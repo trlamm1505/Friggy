@@ -15,7 +15,7 @@ async function bootstrap() {
   });
 
   // ── Global API prefix & versioning ─────────────────────────────────────
-  app.setGlobalPrefix('api');
+  app.setGlobalPrefix('api/v1');
   app.enableVersioning({ type: VersioningType.URI, defaultVersion: '1' });
 
   // ── Global ValidationPipe (dùng khi có DTO class-validator sau này) ────
@@ -49,8 +49,6 @@ async function bootstrap() {
           `Dùng **Bearer Token** (JWT). Lấy token qua \`POST /api/v1/auth/google\` hoặc \`POST /api/v1/auth/phone/verify\`.`,
       )
       .setVersion('1.0')
-      .setContact('Friggy Team', '', 'support@friggy.vn')
-      .setLicense('UNLICENSED', '')
       .addBearerAuth(
         {
           type: 'http',
