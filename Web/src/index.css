@@ -1,0 +1,85 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+@import "tailwindcss";
+
+@layer base {
+  body {
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    background-color: #f6fbf7;
+    color: #1e293b;
+    scroll-behavior: smooth;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+  background: #a7f3d0;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #34d399;
+}
+
+/* Equal height for React Slick Slider Track */
+.slick-track {
+  display: flex !important;
+  align-items: center !important;
+}
+.slick-slide {
+  height: auto !important;
+}
+.slick-slide > div {
+  height: 100%;
+}
+
+/* Custom Slick Dots - Perfectly Centered & Equal Spacing */
+.custom-slick-dots {
+  position: relative !important;
+  bottom: 0 !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  gap: 10px !important;
+  margin-top: 28px !important;
+  padding: 0 !important;
+  list-style: none !important;
+}
+
+.custom-slick-dots li {
+  width: 10px !important;
+  height: 10px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  display: inline-block !important;
+}
+
+.custom-slick-dots li button {
+  width: 10px !important;
+  height: 10px !important;
+  padding: 0 !important;
+  border-radius: 9999px !important;
+  background-color: #a7f3d0 !important;
+  border: none !important;
+  cursor: pointer !important;
+  transition: all 0.3s ease !important;
+}
+
+.custom-slick-dots li button:before {
+  display: none !important;
+}
+
+.custom-slick-dots li.slick-active {
+  width: 26px !important;
+}
+
+.custom-slick-dots li.slick-active button {
+  width: 26px !important;
+  border-radius: 9999px !important;
+  background-color: #10b981 !important;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4) !important;
+}
