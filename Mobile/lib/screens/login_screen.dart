@@ -123,7 +123,7 @@ class _LoginScreenState extends State<LoginScreen> {
         top: false,
         bottom: false,
         child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
+          physics: const NeverScrollableScrollPhysics(),
           child: Stack(
             clipBehavior: Clip.none,
             children: [
@@ -160,12 +160,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
               // 2. Mascot Header Image
               Positioned(
-                top: topPadding + 10,
-                right: -10,
-                width: 250,
-                height: topHeaderHeight,
+                top: topPadding + 55,
+                right: 0,
+                width: 260,
+                height: topHeaderHeight - 35,
                 child: Image.asset(
-                  'assets/images/cute_mascot.png',
+                  'assets/images/mascot_login.png',
                   fit: BoxFit.contain,
                 ),
               ),

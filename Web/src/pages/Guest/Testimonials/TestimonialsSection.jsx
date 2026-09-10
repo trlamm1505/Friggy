@@ -56,14 +56,14 @@ export const TestimonialsSection = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
 
-          {/* ================= LEFT COLUMN: TEXT CONTENT ================= */}
-          <div className="lg:col-span-5 space-y-6 text-left">
-            {/* Tag Badge */}
-            <div className="inline-flex items-center gap-2 bg-emerald-100/90 text-emerald-800 text-xs font-extrabold px-4 py-2 rounded-full uppercase tracking-wider shadow-xs border border-emerald-200/80">
-              <Sparkles className="w-4 h-4 text-emerald-600 animate-pulse" />
-              Trải nghiệm thực tế từ người dùng
-            </div>
-
+          {/* ================= LEFT COLUMN: TEXT CONTENT (SLIDES IN FROM LEFT) ================= */}
+          <motion.div
+            initial={{ opacity: 0, x: -120 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true, amount: 0.2 }}
+            transition={{ duration: 0.8, ease: [0.25, 1, 0.5, 1] }}
+            className="lg:col-span-5 space-y-6 text-left"
+          >
             {/* Main Headline */}
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-emerald-950 tracking-tight leading-[1.15]">
               Hàng Ngàn Gia Đình Đã Thay Đổi <br className="hidden sm:inline" />
@@ -108,10 +108,16 @@ export const TestimonialsSection = () => {
                 </span>
               </div>
             </div>
-          </div>
+          </motion.div>
 
-          {/* ================= RIGHT COLUMN: ANIMATED CARD DECK SHOWCASE ================= */}
-          <div className="lg:col-span-7 relative flex items-center justify-center min-h-[500px] sm:min-h-[560px]">
+          {/* ================= RIGHT COLUMN: ANIMATED CARD DECK SHOWCASE (SLIDES IN FROM RIGHT) ================= */}
+          <motion.div
+            initial={{ opacity: 0, x: 120 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true, amount: 0.2 }}
+            transition={{ duration: 0.8, ease: [0.25, 1, 0.5, 1] }}
+            className="lg:col-span-7 relative flex items-center justify-center min-h-[500px] sm:min-h-[560px]"
+          >
             <div className="relative w-full max-w-xl h-[480px] sm:h-[520px] flex items-center justify-center perspective-[1200px] -translate-x-4 -translate-y-4">
               {reviews.map((item, idx) => {
                 const offset = (idx - activeIndex + count) % count;
@@ -276,7 +282,7 @@ export const TestimonialsSection = () => {
                 );
               })}
             </div>
-          </div>
+          </motion.div>
 
         </div>
 

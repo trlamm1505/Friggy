@@ -14,6 +14,10 @@ export const DownloadCtaBanner = () => {
     <section id="download" className="py-20 bg-gradient-to-b from-white via-emerald-50/40 to-emerald-100/30">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
+          initial={{ opacity: 0, scale: 0.92, y: 40 }}
+          whileInView={{ opacity: 1, scale: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.25 }}
+          transition={{ duration: 0.7, ease: [0.25, 1, 0.5, 1] }}
           whileHover={{ scale: 1.005 }}
           className="relative rounded-[40px] bg-gradient-to-br from-emerald-100/90 via-emerald-50 to-white p-8 sm:p-12 lg:p-16 text-emerald-950 shadow-xl overflow-hidden border border-emerald-200/80"
         >
@@ -24,11 +28,6 @@ export const DownloadCtaBanner = () => {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center relative z-10">
             {/* Left Column Text */}
             <div className="lg:col-span-8 space-y-6 text-center lg:text-left">
-              <div className="inline-flex items-center gap-2 bg-emerald-200/80 border border-emerald-300 text-emerald-900 font-bold text-xs px-4 py-1.5 rounded-full uppercase tracking-wider shadow-xs">
-                <Sparkles className="w-4 h-4 text-emerald-600 animate-spin-slow" />
-                <span>Khám phá trải nghiệm mới ngay hôm nay</span>
-              </div>
-
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-emerald-950 leading-tight tracking-tight">
                 Biến Chiếc Tủ Lạnh Trở Thành <br className="hidden sm:inline" />
                 <span className="bg-gradient-to-r from-emerald-600 via-green-600 to-teal-700 bg-clip-text text-transparent">
