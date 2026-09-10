@@ -14,16 +14,6 @@ export const PricingSection = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
-          <motion.div
-            initial={{ opacity: 0, y: 15 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="inline-flex items-center gap-2 bg-emerald-100 text-emerald-800 text-xs font-bold px-4 py-1.5 rounded-full uppercase tracking-wider shadow-xs border border-emerald-200"
-          >
-            <Sparkles className="w-4 h-4 text-emerald-600" />
-            Bảng giá minh bạch & Tiết kiệm
-          </motion.div>
-
           <motion.h2
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -79,14 +69,24 @@ export const PricingSection = () => {
 
         {/* Pricing Cards Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
-          {pricingPlans.map((plan) => {
+          {pricingPlans.map((plan, index) => {
             const isPro = plan.isPopular;
             const price = billingCycle === 'monthly' ? plan.priceMonthly : plan.priceYearly;
 
             return (
               <motion.div
                 key={plan.id}
-                whileHover={{ y: isPro ? -10 : -8 }}
+                initial={{ opacity: 0, y: 140, scale: 0.88 }}
+                whileInView={{ opacity: 1, y: 0, scale: 1 }}
+                viewport={{ once: true, amount: 0.15 }}
+                transition={{
+                  type: 'spring',
+                  stiffness: 240,
+                  damping: 16,
+                  mass: 0.9,
+                  delay: index * 0.22,
+                }}
+                whileHover={{ y: isPro ? -12 : -8, scale: 1.02 }}
                 className={`rounded-3xl p-8 flex flex-col justify-between relative overflow-hidden transition-all ${
                   isPro
                     ? 'bg-white border-2 border-emerald-500 shadow-2xl shadow-emerald-500/20 transform lg:-translate-y-3 z-10'

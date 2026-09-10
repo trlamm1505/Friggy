@@ -1,14 +1,30 @@
 import React from 'react';
+import { motion } from 'framer-motion';
 import { Heart, Phone, Mail, Clock } from 'lucide-react';
 import { footerData } from '../../../data';
 
 export const GuestFooter = () => {
   return (
-    <footer className="bg-[#062319] text-white pt-14 pb-8 border-t border-emerald-900/60">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <motion.footer
+      initial={{ opacity: 0, y: 70, scaleY: 0.9 }}
+      whileInView={{ opacity: 1, y: 0, scaleY: 1 }}
+      viewport={{ once: true, amount: 0.1 }}
+      transition={{ duration: 0.6, ease: [0.25, 1, 0.5, 1] }}
+      className="bg-[#062319] text-white pt-14 pb-8 border-t border-emerald-900/60 relative overflow-hidden select-none origin-bottom"
+    >
+      {/* Glow effect */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[200px] bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8 pb-10 border-b border-emerald-900/40">
-          {/* Col 1: Logo & Slogan (4 cols) */}
-          <div className="md:col-span-4 space-y-4 text-center md:text-left">
+          {/* Col 1: Logo & Slogan (4 cols) - Starts AFTER Footer background animation finishes (delay: 0.6s) */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.1 }}
+            transition={{ duration: 0.5, delay: 0.6 }}
+            className="md:col-span-4 space-y-4 text-center md:text-left"
+          >
             <div className="flex items-center justify-center md:justify-start gap-3">
               <div className="w-11 h-11 rounded-2xl overflow-hidden bg-gradient-to-tr from-emerald-500 to-green-400 p-0.5 shadow-md flex items-center justify-center">
                 <img
@@ -30,10 +46,16 @@ export const GuestFooter = () => {
             <p className="text-xs sm:text-sm text-emerald-200/80 font-medium max-w-sm leading-relaxed">
               {footerData.slogan}
             </p>
-          </div>
+          </motion.div>
 
           {/* Col 2: Thông tin liên hệ & Hotline (5 cols) */}
-          <div className="md:col-span-5 space-y-3.5 text-left pl-0 md:pl-4">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.1 }}
+            transition={{ duration: 0.5, delay: 0.75 }}
+            className="md:col-span-5 space-y-3.5 text-left pl-0 md:pl-4"
+          >
             <h4 className="text-sm font-bold text-emerald-400 uppercase tracking-wider">
               Thông Tin Liên Hệ & Hỗ Trợ
             </h4>
@@ -73,10 +95,16 @@ export const GuestFooter = () => {
                 </div>
               </div>
             </div>
-          </div>
+          </motion.div>
 
           {/* Col 3: Liên kết nhanh (3 cols) */}
-          <div className="md:col-span-3 space-y-3.5 text-center md:text-left">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.1 }}
+            transition={{ duration: 0.5, delay: 0.9 }}
+            className="md:col-span-3 space-y-3.5 text-center md:text-left"
+          >
             <h4 className="text-sm font-bold text-emerald-400 uppercase tracking-wider">
               Liên Kết Nhanh
             </h4>
@@ -89,18 +117,24 @@ export const GuestFooter = () => {
                 </li>
               ))}
             </ul>
-          </div>
+          </motion.div>
         </div>
 
         {/* Copyright notice */}
-        <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-emerald-300/70 font-medium">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.1 }}
+          transition={{ duration: 0.4, delay: 1.05 }}
+          className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-emerald-300/70 font-medium"
+        >
           <p>© {new Date().getFullYear()} {footerData.brandName} Inc. Bảo lưu mọi quyền.</p>
           <p className="flex items-center gap-1">
-            Thiết kế với <Heart className="w-3.5 h-3.5 text-rose-500 fill-current inline" /> dành cho gia đình Việt
+            Thiết kế với <Heart className="w-3.5 h-3.5 text-rose-500 fill-current inline animate-pulse" /> dành cho gia đình Việt
           </p>
-        </div>
+        </motion.div>
       </div>
-    </footer>
+    </motion.footer>
   );
 };
 
