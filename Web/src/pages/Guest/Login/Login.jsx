@@ -1,19 +1,31 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Mail, Lock, Eye, EyeOff, ArrowLeft, Sparkles, ShieldCheck } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { User, Lock, Eye, EyeOff, ArrowLeft, Sparkles, ShieldCheck, CheckCircle2 } from 'lucide-react';
 import cuteMascotImg from '../../../assets/images/cute_mascot.png';
 import qrMascotImg from '../../../assets/images/QR.png';
 import mascotImg from '../../../assets/images/mascot.png';
+import suggestImg from '../../../assets/images/suggest.png';
+import { adminAccount, initialUsers } from '../../../data/adminMockData';
 
 export const Login = ({ onBack, onLoginSuccess }) => {
+  const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
-    email: '',
+    username: '',
     password: '',
     remember: true,
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  const handleBack = () => {
+    if (onBack) {
+      onBack();
+    } else {
+      navigate('/');
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -27,8 +39,11 @@ export const Login = ({ onBack, onLoginSuccess }) => {
     e.preventDefault();
     setError('');
 
-    if (!formData.email || !formData.password) {
-      setError('Vui lòng nhập đầy đủ Email và Mật khẩu.');
+    const inputUser = formData.username.trim();
+    const inputPass = formData.password.trim();
+
+    if (!inputUser || !inputPass) {
+      setError('Vui lòng nhập đầy đủ Tên đăng nhập và Mật khẩu.');
       return;
     }
 
@@ -36,24 +51,48 @@ export const Login = ({ onBack, onLoginSuccess }) => {
 
     setTimeout(() => {
       setLoading(false);
-      if (onLoginSuccess) {
-        onLoginSuccess(formData);
-      } else if (onBack) {
-        onBack();
-      }
-    }, 1200);
-  };
 
-  const handleGoogleSignIn = () => {
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      if (onLoginSuccess) {
-        onLoginSuccess({ email: 'user.google@gmail.com', name: 'Người Dùng Google' });
-      } else if (onBack) {
-        onBack();
+      // List of all valid accounts in the system
+      const validAccounts = [
+        adminAccount,
+        ...initialUsers.map((u) => ({
+          ...u,
+          password: u.password || '123456',
+        })),
+      ];
+
+      // 1. Check if username & password are correct
+      const matchedAccount = validAccounts.find((acc) => {
+        const matchesUser =
+          acc.username === inputUser ||
+          acc.phone === inputUser ||
+          acc.email === inputUser;
+        const matchesPass = acc.password === inputPass;
+        return matchesUser && matchesPass;
+      });
+
+      if (!matchedAccount) {
+        setError('Tên đăng nhập hoặc mật khẩu không chính xác!');
+        return;
       }
-    }, 1200);
+
+      // 2. Check role: if role is admin -> redirect to admin page
+      const roleLower = String(matchedAccount.role || '').toLowerCase();
+      const isAdmin = roleLower === 'admin' || roleLower.includes('admin');
+
+      if (isAdmin) {
+        navigate('/admin/dashboard', { replace: true });
+        if (onLoginSuccess) {
+          onLoginSuccess(matchedAccount);
+        }
+      } else {
+        alert(`Đăng nhập thành công! Chào mừng ${matchedAccount.name || matchedAccount.username}`);
+        navigate('/', { replace: true });
+        if (onLoginSuccess) {
+          onLoginSuccess(matchedAccount);
+        }
+      }
+    }, 1000);
   };
 
   return (
@@ -63,17 +102,15 @@ export const Login = ({ onBack, onLoginSuccess }) => {
       <div className="absolute bottom-10 right-10 w-[600px] h-[600px] bg-emerald-300/30 rounded-full blur-3xl pointer-events-none" />
 
       {/* Back to Home Button */}
-      {onBack && (
-        <button
-          onClick={onBack}
-          className="absolute top-6 left-6 z-30 flex items-center gap-2 bg-white/95 hover:bg-emerald-600 text-emerald-950 hover:text-white shadow-md border border-emerald-300/80 px-4.5 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition-all duration-200 cursor-pointer group"
-        >
-          <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-          <span>Quay lại trang chủ</span>
-        </button>
-      )}
+      <button
+        onClick={handleBack}
+        className="absolute top-6 left-6 z-30 flex items-center gap-2 bg-white/95 hover:bg-emerald-600 text-emerald-950 hover:text-white shadow-md border border-emerald-300/80 px-4.5 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition-all duration-200 cursor-pointer group"
+      >
+        <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+        <span>Quay lại trang chủ</span>
+      </button>
 
-      {/* Main Glassmorphic Container (Pure White Card popping nicely out from Sage background) */}
+      {/* Main Glassmorphic Container */}
       <motion.div
         initial={{ opacity: 0, scale: 0.94, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -140,9 +177,9 @@ export const Login = ({ onBack, onLoginSuccess }) => {
         </div>
 
         {/* ================= RIGHT SIDE: LOGIN FORM (7 cols) ================= */}
-        <div className="lg:col-span-7 p-6 sm:p-10 lg:p-12 flex flex-col justify-center bg-white relative">
+        <div className="lg:col-span-7 p-8 sm:p-10 lg:p-12 flex flex-col justify-center space-y-6 bg-white relative">
           {/* Header Mobile Logo (visible on small screens) */}
-          <div className="lg:hidden flex items-center justify-center gap-2.5 mb-6">
+          <div className="lg:hidden flex items-center justify-center gap-2.5 mb-2">
             <img src={cuteMascotImg} alt="Friggy Logo" className="w-9 h-9 object-cover rounded-xl" />
             <div className="flex items-baseline">
               <span className="text-2xl font-black text-emerald-950">Fri</span>
@@ -151,12 +188,28 @@ export const Login = ({ onBack, onLoginSuccess }) => {
             </div>
           </div>
 
-          {/* Form Header (Perfectly aligned with Left Banner) */}
-          <div className="text-center lg:text-left mb-6 sm:mb-7">
-            <h2 className="text-2xl sm:text-3xl font-black text-emerald-950 tracking-tight">
+          {/* Extra Large Floating Mascot Decor flush at top-right corner */}
+          <motion.div
+            animate={{ y: [0, -10, 0] }}
+            transition={{ duration: 3.0, repeat: Infinity, ease: 'easeInOut' }}
+            className="absolute -top-4 -right-4 sm:-top-6 sm:-right-6 z-10 pointer-events-none"
+          >
+            <div className="relative">
+              <div className="absolute inset-0 bg-emerald-300/30 rounded-full blur-2xl pointer-events-none" />
+              <img
+                src={mascotImg}
+                alt="Friggy Mascot Decor"
+                className="w-40 sm:w-48 h-40 sm:h-48 object-contain relative z-10 drop-shadow-2xl"
+              />
+            </div>
+          </motion.div>
+
+          {/* Header Section */}
+          <div className="space-y-1.5 border-b border-emerald-100/80 pb-5 relative z-20">
+            <h2 className="text-2xl sm:text-3xl font-black text-emerald-950 tracking-tight whitespace-nowrap">
               Đăng Nhập Friggy
             </h2>
-            <p className="text-xs sm:text-sm text-emerald-900/65 font-medium mt-2">
+            <p className="text-xs sm:text-sm text-emerald-900/65 font-medium max-w-xs sm:max-w-sm">
               Nhập thông tin tài khoản của bạn để tiếp tục sử dụng ứng dụng.
             </p>
           </div>
@@ -166,30 +219,30 @@ export const Login = ({ onBack, onLoginSuccess }) => {
             <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="mb-6 p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs sm:text-sm font-semibold flex items-center gap-2"
+              className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs sm:text-sm font-semibold flex items-center gap-2"
             >
-              <div className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
+              <div className="w-2 h-2 rounded-full bg-rose-500 animate-ping flex-shrink-0" />
               <span>{error}</span>
             </motion.div>
           )}
 
           {/* Form Inputs */}
           <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Email Input Field */}
+            {/* Username Input Field */}
             <div className="space-y-1.5 relative">
               <label className="block text-xs font-bold text-emerald-950 uppercase tracking-wider">
-                Địa chỉ Email
+                Tên Đăng Nhập
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-emerald-600">
-                  <Mail className="w-4 h-4" />
+                  <User className="w-4 h-4" />
                 </div>
                 <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
+                  type="text"
+                  name="username"
+                  value={formData.username}
                   onChange={handleChange}
-                  placeholder="name@example.com"
+                  placeholder="Nhập tên đăng nhập hoặc số điện thoại"
                   className="w-full pl-10 pr-4 py-3.5 bg-white border-2 border-emerald-200 hover:border-emerald-400 rounded-2xl text-sm font-semibold text-emerald-950 placeholder-emerald-800/35 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all shadow-2xs"
                 />
               </div>
@@ -198,7 +251,7 @@ export const Login = ({ onBack, onLoginSuccess }) => {
             {/* Password Input Field */}
             <div className="space-y-1.5 relative">
               <label className="block text-xs font-bold text-emerald-950 uppercase tracking-wider">
-                Mật khẩu
+                Mật Khẩu
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-emerald-600">
@@ -222,9 +275,9 @@ export const Login = ({ onBack, onLoginSuccess }) => {
               </div>
             </div>
 
-            {/* Remember Me Checkbox */}
+            {/* Remember Me Checkbox & Forgot Password */}
             <div className="flex items-center justify-between pt-1">
-              <label className="flex items-center gap-2 cursor-pointer group">
+              <label className="flex items-center gap-2 cursor-pointer group select-none">
                 <input
                   type="checkbox"
                   name="remember"
@@ -236,6 +289,14 @@ export const Login = ({ onBack, onLoginSuccess }) => {
                   Ghi nhớ đăng nhập
                 </span>
               </label>
+
+              <button
+                type="button"
+                onClick={() => alert('Vui lòng liên hệ hỗ trợ hoặc nhập lại mật khẩu!')}
+                className="text-xs font-bold text-emerald-600 hover:text-emerald-800 hover:underline transition-colors"
+              >
+                Quên mật khẩu?
+              </button>
             </div>
 
             {/* Main Submit Button */}
@@ -252,41 +313,17 @@ export const Login = ({ onBack, onLoginSuccess }) => {
             </button>
           </form>
 
-          {/* Separator Divider */}
-          <div className="relative my-6 flex items-center justify-center">
-            <div className="w-full border-t border-emerald-100" />
-            <span className="absolute bg-white px-4 text-xs font-bold text-emerald-900/40 uppercase tracking-wider">
-              HOẶC ĐĂNG NHẬP VỚI
-            </span>
+          {/* Bottom Footer Note for perfect proportion */}
+          <div className="pt-2 text-center text-xs text-emerald-900/60 font-medium">
+            Chưa có tài khoản?{' '}
+            <button
+              type="button"
+              onClick={() => alert('Chức năng Đăng ký đang được phát triển!')}
+              className="font-bold text-emerald-700 hover:text-emerald-900 hover:underline cursor-pointer ml-1"
+            >
+              Đăng ký tài khoản mới
+            </button>
           </div>
-
-          {/* GOOGLE SIGN IN BUTTON AT THE BOTTOM */}
-          <button
-            type="button"
-            onClick={handleGoogleSignIn}
-            disabled={loading}
-            className="w-full flex items-center justify-center gap-3 bg-white border-2 border-emerald-100 hover:border-emerald-300 text-emerald-950 font-bold py-3.5 px-4 rounded-2xl shadow-xs hover:shadow-md hover:scale-[1.01] active:scale-[0.99] transition-all duration-200 cursor-pointer group disabled:opacity-50"
-          >
-            <svg className="w-5 h-5 group-hover:scale-110 transition-transform" viewBox="0 0 24 24">
-              <path
-                fill="#4285F4"
-                d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-              />
-              <path
-                fill="#34A853"
-                d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-              />
-              <path
-                fill="#FBBC05"
-                d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
-              />
-              <path
-                fill="#EA4335"
-                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
-              />
-            </svg>
-            <span className="text-sm">Đăng nhập bằng Google</span>
-          </button>
         </div>
       </motion.div>
     </div>
@@ -294,3 +331,4 @@ export const Login = ({ onBack, onLoginSuccess }) => {
 };
 
 export default Login;
+

@@ -1,8 +1,13 @@
 import React from 'react';
-import GuestPage from './pages/Guest';
+import { BrowserRouter } from 'react-router-dom';
+import Router from './routes/router';
 
 function App() {
-  return <GuestPage />;
+  return (
+    <BrowserRouter>
+      <Router />
+    </BrowserRouter>
+  );
 }
 
 export default App;
