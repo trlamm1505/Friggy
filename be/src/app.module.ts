@@ -6,6 +6,9 @@ import { JwtModule } from '@nestjs/jwt';
 import { PrismaModule } from './modules-system/prisma/prisma.module';
 import { TokensModule } from './modules-system/tokens/tokens.module';
 
+// API modules
+import { AuthModule } from './modules-api/auth/auth.module';
+
 // Global guards
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
@@ -24,6 +27,9 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter';
     // JwtModule export từ TokensModule, nhưng cần register tại root
     // để JwtAuthGuard (được inject qua APP_GUARD) có thể dùng
     JwtModule.register({}),
+
+    // ── API Modules ────────────────────────────────────────────────
+    AuthModule,
   ],
   controllers: [],
   providers: [

@@ -42,6 +42,7 @@ export type UserMinAggregateOutputType = {
   authProvider: $Enums.AuthProvider | null
   status: $Enums.UserStatus | null
   roleId: number | null
+  isOnboardingCompleted: boolean | null
   lastLoginAt: Date | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -56,6 +57,7 @@ export type UserMaxAggregateOutputType = {
   authProvider: $Enums.AuthProvider | null
   status: $Enums.UserStatus | null
   roleId: number | null
+  isOnboardingCompleted: boolean | null
   lastLoginAt: Date | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -70,6 +72,7 @@ export type UserCountAggregateOutputType = {
   authProvider: number
   status: number
   roleId: number
+  isOnboardingCompleted: number
   lastLoginAt: number
   createdAt: number
   updatedAt: number
@@ -94,6 +97,7 @@ export type UserMinAggregateInputType = {
   authProvider?: true
   status?: true
   roleId?: true
+  isOnboardingCompleted?: true
   lastLoginAt?: true
   createdAt?: true
   updatedAt?: true
@@ -108,6 +112,7 @@ export type UserMaxAggregateInputType = {
   authProvider?: true
   status?: true
   roleId?: true
+  isOnboardingCompleted?: true
   lastLoginAt?: true
   createdAt?: true
   updatedAt?: true
@@ -122,6 +127,7 @@ export type UserCountAggregateInputType = {
   authProvider?: true
   status?: true
   roleId?: true
+  isOnboardingCompleted?: true
   lastLoginAt?: true
   createdAt?: true
   updatedAt?: true
@@ -223,6 +229,7 @@ export type UserGroupByOutputType = {
   authProvider: $Enums.AuthProvider
   status: $Enums.UserStatus
   roleId: number
+  isOnboardingCompleted: boolean
   lastLoginAt: Date | null
   createdAt: Date
   updatedAt: Date
@@ -260,6 +267,7 @@ export type UserWhereInput = {
   authProvider?: Prisma.EnumAuthProviderFilter<"User"> | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFilter<"User"> | $Enums.UserStatus
   roleId?: Prisma.IntFilter<"User"> | number
+  isOnboardingCompleted?: Prisma.BoolFilter<"User"> | boolean
   lastLoginAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string
@@ -290,6 +298,7 @@ export type UserOrderByWithRelationInput = {
   authProvider?: Prisma.SortOrder
   status?: Prisma.SortOrder
   roleId?: Prisma.SortOrder
+  isOnboardingCompleted?: Prisma.SortOrder
   lastLoginAt?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -324,6 +333,7 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   authProvider?: Prisma.EnumAuthProviderFilter<"User"> | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFilter<"User"> | $Enums.UserStatus
   roleId?: Prisma.IntFilter<"User"> | number
+  isOnboardingCompleted?: Prisma.BoolFilter<"User"> | boolean
   lastLoginAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string
@@ -354,6 +364,7 @@ export type UserOrderByWithAggregationInput = {
   authProvider?: Prisma.SortOrder
   status?: Prisma.SortOrder
   roleId?: Prisma.SortOrder
+  isOnboardingCompleted?: Prisma.SortOrder
   lastLoginAt?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -376,6 +387,7 @@ export type UserScalarWhereWithAggregatesInput = {
   authProvider?: Prisma.EnumAuthProviderWithAggregatesFilter<"User"> | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusWithAggregatesFilter<"User"> | $Enums.UserStatus
   roleId?: Prisma.IntWithAggregatesFilter<"User"> | number
+  isOnboardingCompleted?: Prisma.BoolWithAggregatesFilter<"User"> | boolean
   lastLoginAt?: Prisma.DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"User"> | Date | string
@@ -389,6 +401,7 @@ export type UserCreateInput = {
   googleEmail?: string | null
   authProvider: $Enums.AuthProvider
   status?: $Enums.UserStatus
+  isOnboardingCompleted?: boolean
   lastLoginAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -419,6 +432,7 @@ export type UserUncheckedCreateInput = {
   authProvider: $Enums.AuthProvider
   status?: $Enums.UserStatus
   roleId: number
+  isOnboardingCompleted?: boolean
   lastLoginAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -447,6 +461,7 @@ export type UserUpdateInput = {
   googleEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -477,6 +492,7 @@ export type UserUncheckedUpdateInput = {
   authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   roleId?: Prisma.IntFieldUpdateOperationsInput | number
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -506,6 +522,7 @@ export type UserCreateManyInput = {
   authProvider: $Enums.AuthProvider
   status?: $Enums.UserStatus
   roleId: number
+  isOnboardingCompleted?: boolean
   lastLoginAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -519,6 +536,7 @@ export type UserUpdateManyMutationInput = {
   googleEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -533,6 +551,7 @@ export type UserUncheckedUpdateManyInput = {
   authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   roleId?: Prisma.IntFieldUpdateOperationsInput | number
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -563,6 +582,7 @@ export type UserCountOrderByAggregateInput = {
   authProvider?: Prisma.SortOrder
   status?: Prisma.SortOrder
   roleId?: Prisma.SortOrder
+  isOnboardingCompleted?: Prisma.SortOrder
   lastLoginAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -581,6 +601,7 @@ export type UserMaxOrderByAggregateInput = {
   authProvider?: Prisma.SortOrder
   status?: Prisma.SortOrder
   roleId?: Prisma.SortOrder
+  isOnboardingCompleted?: Prisma.SortOrder
   lastLoginAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -595,6 +616,7 @@ export type UserMinOrderByAggregateInput = {
   authProvider?: Prisma.SortOrder
   status?: Prisma.SortOrder
   roleId?: Prisma.SortOrder
+  isOnboardingCompleted?: Prisma.SortOrder
   lastLoginAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -667,6 +689,10 @@ export type EnumAuthProviderFieldUpdateOperationsInput = {
 
 export type EnumUserStatusFieldUpdateOperationsInput = {
   set?: $Enums.UserStatus
+}
+
+export type BoolFieldUpdateOperationsInput = {
+  set?: boolean
 }
 
 export type UserCreateNestedOneWithoutProfileInput = {
@@ -892,6 +918,7 @@ export type UserCreateWithoutRoleInput = {
   googleEmail?: string | null
   authProvider: $Enums.AuthProvider
   status?: $Enums.UserStatus
+  isOnboardingCompleted?: boolean
   lastLoginAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -920,6 +947,7 @@ export type UserUncheckedCreateWithoutRoleInput = {
   googleEmail?: string | null
   authProvider: $Enums.AuthProvider
   status?: $Enums.UserStatus
+  isOnboardingCompleted?: boolean
   lastLoginAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -978,6 +1006,7 @@ export type UserScalarWhereInput = {
   authProvider?: Prisma.EnumAuthProviderFilter<"User"> | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFilter<"User"> | $Enums.UserStatus
   roleId?: Prisma.IntFilter<"User"> | number
+  isOnboardingCompleted?: Prisma.BoolFilter<"User"> | boolean
   lastLoginAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string
@@ -991,6 +1020,7 @@ export type UserCreateWithoutProfileInput = {
   googleEmail?: string | null
   authProvider: $Enums.AuthProvider
   status?: $Enums.UserStatus
+  isOnboardingCompleted?: boolean
   lastLoginAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1020,6 +1050,7 @@ export type UserUncheckedCreateWithoutProfileInput = {
   authProvider: $Enums.AuthProvider
   status?: $Enums.UserStatus
   roleId: number
+  isOnboardingCompleted?: boolean
   lastLoginAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1063,6 +1094,7 @@ export type UserUpdateWithoutProfileInput = {
   googleEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1092,6 +1124,7 @@ export type UserUncheckedUpdateWithoutProfileInput = {
   authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   roleId?: Prisma.IntFieldUpdateOperationsInput | number
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1119,6 +1152,7 @@ export type UserCreateWithoutPreferencesInput = {
   googleEmail?: string | null
   authProvider: $Enums.AuthProvider
   status?: $Enums.UserStatus
+  isOnboardingCompleted?: boolean
   lastLoginAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1148,6 +1182,7 @@ export type UserUncheckedCreateWithoutPreferencesInput = {
   authProvider: $Enums.AuthProvider
   status?: $Enums.UserStatus
   roleId: number
+  isOnboardingCompleted?: boolean
   lastLoginAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1191,6 +1226,7 @@ export type UserUpdateWithoutPreferencesInput = {
   googleEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1220,6 +1256,7 @@ export type UserUncheckedUpdateWithoutPreferencesInput = {
   authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   roleId?: Prisma.IntFieldUpdateOperationsInput | number
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1247,6 +1284,7 @@ export type UserCreateWithoutRefreshTokensInput = {
   googleEmail?: string | null
   authProvider: $Enums.AuthProvider
   status?: $Enums.UserStatus
+  isOnboardingCompleted?: boolean
   lastLoginAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1276,6 +1314,7 @@ export type UserUncheckedCreateWithoutRefreshTokensInput = {
   authProvider: $Enums.AuthProvider
   status?: $Enums.UserStatus
   roleId: number
+  isOnboardingCompleted?: boolean
   lastLoginAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1319,6 +1358,7 @@ export type UserUpdateWithoutRefreshTokensInput = {
   googleEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1348,6 +1388,7 @@ export type UserUncheckedUpdateWithoutRefreshTokensInput = {
   authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   roleId?: Prisma.IntFieldUpdateOperationsInput | number
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1375,6 +1416,7 @@ export type UserCreateWithoutAuthoredRecipesInput = {
   googleEmail?: string | null
   authProvider: $Enums.AuthProvider
   status?: $Enums.UserStatus
+  isOnboardingCompleted?: boolean
   lastLoginAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1404,6 +1446,7 @@ export type UserUncheckedCreateWithoutAuthoredRecipesInput = {
   authProvider: $Enums.AuthProvider
   status?: $Enums.UserStatus
   roleId: number
+  isOnboardingCompleted?: boolean
   lastLoginAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1447,6 +1490,7 @@ export type UserUpdateWithoutAuthoredRecipesInput = {
   googleEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1476,6 +1520,7 @@ export type UserUncheckedUpdateWithoutAuthoredRecipesInput = {
   authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   roleId?: Prisma.IntFieldUpdateOperationsInput | number
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1503,6 +1548,7 @@ export type UserCreateWithoutSavedRecipesInput = {
   googleEmail?: string | null
   authProvider: $Enums.AuthProvider
   status?: $Enums.UserStatus
+  isOnboardingCompleted?: boolean
   lastLoginAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1532,6 +1578,7 @@ export type UserUncheckedCreateWithoutSavedRecipesInput = {
   authProvider: $Enums.AuthProvider
   status?: $Enums.UserStatus
   roleId: number
+  isOnboardingCompleted?: boolean
   lastLoginAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1575,6 +1622,7 @@ export type UserUpdateWithoutSavedRecipesInput = {
   googleEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1604,6 +1652,7 @@ export type UserUncheckedUpdateWithoutSavedRecipesInput = {
   authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   roleId?: Prisma.IntFieldUpdateOperationsInput | number
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1631,6 +1680,7 @@ export type UserCreateWithoutFridgeItemsInput = {
   googleEmail?: string | null
   authProvider: $Enums.AuthProvider
   status?: $Enums.UserStatus
+  isOnboardingCompleted?: boolean
   lastLoginAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1660,6 +1710,7 @@ export type UserUncheckedCreateWithoutFridgeItemsInput = {
   authProvider: $Enums.AuthProvider
   status?: $Enums.UserStatus
   roleId: number
+  isOnboardingCompleted?: boolean
   lastLoginAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1703,6 +1754,7 @@ export type UserUpdateWithoutFridgeItemsInput = {
   googleEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1732,6 +1784,7 @@ export type UserUncheckedUpdateWithoutFridgeItemsInput = {
   authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   roleId?: Prisma.IntFieldUpdateOperationsInput | number
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1759,6 +1812,7 @@ export type UserCreateWithoutScanLogsInput = {
   googleEmail?: string | null
   authProvider: $Enums.AuthProvider
   status?: $Enums.UserStatus
+  isOnboardingCompleted?: boolean
   lastLoginAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1788,6 +1842,7 @@ export type UserUncheckedCreateWithoutScanLogsInput = {
   authProvider: $Enums.AuthProvider
   status?: $Enums.UserStatus
   roleId: number
+  isOnboardingCompleted?: boolean
   lastLoginAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1831,6 +1886,7 @@ export type UserUpdateWithoutScanLogsInput = {
   googleEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1860,6 +1916,7 @@ export type UserUncheckedUpdateWithoutScanLogsInput = {
   authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   roleId?: Prisma.IntFieldUpdateOperationsInput | number
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1887,6 +1944,7 @@ export type UserCreateWithoutAllergiesInput = {
   googleEmail?: string | null
   authProvider: $Enums.AuthProvider
   status?: $Enums.UserStatus
+  isOnboardingCompleted?: boolean
   lastLoginAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1916,6 +1974,7 @@ export type UserUncheckedCreateWithoutAllergiesInput = {
   authProvider: $Enums.AuthProvider
   status?: $Enums.UserStatus
   roleId: number
+  isOnboardingCompleted?: boolean
   lastLoginAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1959,6 +2018,7 @@ export type UserUpdateWithoutAllergiesInput = {
   googleEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1988,6 +2048,7 @@ export type UserUncheckedUpdateWithoutAllergiesInput = {
   authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   roleId?: Prisma.IntFieldUpdateOperationsInput | number
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -2015,6 +2076,7 @@ export type UserCreateWithoutWeeklyPlansInput = {
   googleEmail?: string | null
   authProvider: $Enums.AuthProvider
   status?: $Enums.UserStatus
+  isOnboardingCompleted?: boolean
   lastLoginAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -2044,6 +2106,7 @@ export type UserUncheckedCreateWithoutWeeklyPlansInput = {
   authProvider: $Enums.AuthProvider
   status?: $Enums.UserStatus
   roleId: number
+  isOnboardingCompleted?: boolean
   lastLoginAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -2087,6 +2150,7 @@ export type UserUpdateWithoutWeeklyPlansInput = {
   googleEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -2116,6 +2180,7 @@ export type UserUncheckedUpdateWithoutWeeklyPlansInput = {
   authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   roleId?: Prisma.IntFieldUpdateOperationsInput | number
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -2143,6 +2208,7 @@ export type UserCreateWithoutShoppingListsInput = {
   googleEmail?: string | null
   authProvider: $Enums.AuthProvider
   status?: $Enums.UserStatus
+  isOnboardingCompleted?: boolean
   lastLoginAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -2172,6 +2238,7 @@ export type UserUncheckedCreateWithoutShoppingListsInput = {
   authProvider: $Enums.AuthProvider
   status?: $Enums.UserStatus
   roleId: number
+  isOnboardingCompleted?: boolean
   lastLoginAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -2215,6 +2282,7 @@ export type UserUpdateWithoutShoppingListsInput = {
   googleEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -2244,6 +2312,7 @@ export type UserUncheckedUpdateWithoutShoppingListsInput = {
   authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   roleId?: Prisma.IntFieldUpdateOperationsInput | number
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -2271,6 +2340,7 @@ export type UserCreateWithoutActivatedPromptsInput = {
   googleEmail?: string | null
   authProvider: $Enums.AuthProvider
   status?: $Enums.UserStatus
+  isOnboardingCompleted?: boolean
   lastLoginAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -2300,6 +2370,7 @@ export type UserUncheckedCreateWithoutActivatedPromptsInput = {
   authProvider: $Enums.AuthProvider
   status?: $Enums.UserStatus
   roleId: number
+  isOnboardingCompleted?: boolean
   lastLoginAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -2343,6 +2414,7 @@ export type UserUpdateWithoutActivatedPromptsInput = {
   googleEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -2372,6 +2444,7 @@ export type UserUncheckedUpdateWithoutActivatedPromptsInput = {
   authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   roleId?: Prisma.IntFieldUpdateOperationsInput | number
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -2399,6 +2472,7 @@ export type UserCreateWithoutChatSessionsInput = {
   googleEmail?: string | null
   authProvider: $Enums.AuthProvider
   status?: $Enums.UserStatus
+  isOnboardingCompleted?: boolean
   lastLoginAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -2428,6 +2502,7 @@ export type UserUncheckedCreateWithoutChatSessionsInput = {
   authProvider: $Enums.AuthProvider
   status?: $Enums.UserStatus
   roleId: number
+  isOnboardingCompleted?: boolean
   lastLoginAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -2471,6 +2546,7 @@ export type UserUpdateWithoutChatSessionsInput = {
   googleEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -2500,6 +2576,7 @@ export type UserUncheckedUpdateWithoutChatSessionsInput = {
   authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   roleId?: Prisma.IntFieldUpdateOperationsInput | number
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -2527,6 +2604,7 @@ export type UserCreateWithoutActivatedConfigsInput = {
   googleEmail?: string | null
   authProvider: $Enums.AuthProvider
   status?: $Enums.UserStatus
+  isOnboardingCompleted?: boolean
   lastLoginAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -2556,6 +2634,7 @@ export type UserUncheckedCreateWithoutActivatedConfigsInput = {
   authProvider: $Enums.AuthProvider
   status?: $Enums.UserStatus
   roleId: number
+  isOnboardingCompleted?: boolean
   lastLoginAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -2599,6 +2678,7 @@ export type UserUpdateWithoutActivatedConfigsInput = {
   googleEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -2628,6 +2708,7 @@ export type UserUncheckedUpdateWithoutActivatedConfigsInput = {
   authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   roleId?: Prisma.IntFieldUpdateOperationsInput | number
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -2655,6 +2736,7 @@ export type UserCreateWithoutAdminLogsInput = {
   googleEmail?: string | null
   authProvider: $Enums.AuthProvider
   status?: $Enums.UserStatus
+  isOnboardingCompleted?: boolean
   lastLoginAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -2684,6 +2766,7 @@ export type UserUncheckedCreateWithoutAdminLogsInput = {
   authProvider: $Enums.AuthProvider
   status?: $Enums.UserStatus
   roleId: number
+  isOnboardingCompleted?: boolean
   lastLoginAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -2727,6 +2810,7 @@ export type UserUpdateWithoutAdminLogsInput = {
   googleEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -2756,6 +2840,7 @@ export type UserUncheckedUpdateWithoutAdminLogsInput = {
   authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   roleId?: Prisma.IntFieldUpdateOperationsInput | number
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -2783,6 +2868,7 @@ export type UserCreateWithoutNotificationsInput = {
   googleEmail?: string | null
   authProvider: $Enums.AuthProvider
   status?: $Enums.UserStatus
+  isOnboardingCompleted?: boolean
   lastLoginAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -2812,6 +2898,7 @@ export type UserUncheckedCreateWithoutNotificationsInput = {
   authProvider: $Enums.AuthProvider
   status?: $Enums.UserStatus
   roleId: number
+  isOnboardingCompleted?: boolean
   lastLoginAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -2855,6 +2942,7 @@ export type UserUpdateWithoutNotificationsInput = {
   googleEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -2884,6 +2972,7 @@ export type UserUncheckedUpdateWithoutNotificationsInput = {
   authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   roleId?: Prisma.IntFieldUpdateOperationsInput | number
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -2911,6 +3000,7 @@ export type UserCreateManyRoleInput = {
   googleEmail?: string | null
   authProvider: $Enums.AuthProvider
   status?: $Enums.UserStatus
+  isOnboardingCompleted?: boolean
   lastLoginAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -2924,6 +3014,7 @@ export type UserUpdateWithoutRoleInput = {
   googleEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -2952,6 +3043,7 @@ export type UserUncheckedUpdateWithoutRoleInput = {
   googleEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -2980,6 +3072,7 @@ export type UserUncheckedUpdateManyWithoutRoleInput = {
   googleEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -3133,6 +3226,7 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   authProvider?: boolean
   status?: boolean
   roleId?: boolean
+  isOnboardingCompleted?: boolean
   lastLoginAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -3166,13 +3260,14 @@ export type UserSelectScalar = {
   authProvider?: boolean
   status?: boolean
   roleId?: boolean
+  isOnboardingCompleted?: boolean
   lastLoginAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   deletedAt?: boolean
 }
 
-export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "phone" | "googleId" | "googleEmail" | "authProvider" | "status" | "roleId" | "lastLoginAt" | "createdAt" | "updatedAt" | "deletedAt", ExtArgs["result"]["user"]>
+export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "phone" | "googleId" | "googleEmail" | "authProvider" | "status" | "roleId" | "isOnboardingCompleted" | "lastLoginAt" | "createdAt" | "updatedAt" | "deletedAt", ExtArgs["result"]["user"]>
 export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   role?: boolean | Prisma.RoleDefaultArgs<ExtArgs>
   profile?: boolean | Prisma.User$profileArgs<ExtArgs>
@@ -3221,6 +3316,7 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     authProvider: $Enums.AuthProvider
     status: $Enums.UserStatus
     roleId: number
+    isOnboardingCompleted: boolean
     lastLoginAt: Date | null
     createdAt: Date
     updatedAt: Date
@@ -3617,6 +3713,7 @@ export interface UserFieldRefs {
   readonly authProvider: Prisma.FieldRef<"User", 'AuthProvider'>
   readonly status: Prisma.FieldRef<"User", 'UserStatus'>
   readonly roleId: Prisma.FieldRef<"User", 'Int'>
+  readonly isOnboardingCompleted: Prisma.FieldRef<"User", 'Boolean'>
   readonly lastLoginAt: Prisma.FieldRef<"User", 'DateTime'>
   readonly createdAt: Prisma.FieldRef<"User", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"User", 'DateTime'>

@@ -15,7 +15,7 @@ async function bootstrap() {
   });
 
   // ── Global API prefix & versioning ─────────────────────────────────────
-  app.setGlobalPrefix('api/v1');
+  app.setGlobalPrefix('api');
   app.enableVersioning({ type: VersioningType.URI, defaultVersion: '1' });
 
   // ── Global ValidationPipe (dùng khi có DTO class-validator sau này) ────

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <title>Friggy — Google ID Token Test</title>
+  <style>
+    body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; padding: 40px; background: #0f0f0f; color: #fff; }
+    h2 { color: #4ade80; }
+    #token-box { margin-top: 20px; width: 100%; max-width: 800px; }
+    textarea { width: 100%; height: 120px; background: #1e1e1e; color: #4ade80; border: 1px solid #333; border-radius: 8px; padding: 12px; font-size: 12px; font-family: monospace; resize: vertical; }
+    button.copy-btn { margin-top: 10px; padding: 10px 24px; background: #4ade80; color: #000; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 14px; }
+    button.copy-btn:hover { background: #22c55e; }
+    .hint { margin-top: 8px; font-size: 12px; color: #888; }
+    .step { background: #1e1e1e; border-radius: 8px; padding: 16px; margin-top: 16px; width: 100%; max-width: 800px; font-size: 13px; color: #ccc; }
+    .step code { background: #2a2a2a; padding: 2px 6px; border-radius: 4px; color: #f97316; }
+  </style>
+</head>
+<body>
+  <h2>🔑 Friggy — Google ID Token Generator</h2>
+  <p style="color:#888">Dùng để lấy <code style="color:#f97316">idToken</code> test endpoint <code style="color:#f97316">POST /api/v1/auth/google</code></p>
+
+  <!-- Google Sign-In Button -->
+  <div id="g_id_onload"
+    data-client_id="302076463841-itoefla7rlbl9rgadphcodev7poj62rn.apps.googleusercontent.com"
+    data-context="signin"
+    data-ux_mode="popup"
+    data-callback="handleCredentialResponse"
+    data-auto_prompt="false">
+  </div>
+  <div class="g_id_signin"
+    data-type="standard"
+    data-shape="rectangular"
+    data-theme="filled_blue"
+    data-text="signin_with"
+    data-size="large"
+    data-locale="vi">
+  </div>
+
+  <div id="token-box" style="display:none">
+    <p style="color:#4ade80; margin-top:20px">✅ ID Token lấy được — copy vào Postman:</p>
+    <textarea id="id-token" readonly></textarea>
+    <button class="copy-btn" onclick="copyToken()">📋 Copy Token</button>
+    <p class="hint">Paste vào Postman → Body → <code style="color:#f97316">{ "idToken": "..." }</code></p>
+  </div>
+
+  <div class="step">
+    <b>Cách dùng:</b><br/>
+    1. Thay <code>YOUR_GOOGLE_CLIENT_ID</code> bằng Client ID thật trong file này<br/>
+    2. Mở file bằng browser (Live Server hoặc mở thẳng file://)<br/>
+    3. Đăng nhập Google → copy token → paste vào Postman<br/><br/>
+    <b>Postman:</b><br/>
+    <code>POST http://localhost:6969/api/v1/auth/google</code><br/>
+    Body: <code>{ "idToken": "&lt;token vừa copy&gt;" }</code>
+  </div>
+
+  <script src="https://accounts.google.com/gsi/client" async></script>
+  <script>
+    function handleCredentialResponse(response) {
+      const token = response.credential;
+      document.getElementById('id-token').value = token;
+      document.getElementById('token-box').style.display = 'block';
+
+      // Decode payload để hiển thị info
+      const parts = token.split('.');
+      const payload = JSON.parse(atob(parts[1]));
+      console.log('Google Payload:', payload);
+      console.log('Email:', payload.email);
+      console.log('Sub (googleId):', payload.sub);
+      console.log('Expires:', new Date(payload.exp * 1000).toLocaleString());
+    }
+
+    function copyToken() {
+      const ta = document.getElementById('id-token');
+      ta.select();
+      navigator.clipboard.writeText(ta.value).then(() => {
+        alert('✅ Đã copy token!');
+      });
+    }
+  </script>
+</body>
+</html>
