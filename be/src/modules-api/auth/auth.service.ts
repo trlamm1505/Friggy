@@ -80,6 +80,7 @@ export class AuthService {
           id: uuid(),
           googleId: googlePayload.sub,
           googleEmail: googlePayload.email ?? null,
+          name: googlePayload.name ?? null,
           authProvider: 'google',
           status: 'active',
           roleId: userRole.id,
@@ -88,13 +89,40 @@ export class AuthService {
         },
         include: { role: true },
       });
+
+      // Tự động tạo UserProfile với displayName từ Google
+      if (googlePayload.name) {
+        await this.prisma.userProfile.create({
+          data: {
+            id: uuid(),
+            userId: user.id,
+            displayName: googlePayload.name,
+          },
+        });
+      }
     } else {
-      // Cập nhật lastLoginAt
+      // Cập nhật lastLoginAt, và name nếu chưa có
+      const updateData: any = { lastLoginAt: new Date() };
+      if (!user.name && googlePayload.name) {
+        updateData.name = googlePayload.name;
+      }
       user = await this.prisma.user.update({
         where: { id: user.id },
-        data: { lastLoginAt: new Date() },
+        data: updateData,
         include: { role: true },
       });
+
+      // Tạo UserProfile nếu chưa có
+      if (googlePayload.name) {
+        const existingProfile = await this.prisma.userProfile.findUnique({
+          where: { userId: user.id },
+        });
+        if (!existingProfile) {
+          await this.prisma.userProfile.create({
+            data: { id: uuid(), userId: user.id, displayName: googlePayload.name },
+          });
+        }
+      }
     }
 
     if (user.status === 'suspended') {
@@ -114,6 +142,7 @@ export class AuthService {
       isNewUser,
       user: {
         id: user.id,
+        name: user.name ?? null,
         phone: user.phone,
         googleEmail: user.googleEmail,
         status: user.status,
@@ -265,6 +294,7 @@ export class AuthService {
       isNewUser,
       user: {
         id: user.id,
+        name: user.name ?? null,
         phone: user.phone,
         googleEmail: user.googleEmail,
         status: user.status,

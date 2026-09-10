@@ -118,6 +118,7 @@ export const UserScalarFieldEnum = {
   phone: 'phone',
   googleId: 'googleId',
   googleEmail: 'googleEmail',
+  name: 'name',
   authProvider: 'authProvider',
   status: 'status',
   roleId: 'roleId',
@@ -171,6 +172,11 @@ export const UserPreferenceScalarFieldEnum = {
   skillLevel: 'skillLevel',
   householdSize: 'householdSize',
   aiPersonalityMode: 'aiPersonalityMode',
+  primaryGoal: 'primaryGoal',
+  cookingFrequency: 'cookingFrequency',
+  height: 'height',
+  weight: 'weight',
+  activityLevel: 'activityLevel',
   updatedAt: 'updatedAt',
   deletedAt: 'deletedAt'
 } as const
@@ -638,7 +644,8 @@ export const UserOrderByRelevanceFieldEnum = {
   id: 'id',
   phone: 'phone',
   googleId: 'googleId',
-  googleEmail: 'googleEmail'
+  googleEmail: 'googleEmail',
+  name: 'name'
 } as const
 
 export type UserOrderByRelevanceFieldEnum = (typeof UserOrderByRelevanceFieldEnum)[keyof typeof UserOrderByRelevanceFieldEnum]
@@ -666,7 +673,10 @@ export type UserProfileOrderByRelevanceFieldEnum = (typeof UserProfileOrderByRel
 
 export const UserPreferenceOrderByRelevanceFieldEnum = {
   id: 'id',
-  userId: 'userId'
+  userId: 'userId',
+  primaryGoal: 'primaryGoal',
+  cookingFrequency: 'cookingFrequency',
+  activityLevel: 'activityLevel'
 } as const
 
 export type UserPreferenceOrderByRelevanceFieldEnum = (typeof UserPreferenceOrderByRelevanceFieldEnum)[keyof typeof UserPreferenceOrderByRelevanceFieldEnum]

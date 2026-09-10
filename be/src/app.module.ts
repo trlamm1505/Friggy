@@ -8,6 +8,7 @@ import { TokensModule } from './modules-system/tokens/tokens.module';
 
 // API modules
 import { AuthModule } from './modules-api/auth/auth.module';
+import { UsersModule } from './modules-api/users/users.module';
 
 // Global guards
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
@@ -30,6 +31,7 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 
     // ── API Modules ────────────────────────────────────────────────
     AuthModule,
+    UsersModule,
   ],
   controllers: [],
   providers: [

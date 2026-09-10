@@ -226,6 +226,7 @@ model User {
   phone                 String?      @unique @db.VarChar(15)
   googleId              String?      @unique @db.VarChar(255)
   googleEmail           String?      @db.VarChar(255)
+  name                  String?      @db.VarChar(100)
   authProvider          AuthProvider
   status                UserStatus   @default(pending)
   roleId                Int
@@ -296,6 +297,11 @@ model UserPreference {
   skillLevel          SkillLevel        @default(beginner)
   householdSize       Int               @default(1) @db.TinyInt
   aiPersonalityMode   AiPersonalityMode @default(friendly)
+  primaryGoal         String?           @db.VarChar(50)
+  cookingFrequency    String?           @db.VarChar(30)
+  height              Int?              @db.SmallInt
+  weight              Int?              @db.SmallInt
+  activityLevel       String?           @db.VarChar(20)
   updatedAt           DateTime          @updatedAt
   deletedAt           DateTime?
 
