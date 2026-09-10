@@ -121,6 +121,7 @@ export const UserScalarFieldEnum = {
   authProvider: 'authProvider',
   status: 'status',
   roleId: 'roleId',
+  isOnboardingCompleted: 'isOnboardingCompleted',
   lastLoginAt: 'lastLoginAt',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',

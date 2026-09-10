@@ -2685,6 +2685,7 @@ export const UserScalarFieldEnum = {
   authProvider: 'authProvider',
   status: 'status',
   roleId: 'roleId',
+  isOnboardingCompleted: 'isOnboardingCompleted',
   lastLoginAt: 'lastLoginAt',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
@@ -3558,6 +3559,13 @@ export type EnumUserStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$Prism
 
 
 /**
+ * Reference to a field of type 'Boolean'
+ */
+export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>
+    
+
+
+/**
  * Reference to a field of type 'OtpPurpose'
  */
 export type EnumOtpPurposeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'OtpPurpose'>
@@ -3575,13 +3583,6 @@ export type EnumGenderFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaMod
  * Reference to a field of type 'DietaryStyle'
  */
 export type EnumDietaryStyleFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DietaryStyle'>
-    
-
-
-/**
- * Reference to a field of type 'Boolean'
- */
-export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>
     
 
 

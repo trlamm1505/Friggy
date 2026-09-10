@@ -579,10 +579,6 @@ export type NullableEnumDietaryStyleFieldUpdateOperationsInput = {
   set?: $Enums.DietaryStyle | null
 }
 
-export type BoolFieldUpdateOperationsInput = {
-  set?: boolean
-}
-
 export type EnumSkillLevelFieldUpdateOperationsInput = {
   set?: $Enums.SkillLevel
 }
