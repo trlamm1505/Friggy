@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Download, LogIn, Menu, X } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Download, LogIn, Menu, X, ShieldCheck } from 'lucide-react';
 import cuteMascotImg from '../../../assets/images/cute_mascot.png';
 
-export const Navbar = ({ onOpenAuthModal }) => {
+export const Navbar = ({ onOpenAuthModal, onOpenAdmin }) => {
+  const navigate = useNavigate();
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -105,7 +107,7 @@ export const Navbar = ({ onOpenAuthModal }) => {
         {/* Actions */}
         <div className="hidden md:flex items-center gap-4">
           <button
-            onClick={onOpenAuthModal}
+            onClick={() => navigate('/login')}
             className="flex items-center gap-1.5 text-sm font-bold text-emerald-900 hover:text-emerald-600 px-3 py-2 transition-colors cursor-pointer"
           >
             <LogIn className="w-4 h-4" />
@@ -172,7 +174,7 @@ export const Navbar = ({ onOpenAuthModal }) => {
             <button
               onClick={() => {
                 setMobileMenuOpen(false);
-                onOpenAuthModal?.();
+                navigate('/login');
               }}
               className="w-full flex justify-center items-center gap-1.5 text-base font-bold text-emerald-900 py-2 cursor-pointer"
             >
