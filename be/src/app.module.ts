@@ -10,6 +10,7 @@ import { TokensModule } from './modules-system/tokens/tokens.module';
 import { AuthModule } from './modules-api/auth/auth.module';
 import { UsersModule } from './modules-api/users/users.module';
 import { IngredientsModule } from './modules-api/ingredients/ingredients.module';
+import { RecipesModule } from './modules-api/recipes/recipes.module';
 
 // Global guards
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
@@ -34,6 +35,7 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter';
     AuthModule,
     UsersModule,
     IngredientsModule,
+    RecipesModule,
   ],
   controllers: [],
   providers: [
