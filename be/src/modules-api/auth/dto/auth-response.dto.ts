@@ -4,6 +4,9 @@ export class AuthUserDto {
   @ApiProperty({ example: 'uuid-...' })
   id!: string;
 
+  @ApiProperty({ example: 'Nguyễn Văn A', nullable: true })
+  name!: string | null;
+
   @ApiProperty({ example: '+84912345678', nullable: true })
   phone!: string | null;
 
