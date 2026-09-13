@@ -7,12 +7,14 @@ import type {
   ListFridgeQueryDto,
   ExpiringQueryDto,
   ConfirmScanDto,
+  StatsChartQueryDto,
 } from './dto/fridge.dto';
 import type {
   FridgeItemResponseDto,
   FridgeStatsResponseDto,
   ScanResponseDto,
   ScanHistoryItemDto,
+  FridgeStatsChartResponseDto,
 } from './dto/fridge-response.dto';
 
 @Injectable()
@@ -209,6 +211,75 @@ export class FridgeService {
     });
 
     return this.mapFridgeItem(updated);
+  }
+
+  // ─────────────────────────────────────────────────────────
+  // GET /stats/chart — Dữ liệu biểu đồ theo ngày
+  // ─────────────────────────────────────────────────────────
+
+  async getStatsChart(userId: string, query: StatsChartQueryDto): Promise<FridgeStatsChartResponseDto> {
+    const period = query.period ?? 'week';
+    const now = new Date();
+    const days = period === 'week' ? 7 : 30;
+
+    // Tạo danh sách ngày trong kỳ
+    const dateRange: Date[] = [];
+    for (let i = days - 1; i >= 0; i--) {
+      const d = new Date(now);
+      d.setDate(now.getDate() - i);
+      d.setHours(0, 0, 0, 0);
+      dateRange.push(d);
+    };
+
+    // Labels viết tắt
+    const dayLabels = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+    const labels = dateRange.map((d) =>
+      period === 'week'
+        ? dayLabels[d.getDay()]
+        : `${d.getDate()}/${d.getMonth() + 1}`,
+    );
+
+    // Query chi tiêu: JOIN shopping_list_items isPurchased=true GROUP BY ngày
+    const startDate = dateRange[0];
+    const endDate = new Date(now);
+    endDate.setHours(23, 59, 59, 999);
+
+    const purchasedItems = await this.prisma.shoppingListItem.findMany({
+      where: {
+        shoppingList: { userId },
+        isPurchased: true,
+        purchasedAt: { gte: startDate, lte: endDate },
+      },
+      select: { estimatedPrice: true, purchasedAt: true },
+    });
+
+    // Query lãng phí: items hết hạn trong kỳ, chưa dùng
+    const wastedItems = await this.prisma.fridgeItem.findMany({
+      where: {
+        userId,
+        consumedAt: null,
+        deletedAt: null,
+        expiresAt: { gte: startDate, lte: endDate },
+      },
+      select: { expiresAt: true },
+    });
+
+    // Map vào mảng theo ngày
+    const spending = dateRange.map((day) => {
+      const dayStr = day.toDateString();
+      return purchasedItems
+        .filter((i) => i.purchasedAt && new Date(i.purchasedAt).toDateString() === dayStr)
+        .reduce((sum, i) => sum + (i.estimatedPrice ?? 0), 0);
+    });
+
+    const wasteItemsArr = dateRange.map((day) => {
+      const dayStr = day.toDateString();
+      return wastedItems.filter(
+        (i) => i.expiresAt && new Date(i.expiresAt).toDateString() === dayStr,
+      ).length;
+    });
+
+    return { period, labels, spending, wasteItems: wasteItemsArr };
   }
 
   // ─────────────────────────────────────────────────────────

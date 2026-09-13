@@ -32,6 +32,11 @@ import {
   AllergyResponseDto,
   AiUsageResponseDto,
 } from './dto/users-response.dto';
+import { NotificationsService } from 'src/modules-api/notifications/notifications.service';
+import {
+  UpdateNotificationSettingsDto,
+  NotificationSettingsDto,
+} from 'src/modules-api/notifications/dto/notifications.dto';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import type { JwtPayload } from 'src/common/interfaces/jwt-payload.interface';
 
@@ -39,7 +44,10 @@ import type { JwtPayload } from 'src/common/interfaces/jwt-payload.interface';
 @ApiBearerAuth('access-token')
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly notificationsService: NotificationsService,
+  ) {}
 
   // ─────────────────────────────────────────────────────────
   // GET /me
@@ -163,5 +171,26 @@ export class UsersController {
   @ApiResponse({ status: 200, type: AiUsageResponseDto })
   async getAiUsage(@CurrentUser() user: JwtPayload): Promise<AiUsageResponseDto> {
     return this.usersService.getAiUsage(user.sub);
+  }
+
+  // ─────────────────────────────────────────────────────────
+  // NOTIFICATION SETTINGS
+  // ─────────────────────────────────────────────────────────
+
+  @Get('me/notification-settings')
+  @ApiOperation({ summary: 'Lấy cài đặt thông báo' })
+  @ApiResponse({ status: 200, type: NotificationSettingsDto })
+  getNotificationSettings(@CurrentUser() user: JwtPayload): Promise<NotificationSettingsDto> {
+    return this.notificationsService.getNotificationSettings(user.sub);
+  }
+
+  @Patch('me/notification-settings')
+  @ApiOperation({ summary: 'Cập nhật cài đặt thông báo (push, expiry alert, shopping reminder)' })
+  @ApiResponse({ status: 200, type: NotificationSettingsDto })
+  updateNotificationSettings(
+    @CurrentUser() user: JwtPayload,
+    @Body() dto: UpdateNotificationSettingsDto,
+  ): Promise<NotificationSettingsDto> {
+    return this.notificationsService.updateNotificationSettings(user.sub, dto);
   }
 }

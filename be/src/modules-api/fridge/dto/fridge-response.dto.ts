@@ -53,3 +53,10 @@ export class ScanHistoryItemDto {
   @ApiPropertyOptional() confirmedCount!: number | null;
   @ApiProperty() createdAt!: string;
 }
+
+export class FridgeStatsChartResponseDto {
+  @ApiProperty({ example: 'week' }) period!: string;
+  @ApiProperty({ type: [String], example: ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'] }) labels!: string[];
+  @ApiProperty({ type: [Number], example: [120000, 0, 85000] }) spending!: number[];
+  @ApiProperty({ type: [Number], example: [0, 1, 0] }) wasteItems!: number[];
+}

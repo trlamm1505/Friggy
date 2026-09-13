@@ -12,6 +12,7 @@ import { UsersModule } from './modules-api/users/users.module';
 import { IngredientsModule } from './modules-api/ingredients/ingredients.module';
 import { RecipesModule } from './modules-api/recipes/recipes.module';
 import { FridgeModule } from './modules-api/fridge/fridge.module';
+import { NotificationsModule } from './modules-api/notifications/notifications.module';
 
 // Global guards
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
@@ -38,6 +39,7 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter';
     IngredientsModule,
     RecipesModule,
     FridgeModule,
+    NotificationsModule,
   ],
   controllers: [],
   providers: [

@@ -304,6 +304,10 @@ model UserPreference {
   height              Int?              @db.SmallInt
   weight              Int?              @db.SmallInt
   activityLevel       String?           @db.VarChar(20)
+  // Notification settings
+  pushNotifications   Boolean           @default(true)
+  expiryAlert         Boolean           @default(true)
+  shoppingReminder    Boolean           @default(true)
   updatedAt           DateTime          @updatedAt
   deletedAt           DateTime?
 

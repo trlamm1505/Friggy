@@ -60,6 +60,9 @@ export type UserPreferenceMinAggregateOutputType = {
   height: number | null
   weight: number | null
   activityLevel: string | null
+  pushNotifications: boolean | null
+  expiryAlert: boolean | null
+  shoppingReminder: boolean | null
   updatedAt: Date | null
   deletedAt: Date | null
 }
@@ -80,6 +83,9 @@ export type UserPreferenceMaxAggregateOutputType = {
   height: number | null
   weight: number | null
   activityLevel: string | null
+  pushNotifications: boolean | null
+  expiryAlert: boolean | null
+  shoppingReminder: boolean | null
   updatedAt: Date | null
   deletedAt: Date | null
 }
@@ -100,6 +106,9 @@ export type UserPreferenceCountAggregateOutputType = {
   height: number
   weight: number
   activityLevel: number
+  pushNotifications: number
+  expiryAlert: number
+  shoppingReminder: number
   updatedAt: number
   deletedAt: number
   _all: number
@@ -140,6 +149,9 @@ export type UserPreferenceMinAggregateInputType = {
   height?: true
   weight?: true
   activityLevel?: true
+  pushNotifications?: true
+  expiryAlert?: true
+  shoppingReminder?: true
   updatedAt?: true
   deletedAt?: true
 }
@@ -160,6 +172,9 @@ export type UserPreferenceMaxAggregateInputType = {
   height?: true
   weight?: true
   activityLevel?: true
+  pushNotifications?: true
+  expiryAlert?: true
+  shoppingReminder?: true
   updatedAt?: true
   deletedAt?: true
 }
@@ -180,6 +195,9 @@ export type UserPreferenceCountAggregateInputType = {
   height?: true
   weight?: true
   activityLevel?: true
+  pushNotifications?: true
+  expiryAlert?: true
+  shoppingReminder?: true
   updatedAt?: true
   deletedAt?: true
   _all?: true
@@ -287,6 +305,9 @@ export type UserPreferenceGroupByOutputType = {
   height: number | null
   weight: number | null
   activityLevel: string | null
+  pushNotifications: boolean
+  expiryAlert: boolean
+  shoppingReminder: boolean
   updatedAt: Date
   deletedAt: Date | null
   _count: UserPreferenceCountAggregateOutputType | null
@@ -330,6 +351,9 @@ export type UserPreferenceWhereInput = {
   height?: Prisma.IntNullableFilter<"UserPreference"> | number | null
   weight?: Prisma.IntNullableFilter<"UserPreference"> | number | null
   activityLevel?: Prisma.StringNullableFilter<"UserPreference"> | string | null
+  pushNotifications?: Prisma.BoolFilter<"UserPreference"> | boolean
+  expiryAlert?: Prisma.BoolFilter<"UserPreference"> | boolean
+  shoppingReminder?: Prisma.BoolFilter<"UserPreference"> | boolean
   updatedAt?: Prisma.DateTimeFilter<"UserPreference"> | Date | string
   deletedAt?: Prisma.DateTimeNullableFilter<"UserPreference"> | Date | string | null
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
@@ -351,6 +375,9 @@ export type UserPreferenceOrderByWithRelationInput = {
   height?: Prisma.SortOrderInput | Prisma.SortOrder
   weight?: Prisma.SortOrderInput | Prisma.SortOrder
   activityLevel?: Prisma.SortOrderInput | Prisma.SortOrder
+  pushNotifications?: Prisma.SortOrder
+  expiryAlert?: Prisma.SortOrder
+  shoppingReminder?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   user?: Prisma.UserOrderByWithRelationInput
@@ -376,6 +403,9 @@ export type UserPreferenceWhereUniqueInput = Prisma.AtLeast<{
   height?: Prisma.IntNullableFilter<"UserPreference"> | number | null
   weight?: Prisma.IntNullableFilter<"UserPreference"> | number | null
   activityLevel?: Prisma.StringNullableFilter<"UserPreference"> | string | null
+  pushNotifications?: Prisma.BoolFilter<"UserPreference"> | boolean
+  expiryAlert?: Prisma.BoolFilter<"UserPreference"> | boolean
+  shoppingReminder?: Prisma.BoolFilter<"UserPreference"> | boolean
   updatedAt?: Prisma.DateTimeFilter<"UserPreference"> | Date | string
   deletedAt?: Prisma.DateTimeNullableFilter<"UserPreference"> | Date | string | null
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
@@ -397,6 +427,9 @@ export type UserPreferenceOrderByWithAggregationInput = {
   height?: Prisma.SortOrderInput | Prisma.SortOrder
   weight?: Prisma.SortOrderInput | Prisma.SortOrder
   activityLevel?: Prisma.SortOrderInput | Prisma.SortOrder
+  pushNotifications?: Prisma.SortOrder
+  expiryAlert?: Prisma.SortOrder
+  shoppingReminder?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   _count?: Prisma.UserPreferenceCountOrderByAggregateInput
@@ -425,6 +458,9 @@ export type UserPreferenceScalarWhereWithAggregatesInput = {
   height?: Prisma.IntNullableWithAggregatesFilter<"UserPreference"> | number | null
   weight?: Prisma.IntNullableWithAggregatesFilter<"UserPreference"> | number | null
   activityLevel?: Prisma.StringNullableWithAggregatesFilter<"UserPreference"> | string | null
+  pushNotifications?: Prisma.BoolWithAggregatesFilter<"UserPreference"> | boolean
+  expiryAlert?: Prisma.BoolWithAggregatesFilter<"UserPreference"> | boolean
+  shoppingReminder?: Prisma.BoolWithAggregatesFilter<"UserPreference"> | boolean
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"UserPreference"> | Date | string
   deletedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"UserPreference"> | Date | string | null
 }
@@ -444,6 +480,9 @@ export type UserPreferenceCreateInput = {
   height?: number | null
   weight?: number | null
   activityLevel?: string | null
+  pushNotifications?: boolean
+  expiryAlert?: boolean
+  shoppingReminder?: boolean
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   user: Prisma.UserCreateNestedOneWithoutPreferencesInput
@@ -465,6 +504,9 @@ export type UserPreferenceUncheckedCreateInput = {
   height?: number | null
   weight?: number | null
   activityLevel?: string | null
+  pushNotifications?: boolean
+  expiryAlert?: boolean
+  shoppingReminder?: boolean
   updatedAt?: Date | string
   deletedAt?: Date | string | null
 }
@@ -484,6 +526,9 @@ export type UserPreferenceUpdateInput = {
   height?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   weight?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   activityLevel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  pushNotifications?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  expiryAlert?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  shoppingReminder?: Prisma.BoolFieldUpdateOperationsInput | boolean
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   user?: Prisma.UserUpdateOneRequiredWithoutPreferencesNestedInput
@@ -505,6 +550,9 @@ export type UserPreferenceUncheckedUpdateInput = {
   height?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   weight?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   activityLevel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  pushNotifications?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  expiryAlert?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  shoppingReminder?: Prisma.BoolFieldUpdateOperationsInput | boolean
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
@@ -525,6 +573,9 @@ export type UserPreferenceCreateManyInput = {
   height?: number | null
   weight?: number | null
   activityLevel?: string | null
+  pushNotifications?: boolean
+  expiryAlert?: boolean
+  shoppingReminder?: boolean
   updatedAt?: Date | string
   deletedAt?: Date | string | null
 }
@@ -544,6 +595,9 @@ export type UserPreferenceUpdateManyMutationInput = {
   height?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   weight?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   activityLevel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  pushNotifications?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  expiryAlert?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  shoppingReminder?: Prisma.BoolFieldUpdateOperationsInput | boolean
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
@@ -564,6 +618,9 @@ export type UserPreferenceUncheckedUpdateManyInput = {
   height?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   weight?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   activityLevel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  pushNotifications?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  expiryAlert?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  shoppingReminder?: Prisma.BoolFieldUpdateOperationsInput | boolean
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
@@ -595,6 +652,9 @@ export type UserPreferenceCountOrderByAggregateInput = {
   height?: Prisma.SortOrder
   weight?: Prisma.SortOrder
   activityLevel?: Prisma.SortOrder
+  pushNotifications?: Prisma.SortOrder
+  expiryAlert?: Prisma.SortOrder
+  shoppingReminder?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrder
 }
@@ -624,6 +684,9 @@ export type UserPreferenceMaxOrderByAggregateInput = {
   height?: Prisma.SortOrder
   weight?: Prisma.SortOrder
   activityLevel?: Prisma.SortOrder
+  pushNotifications?: Prisma.SortOrder
+  expiryAlert?: Prisma.SortOrder
+  shoppingReminder?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrder
 }
@@ -644,6 +707,9 @@ export type UserPreferenceMinOrderByAggregateInput = {
   height?: Prisma.SortOrder
   weight?: Prisma.SortOrder
   activityLevel?: Prisma.SortOrder
+  pushNotifications?: Prisma.SortOrder
+  expiryAlert?: Prisma.SortOrder
+  shoppingReminder?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrder
 }
@@ -724,6 +790,9 @@ export type UserPreferenceCreateWithoutUserInput = {
   height?: number | null
   weight?: number | null
   activityLevel?: string | null
+  pushNotifications?: boolean
+  expiryAlert?: boolean
+  shoppingReminder?: boolean
   updatedAt?: Date | string
   deletedAt?: Date | string | null
 }
@@ -743,6 +812,9 @@ export type UserPreferenceUncheckedCreateWithoutUserInput = {
   height?: number | null
   weight?: number | null
   activityLevel?: string | null
+  pushNotifications?: boolean
+  expiryAlert?: boolean
+  shoppingReminder?: boolean
   updatedAt?: Date | string
   deletedAt?: Date | string | null
 }
@@ -778,6 +850,9 @@ export type UserPreferenceUpdateWithoutUserInput = {
   height?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   weight?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   activityLevel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  pushNotifications?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  expiryAlert?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  shoppingReminder?: Prisma.BoolFieldUpdateOperationsInput | boolean
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
@@ -797,6 +872,9 @@ export type UserPreferenceUncheckedUpdateWithoutUserInput = {
   height?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   weight?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   activityLevel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  pushNotifications?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  expiryAlert?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  shoppingReminder?: Prisma.BoolFieldUpdateOperationsInput | boolean
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
@@ -819,6 +897,9 @@ export type UserPreferenceSelect<ExtArgs extends runtime.Types.Extensions.Intern
   height?: boolean
   weight?: boolean
   activityLevel?: boolean
+  pushNotifications?: boolean
+  expiryAlert?: boolean
+  shoppingReminder?: boolean
   updatedAt?: boolean
   deletedAt?: boolean
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
@@ -842,11 +923,14 @@ export type UserPreferenceSelectScalar = {
   height?: boolean
   weight?: boolean
   activityLevel?: boolean
+  pushNotifications?: boolean
+  expiryAlert?: boolean
+  shoppingReminder?: boolean
   updatedAt?: boolean
   deletedAt?: boolean
 }
 
-export type UserPreferenceOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "weeklyBudget" | "dailyCalorieTarget" | "dietaryStyle" | "preferSimpleRecipes" | "maxCookTimeMinutes" | "skillLevel" | "householdSize" | "aiPersonalityMode" | "primaryGoal" | "cookingFrequency" | "height" | "weight" | "activityLevel" | "updatedAt" | "deletedAt", ExtArgs["result"]["userPreference"]>
+export type UserPreferenceOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "weeklyBudget" | "dailyCalorieTarget" | "dietaryStyle" | "preferSimpleRecipes" | "maxCookTimeMinutes" | "skillLevel" | "householdSize" | "aiPersonalityMode" | "primaryGoal" | "cookingFrequency" | "height" | "weight" | "activityLevel" | "pushNotifications" | "expiryAlert" | "shoppingReminder" | "updatedAt" | "deletedAt", ExtArgs["result"]["userPreference"]>
 export type UserPreferenceInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
 }
@@ -872,6 +956,9 @@ export type $UserPreferencePayload<ExtArgs extends runtime.Types.Extensions.Inte
     height: number | null
     weight: number | null
     activityLevel: string | null
+    pushNotifications: boolean
+    expiryAlert: boolean
+    shoppingReminder: boolean
     updatedAt: Date
     deletedAt: Date | null
   }, ExtArgs["result"]["userPreference"]>
@@ -1259,6 +1346,9 @@ export interface UserPreferenceFieldRefs {
   readonly height: Prisma.FieldRef<"UserPreference", 'Int'>
   readonly weight: Prisma.FieldRef<"UserPreference", 'Int'>
   readonly activityLevel: Prisma.FieldRef<"UserPreference", 'String'>
+  readonly pushNotifications: Prisma.FieldRef<"UserPreference", 'Boolean'>
+  readonly expiryAlert: Prisma.FieldRef<"UserPreference", 'Boolean'>
+  readonly shoppingReminder: Prisma.FieldRef<"UserPreference", 'Boolean'>
   readonly updatedAt: Prisma.FieldRef<"UserPreference", 'DateTime'>
   readonly deletedAt: Prisma.FieldRef<"UserPreference", 'DateTime'>
 }

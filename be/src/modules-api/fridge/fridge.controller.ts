@@ -28,12 +28,14 @@ import {
   ListFridgeQueryDto,
   ExpiringQueryDto,
   ConfirmScanDto,
+  StatsChartQueryDto,
 } from './dto/fridge.dto';
 import {
   FridgeItemResponseDto,
   FridgeStatsResponseDto,
   ScanResponseDto,
   ScanHistoryItemDto,
+  FridgeStatsChartResponseDto,
 } from './dto/fridge-response.dto';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import type { JwtPayload } from 'src/common/interfaces/jwt-payload.interface';
@@ -53,6 +55,20 @@ export class FridgeController {
   @ApiResponse({ status: 200, type: [ScanHistoryItemDto] })
   getScanHistory(@CurrentUser() user: JwtPayload): Promise<ScanHistoryItemDto[]> {
     return this.fridgeService.getScanHistory(user.sub);
+  }
+
+  // ─────────────────────────────────────────────────────────
+  // GET /stats/chart — Chart data biểu đồ
+  // ─────────────────────────────────────────────────────────
+
+  @Get('stats/chart')
+  @ApiOperation({ summary: 'Chart data chi tiêu + lãng phí theo ngày (week/month)' })
+  @ApiResponse({ status: 200, type: FridgeStatsChartResponseDto })
+  getStatsChart(
+    @CurrentUser() user: JwtPayload,
+    @Query() query: StatsChartQueryDto,
+  ): Promise<FridgeStatsChartResponseDto> {
+    return this.fridgeService.getStatsChart(user.sub, query);
   }
 
   // ─────────────────────────────────────────────────────────

@@ -2741,6 +2741,9 @@ export const UserPreferenceScalarFieldEnum = {
   height: 'height',
   weight: 'weight',
   activityLevel: 'activityLevel',
+  pushNotifications: 'pushNotifications',
+  expiryAlert: 'expiryAlert',
+  shoppingReminder: 'shoppingReminder',
   updatedAt: 'updatedAt',
   deletedAt: 'deletedAt'
 } as const
