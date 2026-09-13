@@ -294,6 +294,7 @@ export type UserWhereInput = {
   authoredRecipes?: Prisma.RecipeListRelationFilter
   adminLogs?: Prisma.AdminActivityLogListRelationFilter
   notifications?: Prisma.NotificationListRelationFilter
+  subscription?: Prisma.XOR<Prisma.UserSubscriptionNullableScalarRelationFilter, Prisma.UserSubscriptionWhereInput> | null
   activatedPrompts?: Prisma.AiSystemPromptListRelationFilter
   activatedConfigs?: Prisma.AiProviderConfigListRelationFilter
 }
@@ -326,6 +327,7 @@ export type UserOrderByWithRelationInput = {
   authoredRecipes?: Prisma.RecipeOrderByRelationAggregateInput
   adminLogs?: Prisma.AdminActivityLogOrderByRelationAggregateInput
   notifications?: Prisma.NotificationOrderByRelationAggregateInput
+  subscription?: Prisma.UserSubscriptionOrderByWithRelationInput
   activatedPrompts?: Prisma.AiSystemPromptOrderByRelationAggregateInput
   activatedConfigs?: Prisma.AiProviderConfigOrderByRelationAggregateInput
   _relevance?: Prisma.UserOrderByRelevanceInput
@@ -362,6 +364,7 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   authoredRecipes?: Prisma.RecipeListRelationFilter
   adminLogs?: Prisma.AdminActivityLogListRelationFilter
   notifications?: Prisma.NotificationListRelationFilter
+  subscription?: Prisma.XOR<Prisma.UserSubscriptionNullableScalarRelationFilter, Prisma.UserSubscriptionWhereInput> | null
   activatedPrompts?: Prisma.AiSystemPromptListRelationFilter
   activatedConfigs?: Prisma.AiProviderConfigListRelationFilter
 }, "id" | "phone" | "googleId">
@@ -433,6 +436,7 @@ export type UserCreateInput = {
   authoredRecipes?: Prisma.RecipeCreateNestedManyWithoutAuthorInput
   adminLogs?: Prisma.AdminActivityLogCreateNestedManyWithoutAdminInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  subscription?: Prisma.UserSubscriptionCreateNestedOneWithoutUserInput
   activatedPrompts?: Prisma.AiSystemPromptCreateNestedManyWithoutActivatedByUserInput
   activatedConfigs?: Prisma.AiProviderConfigCreateNestedManyWithoutActivatedByUserInput
 }
@@ -464,6 +468,7 @@ export type UserUncheckedCreateInput = {
   authoredRecipes?: Prisma.RecipeUncheckedCreateNestedManyWithoutAuthorInput
   adminLogs?: Prisma.AdminActivityLogUncheckedCreateNestedManyWithoutAdminInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  subscription?: Prisma.UserSubscriptionUncheckedCreateNestedOneWithoutUserInput
   activatedPrompts?: Prisma.AiSystemPromptUncheckedCreateNestedManyWithoutActivatedByUserInput
   activatedConfigs?: Prisma.AiProviderConfigUncheckedCreateNestedManyWithoutActivatedByUserInput
 }
@@ -495,6 +500,7 @@ export type UserUpdateInput = {
   authoredRecipes?: Prisma.RecipeUpdateManyWithoutAuthorNestedInput
   adminLogs?: Prisma.AdminActivityLogUpdateManyWithoutAdminNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  subscription?: Prisma.UserSubscriptionUpdateOneWithoutUserNestedInput
   activatedPrompts?: Prisma.AiSystemPromptUpdateManyWithoutActivatedByUserNestedInput
   activatedConfigs?: Prisma.AiProviderConfigUpdateManyWithoutActivatedByUserNestedInput
 }
@@ -526,6 +532,7 @@ export type UserUncheckedUpdateInput = {
   authoredRecipes?: Prisma.RecipeUncheckedUpdateManyWithoutAuthorNestedInput
   adminLogs?: Prisma.AdminActivityLogUncheckedUpdateManyWithoutAdminNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  subscription?: Prisma.UserSubscriptionUncheckedUpdateOneWithoutUserNestedInput
   activatedPrompts?: Prisma.AiSystemPromptUncheckedUpdateManyWithoutActivatedByUserNestedInput
   activatedConfigs?: Prisma.AiProviderConfigUncheckedUpdateManyWithoutActivatedByUserNestedInput
 }
@@ -933,6 +940,20 @@ export type UserUpdateOneRequiredWithoutNotificationsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutNotificationsInput, Prisma.UserUpdateWithoutNotificationsInput>, Prisma.UserUncheckedUpdateWithoutNotificationsInput>
 }
 
+export type UserCreateNestedOneWithoutSubscriptionInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutSubscriptionInput, Prisma.UserUncheckedCreateWithoutSubscriptionInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutSubscriptionInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutSubscriptionNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutSubscriptionInput, Prisma.UserUncheckedCreateWithoutSubscriptionInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutSubscriptionInput
+  upsert?: Prisma.UserUpsertWithoutSubscriptionInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutSubscriptionInput, Prisma.UserUpdateWithoutSubscriptionInput>, Prisma.UserUncheckedUpdateWithoutSubscriptionInput>
+}
+
 export type UserCreateWithoutRoleInput = {
   id?: string
   phone?: string | null
@@ -959,6 +980,7 @@ export type UserCreateWithoutRoleInput = {
   authoredRecipes?: Prisma.RecipeCreateNestedManyWithoutAuthorInput
   adminLogs?: Prisma.AdminActivityLogCreateNestedManyWithoutAdminInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  subscription?: Prisma.UserSubscriptionCreateNestedOneWithoutUserInput
   activatedPrompts?: Prisma.AiSystemPromptCreateNestedManyWithoutActivatedByUserInput
   activatedConfigs?: Prisma.AiProviderConfigCreateNestedManyWithoutActivatedByUserInput
 }
@@ -989,6 +1011,7 @@ export type UserUncheckedCreateWithoutRoleInput = {
   authoredRecipes?: Prisma.RecipeUncheckedCreateNestedManyWithoutAuthorInput
   adminLogs?: Prisma.AdminActivityLogUncheckedCreateNestedManyWithoutAdminInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  subscription?: Prisma.UserSubscriptionUncheckedCreateNestedOneWithoutUserInput
   activatedPrompts?: Prisma.AiSystemPromptUncheckedCreateNestedManyWithoutActivatedByUserInput
   activatedConfigs?: Prisma.AiProviderConfigUncheckedCreateNestedManyWithoutActivatedByUserInput
 }
@@ -1064,6 +1087,7 @@ export type UserCreateWithoutProfileInput = {
   authoredRecipes?: Prisma.RecipeCreateNestedManyWithoutAuthorInput
   adminLogs?: Prisma.AdminActivityLogCreateNestedManyWithoutAdminInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  subscription?: Prisma.UserSubscriptionCreateNestedOneWithoutUserInput
   activatedPrompts?: Prisma.AiSystemPromptCreateNestedManyWithoutActivatedByUserInput
   activatedConfigs?: Prisma.AiProviderConfigCreateNestedManyWithoutActivatedByUserInput
 }
@@ -1094,6 +1118,7 @@ export type UserUncheckedCreateWithoutProfileInput = {
   authoredRecipes?: Prisma.RecipeUncheckedCreateNestedManyWithoutAuthorInput
   adminLogs?: Prisma.AdminActivityLogUncheckedCreateNestedManyWithoutAdminInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  subscription?: Prisma.UserSubscriptionUncheckedCreateNestedOneWithoutUserInput
   activatedPrompts?: Prisma.AiSystemPromptUncheckedCreateNestedManyWithoutActivatedByUserInput
   activatedConfigs?: Prisma.AiProviderConfigUncheckedCreateNestedManyWithoutActivatedByUserInput
 }
@@ -1140,6 +1165,7 @@ export type UserUpdateWithoutProfileInput = {
   authoredRecipes?: Prisma.RecipeUpdateManyWithoutAuthorNestedInput
   adminLogs?: Prisma.AdminActivityLogUpdateManyWithoutAdminNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  subscription?: Prisma.UserSubscriptionUpdateOneWithoutUserNestedInput
   activatedPrompts?: Prisma.AiSystemPromptUpdateManyWithoutActivatedByUserNestedInput
   activatedConfigs?: Prisma.AiProviderConfigUpdateManyWithoutActivatedByUserNestedInput
 }
@@ -1170,6 +1196,7 @@ export type UserUncheckedUpdateWithoutProfileInput = {
   authoredRecipes?: Prisma.RecipeUncheckedUpdateManyWithoutAuthorNestedInput
   adminLogs?: Prisma.AdminActivityLogUncheckedUpdateManyWithoutAdminNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  subscription?: Prisma.UserSubscriptionUncheckedUpdateOneWithoutUserNestedInput
   activatedPrompts?: Prisma.AiSystemPromptUncheckedUpdateManyWithoutActivatedByUserNestedInput
   activatedConfigs?: Prisma.AiProviderConfigUncheckedUpdateManyWithoutActivatedByUserNestedInput
 }
@@ -1200,6 +1227,7 @@ export type UserCreateWithoutPreferencesInput = {
   authoredRecipes?: Prisma.RecipeCreateNestedManyWithoutAuthorInput
   adminLogs?: Prisma.AdminActivityLogCreateNestedManyWithoutAdminInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  subscription?: Prisma.UserSubscriptionCreateNestedOneWithoutUserInput
   activatedPrompts?: Prisma.AiSystemPromptCreateNestedManyWithoutActivatedByUserInput
   activatedConfigs?: Prisma.AiProviderConfigCreateNestedManyWithoutActivatedByUserInput
 }
@@ -1230,6 +1258,7 @@ export type UserUncheckedCreateWithoutPreferencesInput = {
   authoredRecipes?: Prisma.RecipeUncheckedCreateNestedManyWithoutAuthorInput
   adminLogs?: Prisma.AdminActivityLogUncheckedCreateNestedManyWithoutAdminInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  subscription?: Prisma.UserSubscriptionUncheckedCreateNestedOneWithoutUserInput
   activatedPrompts?: Prisma.AiSystemPromptUncheckedCreateNestedManyWithoutActivatedByUserInput
   activatedConfigs?: Prisma.AiProviderConfigUncheckedCreateNestedManyWithoutActivatedByUserInput
 }
@@ -1276,6 +1305,7 @@ export type UserUpdateWithoutPreferencesInput = {
   authoredRecipes?: Prisma.RecipeUpdateManyWithoutAuthorNestedInput
   adminLogs?: Prisma.AdminActivityLogUpdateManyWithoutAdminNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  subscription?: Prisma.UserSubscriptionUpdateOneWithoutUserNestedInput
   activatedPrompts?: Prisma.AiSystemPromptUpdateManyWithoutActivatedByUserNestedInput
   activatedConfigs?: Prisma.AiProviderConfigUpdateManyWithoutActivatedByUserNestedInput
 }
@@ -1306,6 +1336,7 @@ export type UserUncheckedUpdateWithoutPreferencesInput = {
   authoredRecipes?: Prisma.RecipeUncheckedUpdateManyWithoutAuthorNestedInput
   adminLogs?: Prisma.AdminActivityLogUncheckedUpdateManyWithoutAdminNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  subscription?: Prisma.UserSubscriptionUncheckedUpdateOneWithoutUserNestedInput
   activatedPrompts?: Prisma.AiSystemPromptUncheckedUpdateManyWithoutActivatedByUserNestedInput
   activatedConfigs?: Prisma.AiProviderConfigUncheckedUpdateManyWithoutActivatedByUserNestedInput
 }
@@ -1336,6 +1367,7 @@ export type UserCreateWithoutRefreshTokensInput = {
   authoredRecipes?: Prisma.RecipeCreateNestedManyWithoutAuthorInput
   adminLogs?: Prisma.AdminActivityLogCreateNestedManyWithoutAdminInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  subscription?: Prisma.UserSubscriptionCreateNestedOneWithoutUserInput
   activatedPrompts?: Prisma.AiSystemPromptCreateNestedManyWithoutActivatedByUserInput
   activatedConfigs?: Prisma.AiProviderConfigCreateNestedManyWithoutActivatedByUserInput
 }
@@ -1366,6 +1398,7 @@ export type UserUncheckedCreateWithoutRefreshTokensInput = {
   authoredRecipes?: Prisma.RecipeUncheckedCreateNestedManyWithoutAuthorInput
   adminLogs?: Prisma.AdminActivityLogUncheckedCreateNestedManyWithoutAdminInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  subscription?: Prisma.UserSubscriptionUncheckedCreateNestedOneWithoutUserInput
   activatedPrompts?: Prisma.AiSystemPromptUncheckedCreateNestedManyWithoutActivatedByUserInput
   activatedConfigs?: Prisma.AiProviderConfigUncheckedCreateNestedManyWithoutActivatedByUserInput
 }
@@ -1412,6 +1445,7 @@ export type UserUpdateWithoutRefreshTokensInput = {
   authoredRecipes?: Prisma.RecipeUpdateManyWithoutAuthorNestedInput
   adminLogs?: Prisma.AdminActivityLogUpdateManyWithoutAdminNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  subscription?: Prisma.UserSubscriptionUpdateOneWithoutUserNestedInput
   activatedPrompts?: Prisma.AiSystemPromptUpdateManyWithoutActivatedByUserNestedInput
   activatedConfigs?: Prisma.AiProviderConfigUpdateManyWithoutActivatedByUserNestedInput
 }
@@ -1442,6 +1476,7 @@ export type UserUncheckedUpdateWithoutRefreshTokensInput = {
   authoredRecipes?: Prisma.RecipeUncheckedUpdateManyWithoutAuthorNestedInput
   adminLogs?: Prisma.AdminActivityLogUncheckedUpdateManyWithoutAdminNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  subscription?: Prisma.UserSubscriptionUncheckedUpdateOneWithoutUserNestedInput
   activatedPrompts?: Prisma.AiSystemPromptUncheckedUpdateManyWithoutActivatedByUserNestedInput
   activatedConfigs?: Prisma.AiProviderConfigUncheckedUpdateManyWithoutActivatedByUserNestedInput
 }
@@ -1472,6 +1507,7 @@ export type UserCreateWithoutAuthoredRecipesInput = {
   savedRecipes?: Prisma.UserSavedRecipeCreateNestedManyWithoutUserInput
   adminLogs?: Prisma.AdminActivityLogCreateNestedManyWithoutAdminInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  subscription?: Prisma.UserSubscriptionCreateNestedOneWithoutUserInput
   activatedPrompts?: Prisma.AiSystemPromptCreateNestedManyWithoutActivatedByUserInput
   activatedConfigs?: Prisma.AiProviderConfigCreateNestedManyWithoutActivatedByUserInput
 }
@@ -1502,6 +1538,7 @@ export type UserUncheckedCreateWithoutAuthoredRecipesInput = {
   savedRecipes?: Prisma.UserSavedRecipeUncheckedCreateNestedManyWithoutUserInput
   adminLogs?: Prisma.AdminActivityLogUncheckedCreateNestedManyWithoutAdminInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  subscription?: Prisma.UserSubscriptionUncheckedCreateNestedOneWithoutUserInput
   activatedPrompts?: Prisma.AiSystemPromptUncheckedCreateNestedManyWithoutActivatedByUserInput
   activatedConfigs?: Prisma.AiProviderConfigUncheckedCreateNestedManyWithoutActivatedByUserInput
 }
@@ -1548,6 +1585,7 @@ export type UserUpdateWithoutAuthoredRecipesInput = {
   savedRecipes?: Prisma.UserSavedRecipeUpdateManyWithoutUserNestedInput
   adminLogs?: Prisma.AdminActivityLogUpdateManyWithoutAdminNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  subscription?: Prisma.UserSubscriptionUpdateOneWithoutUserNestedInput
   activatedPrompts?: Prisma.AiSystemPromptUpdateManyWithoutActivatedByUserNestedInput
   activatedConfigs?: Prisma.AiProviderConfigUpdateManyWithoutActivatedByUserNestedInput
 }
@@ -1578,6 +1616,7 @@ export type UserUncheckedUpdateWithoutAuthoredRecipesInput = {
   savedRecipes?: Prisma.UserSavedRecipeUncheckedUpdateManyWithoutUserNestedInput
   adminLogs?: Prisma.AdminActivityLogUncheckedUpdateManyWithoutAdminNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  subscription?: Prisma.UserSubscriptionUncheckedUpdateOneWithoutUserNestedInput
   activatedPrompts?: Prisma.AiSystemPromptUncheckedUpdateManyWithoutActivatedByUserNestedInput
   activatedConfigs?: Prisma.AiProviderConfigUncheckedUpdateManyWithoutActivatedByUserNestedInput
 }
@@ -1608,6 +1647,7 @@ export type UserCreateWithoutSavedRecipesInput = {
   authoredRecipes?: Prisma.RecipeCreateNestedManyWithoutAuthorInput
   adminLogs?: Prisma.AdminActivityLogCreateNestedManyWithoutAdminInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  subscription?: Prisma.UserSubscriptionCreateNestedOneWithoutUserInput
   activatedPrompts?: Prisma.AiSystemPromptCreateNestedManyWithoutActivatedByUserInput
   activatedConfigs?: Prisma.AiProviderConfigCreateNestedManyWithoutActivatedByUserInput
 }
@@ -1638,6 +1678,7 @@ export type UserUncheckedCreateWithoutSavedRecipesInput = {
   authoredRecipes?: Prisma.RecipeUncheckedCreateNestedManyWithoutAuthorInput
   adminLogs?: Prisma.AdminActivityLogUncheckedCreateNestedManyWithoutAdminInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  subscription?: Prisma.UserSubscriptionUncheckedCreateNestedOneWithoutUserInput
   activatedPrompts?: Prisma.AiSystemPromptUncheckedCreateNestedManyWithoutActivatedByUserInput
   activatedConfigs?: Prisma.AiProviderConfigUncheckedCreateNestedManyWithoutActivatedByUserInput
 }
@@ -1684,6 +1725,7 @@ export type UserUpdateWithoutSavedRecipesInput = {
   authoredRecipes?: Prisma.RecipeUpdateManyWithoutAuthorNestedInput
   adminLogs?: Prisma.AdminActivityLogUpdateManyWithoutAdminNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  subscription?: Prisma.UserSubscriptionUpdateOneWithoutUserNestedInput
   activatedPrompts?: Prisma.AiSystemPromptUpdateManyWithoutActivatedByUserNestedInput
   activatedConfigs?: Prisma.AiProviderConfigUpdateManyWithoutActivatedByUserNestedInput
 }
@@ -1714,6 +1756,7 @@ export type UserUncheckedUpdateWithoutSavedRecipesInput = {
   authoredRecipes?: Prisma.RecipeUncheckedUpdateManyWithoutAuthorNestedInput
   adminLogs?: Prisma.AdminActivityLogUncheckedUpdateManyWithoutAdminNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  subscription?: Prisma.UserSubscriptionUncheckedUpdateOneWithoutUserNestedInput
   activatedPrompts?: Prisma.AiSystemPromptUncheckedUpdateManyWithoutActivatedByUserNestedInput
   activatedConfigs?: Prisma.AiProviderConfigUncheckedUpdateManyWithoutActivatedByUserNestedInput
 }
@@ -1744,6 +1787,7 @@ export type UserCreateWithoutFridgeItemsInput = {
   authoredRecipes?: Prisma.RecipeCreateNestedManyWithoutAuthorInput
   adminLogs?: Prisma.AdminActivityLogCreateNestedManyWithoutAdminInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  subscription?: Prisma.UserSubscriptionCreateNestedOneWithoutUserInput
   activatedPrompts?: Prisma.AiSystemPromptCreateNestedManyWithoutActivatedByUserInput
   activatedConfigs?: Prisma.AiProviderConfigCreateNestedManyWithoutActivatedByUserInput
 }
@@ -1774,6 +1818,7 @@ export type UserUncheckedCreateWithoutFridgeItemsInput = {
   authoredRecipes?: Prisma.RecipeUncheckedCreateNestedManyWithoutAuthorInput
   adminLogs?: Prisma.AdminActivityLogUncheckedCreateNestedManyWithoutAdminInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  subscription?: Prisma.UserSubscriptionUncheckedCreateNestedOneWithoutUserInput
   activatedPrompts?: Prisma.AiSystemPromptUncheckedCreateNestedManyWithoutActivatedByUserInput
   activatedConfigs?: Prisma.AiProviderConfigUncheckedCreateNestedManyWithoutActivatedByUserInput
 }
@@ -1820,6 +1865,7 @@ export type UserUpdateWithoutFridgeItemsInput = {
   authoredRecipes?: Prisma.RecipeUpdateManyWithoutAuthorNestedInput
   adminLogs?: Prisma.AdminActivityLogUpdateManyWithoutAdminNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  subscription?: Prisma.UserSubscriptionUpdateOneWithoutUserNestedInput
   activatedPrompts?: Prisma.AiSystemPromptUpdateManyWithoutActivatedByUserNestedInput
   activatedConfigs?: Prisma.AiProviderConfigUpdateManyWithoutActivatedByUserNestedInput
 }
@@ -1850,6 +1896,7 @@ export type UserUncheckedUpdateWithoutFridgeItemsInput = {
   authoredRecipes?: Prisma.RecipeUncheckedUpdateManyWithoutAuthorNestedInput
   adminLogs?: Prisma.AdminActivityLogUncheckedUpdateManyWithoutAdminNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  subscription?: Prisma.UserSubscriptionUncheckedUpdateOneWithoutUserNestedInput
   activatedPrompts?: Prisma.AiSystemPromptUncheckedUpdateManyWithoutActivatedByUserNestedInput
   activatedConfigs?: Prisma.AiProviderConfigUncheckedUpdateManyWithoutActivatedByUserNestedInput
 }
@@ -1880,6 +1927,7 @@ export type UserCreateWithoutScanLogsInput = {
   authoredRecipes?: Prisma.RecipeCreateNestedManyWithoutAuthorInput
   adminLogs?: Prisma.AdminActivityLogCreateNestedManyWithoutAdminInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  subscription?: Prisma.UserSubscriptionCreateNestedOneWithoutUserInput
   activatedPrompts?: Prisma.AiSystemPromptCreateNestedManyWithoutActivatedByUserInput
   activatedConfigs?: Prisma.AiProviderConfigCreateNestedManyWithoutActivatedByUserInput
 }
@@ -1910,6 +1958,7 @@ export type UserUncheckedCreateWithoutScanLogsInput = {
   authoredRecipes?: Prisma.RecipeUncheckedCreateNestedManyWithoutAuthorInput
   adminLogs?: Prisma.AdminActivityLogUncheckedCreateNestedManyWithoutAdminInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  subscription?: Prisma.UserSubscriptionUncheckedCreateNestedOneWithoutUserInput
   activatedPrompts?: Prisma.AiSystemPromptUncheckedCreateNestedManyWithoutActivatedByUserInput
   activatedConfigs?: Prisma.AiProviderConfigUncheckedCreateNestedManyWithoutActivatedByUserInput
 }
@@ -1956,6 +2005,7 @@ export type UserUpdateWithoutScanLogsInput = {
   authoredRecipes?: Prisma.RecipeUpdateManyWithoutAuthorNestedInput
   adminLogs?: Prisma.AdminActivityLogUpdateManyWithoutAdminNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  subscription?: Prisma.UserSubscriptionUpdateOneWithoutUserNestedInput
   activatedPrompts?: Prisma.AiSystemPromptUpdateManyWithoutActivatedByUserNestedInput
   activatedConfigs?: Prisma.AiProviderConfigUpdateManyWithoutActivatedByUserNestedInput
 }
@@ -1986,6 +2036,7 @@ export type UserUncheckedUpdateWithoutScanLogsInput = {
   authoredRecipes?: Prisma.RecipeUncheckedUpdateManyWithoutAuthorNestedInput
   adminLogs?: Prisma.AdminActivityLogUncheckedUpdateManyWithoutAdminNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  subscription?: Prisma.UserSubscriptionUncheckedUpdateOneWithoutUserNestedInput
   activatedPrompts?: Prisma.AiSystemPromptUncheckedUpdateManyWithoutActivatedByUserNestedInput
   activatedConfigs?: Prisma.AiProviderConfigUncheckedUpdateManyWithoutActivatedByUserNestedInput
 }
@@ -2016,6 +2067,7 @@ export type UserCreateWithoutAllergiesInput = {
   authoredRecipes?: Prisma.RecipeCreateNestedManyWithoutAuthorInput
   adminLogs?: Prisma.AdminActivityLogCreateNestedManyWithoutAdminInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  subscription?: Prisma.UserSubscriptionCreateNestedOneWithoutUserInput
   activatedPrompts?: Prisma.AiSystemPromptCreateNestedManyWithoutActivatedByUserInput
   activatedConfigs?: Prisma.AiProviderConfigCreateNestedManyWithoutActivatedByUserInput
 }
@@ -2046,6 +2098,7 @@ export type UserUncheckedCreateWithoutAllergiesInput = {
   authoredRecipes?: Prisma.RecipeUncheckedCreateNestedManyWithoutAuthorInput
   adminLogs?: Prisma.AdminActivityLogUncheckedCreateNestedManyWithoutAdminInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  subscription?: Prisma.UserSubscriptionUncheckedCreateNestedOneWithoutUserInput
   activatedPrompts?: Prisma.AiSystemPromptUncheckedCreateNestedManyWithoutActivatedByUserInput
   activatedConfigs?: Prisma.AiProviderConfigUncheckedCreateNestedManyWithoutActivatedByUserInput
 }
@@ -2092,6 +2145,7 @@ export type UserUpdateWithoutAllergiesInput = {
   authoredRecipes?: Prisma.RecipeUpdateManyWithoutAuthorNestedInput
   adminLogs?: Prisma.AdminActivityLogUpdateManyWithoutAdminNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  subscription?: Prisma.UserSubscriptionUpdateOneWithoutUserNestedInput
   activatedPrompts?: Prisma.AiSystemPromptUpdateManyWithoutActivatedByUserNestedInput
   activatedConfigs?: Prisma.AiProviderConfigUpdateManyWithoutActivatedByUserNestedInput
 }
@@ -2122,6 +2176,7 @@ export type UserUncheckedUpdateWithoutAllergiesInput = {
   authoredRecipes?: Prisma.RecipeUncheckedUpdateManyWithoutAuthorNestedInput
   adminLogs?: Prisma.AdminActivityLogUncheckedUpdateManyWithoutAdminNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  subscription?: Prisma.UserSubscriptionUncheckedUpdateOneWithoutUserNestedInput
   activatedPrompts?: Prisma.AiSystemPromptUncheckedUpdateManyWithoutActivatedByUserNestedInput
   activatedConfigs?: Prisma.AiProviderConfigUncheckedUpdateManyWithoutActivatedByUserNestedInput
 }
@@ -2152,6 +2207,7 @@ export type UserCreateWithoutWeeklyPlansInput = {
   authoredRecipes?: Prisma.RecipeCreateNestedManyWithoutAuthorInput
   adminLogs?: Prisma.AdminActivityLogCreateNestedManyWithoutAdminInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  subscription?: Prisma.UserSubscriptionCreateNestedOneWithoutUserInput
   activatedPrompts?: Prisma.AiSystemPromptCreateNestedManyWithoutActivatedByUserInput
   activatedConfigs?: Prisma.AiProviderConfigCreateNestedManyWithoutActivatedByUserInput
 }
@@ -2182,6 +2238,7 @@ export type UserUncheckedCreateWithoutWeeklyPlansInput = {
   authoredRecipes?: Prisma.RecipeUncheckedCreateNestedManyWithoutAuthorInput
   adminLogs?: Prisma.AdminActivityLogUncheckedCreateNestedManyWithoutAdminInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  subscription?: Prisma.UserSubscriptionUncheckedCreateNestedOneWithoutUserInput
   activatedPrompts?: Prisma.AiSystemPromptUncheckedCreateNestedManyWithoutActivatedByUserInput
   activatedConfigs?: Prisma.AiProviderConfigUncheckedCreateNestedManyWithoutActivatedByUserInput
 }
@@ -2228,6 +2285,7 @@ export type UserUpdateWithoutWeeklyPlansInput = {
   authoredRecipes?: Prisma.RecipeUpdateManyWithoutAuthorNestedInput
   adminLogs?: Prisma.AdminActivityLogUpdateManyWithoutAdminNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  subscription?: Prisma.UserSubscriptionUpdateOneWithoutUserNestedInput
   activatedPrompts?: Prisma.AiSystemPromptUpdateManyWithoutActivatedByUserNestedInput
   activatedConfigs?: Prisma.AiProviderConfigUpdateManyWithoutActivatedByUserNestedInput
 }
@@ -2258,6 +2316,7 @@ export type UserUncheckedUpdateWithoutWeeklyPlansInput = {
   authoredRecipes?: Prisma.RecipeUncheckedUpdateManyWithoutAuthorNestedInput
   adminLogs?: Prisma.AdminActivityLogUncheckedUpdateManyWithoutAdminNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  subscription?: Prisma.UserSubscriptionUncheckedUpdateOneWithoutUserNestedInput
   activatedPrompts?: Prisma.AiSystemPromptUncheckedUpdateManyWithoutActivatedByUserNestedInput
   activatedConfigs?: Prisma.AiProviderConfigUncheckedUpdateManyWithoutActivatedByUserNestedInput
 }
@@ -2288,6 +2347,7 @@ export type UserCreateWithoutShoppingListsInput = {
   authoredRecipes?: Prisma.RecipeCreateNestedManyWithoutAuthorInput
   adminLogs?: Prisma.AdminActivityLogCreateNestedManyWithoutAdminInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  subscription?: Prisma.UserSubscriptionCreateNestedOneWithoutUserInput
   activatedPrompts?: Prisma.AiSystemPromptCreateNestedManyWithoutActivatedByUserInput
   activatedConfigs?: Prisma.AiProviderConfigCreateNestedManyWithoutActivatedByUserInput
 }
@@ -2318,6 +2378,7 @@ export type UserUncheckedCreateWithoutShoppingListsInput = {
   authoredRecipes?: Prisma.RecipeUncheckedCreateNestedManyWithoutAuthorInput
   adminLogs?: Prisma.AdminActivityLogUncheckedCreateNestedManyWithoutAdminInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  subscription?: Prisma.UserSubscriptionUncheckedCreateNestedOneWithoutUserInput
   activatedPrompts?: Prisma.AiSystemPromptUncheckedCreateNestedManyWithoutActivatedByUserInput
   activatedConfigs?: Prisma.AiProviderConfigUncheckedCreateNestedManyWithoutActivatedByUserInput
 }
@@ -2364,6 +2425,7 @@ export type UserUpdateWithoutShoppingListsInput = {
   authoredRecipes?: Prisma.RecipeUpdateManyWithoutAuthorNestedInput
   adminLogs?: Prisma.AdminActivityLogUpdateManyWithoutAdminNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  subscription?: Prisma.UserSubscriptionUpdateOneWithoutUserNestedInput
   activatedPrompts?: Prisma.AiSystemPromptUpdateManyWithoutActivatedByUserNestedInput
   activatedConfigs?: Prisma.AiProviderConfigUpdateManyWithoutActivatedByUserNestedInput
 }
@@ -2394,6 +2456,7 @@ export type UserUncheckedUpdateWithoutShoppingListsInput = {
   authoredRecipes?: Prisma.RecipeUncheckedUpdateManyWithoutAuthorNestedInput
   adminLogs?: Prisma.AdminActivityLogUncheckedUpdateManyWithoutAdminNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  subscription?: Prisma.UserSubscriptionUncheckedUpdateOneWithoutUserNestedInput
   activatedPrompts?: Prisma.AiSystemPromptUncheckedUpdateManyWithoutActivatedByUserNestedInput
   activatedConfigs?: Prisma.AiProviderConfigUncheckedUpdateManyWithoutActivatedByUserNestedInput
 }
@@ -2425,6 +2488,7 @@ export type UserCreateWithoutActivatedPromptsInput = {
   authoredRecipes?: Prisma.RecipeCreateNestedManyWithoutAuthorInput
   adminLogs?: Prisma.AdminActivityLogCreateNestedManyWithoutAdminInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  subscription?: Prisma.UserSubscriptionCreateNestedOneWithoutUserInput
   activatedConfigs?: Prisma.AiProviderConfigCreateNestedManyWithoutActivatedByUserInput
 }
 
@@ -2455,6 +2519,7 @@ export type UserUncheckedCreateWithoutActivatedPromptsInput = {
   authoredRecipes?: Prisma.RecipeUncheckedCreateNestedManyWithoutAuthorInput
   adminLogs?: Prisma.AdminActivityLogUncheckedCreateNestedManyWithoutAdminInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  subscription?: Prisma.UserSubscriptionUncheckedCreateNestedOneWithoutUserInput
   activatedConfigs?: Prisma.AiProviderConfigUncheckedCreateNestedManyWithoutActivatedByUserInput
 }
 
@@ -2501,6 +2566,7 @@ export type UserUpdateWithoutActivatedPromptsInput = {
   authoredRecipes?: Prisma.RecipeUpdateManyWithoutAuthorNestedInput
   adminLogs?: Prisma.AdminActivityLogUpdateManyWithoutAdminNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  subscription?: Prisma.UserSubscriptionUpdateOneWithoutUserNestedInput
   activatedConfigs?: Prisma.AiProviderConfigUpdateManyWithoutActivatedByUserNestedInput
 }
 
@@ -2531,6 +2597,7 @@ export type UserUncheckedUpdateWithoutActivatedPromptsInput = {
   authoredRecipes?: Prisma.RecipeUncheckedUpdateManyWithoutAuthorNestedInput
   adminLogs?: Prisma.AdminActivityLogUncheckedUpdateManyWithoutAdminNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  subscription?: Prisma.UserSubscriptionUncheckedUpdateOneWithoutUserNestedInput
   activatedConfigs?: Prisma.AiProviderConfigUncheckedUpdateManyWithoutActivatedByUserNestedInput
 }
 
@@ -2560,6 +2627,7 @@ export type UserCreateWithoutChatSessionsInput = {
   authoredRecipes?: Prisma.RecipeCreateNestedManyWithoutAuthorInput
   adminLogs?: Prisma.AdminActivityLogCreateNestedManyWithoutAdminInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  subscription?: Prisma.UserSubscriptionCreateNestedOneWithoutUserInput
   activatedPrompts?: Prisma.AiSystemPromptCreateNestedManyWithoutActivatedByUserInput
   activatedConfigs?: Prisma.AiProviderConfigCreateNestedManyWithoutActivatedByUserInput
 }
@@ -2590,6 +2658,7 @@ export type UserUncheckedCreateWithoutChatSessionsInput = {
   authoredRecipes?: Prisma.RecipeUncheckedCreateNestedManyWithoutAuthorInput
   adminLogs?: Prisma.AdminActivityLogUncheckedCreateNestedManyWithoutAdminInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  subscription?: Prisma.UserSubscriptionUncheckedCreateNestedOneWithoutUserInput
   activatedPrompts?: Prisma.AiSystemPromptUncheckedCreateNestedManyWithoutActivatedByUserInput
   activatedConfigs?: Prisma.AiProviderConfigUncheckedCreateNestedManyWithoutActivatedByUserInput
 }
@@ -2636,6 +2705,7 @@ export type UserUpdateWithoutChatSessionsInput = {
   authoredRecipes?: Prisma.RecipeUpdateManyWithoutAuthorNestedInput
   adminLogs?: Prisma.AdminActivityLogUpdateManyWithoutAdminNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  subscription?: Prisma.UserSubscriptionUpdateOneWithoutUserNestedInput
   activatedPrompts?: Prisma.AiSystemPromptUpdateManyWithoutActivatedByUserNestedInput
   activatedConfigs?: Prisma.AiProviderConfigUpdateManyWithoutActivatedByUserNestedInput
 }
@@ -2666,6 +2736,7 @@ export type UserUncheckedUpdateWithoutChatSessionsInput = {
   authoredRecipes?: Prisma.RecipeUncheckedUpdateManyWithoutAuthorNestedInput
   adminLogs?: Prisma.AdminActivityLogUncheckedUpdateManyWithoutAdminNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  subscription?: Prisma.UserSubscriptionUncheckedUpdateOneWithoutUserNestedInput
   activatedPrompts?: Prisma.AiSystemPromptUncheckedUpdateManyWithoutActivatedByUserNestedInput
   activatedConfigs?: Prisma.AiProviderConfigUncheckedUpdateManyWithoutActivatedByUserNestedInput
 }
@@ -2697,6 +2768,7 @@ export type UserCreateWithoutActivatedConfigsInput = {
   authoredRecipes?: Prisma.RecipeCreateNestedManyWithoutAuthorInput
   adminLogs?: Prisma.AdminActivityLogCreateNestedManyWithoutAdminInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  subscription?: Prisma.UserSubscriptionCreateNestedOneWithoutUserInput
   activatedPrompts?: Prisma.AiSystemPromptCreateNestedManyWithoutActivatedByUserInput
 }
 
@@ -2727,6 +2799,7 @@ export type UserUncheckedCreateWithoutActivatedConfigsInput = {
   authoredRecipes?: Prisma.RecipeUncheckedCreateNestedManyWithoutAuthorInput
   adminLogs?: Prisma.AdminActivityLogUncheckedCreateNestedManyWithoutAdminInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  subscription?: Prisma.UserSubscriptionUncheckedCreateNestedOneWithoutUserInput
   activatedPrompts?: Prisma.AiSystemPromptUncheckedCreateNestedManyWithoutActivatedByUserInput
 }
 
@@ -2773,6 +2846,7 @@ export type UserUpdateWithoutActivatedConfigsInput = {
   authoredRecipes?: Prisma.RecipeUpdateManyWithoutAuthorNestedInput
   adminLogs?: Prisma.AdminActivityLogUpdateManyWithoutAdminNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  subscription?: Prisma.UserSubscriptionUpdateOneWithoutUserNestedInput
   activatedPrompts?: Prisma.AiSystemPromptUpdateManyWithoutActivatedByUserNestedInput
 }
 
@@ -2803,6 +2877,7 @@ export type UserUncheckedUpdateWithoutActivatedConfigsInput = {
   authoredRecipes?: Prisma.RecipeUncheckedUpdateManyWithoutAuthorNestedInput
   adminLogs?: Prisma.AdminActivityLogUncheckedUpdateManyWithoutAdminNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  subscription?: Prisma.UserSubscriptionUncheckedUpdateOneWithoutUserNestedInput
   activatedPrompts?: Prisma.AiSystemPromptUncheckedUpdateManyWithoutActivatedByUserNestedInput
 }
 
@@ -2832,6 +2907,7 @@ export type UserCreateWithoutAdminLogsInput = {
   savedRecipes?: Prisma.UserSavedRecipeCreateNestedManyWithoutUserInput
   authoredRecipes?: Prisma.RecipeCreateNestedManyWithoutAuthorInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  subscription?: Prisma.UserSubscriptionCreateNestedOneWithoutUserInput
   activatedPrompts?: Prisma.AiSystemPromptCreateNestedManyWithoutActivatedByUserInput
   activatedConfigs?: Prisma.AiProviderConfigCreateNestedManyWithoutActivatedByUserInput
 }
@@ -2862,6 +2938,7 @@ export type UserUncheckedCreateWithoutAdminLogsInput = {
   savedRecipes?: Prisma.UserSavedRecipeUncheckedCreateNestedManyWithoutUserInput
   authoredRecipes?: Prisma.RecipeUncheckedCreateNestedManyWithoutAuthorInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  subscription?: Prisma.UserSubscriptionUncheckedCreateNestedOneWithoutUserInput
   activatedPrompts?: Prisma.AiSystemPromptUncheckedCreateNestedManyWithoutActivatedByUserInput
   activatedConfigs?: Prisma.AiProviderConfigUncheckedCreateNestedManyWithoutActivatedByUserInput
 }
@@ -2908,6 +2985,7 @@ export type UserUpdateWithoutAdminLogsInput = {
   savedRecipes?: Prisma.UserSavedRecipeUpdateManyWithoutUserNestedInput
   authoredRecipes?: Prisma.RecipeUpdateManyWithoutAuthorNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  subscription?: Prisma.UserSubscriptionUpdateOneWithoutUserNestedInput
   activatedPrompts?: Prisma.AiSystemPromptUpdateManyWithoutActivatedByUserNestedInput
   activatedConfigs?: Prisma.AiProviderConfigUpdateManyWithoutActivatedByUserNestedInput
 }
@@ -2938,6 +3016,7 @@ export type UserUncheckedUpdateWithoutAdminLogsInput = {
   savedRecipes?: Prisma.UserSavedRecipeUncheckedUpdateManyWithoutUserNestedInput
   authoredRecipes?: Prisma.RecipeUncheckedUpdateManyWithoutAuthorNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  subscription?: Prisma.UserSubscriptionUncheckedUpdateOneWithoutUserNestedInput
   activatedPrompts?: Prisma.AiSystemPromptUncheckedUpdateManyWithoutActivatedByUserNestedInput
   activatedConfigs?: Prisma.AiProviderConfigUncheckedUpdateManyWithoutActivatedByUserNestedInput
 }
@@ -2968,6 +3047,7 @@ export type UserCreateWithoutNotificationsInput = {
   savedRecipes?: Prisma.UserSavedRecipeCreateNestedManyWithoutUserInput
   authoredRecipes?: Prisma.RecipeCreateNestedManyWithoutAuthorInput
   adminLogs?: Prisma.AdminActivityLogCreateNestedManyWithoutAdminInput
+  subscription?: Prisma.UserSubscriptionCreateNestedOneWithoutUserInput
   activatedPrompts?: Prisma.AiSystemPromptCreateNestedManyWithoutActivatedByUserInput
   activatedConfigs?: Prisma.AiProviderConfigCreateNestedManyWithoutActivatedByUserInput
 }
@@ -2998,6 +3078,7 @@ export type UserUncheckedCreateWithoutNotificationsInput = {
   savedRecipes?: Prisma.UserSavedRecipeUncheckedCreateNestedManyWithoutUserInput
   authoredRecipes?: Prisma.RecipeUncheckedCreateNestedManyWithoutAuthorInput
   adminLogs?: Prisma.AdminActivityLogUncheckedCreateNestedManyWithoutAdminInput
+  subscription?: Prisma.UserSubscriptionUncheckedCreateNestedOneWithoutUserInput
   activatedPrompts?: Prisma.AiSystemPromptUncheckedCreateNestedManyWithoutActivatedByUserInput
   activatedConfigs?: Prisma.AiProviderConfigUncheckedCreateNestedManyWithoutActivatedByUserInput
 }
@@ -3044,6 +3125,7 @@ export type UserUpdateWithoutNotificationsInput = {
   savedRecipes?: Prisma.UserSavedRecipeUpdateManyWithoutUserNestedInput
   authoredRecipes?: Prisma.RecipeUpdateManyWithoutAuthorNestedInput
   adminLogs?: Prisma.AdminActivityLogUpdateManyWithoutAdminNestedInput
+  subscription?: Prisma.UserSubscriptionUpdateOneWithoutUserNestedInput
   activatedPrompts?: Prisma.AiSystemPromptUpdateManyWithoutActivatedByUserNestedInput
   activatedConfigs?: Prisma.AiProviderConfigUpdateManyWithoutActivatedByUserNestedInput
 }
@@ -3074,6 +3156,147 @@ export type UserUncheckedUpdateWithoutNotificationsInput = {
   savedRecipes?: Prisma.UserSavedRecipeUncheckedUpdateManyWithoutUserNestedInput
   authoredRecipes?: Prisma.RecipeUncheckedUpdateManyWithoutAuthorNestedInput
   adminLogs?: Prisma.AdminActivityLogUncheckedUpdateManyWithoutAdminNestedInput
+  subscription?: Prisma.UserSubscriptionUncheckedUpdateOneWithoutUserNestedInput
+  activatedPrompts?: Prisma.AiSystemPromptUncheckedUpdateManyWithoutActivatedByUserNestedInput
+  activatedConfigs?: Prisma.AiProviderConfigUncheckedUpdateManyWithoutActivatedByUserNestedInput
+}
+
+export type UserCreateWithoutSubscriptionInput = {
+  id?: string
+  phone?: string | null
+  googleId?: string | null
+  googleEmail?: string | null
+  name?: string | null
+  authProvider: $Enums.AuthProvider
+  status?: $Enums.UserStatus
+  isOnboardingCompleted?: boolean
+  lastLoginAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  role: Prisma.RoleCreateNestedOneWithoutUsersInput
+  profile?: Prisma.UserProfileCreateNestedOneWithoutUserInput
+  preferences?: Prisma.UserPreferenceCreateNestedOneWithoutUserInput
+  refreshTokens?: Prisma.RefreshTokenCreateNestedManyWithoutUserInput
+  fridgeItems?: Prisma.FridgeItemCreateNestedManyWithoutUserInput
+  scanLogs?: Prisma.IngredientScanLogCreateNestedManyWithoutUserInput
+  allergies?: Prisma.UserAllergyCreateNestedManyWithoutUserInput
+  weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutUserInput
+  shoppingLists?: Prisma.ShoppingListCreateNestedManyWithoutUserInput
+  chatSessions?: Prisma.ChatSessionCreateNestedManyWithoutUserInput
+  savedRecipes?: Prisma.UserSavedRecipeCreateNestedManyWithoutUserInput
+  authoredRecipes?: Prisma.RecipeCreateNestedManyWithoutAuthorInput
+  adminLogs?: Prisma.AdminActivityLogCreateNestedManyWithoutAdminInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  activatedPrompts?: Prisma.AiSystemPromptCreateNestedManyWithoutActivatedByUserInput
+  activatedConfigs?: Prisma.AiProviderConfigCreateNestedManyWithoutActivatedByUserInput
+}
+
+export type UserUncheckedCreateWithoutSubscriptionInput = {
+  id?: string
+  phone?: string | null
+  googleId?: string | null
+  googleEmail?: string | null
+  name?: string | null
+  authProvider: $Enums.AuthProvider
+  status?: $Enums.UserStatus
+  roleId: number
+  isOnboardingCompleted?: boolean
+  lastLoginAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  profile?: Prisma.UserProfileUncheckedCreateNestedOneWithoutUserInput
+  preferences?: Prisma.UserPreferenceUncheckedCreateNestedOneWithoutUserInput
+  refreshTokens?: Prisma.RefreshTokenUncheckedCreateNestedManyWithoutUserInput
+  fridgeItems?: Prisma.FridgeItemUncheckedCreateNestedManyWithoutUserInput
+  scanLogs?: Prisma.IngredientScanLogUncheckedCreateNestedManyWithoutUserInput
+  allergies?: Prisma.UserAllergyUncheckedCreateNestedManyWithoutUserInput
+  weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutUserInput
+  shoppingLists?: Prisma.ShoppingListUncheckedCreateNestedManyWithoutUserInput
+  chatSessions?: Prisma.ChatSessionUncheckedCreateNestedManyWithoutUserInput
+  savedRecipes?: Prisma.UserSavedRecipeUncheckedCreateNestedManyWithoutUserInput
+  authoredRecipes?: Prisma.RecipeUncheckedCreateNestedManyWithoutAuthorInput
+  adminLogs?: Prisma.AdminActivityLogUncheckedCreateNestedManyWithoutAdminInput
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  activatedPrompts?: Prisma.AiSystemPromptUncheckedCreateNestedManyWithoutActivatedByUserInput
+  activatedConfigs?: Prisma.AiProviderConfigUncheckedCreateNestedManyWithoutActivatedByUserInput
+}
+
+export type UserCreateOrConnectWithoutSubscriptionInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutSubscriptionInput, Prisma.UserUncheckedCreateWithoutSubscriptionInput>
+}
+
+export type UserUpsertWithoutSubscriptionInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutSubscriptionInput, Prisma.UserUncheckedUpdateWithoutSubscriptionInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutSubscriptionInput, Prisma.UserUncheckedCreateWithoutSubscriptionInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutSubscriptionInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutSubscriptionInput, Prisma.UserUncheckedUpdateWithoutSubscriptionInput>
+}
+
+export type UserUpdateWithoutSubscriptionInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  googleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  googleEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
+  status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
+  profile?: Prisma.UserProfileUpdateOneWithoutUserNestedInput
+  preferences?: Prisma.UserPreferenceUpdateOneWithoutUserNestedInput
+  refreshTokens?: Prisma.RefreshTokenUpdateManyWithoutUserNestedInput
+  fridgeItems?: Prisma.FridgeItemUpdateManyWithoutUserNestedInput
+  scanLogs?: Prisma.IngredientScanLogUpdateManyWithoutUserNestedInput
+  allergies?: Prisma.UserAllergyUpdateManyWithoutUserNestedInput
+  weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutUserNestedInput
+  shoppingLists?: Prisma.ShoppingListUpdateManyWithoutUserNestedInput
+  chatSessions?: Prisma.ChatSessionUpdateManyWithoutUserNestedInput
+  savedRecipes?: Prisma.UserSavedRecipeUpdateManyWithoutUserNestedInput
+  authoredRecipes?: Prisma.RecipeUpdateManyWithoutAuthorNestedInput
+  adminLogs?: Prisma.AdminActivityLogUpdateManyWithoutAdminNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  activatedPrompts?: Prisma.AiSystemPromptUpdateManyWithoutActivatedByUserNestedInput
+  activatedConfigs?: Prisma.AiProviderConfigUpdateManyWithoutActivatedByUserNestedInput
+}
+
+export type UserUncheckedUpdateWithoutSubscriptionInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  googleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  googleEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
+  status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+  roleId?: Prisma.IntFieldUpdateOperationsInput | number
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  profile?: Prisma.UserProfileUncheckedUpdateOneWithoutUserNestedInput
+  preferences?: Prisma.UserPreferenceUncheckedUpdateOneWithoutUserNestedInput
+  refreshTokens?: Prisma.RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
+  fridgeItems?: Prisma.FridgeItemUncheckedUpdateManyWithoutUserNestedInput
+  scanLogs?: Prisma.IngredientScanLogUncheckedUpdateManyWithoutUserNestedInput
+  allergies?: Prisma.UserAllergyUncheckedUpdateManyWithoutUserNestedInput
+  weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutUserNestedInput
+  shoppingLists?: Prisma.ShoppingListUncheckedUpdateManyWithoutUserNestedInput
+  chatSessions?: Prisma.ChatSessionUncheckedUpdateManyWithoutUserNestedInput
+  savedRecipes?: Prisma.UserSavedRecipeUncheckedUpdateManyWithoutUserNestedInput
+  authoredRecipes?: Prisma.RecipeUncheckedUpdateManyWithoutAuthorNestedInput
+  adminLogs?: Prisma.AdminActivityLogUncheckedUpdateManyWithoutAdminNestedInput
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
   activatedPrompts?: Prisma.AiSystemPromptUncheckedUpdateManyWithoutActivatedByUserNestedInput
   activatedConfigs?: Prisma.AiProviderConfigUncheckedUpdateManyWithoutActivatedByUserNestedInput
 }
@@ -3119,6 +3342,7 @@ export type UserUpdateWithoutRoleInput = {
   authoredRecipes?: Prisma.RecipeUpdateManyWithoutAuthorNestedInput
   adminLogs?: Prisma.AdminActivityLogUpdateManyWithoutAdminNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  subscription?: Prisma.UserSubscriptionUpdateOneWithoutUserNestedInput
   activatedPrompts?: Prisma.AiSystemPromptUpdateManyWithoutActivatedByUserNestedInput
   activatedConfigs?: Prisma.AiProviderConfigUpdateManyWithoutActivatedByUserNestedInput
 }
@@ -3149,6 +3373,7 @@ export type UserUncheckedUpdateWithoutRoleInput = {
   authoredRecipes?: Prisma.RecipeUncheckedUpdateManyWithoutAuthorNestedInput
   adminLogs?: Prisma.AdminActivityLogUncheckedUpdateManyWithoutAdminNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  subscription?: Prisma.UserSubscriptionUncheckedUpdateOneWithoutUserNestedInput
   activatedPrompts?: Prisma.AiSystemPromptUncheckedUpdateManyWithoutActivatedByUserNestedInput
   activatedConfigs?: Prisma.AiProviderConfigUncheckedUpdateManyWithoutActivatedByUserNestedInput
 }
@@ -3335,6 +3560,7 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   authoredRecipes?: boolean | Prisma.User$authoredRecipesArgs<ExtArgs>
   adminLogs?: boolean | Prisma.User$adminLogsArgs<ExtArgs>
   notifications?: boolean | Prisma.User$notificationsArgs<ExtArgs>
+  subscription?: boolean | Prisma.User$subscriptionArgs<ExtArgs>
   activatedPrompts?: boolean | Prisma.User$activatedPromptsArgs<ExtArgs>
   activatedConfigs?: boolean | Prisma.User$activatedConfigsArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
@@ -3374,6 +3600,7 @@ export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   authoredRecipes?: boolean | Prisma.User$authoredRecipesArgs<ExtArgs>
   adminLogs?: boolean | Prisma.User$adminLogsArgs<ExtArgs>
   notifications?: boolean | Prisma.User$notificationsArgs<ExtArgs>
+  subscription?: boolean | Prisma.User$subscriptionArgs<ExtArgs>
   activatedPrompts?: boolean | Prisma.User$activatedPromptsArgs<ExtArgs>
   activatedConfigs?: boolean | Prisma.User$activatedConfigsArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
@@ -3396,6 +3623,7 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     authoredRecipes: Prisma.$RecipePayload<ExtArgs>[]
     adminLogs: Prisma.$AdminActivityLogPayload<ExtArgs>[]
     notifications: Prisma.$NotificationPayload<ExtArgs>[]
+    subscription: Prisma.$UserSubscriptionPayload<ExtArgs> | null
     activatedPrompts: Prisma.$AiSystemPromptPayload<ExtArgs>[]
     activatedConfigs: Prisma.$AiProviderConfigPayload<ExtArgs>[]
   }
@@ -3767,6 +3995,7 @@ export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Typ
   authoredRecipes<T extends Prisma.User$authoredRecipesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$authoredRecipesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$RecipePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   adminLogs<T extends Prisma.User$adminLogsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$adminLogsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AdminActivityLogPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   notifications<T extends Prisma.User$notificationsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$notificationsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$NotificationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  subscription<T extends Prisma.User$subscriptionArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$subscriptionArgs<ExtArgs>>): Prisma.Prisma__UserSubscriptionClient<runtime.Types.Result.GetResult<Prisma.$UserSubscriptionPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   activatedPrompts<T extends Prisma.User$activatedPromptsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$activatedPromptsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AiSystemPromptPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   activatedConfigs<T extends Prisma.User$activatedConfigsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$activatedConfigsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AiProviderConfigPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
@@ -4458,6 +4687,25 @@ export type User$notificationsArgs<ExtArgs extends runtime.Types.Extensions.Inte
   take?: number
   skip?: number
   distinct?: Prisma.NotificationScalarFieldEnum | Prisma.NotificationScalarFieldEnum[]
+}
+
+/**
+ * User.subscription
+ */
+export type User$subscriptionArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the UserSubscription
+   */
+  select?: Prisma.UserSubscriptionSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the UserSubscription
+   */
+  omit?: Prisma.UserSubscriptionOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.UserSubscriptionInclude<ExtArgs> | null
+  where?: Prisma.UserSubscriptionWhereInput
 }
 
 /**

@@ -252,6 +252,7 @@ model User {
   authoredRecipes  Recipe[]
   adminLogs        AdminActivityLog[]
   notifications    Notification[]
+  subscription     UserSubscription?
   activatedPrompts AiSystemPrompt[]    @relation("PromptActivatedBy")
   activatedConfigs AiProviderConfig[]  @relation("ConfigActivatedBy")
 
@@ -837,4 +838,44 @@ model Notification {
 
   @@index([userId, isRead, createdAt])
   @@map("notifications")
+}
+
+// ============================================================
+// [G] SUBSCRIPTION
+// ============================================================
+
+model SubscriptionPlan {
+  id             Int      @id @default(autoincrement())
+  name           String   @unique @db.VarChar(50)  // free | individual
+  displayName    String   @db.VarChar(100)
+  priceVnd       Int      @default(0)
+  billingCycle   String   @db.VarChar(20)           // monthly | forever
+  features       Json                                // string[]
+  aiUsagePerWeek Int      @default(2) @db.TinyInt   // -1 = unlimited
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  deletedAt      DateTime?
+
+  subscriptions UserSubscription[]
+
+  @@map("subscription_plans")
+}
+
+model UserSubscription {
+  id         String    @id @default(uuid()) @db.Char(36)
+  userId     String    @unique @db.Char(36)
+  planId     Int
+  startDate  DateTime  @db.Date
+  endDate    DateTime? @db.Date
+  status     String    @db.VarChar(20)   // active | expired | cancelled | pending
+  paymentRef String?   @db.VarChar(255)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  deletedAt  DateTime?
+
+  user User             @relation(fields: [userId], references: [id])
+  plan SubscriptionPlan @relation(fields: [planId], references: [id])
+
+  @@index([userId, status])
+  @@map("user_subscriptions")
 }
