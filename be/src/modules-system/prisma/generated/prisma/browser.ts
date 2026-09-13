@@ -153,6 +153,11 @@ export type AiEvaluationLog = Prisma.AiEvaluationLogModel
  */
 export type AiProviderConfig = Prisma.AiProviderConfigModel
 /**
+ * Model AiUsageLog
+ * 
+ */
+export type AiUsageLog = Prisma.AiUsageLogModel
+/**
  * Model Sponsor
  * 
  */

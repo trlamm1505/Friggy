@@ -14,12 +14,13 @@ import {
   ApiBearerAuth,
 } from '@nestjs/swagger';
 import { SubscriptionsService } from './subscriptions.service';
+import { SubscribeDto } from './dto/subscriptions.dto';
 import {
-  SubscribeDto,
   SubscriptionPlanResponseDto,
   UserSubscriptionResponseDto,
   SubscribeResponseDto,
-} from './dto/subscriptions.dto';
+  WebhookResponseDto,
+} from './dto/subscriptions-response.dto';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import type { JwtPayload } from 'src/common/interfaces/jwt-payload.interface';
 import { Public } from 'src/common/decorators/public.decorator';
@@ -31,7 +32,7 @@ export class SubscriptionsController {
   constructor(private readonly subscriptionsService: SubscriptionsService) {}
 
   // ─────────────────────────────────────────────────────────
-  // GET /plans — DS gói (Public có thể xem, nhưng yêu cầu JWT theo plan)
+  // GET /plans — DS gói
   // ─────────────────────────────────────────────────────────
 
   @Get('plans')
@@ -77,8 +78,8 @@ export class SubscriptionsController {
   @Public()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: '[Public] Webhook nhận callback từ cổng QR (VNPay/MoMo)' })
-  @ApiResponse({ status: 200, schema: { example: { received: true } } })
-  handleWebhook(@Body() body: any): Promise<{ received: boolean }> {
+  @ApiResponse({ status: 200, type: WebhookResponseDto })
+  handleWebhook(@Body() body: any): Promise<WebhookResponseDto> {
     return this.subscriptionsService.handleWebhook(body);
   }
 
@@ -89,7 +90,7 @@ export class SubscriptionsController {
   @Delete('me')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Hủy gói Individual → tự động chuyển về Free' })
-  @ApiResponse({ status: 204 })
+  @ApiResponse({ status: 204, description: 'Hủy thành công' })
   @ApiResponse({ status: 400, description: 'Không thể hủy gói Free' })
   cancelSubscription(@CurrentUser() user: JwtPayload): Promise<void> {
     return this.subscriptionsService.cancelSubscription(user.sub);

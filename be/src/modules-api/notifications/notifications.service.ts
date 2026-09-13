@@ -7,9 +7,10 @@ import type {
 import type {
   NotificationResponseDto,
   PaginatedNotificationsDto,
-  UnreadCountDto,
-  NotificationSettingsDto,
-} from './dto/notifications.dto';
+  UnreadCountResponseDto,
+  MarkAllReadResponseDto,
+  NotificationSettingsResponseDto,
+} from './dto/notifications-response.dto';
 
 @Injectable()
 export class NotificationsService {
@@ -52,7 +53,7 @@ export class NotificationsService {
   // GET /unread-count — Số chưa đọc
   // ─────────────────────────────────────────────────────────
 
-  async getUnreadCount(userId: string): Promise<UnreadCountDto> {
+  async getUnreadCount(userId: string): Promise<UnreadCountResponseDto> {
     const count = await this.prisma.notification.count({
       where: { userId, deletedAt: null, isRead: false },
     });
@@ -80,7 +81,7 @@ export class NotificationsService {
   // PATCH /read-all — Đánh dấu tất cả đã đọc
   // ─────────────────────────────────────────────────────────
 
-  async markAllRead(userId: string): Promise<{ updated: number }> {
+  async markAllRead(userId: string): Promise<MarkAllReadResponseDto> {
     const result = await this.prisma.notification.updateMany({
       where: { userId, deletedAt: null, isRead: false },
       data: { isRead: true, readAt: new Date() },
@@ -108,7 +109,7 @@ export class NotificationsService {
   // GET /me/notification-settings — Lấy cài đặt
   // ─────────────────────────────────────────────────────────
 
-  async getNotificationSettings(userId: string): Promise<NotificationSettingsDto> {
+  async getNotificationSettings(userId: string): Promise<NotificationSettingsResponseDto> {
     let pref = await this.prisma.userPreference.findUnique({ where: { userId } });
 
     if (!pref) {
@@ -129,7 +130,7 @@ export class NotificationsService {
   // PATCH /me/notification-settings — Cập nhật
   // ─────────────────────────────────────────────────────────
 
-  async updateNotificationSettings(userId: string, dto: UpdateNotificationSettingsDto): Promise<NotificationSettingsDto> {
+  async updateNotificationSettings(userId: string, dto: UpdateNotificationSettingsDto): Promise<NotificationSettingsResponseDto> {
     const pref = await this.prisma.userPreference.upsert({
       where: { userId },
       create: {

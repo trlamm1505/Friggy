@@ -5,6 +5,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from 'src/modules-system/prisma/prisma.service';
+import { RateLimitService } from 'src/modules-system/ai-core/rate-limit.service';
 import { v4 as uuid } from 'uuid';
 import type {
   UpdateProfileDto,
@@ -26,7 +27,10 @@ const AI_WEEKLY_LIMIT_PAID = 999;
 export class UsersService {
   private readonly logger = new Logger(UsersService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly rateLimitService: RateLimitService,
+  ) {}
 
   // ─────────────────────────────────────────────────────────
   // GET /me
@@ -233,33 +237,12 @@ export class UsersService {
   // ─────────────────────────────────────────────────────────
 
   async getAiUsage(userId: string): Promise<AiUsageResponseDto> {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      include: { role: true },
-    });
-    if (!user) throw new NotFoundException('Không tìm thấy người dùng');
-
-    const weekStart = new Date();
-    weekStart.setDate(weekStart.getDate() - weekStart.getDay());
-    weekStart.setHours(0, 0, 0, 0);
-
-    // Dùng ChatMessage count thay thế cho đến khi có bảng ai_usage_logs
-    // (Phase 7 sẽ thêm AiUsageLog vào schema)
-    const used = await this.prisma.chatMessage.count({
-      where: {
-        role: 'assistant',
-        session: { userId, createdAt: { gte: weekStart } },
-      },
-    });
-
-    const isPaid = user.role.name !== 'user'; // có thể mở rộng kiểm tra subscription
-    const limit = isPaid ? AI_WEEKLY_LIMIT_PAID : AI_WEEKLY_LIMIT_FREE;
-
+    const summary = await this.rateLimitService.getUsageSummary(userId);
     return {
-      used,
-      limit,
-      remaining: Math.max(0, limit - used),
-      plan: isPaid ? 'paid' : 'free',
+      used: summary.used,
+      limit: summary.limit,
+      remaining: summary.isUnlimited ? 999 : Math.max(0, summary.limit - summary.used),
+      plan: summary.isUnlimited ? 'individual' : 'free',
     };
   }
 

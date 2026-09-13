@@ -14,6 +14,9 @@ import { RecipesModule } from './modules-api/recipes/recipes.module';
 import { FridgeModule } from './modules-api/fridge/fridge.module';
 import { NotificationsModule } from './modules-api/notifications/notifications.module';
 import { SubscriptionsModule } from './modules-api/subscriptions/subscriptions.module';
+import { AdminModule } from './modules-api/admin/admin.module';
+// System modules
+import { AiCoreModule } from './modules-system/ai-core/ai-core.module';
 
 // Global guards
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
@@ -42,6 +45,8 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter';
     FridgeModule,
     NotificationsModule,
     SubscriptionsModule,
+    AdminModule,
+    AiCoreModule,
   ],
   controllers: [],
   providers: [

@@ -3,9 +3,10 @@ import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
 import { PrismaModule } from 'src/modules-system/prisma/prisma.module';
 import { NotificationsModule } from 'src/modules-api/notifications/notifications.module';
+import { AiCoreModule } from 'src/modules-system/ai-core/ai-core.module';
 
 @Module({
-  imports: [PrismaModule, NotificationsModule],
+  imports: [PrismaModule, NotificationsModule, AiCoreModule],
   controllers: [UsersController],
   providers: [UsersService],
   exports: [UsersService],
