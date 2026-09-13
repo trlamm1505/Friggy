@@ -28,6 +28,9 @@ export type IngredientScanLogMinAggregateOutputType = {
   id: string | null
   userId: string | null
   imagePath: string | null
+  scanType: string | null
+  rawText: string | null
+  barcode: string | null
   processingStatus: $Enums.ProcessingStatus | null
   errorMessage: string | null
   processedAt: Date | null
@@ -39,6 +42,9 @@ export type IngredientScanLogMaxAggregateOutputType = {
   id: string | null
   userId: string | null
   imagePath: string | null
+  scanType: string | null
+  rawText: string | null
+  barcode: string | null
   processingStatus: $Enums.ProcessingStatus | null
   errorMessage: string | null
   processedAt: Date | null
@@ -50,6 +56,9 @@ export type IngredientScanLogCountAggregateOutputType = {
   id: number
   userId: number
   imagePath: number
+  scanType: number
+  rawText: number
+  barcode: number
   aiRawResponse: number
   detectedItems: number
   confirmedItems: number
@@ -66,6 +75,9 @@ export type IngredientScanLogMinAggregateInputType = {
   id?: true
   userId?: true
   imagePath?: true
+  scanType?: true
+  rawText?: true
+  barcode?: true
   processingStatus?: true
   errorMessage?: true
   processedAt?: true
@@ -77,6 +89,9 @@ export type IngredientScanLogMaxAggregateInputType = {
   id?: true
   userId?: true
   imagePath?: true
+  scanType?: true
+  rawText?: true
+  barcode?: true
   processingStatus?: true
   errorMessage?: true
   processedAt?: true
@@ -88,6 +103,9 @@ export type IngredientScanLogCountAggregateInputType = {
   id?: true
   userId?: true
   imagePath?: true
+  scanType?: true
+  rawText?: true
+  barcode?: true
   aiRawResponse?: true
   detectedItems?: true
   confirmedItems?: true
@@ -175,6 +193,9 @@ export type IngredientScanLogGroupByOutputType = {
   id: string
   userId: string
   imagePath: string
+  scanType: string
+  rawText: string | null
+  barcode: string | null
   aiRawResponse: runtime.JsonValue
   detectedItems: runtime.JsonValue
   confirmedItems: runtime.JsonValue | null
@@ -210,6 +231,9 @@ export type IngredientScanLogWhereInput = {
   id?: Prisma.StringFilter<"IngredientScanLog"> | string
   userId?: Prisma.StringFilter<"IngredientScanLog"> | string
   imagePath?: Prisma.StringFilter<"IngredientScanLog"> | string
+  scanType?: Prisma.StringFilter<"IngredientScanLog"> | string
+  rawText?: Prisma.StringNullableFilter<"IngredientScanLog"> | string | null
+  barcode?: Prisma.StringNullableFilter<"IngredientScanLog"> | string | null
   aiRawResponse?: Prisma.JsonFilter<"IngredientScanLog">
   detectedItems?: Prisma.JsonFilter<"IngredientScanLog">
   confirmedItems?: Prisma.JsonNullableFilter<"IngredientScanLog">
@@ -225,6 +249,9 @@ export type IngredientScanLogOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   userId?: Prisma.SortOrder
   imagePath?: Prisma.SortOrder
+  scanType?: Prisma.SortOrder
+  rawText?: Prisma.SortOrderInput | Prisma.SortOrder
+  barcode?: Prisma.SortOrderInput | Prisma.SortOrder
   aiRawResponse?: Prisma.SortOrder
   detectedItems?: Prisma.SortOrder
   confirmedItems?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -244,6 +271,9 @@ export type IngredientScanLogWhereUniqueInput = Prisma.AtLeast<{
   NOT?: Prisma.IngredientScanLogWhereInput | Prisma.IngredientScanLogWhereInput[]
   userId?: Prisma.StringFilter<"IngredientScanLog"> | string
   imagePath?: Prisma.StringFilter<"IngredientScanLog"> | string
+  scanType?: Prisma.StringFilter<"IngredientScanLog"> | string
+  rawText?: Prisma.StringNullableFilter<"IngredientScanLog"> | string | null
+  barcode?: Prisma.StringNullableFilter<"IngredientScanLog"> | string | null
   aiRawResponse?: Prisma.JsonFilter<"IngredientScanLog">
   detectedItems?: Prisma.JsonFilter<"IngredientScanLog">
   confirmedItems?: Prisma.JsonNullableFilter<"IngredientScanLog">
@@ -259,6 +289,9 @@ export type IngredientScanLogOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   userId?: Prisma.SortOrder
   imagePath?: Prisma.SortOrder
+  scanType?: Prisma.SortOrder
+  rawText?: Prisma.SortOrderInput | Prisma.SortOrder
+  barcode?: Prisma.SortOrderInput | Prisma.SortOrder
   aiRawResponse?: Prisma.SortOrder
   detectedItems?: Prisma.SortOrder
   confirmedItems?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -279,6 +312,9 @@ export type IngredientScanLogScalarWhereWithAggregatesInput = {
   id?: Prisma.StringWithAggregatesFilter<"IngredientScanLog"> | string
   userId?: Prisma.StringWithAggregatesFilter<"IngredientScanLog"> | string
   imagePath?: Prisma.StringWithAggregatesFilter<"IngredientScanLog"> | string
+  scanType?: Prisma.StringWithAggregatesFilter<"IngredientScanLog"> | string
+  rawText?: Prisma.StringNullableWithAggregatesFilter<"IngredientScanLog"> | string | null
+  barcode?: Prisma.StringNullableWithAggregatesFilter<"IngredientScanLog"> | string | null
   aiRawResponse?: Prisma.JsonWithAggregatesFilter<"IngredientScanLog">
   detectedItems?: Prisma.JsonWithAggregatesFilter<"IngredientScanLog">
   confirmedItems?: Prisma.JsonNullableWithAggregatesFilter<"IngredientScanLog">
@@ -292,6 +328,9 @@ export type IngredientScanLogScalarWhereWithAggregatesInput = {
 export type IngredientScanLogCreateInput = {
   id?: string
   imagePath: string
+  scanType?: string
+  rawText?: string | null
+  barcode?: string | null
   aiRawResponse: Prisma.JsonNullValueInput | runtime.InputJsonValue
   detectedItems: Prisma.JsonNullValueInput | runtime.InputJsonValue
   confirmedItems?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -307,6 +346,9 @@ export type IngredientScanLogUncheckedCreateInput = {
   id?: string
   userId: string
   imagePath: string
+  scanType?: string
+  rawText?: string | null
+  barcode?: string | null
   aiRawResponse: Prisma.JsonNullValueInput | runtime.InputJsonValue
   detectedItems: Prisma.JsonNullValueInput | runtime.InputJsonValue
   confirmedItems?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -320,6 +362,9 @@ export type IngredientScanLogUncheckedCreateInput = {
 export type IngredientScanLogUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   imagePath?: Prisma.StringFieldUpdateOperationsInput | string
+  scanType?: Prisma.StringFieldUpdateOperationsInput | string
+  rawText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  barcode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   aiRawResponse?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   detectedItems?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   confirmedItems?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -335,6 +380,9 @@ export type IngredientScanLogUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   userId?: Prisma.StringFieldUpdateOperationsInput | string
   imagePath?: Prisma.StringFieldUpdateOperationsInput | string
+  scanType?: Prisma.StringFieldUpdateOperationsInput | string
+  rawText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  barcode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   aiRawResponse?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   detectedItems?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   confirmedItems?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -349,6 +397,9 @@ export type IngredientScanLogCreateManyInput = {
   id?: string
   userId: string
   imagePath: string
+  scanType?: string
+  rawText?: string | null
+  barcode?: string | null
   aiRawResponse: Prisma.JsonNullValueInput | runtime.InputJsonValue
   detectedItems: Prisma.JsonNullValueInput | runtime.InputJsonValue
   confirmedItems?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -362,6 +413,9 @@ export type IngredientScanLogCreateManyInput = {
 export type IngredientScanLogUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   imagePath?: Prisma.StringFieldUpdateOperationsInput | string
+  scanType?: Prisma.StringFieldUpdateOperationsInput | string
+  rawText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  barcode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   aiRawResponse?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   detectedItems?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   confirmedItems?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -376,6 +430,9 @@ export type IngredientScanLogUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   userId?: Prisma.StringFieldUpdateOperationsInput | string
   imagePath?: Prisma.StringFieldUpdateOperationsInput | string
+  scanType?: Prisma.StringFieldUpdateOperationsInput | string
+  rawText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  barcode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   aiRawResponse?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   detectedItems?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   confirmedItems?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -406,6 +463,9 @@ export type IngredientScanLogCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   userId?: Prisma.SortOrder
   imagePath?: Prisma.SortOrder
+  scanType?: Prisma.SortOrder
+  rawText?: Prisma.SortOrder
+  barcode?: Prisma.SortOrder
   aiRawResponse?: Prisma.SortOrder
   detectedItems?: Prisma.SortOrder
   confirmedItems?: Prisma.SortOrder
@@ -420,6 +480,9 @@ export type IngredientScanLogMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   userId?: Prisma.SortOrder
   imagePath?: Prisma.SortOrder
+  scanType?: Prisma.SortOrder
+  rawText?: Prisma.SortOrder
+  barcode?: Prisma.SortOrder
   processingStatus?: Prisma.SortOrder
   errorMessage?: Prisma.SortOrder
   processedAt?: Prisma.SortOrder
@@ -431,6 +494,9 @@ export type IngredientScanLogMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   userId?: Prisma.SortOrder
   imagePath?: Prisma.SortOrder
+  scanType?: Prisma.SortOrder
+  rawText?: Prisma.SortOrder
+  barcode?: Prisma.SortOrder
   processingStatus?: Prisma.SortOrder
   errorMessage?: Prisma.SortOrder
   processedAt?: Prisma.SortOrder
@@ -487,6 +553,9 @@ export type EnumProcessingStatusFieldUpdateOperationsInput = {
 export type IngredientScanLogCreateWithoutUserInput = {
   id?: string
   imagePath: string
+  scanType?: string
+  rawText?: string | null
+  barcode?: string | null
   aiRawResponse: Prisma.JsonNullValueInput | runtime.InputJsonValue
   detectedItems: Prisma.JsonNullValueInput | runtime.InputJsonValue
   confirmedItems?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -500,6 +569,9 @@ export type IngredientScanLogCreateWithoutUserInput = {
 export type IngredientScanLogUncheckedCreateWithoutUserInput = {
   id?: string
   imagePath: string
+  scanType?: string
+  rawText?: string | null
+  barcode?: string | null
   aiRawResponse: Prisma.JsonNullValueInput | runtime.InputJsonValue
   detectedItems: Prisma.JsonNullValueInput | runtime.InputJsonValue
   confirmedItems?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -543,6 +615,9 @@ export type IngredientScanLogScalarWhereInput = {
   id?: Prisma.StringFilter<"IngredientScanLog"> | string
   userId?: Prisma.StringFilter<"IngredientScanLog"> | string
   imagePath?: Prisma.StringFilter<"IngredientScanLog"> | string
+  scanType?: Prisma.StringFilter<"IngredientScanLog"> | string
+  rawText?: Prisma.StringNullableFilter<"IngredientScanLog"> | string | null
+  barcode?: Prisma.StringNullableFilter<"IngredientScanLog"> | string | null
   aiRawResponse?: Prisma.JsonFilter<"IngredientScanLog">
   detectedItems?: Prisma.JsonFilter<"IngredientScanLog">
   confirmedItems?: Prisma.JsonNullableFilter<"IngredientScanLog">
@@ -556,6 +631,9 @@ export type IngredientScanLogScalarWhereInput = {
 export type IngredientScanLogCreateManyUserInput = {
   id?: string
   imagePath: string
+  scanType?: string
+  rawText?: string | null
+  barcode?: string | null
   aiRawResponse: Prisma.JsonNullValueInput | runtime.InputJsonValue
   detectedItems: Prisma.JsonNullValueInput | runtime.InputJsonValue
   confirmedItems?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -569,6 +647,9 @@ export type IngredientScanLogCreateManyUserInput = {
 export type IngredientScanLogUpdateWithoutUserInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   imagePath?: Prisma.StringFieldUpdateOperationsInput | string
+  scanType?: Prisma.StringFieldUpdateOperationsInput | string
+  rawText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  barcode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   aiRawResponse?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   detectedItems?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   confirmedItems?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -582,6 +663,9 @@ export type IngredientScanLogUpdateWithoutUserInput = {
 export type IngredientScanLogUncheckedUpdateWithoutUserInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   imagePath?: Prisma.StringFieldUpdateOperationsInput | string
+  scanType?: Prisma.StringFieldUpdateOperationsInput | string
+  rawText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  barcode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   aiRawResponse?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   detectedItems?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   confirmedItems?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -595,6 +679,9 @@ export type IngredientScanLogUncheckedUpdateWithoutUserInput = {
 export type IngredientScanLogUncheckedUpdateManyWithoutUserInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   imagePath?: Prisma.StringFieldUpdateOperationsInput | string
+  scanType?: Prisma.StringFieldUpdateOperationsInput | string
+  rawText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  barcode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   aiRawResponse?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   detectedItems?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   confirmedItems?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -611,6 +698,9 @@ export type IngredientScanLogSelect<ExtArgs extends runtime.Types.Extensions.Int
   id?: boolean
   userId?: boolean
   imagePath?: boolean
+  scanType?: boolean
+  rawText?: boolean
+  barcode?: boolean
   aiRawResponse?: boolean
   detectedItems?: boolean
   confirmedItems?: boolean
@@ -628,6 +718,9 @@ export type IngredientScanLogSelectScalar = {
   id?: boolean
   userId?: boolean
   imagePath?: boolean
+  scanType?: boolean
+  rawText?: boolean
+  barcode?: boolean
   aiRawResponse?: boolean
   detectedItems?: boolean
   confirmedItems?: boolean
@@ -638,7 +731,7 @@ export type IngredientScanLogSelectScalar = {
   deletedAt?: boolean
 }
 
-export type IngredientScanLogOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "imagePath" | "aiRawResponse" | "detectedItems" | "confirmedItems" | "processingStatus" | "errorMessage" | "processedAt" | "createdAt" | "deletedAt", ExtArgs["result"]["ingredientScanLog"]>
+export type IngredientScanLogOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "imagePath" | "scanType" | "rawText" | "barcode" | "aiRawResponse" | "detectedItems" | "confirmedItems" | "processingStatus" | "errorMessage" | "processedAt" | "createdAt" | "deletedAt", ExtArgs["result"]["ingredientScanLog"]>
 export type IngredientScanLogInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
 }
@@ -652,6 +745,9 @@ export type $IngredientScanLogPayload<ExtArgs extends runtime.Types.Extensions.I
     id: string
     userId: string
     imagePath: string
+    scanType: string
+    rawText: string | null
+    barcode: string | null
     aiRawResponse: runtime.JsonValue
     detectedItems: runtime.JsonValue
     confirmedItems: runtime.JsonValue | null
@@ -1033,6 +1129,9 @@ export interface IngredientScanLogFieldRefs {
   readonly id: Prisma.FieldRef<"IngredientScanLog", 'String'>
   readonly userId: Prisma.FieldRef<"IngredientScanLog", 'String'>
   readonly imagePath: Prisma.FieldRef<"IngredientScanLog", 'String'>
+  readonly scanType: Prisma.FieldRef<"IngredientScanLog", 'String'>
+  readonly rawText: Prisma.FieldRef<"IngredientScanLog", 'String'>
+  readonly barcode: Prisma.FieldRef<"IngredientScanLog", 'String'>
   readonly aiRawResponse: Prisma.FieldRef<"IngredientScanLog", 'Json'>
   readonly detectedItems: Prisma.FieldRef<"IngredientScanLog", 'Json'>
   readonly confirmedItems: Prisma.FieldRef<"IngredientScanLog", 'Json'>

@@ -2879,6 +2879,7 @@ export const FridgeItemScalarFieldEnum = {
   expiresAt: 'expiresAt',
   storageLocation: 'storageLocation',
   addedBy: 'addedBy',
+  consumedAt: 'consumedAt',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
   deletedAt: 'deletedAt'
@@ -2891,6 +2892,9 @@ export const IngredientScanLogScalarFieldEnum = {
   id: 'id',
   userId: 'userId',
   imagePath: 'imagePath',
+  scanType: 'scanType',
+  rawText: 'rawText',
+  barcode: 'barcode',
   aiRawResponse: 'aiRawResponse',
   detectedItems: 'detectedItems',
   confirmedItems: 'confirmedItems',
@@ -3355,6 +3359,9 @@ export const IngredientScanLogOrderByRelevanceFieldEnum = {
   id: 'id',
   userId: 'userId',
   imagePath: 'imagePath',
+  scanType: 'scanType',
+  rawText: 'rawText',
+  barcode: 'barcode',
   errorMessage: 'errorMessage'
 } as const
 

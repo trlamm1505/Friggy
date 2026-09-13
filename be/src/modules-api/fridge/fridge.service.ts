@@ -1,0 +1,353 @@
+import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
+import { PrismaService } from 'src/modules-system/prisma/prisma.service';
+import { v4 as uuid } from 'uuid';
+import type {
+  AddFridgeItemDto,
+  UpdateFridgeItemDto,
+  ListFridgeQueryDto,
+  ExpiringQueryDto,
+  ConfirmScanDto,
+} from './dto/fridge.dto';
+import type {
+  FridgeItemResponseDto,
+  FridgeStatsResponseDto,
+  ScanResponseDto,
+  ScanHistoryItemDto,
+} from './dto/fridge-response.dto';
+
+@Injectable()
+export class FridgeService {
+  private readonly logger = new Logger(FridgeService.name);
+
+  constructor(private readonly prisma: PrismaService) {}
+
+  // ─────────────────────────────────────────────────────────
+  // GET / — Danh sách tủ lạnh
+  // ─────────────────────────────────────────────────────────
+
+  async findAll(userId: string, query: ListFridgeQueryDto): Promise<FridgeItemResponseDto[]> {
+    const where: any = { userId, deletedAt: null };
+    if (query.storageLocation) where.storageLocation = query.storageLocation;
+
+    const items = await this.prisma.fridgeItem.findMany({
+      where,
+      include: { ingredient: true },
+      orderBy: [{ expiresAt: 'asc' }, { createdAt: 'desc' }],
+    });
+
+    return items.map(this.mapFridgeItem);
+  }
+
+  // ─────────────────────────────────────────────────────────
+  // GET /expiring — Sắp hết hạn trong N ngày
+  // ─────────────────────────────────────────────────────────
+
+  async getExpiring(userId: string, query: ExpiringQueryDto): Promise<FridgeItemResponseDto[]> {
+    const days = query.days ?? 3;
+    const deadline = new Date();
+    deadline.setDate(deadline.getDate() + days);
+
+    const items = await this.prisma.fridgeItem.findMany({
+      where: {
+        userId,
+        deletedAt: null,
+        consumedAt: null,
+        expiresAt: { not: null, lte: deadline },
+      },
+      include: { ingredient: true },
+      orderBy: { expiresAt: 'asc' },
+    });
+
+    return items.map(this.mapFridgeItem);
+  }
+
+  // ─────────────────────────────────────────────────────────
+  // GET /stats
+  // ─────────────────────────────────────────────────────────
+
+  async getStats(userId: string): Promise<FridgeStatsResponseDto> {
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const weekStart = new Date(now);
+    weekStart.setDate(now.getDate() - now.getDay());
+    weekStart.setHours(0, 0, 0, 0);
+    const expirySoon = new Date(now);
+    expirySoon.setDate(now.getDate() + 3);
+
+    // Tổng chi tiêu tháng: từ shopping list items đã mua
+    const spentResult = await this.prisma.shoppingListItem.aggregate({
+      _sum: { estimatedPrice: true },
+      where: {
+        shoppingList: { userId },
+        isPurchased: true,
+        purchasedAt: { gte: monthStart },
+      },
+    });
+    const totalSpentThisMonth = (spentResult._sum?.estimatedPrice) ?? 0;
+
+    // % lãng phí: item hết hạn chưa dùng / tổng item có expiresAt
+    const [expiredWaste, totalWithExpiry] = await Promise.all([
+      this.prisma.fridgeItem.count({
+        where: { userId, deletedAt: null, consumedAt: null, expiresAt: { lt: now } },
+      }),
+      this.prisma.fridgeItem.count({
+        where: { userId, deletedAt: null, expiresAt: { not: null } },
+      }),
+    ]);
+    const wastePercent =
+      totalWithExpiry > 0 ? Math.round((expiredWaste / totalWithExpiry) * 1000) / 10 : 0;
+
+    // Số bữa đã nấu tuần này (MealSlot có completedAt, join qua dailyPlan -> weeklyPlan)
+    const mealsCooked = await this.prisma.mealSlot.count({
+      where: {
+        dailyPlan: { weeklyPlan: { userId } },
+        completedAt: { gte: weekStart },
+      },
+    });
+
+    // Sắp hết hạn ≤3 ngày
+    const expiringSoonCount = await this.prisma.fridgeItem.count({
+      where: {
+        userId,
+        deletedAt: null,
+        consumedAt: null,
+        expiresAt: { gte: now, lte: expirySoon },
+      },
+    });
+
+    // Tổng items hiện tại
+    const totalItems = await this.prisma.fridgeItem.count({
+      where: { userId, deletedAt: null, consumedAt: null },
+    });
+
+    return { totalSpentThisMonth, wastePercent, mealsCooked, expiringSoonCount, totalItems };
+  }
+
+  // ─────────────────────────────────────────────────────────
+  // POST /items — Thêm nguyên liệu
+  // ─────────────────────────────────────────────────────────
+
+  async addItem(userId: string, dto: AddFridgeItemDto): Promise<FridgeItemResponseDto> {
+    const ingredient = await this.prisma.ingredient.findFirst({
+      where: { id: dto.ingredientId, deletedAt: null },
+    });
+    if (!ingredient) throw new NotFoundException('Nguyên liệu không tồn tại');
+
+    const item = await this.prisma.fridgeItem.create({
+      data: {
+        id: uuid(),
+        userId,
+        ingredientId: dto.ingredientId,
+        quantity: dto.quantity,
+        unit: dto.unit,
+        purchasedAt: dto.purchasedAt ? new Date(dto.purchasedAt) : null,
+        expiresAt: dto.expiresAt ? new Date(dto.expiresAt) : null,
+        storageLocation: (dto.storageLocation as any) ?? 'fridge',
+        addedBy: 'manual',
+      },
+      include: { ingredient: true },
+    });
+
+    return this.mapFridgeItem(item);
+  }
+
+  // ─────────────────────────────────────────────────────────
+  // PATCH /items/:id — Cập nhật
+  // ─────────────────────────────────────────────────────────
+
+  async updateItem(userId: string, itemId: string, dto: UpdateFridgeItemDto): Promise<FridgeItemResponseDto> {
+    const item = await this.prisma.fridgeItem.findFirst({
+      where: { id: itemId, userId, deletedAt: null },
+    });
+    if (!item) throw new NotFoundException('Không tìm thấy nguyên liệu trong tủ');
+
+    const updated = await this.prisma.fridgeItem.update({
+      where: { id: itemId },
+      data: {
+        ...(dto.quantity !== undefined && { quantity: dto.quantity }),
+        ...(dto.unit && { unit: dto.unit }),
+        ...(dto.expiresAt !== undefined && { expiresAt: dto.expiresAt ? new Date(dto.expiresAt) : null }),
+        ...(dto.storageLocation && { storageLocation: dto.storageLocation as any }),
+      },
+      include: { ingredient: true },
+    });
+
+    return this.mapFridgeItem(updated);
+  }
+
+  // ─────────────────────────────────────────────────────────
+  // DELETE /items/:id — Soft delete
+  // ─────────────────────────────────────────────────────────
+
+  async removeItem(userId: string, itemId: string): Promise<void> {
+    const item = await this.prisma.fridgeItem.findFirst({
+      where: { id: itemId, userId, deletedAt: null },
+    });
+    if (!item) throw new NotFoundException('Không tìm thấy nguyên liệu trong tủ');
+
+    await this.prisma.fridgeItem.update({
+      where: { id: itemId },
+      data: { deletedAt: new Date() },
+    });
+  }
+
+  // ─────────────────────────────────────────────────────────
+  // PATCH /items/:id/consume — Đánh dấu đã dùng hết
+  // ─────────────────────────────────────────────────────────
+
+  async consumeItem(userId: string, itemId: string): Promise<FridgeItemResponseDto> {
+    const item = await this.prisma.fridgeItem.findFirst({
+      where: { id: itemId, userId, deletedAt: null },
+    });
+    if (!item) throw new NotFoundException('Không tìm thấy nguyên liệu trong tủ');
+    if (item.consumedAt) throw new BadRequestException('Nguyên liệu này đã được đánh dấu dùng hết');
+
+    const updated = await this.prisma.fridgeItem.update({
+      where: { id: itemId },
+      data: { consumedAt: new Date() },
+      include: { ingredient: true },
+    });
+
+    return this.mapFridgeItem(updated);
+  }
+
+  // ─────────────────────────────────────────────────────────
+  // POST /scan/image|receipt|barcode — Scan AI (stub)
+  // NOTE: AI integration sẽ được implement ở Phase 7
+  // ─────────────────────────────────────────────────────────
+
+  async scanImage(userId: string, file: Express.Multer.File, scanType: 'image' | 'receipt' | 'barcode'): Promise<ScanResponseDto> {
+    if (!file) throw new BadRequestException('Vui lòng upload file ảnh');
+
+    // Lưu scan log với status pending — Phase 7 sẽ gọi Gemini Vision
+    const scanId = uuid();
+    const imagePath = `/uploads/scans/${scanId}.webp`;
+
+    const scanLog = await this.prisma.ingredientScanLog.create({
+      data: {
+        id: scanId,
+        userId,
+        imagePath,
+        scanType,
+        aiRawResponse: {},
+        detectedItems: [],
+        processingStatus: 'pending',
+      },
+    });
+
+    this.logger.log(`[Scan] scanId=${scanId} type=${scanType} user=${userId} — AI pending (Phase 7)`);
+
+    return {
+      scanId: scanLog.id,
+      scanType,
+      status: 'pending',
+      detectedItems: [],
+    };
+  }
+
+  // ─────────────────────────────────────────────────────────
+  // POST /scan/:scanId/confirm — Xác nhận kết quả scan
+  // ─────────────────────────────────────────────────────────
+
+  async confirmScan(userId: string, scanId: string, dto: ConfirmScanDto): Promise<FridgeItemResponseDto[]> {
+    const scanLog = await this.prisma.ingredientScanLog.findFirst({
+      where: { id: scanId, userId, deletedAt: null },
+    });
+    if (!scanLog) throw new NotFoundException('Không tìm thấy kết quả scan');
+
+    const addedBy = scanLog.scanType === 'receipt'
+      ? 'receipt_scan'
+      : scanLog.scanType === 'barcode'
+      ? 'barcode_scan'
+      : 'ai_scan';
+
+    // Tạo fridge items từ confirmed list
+    const createdItems: FridgeItemResponseDto[] = [];
+    for (const item of dto.items) {
+      const ingredient = await this.prisma.ingredient.findFirst({
+        where: { id: item.ingredientId, deletedAt: null },
+      });
+      if (!ingredient) continue;
+
+      const fridgeItem = await this.prisma.fridgeItem.create({
+        data: {
+          id: uuid(),
+          userId,
+          ingredientId: item.ingredientId,
+          quantity: item.quantity,
+          unit: item.unit,
+          expiresAt: item.expiresAt ? new Date(item.expiresAt) : null,
+          storageLocation: (item.storageLocation as any) ?? 'fridge',
+          addedBy: addedBy as any,
+        },
+        include: { ingredient: true },
+      });
+      createdItems.push(this.mapFridgeItem(fridgeItem));
+    }
+
+    // Cập nhật scan log
+    await this.prisma.ingredientScanLog.update({
+      where: { id: scanId },
+      data: {
+        confirmedItems: dto.items as any,
+        processingStatus: 'success',
+        processedAt: new Date(),
+      },
+    });
+
+    return createdItems;
+  }
+
+  // ─────────────────────────────────────────────────────────
+  // GET /scan/history — Lịch sử scan
+  // ─────────────────────────────────────────────────────────
+
+  async getScanHistory(userId: string): Promise<ScanHistoryItemDto[]> {
+    const logs = await this.prisma.ingredientScanLog.findMany({
+      where: { userId, deletedAt: null },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+    });
+
+    return logs.map((l) => ({
+      id: l.id,
+      scanType: l.scanType,
+      status: l.processingStatus,
+      detectedCount: Array.isArray(l.detectedItems) ? (l.detectedItems as any[]).length : 0,
+      confirmedCount: l.confirmedItems
+        ? Array.isArray(l.confirmedItems)
+          ? (l.confirmedItems as any[]).length
+          : null
+        : null,
+      createdAt: l.createdAt.toISOString(),
+    }));
+  }
+
+  // ─────────────────────────────────────────────────────────
+  // HELPER
+  // ─────────────────────────────────────────────────────────
+
+  private mapFridgeItem(item: any): FridgeItemResponseDto {
+    let daysUntilExpiry: number | null = null;
+    if (item.expiresAt) {
+      const diff = item.expiresAt.getTime() - Date.now();
+      daysUntilExpiry = Math.ceil(diff / (1000 * 60 * 60 * 24));
+    }
+
+    return {
+      id: item.id,
+      ingredientId: item.ingredientId,
+      ingredientName: item.ingredient.name,
+      ingredientImagePath: item.ingredient.imagePath ?? null,
+      quantity: item.quantity,
+      unit: item.unit,
+      purchasedAt: item.purchasedAt?.toISOString().split('T')[0] ?? null,
+      expiresAt: item.expiresAt?.toISOString().split('T')[0] ?? null,
+      storageLocation: item.storageLocation,
+      addedBy: item.addedBy,
+      consumedAt: item.consumedAt?.toISOString() ?? null,
+      daysUntilExpiry,
+      createdAt: item.createdAt.toISOString(),
+    };
+  }
+}
