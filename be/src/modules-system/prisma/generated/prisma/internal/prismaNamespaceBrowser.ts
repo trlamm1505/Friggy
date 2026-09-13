@@ -83,7 +83,9 @@ export const ModelName = {
   CampaignRecipe: 'CampaignRecipe',
   IngredientPurchaseLink: 'IngredientPurchaseLink',
   AdminActivityLog: 'AdminActivityLog',
-  Notification: 'Notification'
+  Notification: 'Notification',
+  SubscriptionPlan: 'SubscriptionPlan',
+  UserSubscription: 'UserSubscription'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -609,6 +611,38 @@ export const NotificationScalarFieldEnum = {
 export type NotificationScalarFieldEnum = (typeof NotificationScalarFieldEnum)[keyof typeof NotificationScalarFieldEnum]
 
 
+export const SubscriptionPlanScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  displayName: 'displayName',
+  priceVnd: 'priceVnd',
+  billingCycle: 'billingCycle',
+  features: 'features',
+  aiUsagePerWeek: 'aiUsagePerWeek',
+  isActive: 'isActive',
+  createdAt: 'createdAt',
+  deletedAt: 'deletedAt'
+} as const
+
+export type SubscriptionPlanScalarFieldEnum = (typeof SubscriptionPlanScalarFieldEnum)[keyof typeof SubscriptionPlanScalarFieldEnum]
+
+
+export const UserSubscriptionScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  planId: 'planId',
+  startDate: 'startDate',
+  endDate: 'endDate',
+  status: 'status',
+  paymentRef: 'paymentRef',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  deletedAt: 'deletedAt'
+} as const
+
+export type UserSubscriptionScalarFieldEnum = (typeof UserSubscriptionScalarFieldEnum)[keyof typeof UserSubscriptionScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -964,4 +998,23 @@ export const NotificationOrderByRelevanceFieldEnum = {
 } as const
 
 export type NotificationOrderByRelevanceFieldEnum = (typeof NotificationOrderByRelevanceFieldEnum)[keyof typeof NotificationOrderByRelevanceFieldEnum]
+
+
+export const SubscriptionPlanOrderByRelevanceFieldEnum = {
+  name: 'name',
+  displayName: 'displayName',
+  billingCycle: 'billingCycle'
+} as const
+
+export type SubscriptionPlanOrderByRelevanceFieldEnum = (typeof SubscriptionPlanOrderByRelevanceFieldEnum)[keyof typeof SubscriptionPlanOrderByRelevanceFieldEnum]
+
+
+export const UserSubscriptionOrderByRelevanceFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  status: 'status',
+  paymentRef: 'paymentRef'
+} as const
+
+export type UserSubscriptionOrderByRelevanceFieldEnum = (typeof UserSubscriptionOrderByRelevanceFieldEnum)[keyof typeof UserSubscriptionOrderByRelevanceFieldEnum]
 

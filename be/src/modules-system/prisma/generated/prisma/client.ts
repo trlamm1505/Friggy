@@ -204,3 +204,13 @@ export type AdminActivityLog = Prisma.AdminActivityLogModel
  * 
  */
 export type Notification = Prisma.NotificationModel
+/**
+ * Model SubscriptionPlan
+ * 
+ */
+export type SubscriptionPlan = Prisma.SubscriptionPlanModel
+/**
+ * Model UserSubscription
+ * 
+ */
+export type UserSubscription = Prisma.UserSubscriptionModel
