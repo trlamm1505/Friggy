@@ -424,6 +424,7 @@ export const ModelName = {
   ChatMessage: 'ChatMessage',
   AiEvaluationLog: 'AiEvaluationLog',
   AiProviderConfig: 'AiProviderConfig',
+  AiUsageLog: 'AiUsageLog',
   Sponsor: 'Sponsor',
   SponsorCampaign: 'SponsorCampaign',
   CampaignRecipe: 'CampaignRecipe',
@@ -447,7 +448,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "role" | "user" | "otpVerification" | "userProfile" | "userPreference" | "refreshToken" | "ingredientCategory" | "ingredient" | "tag" | "recipe" | "recipeIngredient" | "recipeStep" | "recipeTag" | "userSavedRecipe" | "fridgeItem" | "ingredientScanLog" | "userAllergy" | "weeklyPlan" | "dailyPlan" | "mealSlot" | "shoppingList" | "shoppingListItem" | "aiSystemPrompt" | "chatSession" | "chatMessage" | "aiEvaluationLog" | "aiProviderConfig" | "sponsor" | "sponsorCampaign" | "campaignRecipe" | "ingredientPurchaseLink" | "adminActivityLog" | "notification" | "subscriptionPlan" | "userSubscription"
+    modelProps: "role" | "user" | "otpVerification" | "userProfile" | "userPreference" | "refreshToken" | "ingredientCategory" | "ingredient" | "tag" | "recipe" | "recipeIngredient" | "recipeStep" | "recipeTag" | "userSavedRecipe" | "fridgeItem" | "ingredientScanLog" | "userAllergy" | "weeklyPlan" | "dailyPlan" | "mealSlot" | "shoppingList" | "shoppingListItem" | "aiSystemPrompt" | "chatSession" | "chatMessage" | "aiEvaluationLog" | "aiProviderConfig" | "aiUsageLog" | "sponsor" | "sponsorCampaign" | "campaignRecipe" | "ingredientPurchaseLink" | "adminActivityLog" | "notification" | "subscriptionPlan" | "userSubscription"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -2233,6 +2234,72 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    AiUsageLog: {
+      payload: Prisma.$AiUsageLogPayload<ExtArgs>
+      fields: Prisma.AiUsageLogFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.AiUsageLogFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AiUsageLogPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.AiUsageLogFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AiUsageLogPayload>
+        }
+        findFirst: {
+          args: Prisma.AiUsageLogFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AiUsageLogPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.AiUsageLogFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AiUsageLogPayload>
+        }
+        findMany: {
+          args: Prisma.AiUsageLogFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AiUsageLogPayload>[]
+        }
+        create: {
+          args: Prisma.AiUsageLogCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AiUsageLogPayload>
+        }
+        createMany: {
+          args: Prisma.AiUsageLogCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        delete: {
+          args: Prisma.AiUsageLogDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AiUsageLogPayload>
+        }
+        update: {
+          args: Prisma.AiUsageLogUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AiUsageLogPayload>
+        }
+        deleteMany: {
+          args: Prisma.AiUsageLogDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.AiUsageLogUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        upsert: {
+          args: Prisma.AiUsageLogUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AiUsageLogPayload>
+        }
+        aggregate: {
+          args: Prisma.AiUsageLogAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateAiUsageLog>
+        }
+        groupBy: {
+          args: Prisma.AiUsageLogGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AiUsageLogGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.AiUsageLogCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AiUsageLogCountAggregateOutputType> | number
+        }
+      }
+    }
     Sponsor: {
       payload: Prisma.$SponsorPayload<ExtArgs>
       fields: Prisma.SponsorFieldRefs
@@ -3215,6 +3282,17 @@ export const AiProviderConfigScalarFieldEnum = {
 export type AiProviderConfigScalarFieldEnum = (typeof AiProviderConfigScalarFieldEnum)[keyof typeof AiProviderConfigScalarFieldEnum]
 
 
+export const AiUsageLogScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  featureType: 'featureType',
+  tokensUsed: 'tokensUsed',
+  usedAt: 'usedAt'
+} as const
+
+export type AiUsageLogScalarFieldEnum = (typeof AiUsageLogScalarFieldEnum)[keyof typeof AiUsageLogScalarFieldEnum]
+
+
 export const SponsorScalarFieldEnum = {
   id: 'id',
   name: 'name',
@@ -3635,6 +3713,15 @@ export const AiProviderConfigOrderByRelevanceFieldEnum = {
 } as const
 
 export type AiProviderConfigOrderByRelevanceFieldEnum = (typeof AiProviderConfigOrderByRelevanceFieldEnum)[keyof typeof AiProviderConfigOrderByRelevanceFieldEnum]
+
+
+export const AiUsageLogOrderByRelevanceFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  featureType: 'featureType'
+} as const
+
+export type AiUsageLogOrderByRelevanceFieldEnum = (typeof AiUsageLogOrderByRelevanceFieldEnum)[keyof typeof AiUsageLogOrderByRelevanceFieldEnum]
 
 
 export const SponsorOrderByRelevanceFieldEnum = {
@@ -4157,6 +4244,7 @@ export type GlobalOmitConfig = {
   chatMessage?: Prisma.ChatMessageOmit
   aiEvaluationLog?: Prisma.AiEvaluationLogOmit
   aiProviderConfig?: Prisma.AiProviderConfigOmit
+  aiUsageLog?: Prisma.AiUsageLogOmit
   sponsor?: Prisma.SponsorOmit
   sponsorCampaign?: Prisma.SponsorCampaignOmit
   campaignRecipe?: Prisma.CampaignRecipeOmit

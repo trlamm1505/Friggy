@@ -33,10 +33,8 @@ import {
   AiUsageResponseDto,
 } from './dto/users-response.dto';
 import { NotificationsService } from 'src/modules-api/notifications/notifications.service';
-import {
-  UpdateNotificationSettingsDto,
-  NotificationSettingsDto,
-} from 'src/modules-api/notifications/dto/notifications.dto';
+import { UpdateNotificationSettingsDto } from 'src/modules-api/notifications/dto/notifications.dto';
+import { NotificationSettingsResponseDto } from 'src/modules-api/notifications/dto/notifications-response.dto';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import type { JwtPayload } from 'src/common/interfaces/jwt-payload.interface';
 
@@ -179,18 +177,18 @@ export class UsersController {
 
   @Get('me/notification-settings')
   @ApiOperation({ summary: 'Lấy cài đặt thông báo' })
-  @ApiResponse({ status: 200, type: NotificationSettingsDto })
-  getNotificationSettings(@CurrentUser() user: JwtPayload): Promise<NotificationSettingsDto> {
+  @ApiResponse({ status: 200, type: NotificationSettingsResponseDto })
+  getNotificationSettings(@CurrentUser() user: JwtPayload): Promise<NotificationSettingsResponseDto> {
     return this.notificationsService.getNotificationSettings(user.sub);
   }
 
   @Patch('me/notification-settings')
   @ApiOperation({ summary: 'Cập nhật cài đặt thông báo (push, expiry alert, shopping reminder)' })
-  @ApiResponse({ status: 200, type: NotificationSettingsDto })
+  @ApiResponse({ status: 200, type: NotificationSettingsResponseDto })
   updateNotificationSettings(
     @CurrentUser() user: JwtPayload,
     @Body() dto: UpdateNotificationSettingsDto,
-  ): Promise<NotificationSettingsDto> {
+  ): Promise<NotificationSettingsResponseDto> {
     return this.notificationsService.updateNotificationSettings(user.sub, dto);
   }
 }

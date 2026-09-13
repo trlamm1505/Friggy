@@ -6,12 +6,13 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from 'src/modules-system/prisma/prisma.service';
 import { v4 as uuid } from 'uuid';
+import type { SubscribeDto } from './dto/subscriptions.dto';
 import type {
-  SubscribeDto,
   SubscriptionPlanResponseDto,
   UserSubscriptionResponseDto,
   SubscribeResponseDto,
-} from './dto/subscriptions.dto';
+  WebhookResponseDto,
+} from './dto/subscriptions-response.dto';
 
 @Injectable()
 export class SubscriptionsService {
@@ -128,7 +129,7 @@ export class SubscriptionsService {
   // POST /webhook — Callback từ cổng thanh toán
   // ─────────────────────────────────────────────────────────
 
-  async handleWebhook(body: any): Promise<{ received: boolean }> {
+  async handleWebhook(body: any): Promise<WebhookResponseDto> {
     const { paymentRef, status } = body ?? {};
     this.logger.log(`[Webhook] ref=${paymentRef} status=${status}`);
 

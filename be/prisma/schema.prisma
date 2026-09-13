@@ -253,6 +253,7 @@ model User {
   adminLogs        AdminActivityLog[]
   notifications    Notification[]
   subscription     UserSubscription?
+  aiUsageLogs      AiUsageLog[]
   activatedPrompts AiSystemPrompt[]    @relation("PromptActivatedBy")
   activatedConfigs AiProviderConfig[]  @relation("ConfigActivatedBy")
 
@@ -729,6 +730,19 @@ model AiProviderConfig {
   @@unique([provider, modelName])
   @@index([isActive, provider])
   @@map("ai_provider_configs")
+}
+
+model AiUsageLog {
+  id          String   @id @default(uuid()) @db.Char(36)
+  userId      String   @db.Char(36)
+  featureType String   @db.VarChar(50)  // recipe_suggest|scan|chat|meal_plan
+  tokensUsed  Int?     @default(0)
+  usedAt      DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId, featureType, usedAt])
+  @@map("ai_usage_logs")
 }
 
 // ============================================================

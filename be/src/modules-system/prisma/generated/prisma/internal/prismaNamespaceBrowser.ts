@@ -78,6 +78,7 @@ export const ModelName = {
   ChatMessage: 'ChatMessage',
   AiEvaluationLog: 'AiEvaluationLog',
   AiProviderConfig: 'AiProviderConfig',
+  AiUsageLog: 'AiUsageLog',
   Sponsor: 'Sponsor',
   SponsorCampaign: 'SponsorCampaign',
   CampaignRecipe: 'CampaignRecipe',
@@ -519,6 +520,17 @@ export const AiProviderConfigScalarFieldEnum = {
 export type AiProviderConfigScalarFieldEnum = (typeof AiProviderConfigScalarFieldEnum)[keyof typeof AiProviderConfigScalarFieldEnum]
 
 
+export const AiUsageLogScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  featureType: 'featureType',
+  tokensUsed: 'tokensUsed',
+  usedAt: 'usedAt'
+} as const
+
+export type AiUsageLogScalarFieldEnum = (typeof AiUsageLogScalarFieldEnum)[keyof typeof AiUsageLogScalarFieldEnum]
+
+
 export const SponsorScalarFieldEnum = {
   id: 'id',
   name: 'name',
@@ -939,6 +951,15 @@ export const AiProviderConfigOrderByRelevanceFieldEnum = {
 } as const
 
 export type AiProviderConfigOrderByRelevanceFieldEnum = (typeof AiProviderConfigOrderByRelevanceFieldEnum)[keyof typeof AiProviderConfigOrderByRelevanceFieldEnum]
+
+
+export const AiUsageLogOrderByRelevanceFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  featureType: 'featureType'
+} as const
+
+export type AiUsageLogOrderByRelevanceFieldEnum = (typeof AiUsageLogOrderByRelevanceFieldEnum)[keyof typeof AiUsageLogOrderByRelevanceFieldEnum]
 
 
 export const SponsorOrderByRelevanceFieldEnum = {
