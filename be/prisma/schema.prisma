@@ -69,6 +69,8 @@ enum StorageLocation {
 enum AddedBy {
   manual
   ai_scan
+  receipt_scan
+  barcode_scan
 }
 
 enum ProcessingStatus {
@@ -482,6 +484,7 @@ model FridgeItem {
   expiresAt       DateTime?
   storageLocation StorageLocation @default(fridge)
   addedBy         AddedBy         @default(manual)
+  consumedAt      DateTime?
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
   deletedAt       DateTime?
@@ -497,6 +500,9 @@ model IngredientScanLog {
   id               String           @id @default(uuid()) @db.Char(36)
   userId           String           @db.Char(36)
   imagePath        String           @db.VarChar(512)
+  scanType         String           @default("image") @db.VarChar(20)
+  rawText          String?          @db.Text
+  barcode          String?          @db.VarChar(50)
   aiRawResponse    Json
   detectedItems    Json
   confirmedItems   Json?

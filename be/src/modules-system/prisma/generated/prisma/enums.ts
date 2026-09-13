@@ -92,7 +92,9 @@ export type StorageLocation = (typeof StorageLocation)[keyof typeof StorageLocat
 
 export const AddedBy = {
   manual: 'manual',
-  ai_scan: 'ai_scan'
+  ai_scan: 'ai_scan',
+  receipt_scan: 'receipt_scan',
+  barcode_scan: 'barcode_scan'
 } as const
 
 export type AddedBy = (typeof AddedBy)[keyof typeof AddedBy]
