@@ -63,6 +63,7 @@ async function bootstrap() {
       .addTag('Ingredients', 'Nguyên liệu & Danh mục')
       .addTag('Recipes', 'Công thức nấu ăn')
       .addTag('Fridge', 'Tủ lạnh cá nhân')
+      .addTag('Notifications', 'Thông báo & Cài đặt thông báo')
       .addTag('Meal Planning', 'Thực đơn tuần & Danh sách mua')
       .addTag('AI Chat', 'Đầu bếp AI — Chat & Stream')
       .addTag('Admin', 'Quản trị hệ thống')

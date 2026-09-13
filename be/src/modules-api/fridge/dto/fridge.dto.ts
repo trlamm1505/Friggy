@@ -118,3 +118,10 @@ export class ConfirmScanDto {
   @Type(() => ConfirmedScanItemDto)
   items!: ConfirmedScanItemDto[];
 }
+
+export class StatsChartQueryDto {
+  @ApiPropertyOptional({ enum: ['week', 'month'], example: 'week' })
+  @IsOptional()
+  @IsEnum(['week', 'month'])
+  period?: 'week' | 'month' = 'week';
+}
