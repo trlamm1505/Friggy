@@ -21,6 +21,7 @@ import {
   ApiBody,
 } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { multerScanConfig } from 'src/common/configs/multer.config';
 import { FridgeService } from './fridge.service';
 import {
   AddFridgeItemDto,
@@ -177,7 +178,7 @@ export class FridgeController {
   @ApiConsumes('multipart/form-data')
   @ApiBody({ schema: { type: 'object', properties: { file: { type: 'string', format: 'binary' } } } })
   @ApiResponse({ status: 201, type: ScanResponseDto })
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(FileInterceptor('file', multerScanConfig))
   scanImage(
     @CurrentUser() user: JwtPayload,
     @UploadedFile() file: Express.Multer.File,
@@ -194,7 +195,7 @@ export class FridgeController {
   @ApiConsumes('multipart/form-data')
   @ApiBody({ schema: { type: 'object', properties: { file: { type: 'string', format: 'binary' } } } })
   @ApiResponse({ status: 201, type: ScanResponseDto })
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(FileInterceptor('file', multerScanConfig))
   scanReceipt(
     @CurrentUser() user: JwtPayload,
     @UploadedFile() file: Express.Multer.File,
@@ -211,7 +212,7 @@ export class FridgeController {
   @ApiConsumes('multipart/form-data')
   @ApiBody({ schema: { type: 'object', properties: { file: { type: 'string', format: 'binary' } } } })
   @ApiResponse({ status: 201, type: ScanResponseDto })
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(FileInterceptor('file', multerScanConfig))
   scanBarcode(
     @CurrentUser() user: JwtPayload,
     @UploadedFile() file: Express.Multer.File,

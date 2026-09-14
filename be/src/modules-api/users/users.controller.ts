@@ -19,6 +19,7 @@ import {
   ApiConsumes,
 } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { multerAvatarConfig } from 'src/common/configs/multer.config';
 import { UsersService } from './users.service';
 import {
   UpdateProfileDto,
@@ -80,7 +81,7 @@ export class UsersController {
   @ApiOperation({ summary: 'Upload ảnh đại diện (JPEG/PNG, resize 256×256)' })
   @ApiConsumes('multipart/form-data')
   @ApiResponse({ status: 200, description: 'Avatar URL mới', schema: { example: { avatarUrl: '/uploads/avatars/uuid.webp' } } })
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(FileInterceptor('file', multerAvatarConfig))
   async uploadAvatar(
     @CurrentUser() user: JwtPayload,
     @UploadedFile() file: Express.Multer.File,

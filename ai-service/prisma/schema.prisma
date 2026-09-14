@@ -1,0 +1,897 @@
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/prisma/generated"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+// ============================================================
+// ENUMS
+// ============================================================
+
+enum RoleName {
+  admin
+  user
+}
+
+enum UserStatus {
+  active
+  suspended
+  pending
+}
+
+enum AuthProvider {
+  google
+  phone
+}
+
+enum OtpPurpose {
+  login
+  register
+  change_phone
+}
+
+enum Gender {
+  male
+  female
+  other
+}
+
+enum DietaryStyle {
+  omnivore
+  vegetarian
+  vegan
+  keto
+  halal
+}
+
+enum SkillLevel {
+  beginner
+  intermediate
+  advanced
+}
+
+enum AiPersonalityMode {
+  friendly
+  professional
+  chef
+}
+
+enum StorageLocation {
+  fridge
+  freezer
+  pantry
+}
+
+enum AddedBy {
+  manual
+  ai_scan
+  receipt_scan
+  barcode_scan
+}
+
+enum ProcessingStatus {
+  pending
+  success
+  failed
+}
+
+enum AllergySeverity {
+  mild
+  moderate
+  severe
+}
+
+enum MealType {
+  breakfast
+  lunch
+  dinner
+  snack
+  dessert
+}
+
+enum DifficultyLevel {
+  easy
+  medium
+  hard
+}
+
+enum RecipeStatus {
+  draft
+  published
+  archived
+}
+
+enum TagType {
+  cuisine
+  dietary
+  technique
+  occasion
+}
+
+enum WeeklyPlanStatus {
+  draft
+  confirmed
+  active
+  completed
+}
+
+enum ShoppingListStatus {
+  draft
+  active
+  completed
+}
+
+enum AgentType {
+  supervisor
+  chef_agent
+  data_agent
+  evaluator
+  nutrition_agent
+  accountant_agent
+}
+
+enum ChatSessionStatus {
+  active
+  closed
+  error
+}
+
+enum ChatIntent {
+  general_qa
+  meal_planning
+  recipe_request
+  scan_followup
+  other
+}
+
+enum MessageRole {
+  user
+  assistant
+  system
+  tool
+}
+
+enum ContentType {
+  text
+  image_path
+  function_call
+  function_result
+}
+
+enum EvaluationResult {
+  pass
+  fail
+  max_retries_exceeded
+}
+
+enum AiProvider {
+  gemini
+  openai
+  anthropic
+}
+
+enum SponsorStatus {
+  active
+  paused
+  terminated
+}
+
+enum CampaignType {
+  banner
+  recipe_highlight
+  ingredient_promo
+}
+
+enum CampaignStatus {
+  scheduled
+  active
+  ended
+}
+
+enum EcommercePlatform {
+  shopee
+  lazada
+  tiki
+  sendo
+  bachhoaxanh
+  other
+}
+
+enum NotificationType {
+  expiry_warning
+  budget_alert
+  plan_ready
+  system
+  promo
+}
+
+// ============================================================
+// [A] IDENTITY & RBAC
+// ============================================================
+
+model Role {
+  id          Int       @id @default(autoincrement())
+  name        RoleName  @unique
+  description String?   @db.VarChar(255)
+  createdAt   DateTime  @default(now())
+  deletedAt   DateTime?
+
+  users User[]
+
+  @@map("roles")
+}
+
+model User {
+  id                    String       @id @default(uuid()) @db.Char(36)
+  phone                 String?      @unique @db.VarChar(15)
+  googleId              String?      @unique @db.VarChar(255)
+  googleEmail           String?      @db.VarChar(255)
+  name                  String?      @db.VarChar(100)
+  authProvider          AuthProvider
+  status                UserStatus   @default(pending)
+  roleId                Int
+  isOnboardingCompleted Boolean      @default(false)
+  lastLoginAt           DateTime?
+  createdAt             DateTime     @default(now())
+  updatedAt             DateTime     @updatedAt
+  deletedAt             DateTime?
+
+  role             Role                @relation(fields: [roleId], references: [id])
+  profile          UserProfile?
+  preferences      UserPreference?
+  refreshTokens    RefreshToken[]
+  fridgeItems      FridgeItem[]
+  scanLogs         IngredientScanLog[]
+  allergies        UserAllergy[]
+  weeklyPlans      WeeklyPlan[]
+  shoppingLists    ShoppingList[]
+  chatSessions     ChatSession[]
+  savedRecipes     UserSavedRecipe[]
+  authoredRecipes  Recipe[]
+  adminLogs        AdminActivityLog[]
+  notifications    Notification[]
+  subscription     UserSubscription?
+  aiUsageLogs      AiUsageLog[]
+  activatedPrompts AiSystemPrompt[]    @relation("PromptActivatedBy")
+  activatedConfigs AiProviderConfig[]  @relation("ConfigActivatedBy")
+
+  @@map("users")
+}
+
+model OtpVerification {
+  id         String     @id @default(uuid()) @db.Char(36)
+  phone      String     @db.VarChar(15)
+  otpHash    String     @db.VarChar(255)
+  purpose    OtpPurpose
+  attempts   Int        @default(0) @db.TinyInt
+  expiresAt  DateTime
+  verifiedAt DateTime?
+  createdAt  DateTime   @default(now())
+
+  @@index([phone, purpose, expiresAt])
+  @@map("otp_verifications")
+}
+
+model UserProfile {
+  id          String    @id @default(uuid()) @db.Char(36)
+  userId      String    @unique @db.Char(36)
+  displayName String    @db.VarChar(100)
+  avatarPath  String?   @db.VarChar(512)
+  dateOfBirth DateTime? @db.Date
+  gender      Gender?
+  bio         String?   @db.Text
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("user_profiles")
+}
+
+model UserPreference {
+  id                  String            @id @default(uuid()) @db.Char(36)
+  userId              String            @unique @db.Char(36)
+  weeklyBudget        Int?
+  dailyCalorieTarget  Int?
+  dietaryStyle        DietaryStyle?
+  preferSimpleRecipes Boolean           @default(true)
+  maxCookTimeMinutes  Int?
+  skillLevel          SkillLevel        @default(beginner)
+  householdSize       Int               @default(1) @db.TinyInt
+  aiPersonalityMode   AiPersonalityMode @default(friendly)
+  primaryGoal         String?           @db.VarChar(50)
+  cookingFrequency    String?           @db.VarChar(30)
+  height              Int?              @db.SmallInt
+  weight              Int?              @db.SmallInt
+  activityLevel       String?           @db.VarChar(20)
+  // Notification settings
+  pushNotifications   Boolean           @default(true)
+  expiryAlert         Boolean           @default(true)
+  shoppingReminder    Boolean           @default(true)
+  updatedAt           DateTime          @updatedAt
+  deletedAt           DateTime?
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("user_preferences")
+}
+
+model RefreshToken {
+  id         String    @id @default(uuid()) @db.Char(36)
+  userId     String    @db.Char(36)
+  tokenHash  String    @db.VarChar(512)
+  deviceInfo String?   @db.VarChar(255)
+  ipAddress  String?   @db.VarChar(45)
+  expiresAt  DateTime
+  revokedAt  DateTime?
+  createdAt  DateTime  @default(now())
+  deletedAt  DateTime?
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId, expiresAt])
+  @@map("refresh_tokens")
+}
+
+// ============================================================
+// [B] FOOD CATALOG — Master Data
+// ============================================================
+
+model IngredientCategory {
+  id        Int       @id @default(autoincrement())
+  name      String    @unique @db.VarChar(100)
+  iconPath  String?   @db.VarChar(255)
+  parentId  Int?
+  createdAt DateTime  @default(now())
+  deletedAt DateTime?
+
+  parent      IngredientCategory?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children    IngredientCategory[] @relation("CategoryHierarchy")
+  ingredients Ingredient[]
+
+  @@map("ingredient_categories")
+}
+
+model Ingredient {
+  id                  Int       @id @default(autoincrement())
+  name                String    @unique @db.VarChar(150)
+  categoryId          Int
+  defaultUnit         String    @db.VarChar(30)
+  caloriesPer100g     Float?
+  averagePricePerUnit Int?
+  imagePath           String?   @db.VarChar(512)
+  isCommon            Boolean   @default(true)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  deletedAt           DateTime?
+
+  category          IngredientCategory       @relation(fields: [categoryId], references: [id])
+  recipeIngredients RecipeIngredient[]
+  fridgeItems       FridgeItem[]
+  allergies         UserAllergy[]
+  purchaseLinks     IngredientPurchaseLink[]
+  shoppingItems     ShoppingListItem[]
+
+  @@map("ingredients")
+}
+
+model Tag {
+  id        Int       @id @default(autoincrement())
+  name      String    @unique @db.VarChar(80)
+  type      TagType
+  createdAt DateTime  @default(now())
+  deletedAt DateTime?
+
+  recipeTags RecipeTag[]
+
+  @@map("tags")
+}
+
+// ============================================================
+// [C] RECIPES
+// ============================================================
+
+model Recipe {
+  id              String          @id @default(uuid()) @db.Char(36)
+  title           String          @db.VarChar(255)
+  description     String?         @db.Text
+  thumbnailPath   String?         @db.VarChar(512)
+  mealType        MealType
+  cookTimeMinutes Int
+  servings        Int             @db.TinyInt
+  difficultyLevel DifficultyLevel
+  estimatedCost   Int?
+  isAiGenerated   Boolean         @default(false)
+  authorId        String?         @db.Char(36)
+  status          RecipeStatus    @default(published)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  deletedAt       DateTime?
+
+  author      User?              @relation(fields: [authorId], references: [id])
+  ingredients RecipeIngredient[]
+  steps       RecipeStep[]
+  tags        RecipeTag[]
+  savedBy     UserSavedRecipe[]
+  mealSlots   MealSlot[]
+  campaigns   CampaignRecipe[]
+
+  @@fulltext([title, description])
+  @@map("recipes")
+}
+
+model RecipeIngredient {
+  id           Int       @id @default(autoincrement())
+  recipeId     String    @db.Char(36)
+  ingredientId Int
+  quantity     Float
+  unit         String    @db.VarChar(30)
+  isOptional   Boolean   @default(false)
+  note         String?   @db.VarChar(255)
+  deletedAt    DateTime?
+
+  recipe     Recipe     @relation(fields: [recipeId], references: [id])
+  ingredient Ingredient @relation(fields: [ingredientId], references: [id])
+
+  @@map("recipe_ingredients")
+}
+
+model RecipeStep {
+  id              Int       @id @default(autoincrement())
+  recipeId        String    @db.Char(36)
+  stepNumber      Int       @db.TinyInt
+  instruction     String    @db.Text
+  imagePath       String?   @db.VarChar(512)
+  durationMinutes Int?
+  deletedAt       DateTime?
+
+  recipe Recipe @relation(fields: [recipeId], references: [id])
+
+  @@map("recipe_steps")
+}
+
+model RecipeTag {
+  recipeId String @db.Char(36)
+  tagId    Int
+
+  recipe Recipe @relation(fields: [recipeId], references: [id])
+  tag    Tag    @relation(fields: [tagId], references: [id])
+
+  @@id([recipeId, tagId])
+  @@map("recipe_tags")
+}
+
+model UserSavedRecipe {
+  userId    String    @db.Char(36)
+  recipeId  String    @db.Char(36)
+  savedAt   DateTime  @default(now())
+  deletedAt DateTime?
+
+  user   User   @relation(fields: [userId], references: [id])
+  recipe Recipe @relation(fields: [recipeId], references: [id])
+
+  @@id([userId, recipeId])
+  @@map("user_saved_recipes")
+}
+
+// ============================================================
+// [D] USER FRIDGE
+// ============================================================
+
+model FridgeItem {
+  id              String          @id @default(uuid()) @db.Char(36)
+  userId          String          @db.Char(36)
+  ingredientId    Int
+  quantity        Float
+  unit            String          @db.VarChar(30)
+  purchasedAt     DateTime?
+  expiresAt       DateTime?
+  storageLocation StorageLocation @default(fridge)
+  addedBy         AddedBy         @default(manual)
+  consumedAt      DateTime?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  deletedAt       DateTime?
+
+  user       User       @relation(fields: [userId], references: [id])
+  ingredient Ingredient @relation(fields: [ingredientId], references: [id])
+
+  @@index([userId, expiresAt])
+  @@map("fridge_items")
+}
+
+model IngredientScanLog {
+  id               String           @id @default(uuid()) @db.Char(36)
+  userId           String           @db.Char(36)
+  imagePath        String           @db.VarChar(512)
+  scanType         String           @default("image") @db.VarChar(20)
+  rawText          String?          @db.Text
+  barcode          String?          @db.VarChar(50)
+  aiRawResponse    Json
+  detectedItems    Json
+  confirmedItems   Json?
+  processingStatus ProcessingStatus @default(pending)
+  errorMessage     String?          @db.Text
+  processedAt      DateTime?
+  createdAt        DateTime         @default(now())
+  deletedAt        DateTime?
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("ingredient_scan_logs")
+}
+
+model UserAllergy {
+  id            Int             @id @default(autoincrement())
+  userId        String          @db.Char(36)
+  ingredientId  Int
+  severityLevel AllergySeverity
+  note          String?         @db.VarChar(255)
+  createdAt     DateTime        @default(now())
+  deletedAt     DateTime?
+
+  user       User       @relation(fields: [userId], references: [id])
+  ingredient Ingredient @relation(fields: [ingredientId], references: [id])
+
+  @@unique([userId, ingredientId])
+  @@map("user_allergies")
+}
+
+// ============================================================
+// [E] MEAL PLANNING
+// ============================================================
+
+model WeeklyPlan {
+  id            String           @id @default(uuid()) @db.Char(36)
+  userId        String           @db.Char(36)
+  weekStartDate DateTime         @db.Date
+  totalBudget   Int
+  actualCost    Int?
+  status        WeeklyPlanStatus @default(draft)
+  generatedByAi Boolean          @default(true)
+  aiSessionId   String?          @db.Char(36)
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  deletedAt     DateTime?
+
+  user           User              @relation(fields: [userId], references: [id])
+  aiSession      ChatSession?      @relation(fields: [aiSessionId], references: [id])
+  dailyPlans     DailyPlan[]
+  shoppingLists  ShoppingList[]
+  evaluationLogs AiEvaluationLog[]
+
+  @@index([userId, weekStartDate])
+  @@map("weekly_plans")
+}
+
+model DailyPlan {
+  id           String    @id @default(uuid()) @db.Char(36)
+  weeklyPlanId String    @db.Char(36)
+  dayOfWeek    Int       @db.TinyInt
+  date         DateTime  @db.Date
+  dailyBudget  Int?
+  deletedAt    DateTime?
+
+  weeklyPlan WeeklyPlan @relation(fields: [weeklyPlanId], references: [id])
+  mealSlots  MealSlot[]
+
+  @@map("daily_plans")
+}
+
+model MealSlot {
+  id            String    @id @default(uuid()) @db.Char(36)
+  dailyPlanId   String    @db.Char(36)
+  mealType      MealType
+  recipeId      String?   @db.Char(36)
+  servings      Int       @default(1) @db.TinyInt
+  estimatedCost Int?
+  note          String?   @db.VarChar(255)
+  completedAt   DateTime?
+  deletedAt     DateTime?
+
+  dailyPlan DailyPlan @relation(fields: [dailyPlanId], references: [id])
+  recipe    Recipe?   @relation(fields: [recipeId], references: [id])
+
+  @@map("meal_slots")
+}
+
+model ShoppingList {
+  id                 String             @id @default(uuid()) @db.Char(36)
+  userId             String             @db.Char(36)
+  weeklyPlanId       String?            @db.Char(36)
+  title              String             @db.VarChar(150)
+  status             ShoppingListStatus @default(draft)
+  totalEstimatedCost Int?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  deletedAt          DateTime?
+
+  user       User              @relation(fields: [userId], references: [id])
+  weeklyPlan WeeklyPlan?       @relation(fields: [weeklyPlanId], references: [id])
+  items      ShoppingListItem[]
+
+  @@map("shopping_lists")
+}
+
+model ShoppingListItem {
+  id             Int       @id @default(autoincrement())
+  shoppingListId String    @db.Char(36)
+  ingredientId   Int
+  quantity       Float
+  unit           String    @db.VarChar(30)
+  estimatedPrice Int?
+  isPurchased    Boolean   @default(false)
+  purchasedAt    DateTime?
+  deletedAt      DateTime?
+
+  shoppingList ShoppingList @relation(fields: [shoppingListId], references: [id])
+  ingredient   Ingredient   @relation(fields: [ingredientId], references: [id])
+
+  @@map("shopping_list_items")
+}
+
+// ============================================================
+// [F] AI ORCHESTRATION
+// ============================================================
+
+model AiSystemPrompt {
+  id            Int       @id @default(autoincrement())
+  agentType     AgentType
+  version       String    @db.VarChar(20)
+  promptContent String    @db.LongText
+  isActive      Boolean   @default(false)
+  activatedAt   DateTime?
+  activatedBy   String?   @db.Char(36)
+  createdAt     DateTime  @default(now())
+  deletedAt     DateTime?
+
+  activatedByUser User? @relation("PromptActivatedBy", fields: [activatedBy], references: [id])
+
+  @@unique([agentType, version])
+  @@map("ai_system_prompts")
+}
+
+model ChatSession {
+  id              String            @id @default(uuid()) @db.Char(36)
+  userId          String            @db.Char(36)
+  title           String?           @db.VarChar(255)
+  intent          ChatIntent?
+  status          ChatSessionStatus @default(active)
+  totalTokensUsed Int               @default(0)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  closedAt        DateTime?
+  deletedAt       DateTime?
+
+  user           User              @relation(fields: [userId], references: [id])
+  messages       ChatMessage[]
+  weeklyPlans    WeeklyPlan[]
+  evaluationLogs AiEvaluationLog[]
+
+  @@map("chat_sessions")
+}
+
+model ChatMessage {
+  id             String      @id @default(uuid()) @db.Char(36)
+  sessionId      String      @db.Char(36)
+  role           MessageRole
+  content        String      @db.LongText
+  contentType    ContentType @default(text)
+  attachmentPath String?     @db.VarChar(512)
+  agentType      AgentType?
+  tokensUsed     Int?
+  latencyMs      Int?
+  createdAt      DateTime    @default(now())
+  deletedAt      DateTime?
+
+  session ChatSession @relation(fields: [sessionId], references: [id])
+
+  @@index([sessionId, createdAt])
+  @@map("chat_messages")
+}
+
+model AiEvaluationLog {
+  id               String           @id @default(uuid()) @db.Char(36)
+  sessionId        String           @db.Char(36)
+  weeklyPlanId     String?          @db.Char(36)
+  attemptNumber    Int              @db.TinyInt
+  evaluationResult EvaluationResult
+  failureReasons   Json?
+  budgetAllocated  Int
+  budgetCalculated Int?
+  createdAt        DateTime         @default(now())
+  deletedAt        DateTime?
+
+  session    ChatSession @relation(fields: [sessionId], references: [id])
+  weeklyPlan WeeklyPlan? @relation(fields: [weeklyPlanId], references: [id])
+
+  @@map("ai_evaluation_logs")
+}
+
+model AiProviderConfig {
+  id              Int        @id @default(autoincrement())
+  provider        AiProvider
+  modelName       String     @db.VarChar(100)
+  encryptedApiKey String     @db.Text
+  isActive        Boolean    @default(false)
+  temperature     Float      @default(0.7)
+  maxTokens       Int        @default(8192)
+  usageNote       String?    @db.VarChar(255)
+  activatedBy     String?    @db.Char(36)
+  activatedAt     DateTime?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  deletedAt       DateTime?
+
+  activatedByUser User? @relation("ConfigActivatedBy", fields: [activatedBy], references: [id])
+
+  @@unique([provider, modelName])
+  @@index([isActive, provider])
+  @@map("ai_provider_configs")
+}
+
+model AiUsageLog {
+  id          String   @id @default(uuid()) @db.Char(36)
+  userId      String   @db.Char(36)
+  featureType String   @db.VarChar(50)  // recipe_suggest|scan|chat|meal_plan
+  tokensUsed  Int?     @default(0)
+  usedAt      DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId, featureType, usedAt])
+  @@map("ai_usage_logs")
+}
+
+// ============================================================
+// [G] SPONSORSHIP & ADMIN
+// ============================================================
+
+model Sponsor {
+  id           Int           @id @default(autoincrement())
+  name         String        @db.VarChar(150)
+  logoPath     String?       @db.VarChar(512)
+  websiteUrl   String?       @db.VarChar(512)
+  contactEmail String?       @db.VarChar(255)
+  status       SponsorStatus
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  deletedAt    DateTime?
+
+  campaigns     SponsorCampaign[]
+  purchaseLinks IngredientPurchaseLink[]
+
+  @@map("sponsors")
+}
+
+model SponsorCampaign {
+  id             String         @id @default(uuid()) @db.Char(36)
+  sponsorId      Int
+  title          String         @db.VarChar(255)
+  description    String?        @db.Text
+  campaignType   CampaignType
+  targetAudience Json?
+  startDate      DateTime       @db.Date
+  endDate        DateTime?      @db.Date
+  status         CampaignStatus
+  createdAt      DateTime       @default(now())
+  deletedAt      DateTime?
+
+  sponsor Sponsor          @relation(fields: [sponsorId], references: [id])
+  recipes CampaignRecipe[]
+
+  @@map("sponsor_campaigns")
+}
+
+model CampaignRecipe {
+  campaignId String @db.Char(36)
+  recipeId   String @db.Char(36)
+  priority   Int    @default(0) @db.TinyInt
+
+  campaign SponsorCampaign @relation(fields: [campaignId], references: [id])
+  recipe   Recipe          @relation(fields: [recipeId], references: [id])
+
+  @@id([campaignId, recipeId])
+  @@map("campaign_recipes")
+}
+
+model IngredientPurchaseLink {
+  id              Int               @id @default(autoincrement())
+  ingredientId    Int
+  sponsorId       Int?
+  platform        EcommercePlatform
+  productName     String            @db.VarChar(255)
+  purchaseUrl     String            @db.VarChar(1024)
+  priceVnd        Int?
+  unitDescription String?           @db.VarChar(100)
+  thumbnailPath   String?           @db.VarChar(512)
+  isActive        Boolean           @default(true)
+  priority        Int               @default(0) @db.TinyInt
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  deletedAt       DateTime?
+
+  ingredient Ingredient @relation(fields: [ingredientId], references: [id])
+  sponsor    Sponsor?   @relation(fields: [sponsorId], references: [id])
+
+  @@index([ingredientId, isActive, priority])
+  @@map("ingredient_purchase_links")
+}
+
+model AdminActivityLog {
+  id           String   @id @default(uuid()) @db.Char(36)
+  adminId      String   @db.Char(36)
+  action       String   @db.VarChar(100)
+  targetEntity String?  @db.VarChar(100)
+  targetId     String?  @db.VarChar(36)
+  oldValue     Json?
+  newValue     Json?
+  ipAddress    String?  @db.VarChar(45)
+  createdAt    DateTime @default(now())
+
+  admin User @relation(fields: [adminId], references: [id])
+
+  @@map("admin_activity_logs")
+}
+
+model Notification {
+  id        String           @id @default(uuid()) @db.Char(36)
+  userId    String           @db.Char(36)
+  type      NotificationType
+  title     String           @db.VarChar(255)
+  body      String           @db.Text
+  isRead    Boolean          @default(false)
+  metadata  Json?
+  createdAt DateTime         @default(now())
+  readAt    DateTime?
+  deletedAt DateTime?
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId, isRead, createdAt])
+  @@map("notifications")
+}
+
+// ============================================================
+// [G] SUBSCRIPTION
+// ============================================================
+
+model SubscriptionPlan {
+  id             Int      @id @default(autoincrement())
+  name           String   @unique @db.VarChar(50)  // free | individual
+  displayName    String   @db.VarChar(100)
+  priceVnd       Int      @default(0)
+  billingCycle   String   @db.VarChar(20)           // monthly | forever
+  features       Json                                // string[]
+  aiUsagePerWeek Int      @default(2) @db.TinyInt   // -1 = unlimited
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  deletedAt      DateTime?
+
+  subscriptions UserSubscription[]
+
+  @@map("subscription_plans")
+}
+
+model UserSubscription {
+  id         String    @id @default(uuid()) @db.Char(36)
+  userId     String    @unique @db.Char(36)
+  planId     Int
+  startDate  DateTime  @db.Date
+  endDate    DateTime? @db.Date
+  status     String    @db.VarChar(20)   // active | expired | cancelled | pending
+  paymentRef String?   @db.VarChar(255)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  deletedAt  DateTime?
+
+  user User             @relation(fields: [userId], references: [id])
+  plan SubscriptionPlan @relation(fields: [planId], references: [id])
+
+  @@index([userId, status])
+  @@map("user_subscriptions")
+}

@@ -5,7 +5,6 @@ import {
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from 'src/modules-system/prisma/prisma.service';
-import { RateLimitService } from 'src/modules-system/ai-core/rate-limit.service';
 import { v4 as uuid } from 'uuid';
 import type {
   UpdateProfileDto,
@@ -29,7 +28,6 @@ export class UsersService {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly rateLimitService: RateLimitService,
   ) {}
 
   // ─────────────────────────────────────────────────────────
@@ -237,12 +235,30 @@ export class UsersService {
   // ─────────────────────────────────────────────────────────
 
   async getAiUsage(userId: string): Promise<AiUsageResponseDto> {
-    const summary = await this.rateLimitService.getUsageSummary(userId);
+    // Đếm số lần dùng AI trong tháng hiện tại từ bảng ai_usage_logs
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+
+    const [usedCount, subscription] = await Promise.all([
+      this.prisma.aiUsageLog.count({
+        where: { userId, usedAt: { gte: startOfMonth } }, // AiUsageLog dùng usedAt
+      }),
+      this.prisma.userSubscription.findFirst({
+        where: { userId, status: 'active', deletedAt: null },
+        include: { plan: { select: { name: true, aiUsagePerWeek: true } } },
+      }),
+    ]);
+
+    const planName = subscription?.plan?.name ?? 'free';
+    const isUnlimited = planName !== 'free';
+    const limit = isUnlimited ? 9999 : 20; // Free: 20 lần/tháng
+
     return {
-      used: summary.used,
-      limit: summary.limit,
-      remaining: summary.isUnlimited ? 999 : Math.max(0, summary.limit - summary.used),
-      plan: summary.isUnlimited ? 'individual' : 'free',
+      used: usedCount,
+      limit,
+      remaining: isUnlimited ? 999 : Math.max(0, limit - usedCount),
+      plan: planName,
     };
   }
 

@@ -20,4 +20,15 @@ export const JWT_REFRESH_EXPIRES_IN =
 // AES-256 Encryption
 export const ENCRYPTION_SECRET = process.env.ENCRYPTION_SECRET ?? '';
 
-console.log('\n', { PORT, NODE_ENV, DATABASE_URL }, '\n');
+// Redis — Cache + BullMQ Queue
+export const REDIS_URL = process.env.DATABASE_REDIS ?? 'redis://localhost:6380';
+
+// RabbitMQ — Message broker cho giao tiếp với AI Service
+export const RABBIT_MQ_URL = process.env.RABBIT_MQ_URL ?? 'amqp://user:12345@localhost:5673';
+
+// RabbitMQ Exchange & Routing Keys (phải khớp với ai-service/src/common/constant/app.constant.ts)
+export const FRIGGY_AI_EXCHANGE       = 'friggy.ai';
+export const MEAL_PLAN_ROUTING_KEY    = 'meal.plan.generate';
+export const AI_CHAT_ROUTING_KEY      = 'ai.chat.message';
+
+console.log('\n', { PORT, NODE_ENV, DATABASE_URL, REDIS_URL, RABBIT_MQ_URL }, '\n');

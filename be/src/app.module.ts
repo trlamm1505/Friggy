@@ -5,6 +5,8 @@ import { JwtModule } from '@nestjs/jwt';
 // System modules
 import { PrismaModule } from './modules-system/prisma/prisma.module';
 import { TokensModule } from './modules-system/tokens/tokens.module';
+import { RedisModule } from './modules-system/redis/redis.module';
+import { RabbitMqPublisherModule } from './modules-system/rabbit-mq/rabbit-mq-publisher.module';
 
 // API modules
 import { AuthModule } from './modules-api/auth/auth.module';
@@ -15,8 +17,7 @@ import { FridgeModule } from './modules-api/fridge/fridge.module';
 import { NotificationsModule } from './modules-api/notifications/notifications.module';
 import { SubscriptionsModule } from './modules-api/subscriptions/subscriptions.module';
 import { AdminModule } from './modules-api/admin/admin.module';
-// System modules
-import { AiCoreModule } from './modules-system/ai-core/ai-core.module';
+import { MealPlanningModule } from './modules-api/meal-planning/meal-planning.module';
 
 // Global guards
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
@@ -37,6 +38,10 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter';
     // để JwtAuthGuard (được inject qua APP_GUARD) có thể dùng
     JwtModule.register({}),
 
+    // ── System Modules (Global) ────────────────────────────────────────
+    RedisModule,              // Redis cache + SSE pub/sub (global)
+    RabbitMqPublisherModule,  // Publish jobs lên AI Service qua RabbitMQ (global)
+
     // ── API Modules ────────────────────────────────────────────────
     AuthModule,
     UsersModule,
@@ -46,7 +51,8 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter';
     NotificationsModule,
     SubscriptionsModule,
     AdminModule,
-    AiCoreModule,
+    // AiCoreModule sẽ được bỏ ở Phase 9 khi AI Chat cũng chuyển sang AI Service
+    MealPlanningModule,
   ],
   controllers: [],
   providers: [
