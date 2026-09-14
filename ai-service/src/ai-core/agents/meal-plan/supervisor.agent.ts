@@ -1,4 +1,4 @@
-﻿/**
+/**
  * SupervisorAgent — Agent điều phối trung tâm
  *
  * Đây là agent đầu tiên nhận yêu cầu từ người dùng.
@@ -11,26 +11,24 @@
  *   → Truyền context đã làm giàu cho NutritionAgent + AccountantAgent
  */
 import { Injectable, Logger } from '@nestjs/common';
-import { AiProviderService } from '../ai-provider.service';
-import { PromptService } from '../prompt.service';
-import { UserTools } from '../tools/user.tools';
-import { FridgeTools } from '../tools/fridge.tools';
+import { UserTools } from '../../tools/user.tools';
+import { FridgeTools } from '../../tools/fridge.tools';
 
 // ─────────────────────────────────────────────────────────
 // Context được SupervisorAgent thu thập và truyền đi
 // ─────────────────────────────────────────────────────────
 export interface SupervisorContext {
   userId: string;
-  weekStartDate: string;   // ISO date, ví dụ: '2026-09-15'
-  budget: number;          // Ngân sách cả tuần (VND)
+  weekStartDate: string; // ISO date, ví dụ: '2026-09-15'
+  budget: number; // Ngân sách cả tuần (VND)
   userPreferences: {
     dietaryStyle: string | null;
     cookingFrequency: string | null;
     householdSize: number | null;
     primaryGoal: string | null;
   };
-  allergies: string[];     // Danh sách tên nguyên liệu dị ứng
-  availableIngredients: string[];  // Nguyên liệu hiện có trong tủ
+  allergies: string[]; // Danh sách tên nguyên liệu dị ứng
+  availableIngredients: string[]; // Nguyên liệu hiện có trong tủ
 }
 
 @Injectable()
@@ -38,8 +36,6 @@ export class SupervisorAgent {
   private readonly logger = new Logger(SupervisorAgent.name);
 
   constructor(
-    private readonly aiProvider: AiProviderService,
-    private readonly promptService: PromptService,
     private readonly userTools: UserTools,
     private readonly fridgeTools: FridgeTools,
   ) {}

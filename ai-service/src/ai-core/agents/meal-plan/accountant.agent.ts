@@ -11,25 +11,25 @@
  * Chi phí công thức được cache bởi RedisService (TTL 10 phút).
  */
 import { Injectable, Logger } from '@nestjs/common';
-import { AiProviderService } from '../ai-provider.service';
-import { PromptService } from '../prompt.service';
-import { RecipeTools } from '../tools/recipe.tools';
-import { MealPlanTools } from '../tools/meal-plan.tools';
+import { AiProviderService } from '../../ai-provider.service';
+import { PromptService } from '../../prompt.service';
+import { RecipeTools } from '../../tools/recipe.tools';
+import { MealPlanTools } from '../../tools/meal-plan.tools';
 import type { SupervisorContext } from './supervisor.agent';
 import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions';
-import { stripJsonFences } from '../utils/json.utils';
+import { stripJsonFences } from '../../utils/json.utils';
 
 // ─────────────────────────────────────────────────────────
 // Kết quả phân tích ngân sách — truyền cho ChefAgent
 // ─────────────────────────────────────────────────────────
 export interface BudgetReport {
-  weeklyBudget: number;          // Ngân sách cả tuần (VND)
-  dailyBudget: number;           // Ngân sách mỗi ngày
-  perMealBudget: number;         // Ngân sách mỗi bữa (giả sử 3 bữa/ngày)
+  weeklyBudget: number; // Ngân sách cả tuần (VND)
+  dailyBudget: number; // Ngân sách mỗi ngày
+  perMealBudget: number; // Ngân sách mỗi bữa (giả sử 3 bữa/ngày)
   affordableRecipeIds: string[]; // ID công thức nằm trong ngân sách
   savingsOpportunities: string[]; // Cơ hội tiết kiệm (ví dụ: dùng đồ sắp hết hạn)
-  budgetWarning: string | null;  // Cảnh báo nếu ngân sách quá thấp
-  recommendations: string;       // Gợi ý ngắn cho ChefAgent
+  budgetWarning: string | null; // Cảnh báo nếu ngân sách quá thấp
+  recommendations: string; // Gợi ý ngắn cho ChefAgent
 }
 
 @Injectable()
@@ -69,7 +69,8 @@ export class AccountantAgent {
 
     // Dùng AI để sinh gợi ý tối ưu chi phí
     const llmClient = await this.aiProvider.getActiveClient();
-    const systemPrompt = await this.promptService.getActivePrompt('accountant_agent');
+    const systemPrompt =
+      await this.promptService.getActivePrompt('accountant_agent');
 
     const userMessage = `
 Phân tích ngân sách cho kế hoạch thực đơn tuần:
@@ -109,8 +110,13 @@ Hãy phân tích và trả về JSON theo cấu trúc BudgetReport với savings
         perMealBudget,
         affordableRecipeIds,
         savingsOpportunities: aiReport.savingsOpportunities ?? [],
-        budgetWarning: context.budget < 200_000 ? '⚠️ Ngân sách dưới 200.000đ/tuần có thể khó đảm bảo dinh dưỡng đầy đủ' : null,
-        recommendations: aiReport.recommendations ?? 'Ưu tiên dùng nguyên liệu sẵn có để tiết kiệm.',
+        budgetWarning:
+          context.budget < 200_000
+            ? '⚠️ Ngân sách dưới 200.000đ/tuần có thể khó đảm bảo dinh dưỡng đầy đủ'
+            : null,
+        recommendations:
+          aiReport.recommendations ??
+          'Ưu tiên dùng nguyên liệu sẵn có để tiết kiệm.',
       };
 
       this.logger.log(
@@ -119,15 +125,20 @@ Hãy phân tích và trả về JSON theo cấu trúc BudgetReport với savings
 
       return report;
     } catch {
-      this.logger.warn('⚠️ [AccountantAgent] Không parse được JSON — trả về report cơ bản');
+      this.logger.warn(
+        '⚠️ [AccountantAgent] Không parse được JSON — trả về report cơ bản',
+      );
       return {
         weeklyBudget: context.budget,
         dailyBudget,
         perMealBudget,
         affordableRecipeIds,
-        savingsOpportunities: context.availableIngredients.length > 0
-          ? [`Dùng ${context.availableIngredients[0]} và các nguyên liệu sẵn có để tiết kiệm`]
-          : [],
+        savingsOpportunities:
+          context.availableIngredients.length > 0
+            ? [
+                `Dùng ${context.availableIngredients[0]} và các nguyên liệu sẵn có để tiết kiệm`,
+              ]
+            : [],
         budgetWarning: context.budget < 200_000 ? '⚠️ Ngân sách thấp' : null,
         recommendations: 'Ưu tiên dùng nguyên liệu sẵn có để tiết kiệm.',
       };

@@ -10,25 +10,25 @@
  *   5. Output: WeeklyPlanResult để EvaluatorAgent kiểm tra
  */
 import { Injectable, Logger } from '@nestjs/common';
-import { AiProviderService } from '../ai-provider.service';
-import { PromptService } from '../prompt.service';
-import { RecipeTools } from '../tools/recipe.tools';
-import { FridgeTools } from '../tools/fridge.tools';
-import { MealPlanTools } from '../tools/meal-plan.tools';
+import { AiProviderService } from '../../ai-provider.service';
+import { PromptService } from '../../prompt.service';
+import { RecipeTools } from '../../tools/recipe.tools';
+import { FridgeTools } from '../../tools/fridge.tools';
+import { MealPlanTools } from '../../tools/meal-plan.tools';
 import type { SupervisorContext } from './supervisor.agent';
 import type { NutritionReport } from './nutrition.agent';
 import type { BudgetReport } from './accountant.agent';
 import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions';
-import { stripJsonFences } from '../utils/json.utils';
+import { stripJsonFences } from '../../utils/json.utils';
 
 // ─────────────────────────────────────────────────────────
 // Một meal slot trong thực đơn tuần
 // ─────────────────────────────────────────────────────────
 export interface MealSlot {
-  dayOfWeek: number;    // 0=CN, 1=T2, ..., 6=T7
+  dayOfWeek: number; // 0=CN, 1=T2, ..., 6=T7
   mealType: 'breakfast' | 'lunch' | 'dinner';
   recipeId: string | null;
-  recipeName: string;   // Tên món (để EvaluatorAgent đọc dễ hơn)
+  recipeName: string; // Tên món (để EvaluatorAgent đọc dễ hơn)
   estimatedCost: number; // Chi phí ước tính (VND)
   servings: number;
 }
@@ -37,11 +37,11 @@ export interface MealSlot {
 // Kết quả thực đơn tuần — truyền cho EvaluatorAgent
 // ─────────────────────────────────────────────────────────
 export interface WeeklyPlanResult {
-  weeklyPlanId: string | null;  // null nếu chưa lưu DB (dùng khi retry)
+  weeklyPlanId: string | null; // null nếu chưa lưu DB (dùng khi retry)
   weekStartDate: string;
   slots: MealSlot[];
   totalEstimatedCost: number;
-  summary: string;  // Mô tả ngắn thực đơn cho EvaluatorAgent đánh giá
+  summary: string; // Mô tả ngắn thực đơn cho EvaluatorAgent đánh giá
 }
 
 @Injectable()
@@ -63,7 +63,7 @@ export class ChefAgent {
     context: SupervisorContext;
     nutritionReport: NutritionReport;
     budgetReport: BudgetReport;
-    saveToDb?: boolean;  // false khi đang retry (tránh tạo bản ghi trùng)
+    saveToDb?: boolean; // false khi đang retry (tránh tạo bản ghi trùng)
   }): Promise<WeeklyPlanResult> {
     const { context, nutritionReport, budgetReport, saveToDb = true } = params;
 
@@ -72,7 +72,9 @@ export class ChefAgent {
     );
 
     // Lấy công thức gợi ý từ nguyên liệu sắp hết hạn (ưu tiên giảm lãng phí)
-    const expiringRecipes = await this.fridgeTools.suggestFromExpiring(context.userId);
+    const expiringRecipes = await this.fridgeTools.suggestFromExpiring(
+      context.userId,
+    );
 
     // Dùng AI sinh thực đơn dựa trên tất cả thông tin đã thu thập
     const llmClient = await this.aiProvider.getActiveClient();
@@ -97,7 +99,12 @@ Lập thực đơn tuần bắt đầu từ ${context.weekStartDate} với các 
 
 **Nguyên liệu trong tủ:** ${context.availableIngredients.slice(0, 15).join(', ')}
 
-**Nguyên liệu sắp hết hạn (ưu tiên dùng):** ${expiringRecipes.map((r: any) => r.name).slice(0, 5).join(', ') || 'Không có'}
+**Nguyên liệu sắp hết hạn (ưu tiên dùng):** ${
+      expiringRecipes
+        .map((r: any) => r.name)
+        .slice(0, 5)
+        .join(', ') || 'Không có'
+    }
 
 Hãy tạo thực đơn 7 ngày (Thứ 2 đến Chủ nhật) với 3 bữa/ngày.
 Danh sách recipeId hợp lệ (CHỈ dùng các ID này): ${[budgetReport.affordableRecipeIds].flat().slice(0, 15).join(', ')}
@@ -135,20 +142,41 @@ Ghi chú: dayOfWeek: 1=Thứ Hai, 2=Thứ Ba, ..., 7=Chủ Nhật. mealType ch�
       if (Array.isArray(parsed)) {
         // Format: [{day, meals:[{type, recipe_id}]}] → flatten sang slots[]
         const dayMap: Record<string, number> = {
-          'Thứ Hai': 1, 'Thứ Ba': 2, 'Thứ Tư': 3, 'Thứ Năm': 4,
-          'Thứ Sáu': 5, 'Thứ Bảy': 6, 'Chủ Nhật': 7,
-          'T2': 1, 'T3': 2, 'T4': 3, 'T5': 4, 'T6': 5, 'T7': 6, 'CN': 7,
-          'Monday': 1, 'Tuesday': 2, 'Wednesday': 3, 'Thursday': 4,
-          'Friday': 5, 'Saturday': 6, 'Sunday': 7,
+          'Thứ Hai': 1,
+          'Thứ Ba': 2,
+          'Thứ Tư': 3,
+          'Thứ Năm': 4,
+          'Thứ Sáu': 5,
+          'Thứ Bảy': 6,
+          'Chủ Nhật': 7,
+          T2: 1,
+          T3: 2,
+          T4: 3,
+          T5: 4,
+          T6: 5,
+          T7: 6,
+          CN: 7,
+          Monday: 1,
+          Tuesday: 2,
+          Wednesday: 3,
+          Thursday: 4,
+          Friday: 5,
+          Saturday: 6,
+          Sunday: 7,
         };
         const typeMap: Record<string, string> = {
-          'Sáng': 'breakfast', 'Trưa': 'lunch', 'Tối': 'dinner',
-          'breakfast': 'breakfast', 'lunch': 'lunch', 'dinner': 'dinner',
-          'Snack': 'snack', 'snack': 'snack',
+          Sáng: 'breakfast',
+          Trưa: 'lunch',
+          Tối: 'dinner',
+          breakfast: 'breakfast',
+          lunch: 'lunch',
+          dinner: 'dinner',
+          Snack: 'snack',
+          snack: 'snack',
         };
         for (const day of parsed) {
           const dayOfWeek = dayMap[day.day] ?? dayMap[day.name] ?? 1;
-          for (const meal of (day.meals ?? [])) {
+          for (const meal of day.meals ?? []) {
             slots.push({
               dayOfWeek,
               mealType: typeMap[meal.type] ?? meal.mealType ?? 'lunch',
@@ -164,14 +192,21 @@ Ghi chú: dayOfWeek: 1=Thứ Hai, 2=Thứ Ba, ..., 7=Chủ Nhật. mealType ch�
         slots = (parsed.slots ?? parsed.mealSlots ?? []) as MealSlot[];
       }
 
-      this.logger.log(`[ChefAgent DEBUG] AI trả về ${slots.length} slots | affordableRecipeIds: ${[budgetReport.affordableRecipeIds].flat().length}`);
+      this.logger.log(
+        `[ChefAgent DEBUG] AI trả về ${slots.length} slots | affordableRecipeIds: ${[budgetReport.affordableRecipeIds].flat().length}`,
+      );
     } catch {
-      this.logger.warn('⚠️ [ChefAgent] Không parse được JSON — dùng thực đơn trống');
+      this.logger.warn(
+        '⚠️ [ChefAgent] Không parse được JSON — dùng thực đơn trống',
+      );
       this.logger.warn(`[ChefAgent DEBUG] rawJson: ${rawJson.slice(0, 200)}`);
     }
 
     // Tính tổng chi phí ước tính
-    const totalEstimatedCost = slots.reduce((sum, slot) => sum + (slot.estimatedCost ?? 0), 0);
+    const totalEstimatedCost = slots.reduce(
+      (sum, slot) => sum + (slot.estimatedCost ?? 0),
+      0,
+    );
 
     this.logger.log(
       `✅ [ChefAgent] Lập xong thực đơn: ${slots.length} bữa | Tổng chi phí: ${totalEstimatedCost.toLocaleString('vi-VN')}đ`,
@@ -185,7 +220,7 @@ Ghi chú: dayOfWeek: 1=Thứ Hai, 2=Thứ Ba, ..., 7=Chủ Nhật. mealType ch�
         userId: context.userId,
         weekStartDate: context.weekStartDate,
         slots: slots
-          .filter((s) => s.recipeId !== null)  // Chỉ lưu slot có công thức
+          .filter((s) => s.recipeId !== null) // Chỉ lưu slot có công thức
           .map((s) => ({
             dayOfWeek: s.dayOfWeek,
             mealType: s.mealType,
@@ -194,7 +229,9 @@ Ghi chú: dayOfWeek: 1=Thứ Hai, 2=Thứ Ba, ..., 7=Chủ Nhật. mealType ch�
           })),
       });
       weeklyPlanId = saveResult.weeklyPlanId;
-      this.logger.log(`💾 [ChefAgent] Đã lưu thực đơn vào DB: weeklyPlanId=${weeklyPlanId}`);
+      this.logger.log(
+        `💾 [ChefAgent] Đã lưu thực đơn vào DB: weeklyPlanId=${weeklyPlanId}`,
+      );
     }
 
     return {

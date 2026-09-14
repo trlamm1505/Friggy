@@ -11,31 +11,32 @@
  * Dữ liệu fridge và nutrition được cache bởi RedisService (TTL 5 phút).
  */
 import { Injectable, Logger } from '@nestjs/common';
-import { AiProviderService } from '../ai-provider.service';
-import { PromptService } from '../prompt.service';
-import { FridgeTools } from '../tools/fridge.tools';
-import { RecipeTools } from '../tools/recipe.tools';
+import { AiProviderService } from '../../ai-provider.service';
+import { PromptService } from '../../prompt.service';
+import { FridgeTools } from '../../tools/fridge.tools';
+import { RecipeTools } from '../../tools/recipe.tools';
 import type { SupervisorContext } from './supervisor.agent';
 import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions';
-import { stripJsonFences } from '../utils/json.utils';
+import { stripJsonFences } from '../../utils/json.utils';
 
 // ─────────────────────────────────────────────────────────
 // Kết quả phân tích dinh dưỡng — truyền cho ChefAgent
 // ─────────────────────────────────────────────────────────
 export interface NutritionReport {
-  dailyCaloriesTarget: number;   // Mục tiêu calo/ngày
+  dailyCaloriesTarget: number; // Mục tiêu calo/ngày
   macroRatio: {
-    protein: number;   // % đạm
-    carbs: number;     // % tinh bột
-    fat: number;       // % chất béo
+    protein: number; // % đạm
+    carbs: number; // % tinh bột
+    fat: number; // % chất béo
   };
-  availableNutrition: {         // Dinh dưỡng từ nguyên liệu đang có
+  availableNutrition: {
+    // Dinh dưỡng từ nguyên liệu đang có
     totalCalories: number;
-    highlights: string[];        // Ví dụ: ['Giàu vitamin C', 'Thiếu protein']
+    highlights: string[]; // Ví dụ: ['Giàu vitamin C', 'Thiếu protein']
   };
-  allergyWarnings: string[];    // Cảnh báo dị ứng cần tránh
+  allergyWarnings: string[]; // Cảnh báo dị ứng cần tránh
   dietaryConstraints: string[]; // Ràng buộc chế độ ăn (chay, keto, ...)
-  recommendations: string;      // Gợi ý ngắn cho ChefAgent
+  recommendations: string; // Gợi ý ngắn cho ChefAgent
 }
 
 @Injectable()
@@ -65,7 +66,8 @@ export class NutritionAgent {
 
     // Dùng AI để phân tích và tổng hợp thành báo cáo dinh dưỡng
     const llmClient = await this.aiProvider.getActiveClient();
-    const systemPrompt = await this.promptService.getActivePrompt('nutrition_agent');
+    const systemPrompt =
+      await this.promptService.getActivePrompt('nutrition_agent');
 
     const userMessage = `
 Phân tích dinh dưỡng cho kế hoạch thực đơn tuần với thông tin sau:
@@ -107,7 +109,9 @@ Hãy trả về JSON theo cấu trúc NutritionReport.
       );
       return report;
     } catch {
-      this.logger.warn('⚠️ [NutritionAgent] Không parse được JSON — trả về report mặc định');
+      this.logger.warn(
+        '⚠️ [NutritionAgent] Không parse được JSON — trả về report mặc định',
+      );
       // Trả về báo cáo mặc định nếu AI không trả đúng format
       return this.getDefaultReport(context);
     }
@@ -125,7 +129,8 @@ Hãy trả về JSON theo cấu trúc NutritionReport.
       dietaryConstraints: context.userPreferences.dietaryStyle
         ? [context.userPreferences.dietaryStyle]
         : [],
-      recommendations: 'Tạo thực đơn cân bằng dinh dưỡng với các nguyên liệu có sẵn.',
+      recommendations:
+        'Tạo thực đơn cân bằng dinh dưỡng với các nguyên liệu có sẵn.',
     };
   }
 }

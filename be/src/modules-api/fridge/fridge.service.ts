@@ -1,5 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from 'src/modules-system/prisma/prisma.service';
+import { RabbitMqPublisherService } from 'src/modules-system/rabbit-mq/rabbit-mq-publisher.service';
+import { FRIDGE_SCAN_ROUTING_KEY } from 'src/common/constant/app.constant';
 import { v4 as uuid } from 'uuid';
 import type {
   AddFridgeItemDto,
@@ -15,13 +17,17 @@ import type {
   ScanResponseDto,
   ScanHistoryItemDto,
   FridgeStatsChartResponseDto,
+  ScanStatusResponseDto,
 } from './dto/fridge-response.dto';
 
 @Injectable()
 export class FridgeService {
   private readonly logger = new Logger(FridgeService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly rabbitMq: RabbitMqPublisherService,
+  ) {}
 
   // ─────────────────────────────────────────────────────────
   // GET / — Danh sách tủ lạnh
@@ -287,13 +293,17 @@ export class FridgeService {
   // NOTE: AI integration sẽ được implement ở Phase 7
   // ─────────────────────────────────────────────────────────
 
-  async scanImage(userId: string, file: Express.Multer.File, scanType: 'image' | 'receipt' | 'barcode'): Promise<ScanResponseDto> {
+  async scanImage(
+    userId: string,
+    file: Express.Multer.File,
+    scanType: 'image' | 'receipt' | 'barcode',
+  ): Promise<ScanResponseDto> {
     if (!file) throw new BadRequestException('Vui lòng upload file ảnh');
 
-    // Lưu scan log với status pending — Phase 7 sẽ gọi Gemini Vision
     const scanId = uuid();
-    const imagePath = `/uploads/scans/${scanId}.webp`;
+    const imagePath = file.path ?? `/uploads/scans/${userId}/${scanId}`;
 
+    // Tạo scan log trạng thái pending
     const scanLog = await this.prisma.ingredientScanLog.create({
       data: {
         id: scanId,
@@ -306,13 +316,47 @@ export class FridgeService {
       },
     });
 
-    this.logger.log(`[Scan] scanId=${scanId} type=${scanType} user=${userId} — AI pending (Phase 7)`);
+    // Encode file sang base64 để gửi qua RabbitMQ
+    const imageBase64 = file.buffer
+      ? file.buffer.toString('base64')
+      : require('fs').readFileSync(file.path).toString('base64');
+
+    // Publish job cho ai-service xử lý Vision AI
+    await this.rabbitMq.publish(FRIDGE_SCAN_ROUTING_KEY, {
+      scanId,
+      userId,
+      scanType,
+      imageBase64,
+      mimeType: file.mimetype,
+    });
+
+    this.logger.log(`[Scan] scanId=${scanId} type=${scanType} user=${userId} — published to ai-service`);
 
     return {
       scanId: scanLog.id,
       scanType,
       status: 'pending',
       detectedItems: [],
+    };
+  }
+
+  // ─────────────────────────────────────────────────────────
+  // GET /scan/:scanId — Trạng thái + kết quả scan
+  // ─────────────────────────────────────────────────────────
+
+  async getScanStatus(userId: string, scanId: string): Promise<ScanStatusResponseDto> {
+    const scanLog = await this.prisma.ingredientScanLog.findFirst({
+      where: { id: scanId, userId, deletedAt: null },
+    });
+    if (!scanLog) throw new NotFoundException('Không tìm thấy kết quả scan');
+
+    return {
+      scanId: scanLog.id,
+      scanType: scanLog.scanType,
+      status: scanLog.processingStatus,
+      detectedItems: Array.isArray(scanLog.detectedItems) ? scanLog.detectedItems as any[] : [],
+      errorMessage: (scanLog.aiRawResponse as any)?.error ?? null,
+      createdAt: scanLog.createdAt.toISOString(),
     };
   }
 

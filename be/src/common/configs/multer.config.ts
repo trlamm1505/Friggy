@@ -53,7 +53,7 @@ export const multerAvatarConfig: MulterOptions = {
 // ── Ảnh scan tủ lạnh (lưu theo userId để dễ quản lý) ───────────────────────
 export const multerScanConfig: MulterOptions = {
   storage: createStorage((req) => {
-    const userId = (req as any)?.user?.id ?? 'unknown';
+    const userId = (req as any)?.user?.sub ?? 'unknown';
     return `scans/${userId}`;
   }),
   fileFilter: imageFileFilter,
