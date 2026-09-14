@@ -19,21 +19,21 @@
  */
 import { Injectable, Logger } from '@nestjs/common';
 import { RedisService } from 'src/redis/redis.service';
-import { SupervisorAgent } from './agents/supervisor.agent';
-import { NutritionAgent } from './agents/nutrition.agent';
-import { AccountantAgent } from './agents/accountant.agent';
-import { ChefAgent } from './agents/chef.agent';
-import { EvaluatorAgent } from './agents/evaluator.agent';
-import type { WeeklyPlanResult } from './agents/chef.agent';
+import { SupervisorAgent } from './agents/meal-plan/supervisor.agent';
+import { NutritionAgent } from './agents/meal-plan/nutrition.agent';
+import { AccountantAgent } from './agents/meal-plan/accountant.agent';
+import { ChefAgent } from './agents/meal-plan/chef.agent';
+import { EvaluatorAgent } from './agents/meal-plan/evaluator.agent';
+import type { WeeklyPlanResult } from './agents/meal-plan/chef.agent';
 
 // ─────────────────────────────────────────────────────────
 // Tham số đầu vào cho pipeline
 // ─────────────────────────────────────────────────────────
 export interface MealPlanJobData {
-  jobId: string;          // ID job BullMQ để FE subscribe SSE
+  jobId: string; // ID job BullMQ để FE subscribe SSE
   userId: string;
-  weekStartDate: string;  // ISO date 'YYYY-MM-DD'
-  budget: number;         // VND
+  weekStartDate: string; // ISO date 'YYYY-MM-DD'
+  budget: number; // VND
 }
 
 // ─────────────────────────────────────────────────────────
@@ -84,9 +84,15 @@ export class MealPlanGraphService {
 
     try {
       // ── Bước 1: Supervisor thu thập context ──
-      await this.emitProgress(channel, 'supervisor_start', { message: 'Đang thu thập thông tin người dùng...' });
+      await this.emitProgress(channel, 'supervisor_start', {
+        message: 'Đang thu thập thông tin người dùng...',
+      });
 
-      const context = await this.supervisor.gatherContext({ userId, weekStartDate, budget });
+      const context = await this.supervisor.gatherContext({
+        userId,
+        weekStartDate,
+        budget,
+      });
 
       await this.emitProgress(channel, 'supervisor_done', {
         message: 'Đã có đủ thông tin',
@@ -146,7 +152,11 @@ export class MealPlanGraphService {
           attempt,
         });
 
-        const evaluation = this.evaluator.evaluate({ plan, budgetReport, attemptNumber: attempt });
+        const evaluation = this.evaluator.evaluate({
+          plan,
+          budgetReport,
+          attemptNumber: attempt,
+        });
 
         // Giữ lại plan tốt nhất dù có fail hay không
         if (evaluation.score > bestScore) {
@@ -200,11 +210,12 @@ export class MealPlanGraphService {
           slots: bestPlan.slots
             .filter((s) => s.recipeId !== null)
             .map((s) => ({
-            dayOfWeek: s.dayOfWeek,
-            mealType: s.mealType,
-            recipeId: s.recipeId as string,
-            servings: s.servings ?? (context.userPreferences.householdSize ?? 1),
-          })),
+              dayOfWeek: s.dayOfWeek,
+              mealType: s.mealType,
+              recipeId: s.recipeId as string,
+              servings:
+                s.servings ?? context.userPreferences.householdSize ?? 1,
+            })),
         });
         bestPlan.weeklyPlanId = saveResult.weeklyPlanId;
       }
@@ -226,7 +237,9 @@ export class MealPlanGraphService {
     } catch (err) {
       // Lỗi nghiêm trọng — emit failed event để FE biết
       const errorMessage = err instanceof Error ? err.message : String(err);
-      this.logger.error(`❌ [MealPlanGraph] Pipeline thất bại: ${errorMessage}`);
+      this.logger.error(
+        `❌ [MealPlanGraph] Pipeline thất bại: ${errorMessage}`,
+      );
 
       await this.emitProgress(channel, 'failed', {
         message: `Tạo thực đơn thất bại: ${errorMessage}`,
@@ -246,7 +259,11 @@ export class MealPlanGraphService {
     step: PipelineStep,
     data: Record<string, unknown>,
   ): Promise<void> {
-    const payload = JSON.stringify({ step, timestamp: new Date().toISOString(), ...data });
+    const payload = JSON.stringify({
+      step,
+      timestamp: new Date().toISOString(),
+      ...data,
+    });
     await this.redis.publish(channel, payload);
     this.logger.debug(`📡 [MealPlanGraph] Emit ${step}: ${payload}`);
   }

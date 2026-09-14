@@ -60,3 +60,25 @@ export class FridgeStatsChartResponseDto {
   @ApiProperty({ type: [Number], example: [120000, 0, 85000] }) spending!: number[];
   @ApiProperty({ type: [Number], example: [0, 1, 0] }) wasteItems!: number[];
 }
+
+export class DetectedItemResultDto {
+  @ApiPropertyOptional() ingredientId!: number | null;
+  @ApiProperty() name!: string;
+  @ApiProperty() quantity!: number;
+  @ApiProperty() unit!: string;
+  @ApiPropertyOptional() estimatedExpiryDays!: number | null;
+  @ApiProperty({ example: 0.92 }) confidence!: number;
+  @ApiProperty({ description: 'true nếu cần user xác nhận (confidence thấp / không match DB)' })
+  needsConfirm!: boolean;
+  @ApiProperty({ description: 'true nếu nguyên liệu này có trong danh sách dị ứng của user' })
+  allergyWarning!: boolean;
+}
+
+export class ScanStatusResponseDto {
+  @ApiProperty() scanId!: string;
+  @ApiProperty() scanType!: string;
+  @ApiProperty({ enum: ['pending', 'success', 'failed'] }) status!: string;
+  @ApiProperty({ type: [DetectedItemResultDto] }) detectedItems!: DetectedItemResultDto[];
+  @ApiPropertyOptional() errorMessage!: string | null;
+  @ApiProperty() createdAt!: string;
+}

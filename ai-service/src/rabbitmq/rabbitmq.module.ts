@@ -18,6 +18,7 @@ import {
 
 import { AiCoreModule } from 'src/ai-core/ai-core.module';
 import { MealPlanConsumer } from './meal-plan.consumer';
+import { FridgeScanConsumer } from './fridge-scan.consumer';
 
 @Module({
   imports: [
@@ -42,7 +43,7 @@ import { MealPlanConsumer } from './meal-plan.consumer';
     }),
     AiCoreModule,
   ],
-  providers: [MealPlanConsumer],
+  providers: [MealPlanConsumer, FridgeScanConsumer],
   exports: [RabbitMQModule],
 })
 export class RabbitMqConsumerModule {}

@@ -37,6 +37,7 @@ import {
   ScanResponseDto,
   ScanHistoryItemDto,
   FridgeStatsChartResponseDto,
+  ScanStatusResponseDto,
 } from './dto/fridge-response.dto';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import type { JwtPayload } from 'src/common/interfaces/jwt-payload.interface';
@@ -54,8 +55,26 @@ export class FridgeController {
   @Get('scan/history')
   @ApiOperation({ summary: 'Lịch sử các lần scan nguyên liệu' })
   @ApiResponse({ status: 200, type: [ScanHistoryItemDto] })
-  getScanHistory(@CurrentUser() user: JwtPayload): Promise<ScanHistoryItemDto[]> {
+  getScanHistory(
+    @CurrentUser() user: JwtPayload,
+  ): Promise<ScanHistoryItemDto[]> {
     return this.fridgeService.getScanHistory(user.sub);
+  }
+
+  // ─────────────────────────────────────────────────────────
+  // GET /scan/:scanId — Trạng thái + kết quả scan (FE poll)
+  // ─────────────────────────────────────────────────────────
+
+  @Get('scan/:scanId')
+  @ApiOperation({
+    summary: 'Trạng thái scan — FE poll mỗi 2s đến khi status=done',
+  })
+  @ApiResponse({ status: 200, type: ScanStatusResponseDto })
+  getScanStatus(
+    @CurrentUser() user: JwtPayload,
+    @Param('scanId') scanId: string,
+  ): Promise<ScanStatusResponseDto> {
+    return this.fridgeService.getScanStatus(user.sub, scanId);
   }
 
   // ─────────────────────────────────────────────────────────
@@ -63,7 +82,9 @@ export class FridgeController {
   // ─────────────────────────────────────────────────────────
 
   @Get('stats/chart')
-  @ApiOperation({ summary: 'Chart data chi tiêu + lãng phí theo ngày (week/month)' })
+  @ApiOperation({
+    summary: 'Chart data chi tiêu + lãng phí theo ngày (week/month)',
+  })
   @ApiResponse({ status: 200, type: FridgeStatsChartResponseDto })
   getStatsChart(
     @CurrentUser() user: JwtPayload,
@@ -77,7 +98,9 @@ export class FridgeController {
   // ─────────────────────────────────────────────────────────
 
   @Get('stats')
-  @ApiOperation({ summary: 'Thống kê tủ lạnh: chi tiêu tháng, % lãng phí, số bữa nấu' })
+  @ApiOperation({
+    summary: 'Thống kê tủ lạnh: chi tiêu tháng, % lãng phí, số bữa nấu',
+  })
   @ApiResponse({ status: 200, type: FridgeStatsResponseDto })
   getStats(@CurrentUser() user: JwtPayload): Promise<FridgeStatsResponseDto> {
     return this.fridgeService.getStats(user.sub);
@@ -88,7 +111,9 @@ export class FridgeController {
   // ─────────────────────────────────────────────────────────
 
   @Get('expiring')
-  @ApiOperation({ summary: 'Nguyên liệu sắp hết hạn trong N ngày (mặc định 3)' })
+  @ApiOperation({
+    summary: 'Nguyên liệu sắp hết hạn trong N ngày (mặc định 3)',
+  })
   @ApiResponse({ status: 200, type: [FridgeItemResponseDto] })
   getExpiring(
     @CurrentUser() user: JwtPayload,
@@ -102,7 +127,9 @@ export class FridgeController {
   // ─────────────────────────────────────────────────────────
 
   @Get()
-  @ApiOperation({ summary: 'Danh sách nguyên liệu trong tủ (filter: location)' })
+  @ApiOperation({
+    summary: 'Danh sách nguyên liệu trong tủ (filter: location)',
+  })
   @ApiResponse({ status: 200, type: [FridgeItemResponseDto] })
   findAll(
     @CurrentUser() user: JwtPayload,
@@ -174,9 +201,14 @@ export class FridgeController {
   // ─────────────────────────────────────────────────────────
 
   @Post('scan/image')
-  @ApiOperation({ summary: 'Scan ảnh thực phẩm → AI nhận diện nguyên liệu (Phase 7: Gemini Vision)' })
+  @ApiOperation({ summary: 'Scan ảnh thực phẩm → AI nhận diện nguyên liệu' })
   @ApiConsumes('multipart/form-data')
-  @ApiBody({ schema: { type: 'object', properties: { file: { type: 'string', format: 'binary' } } } })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: { file: { type: 'string', format: 'binary' } },
+    },
+  })
   @ApiResponse({ status: 201, type: ScanResponseDto })
   @UseInterceptors(FileInterceptor('file', multerScanConfig))
   scanImage(
@@ -191,9 +223,16 @@ export class FridgeController {
   // ─────────────────────────────────────────────────────────
 
   @Post('scan/receipt')
-  @ApiOperation({ summary: 'Scan hóa đơn mua sắm → AI parse danh sách thực phẩm (Phase 7)' })
+  @ApiOperation({
+    summary: 'Scan hóa đơn mua sắm → AI parse danh sách thực phẩm',
+  })
   @ApiConsumes('multipart/form-data')
-  @ApiBody({ schema: { type: 'object', properties: { file: { type: 'string', format: 'binary' } } } })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: { file: { type: 'string', format: 'binary' } },
+    },
+  })
   @ApiResponse({ status: 201, type: ScanResponseDto })
   @UseInterceptors(FileInterceptor('file', multerScanConfig))
   scanReceipt(
@@ -208,9 +247,16 @@ export class FridgeController {
   // ─────────────────────────────────────────────────────────
 
   @Post('scan/barcode')
-  @ApiOperation({ summary: 'Scan barcode → Gemini Vision nhận diện sản phẩm → map ingredient (Phase 7)' })
+  @ApiOperation({
+    summary: 'Scan barcode → Gemini Vision nhận diện sản phẩm → map ingredient',
+  })
   @ApiConsumes('multipart/form-data')
-  @ApiBody({ schema: { type: 'object', properties: { file: { type: 'string', format: 'binary' } } } })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: { file: { type: 'string', format: 'binary' } },
+    },
+  })
   @ApiResponse({ status: 201, type: ScanResponseDto })
   @UseInterceptors(FileInterceptor('file', multerScanConfig))
   scanBarcode(
@@ -225,7 +271,9 @@ export class FridgeController {
   // ─────────────────────────────────────────────────────────
 
   @Post('scan/:scanId/confirm')
-  @ApiOperation({ summary: 'Xác nhận / chỉnh sửa kết quả scan → thêm vào tủ lạnh' })
+  @ApiOperation({
+    summary: 'Xác nhận / chỉnh sửa kết quả scan → thêm vào tủ lạnh',
+  })
   @ApiResponse({ status: 201, type: [FridgeItemResponseDto] })
   confirmScan(
     @CurrentUser() user: JwtPayload,

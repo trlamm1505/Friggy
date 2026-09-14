@@ -25,17 +25,30 @@ import { RecipeTools } from './tools/recipe.tools';
 import { MealPlanTools } from './tools/meal-plan.tools';
 
 // Specialized Agents (Multi-Agent System)
-import { SupervisorAgent } from './agents/supervisor.agent';
-import { NutritionAgent } from './agents/nutrition.agent';
-import { AccountantAgent } from './agents/accountant.agent';
-import { ChefAgent } from './agents/chef.agent';
-import { EvaluatorAgent } from './agents/evaluator.agent';
+import { SupervisorAgent } from './agents/meal-plan/supervisor.agent';
+import { NutritionAgent } from './agents/meal-plan/nutrition.agent';
+import { AccountantAgent } from './agents/meal-plan/accountant.agent';
+import { ChefAgent } from './agents/meal-plan/chef.agent';
+import { EvaluatorAgent } from './agents/meal-plan/evaluator.agent';
 
 // Orchestration
 import { MealPlanGraphService } from './meal-plan-graph.service';
+import { FridgeScanGraphService } from './fridge-scan-graph.service';
 
-const TOOLS  = [FridgeTools, UserTools, RecipeTools, MealPlanTools];
-const AGENTS = [SupervisorAgent, NutritionAgent, AccountantAgent, ChefAgent, EvaluatorAgent];
+// Fridge Scan Agents
+import { VisionAgent } from './agents/fridge-scan/vision.agent';
+import { NormalizerAgent } from './agents/fridge-scan/normalizer.agent';
+import { ValidatorAgent } from './agents/fridge-scan/validator.agent';
+
+const TOOLS = [FridgeTools, UserTools, RecipeTools, MealPlanTools];
+const AGENTS = [
+  SupervisorAgent,
+  NutritionAgent,
+  AccountantAgent,
+  ChefAgent,
+  EvaluatorAgent,
+];
+const SCAN_AGENTS = [VisionAgent, NormalizerAgent, ValidatorAgent];
 
 @Module({
   imports: [PrismaModule, RedisModule],
@@ -47,10 +60,13 @@ const AGENTS = [SupervisorAgent, NutritionAgent, AccountantAgent, ChefAgent, Eva
     SingleAgentService,
     // Tools
     ...TOOLS,
-    // Multi-Agent
+    // Multi-Agent (Meal Plan)
     ...AGENTS,
-    // Orchestrator
+    // Multi-Agent (Fridge Scan)
+    ...SCAN_AGENTS,
+    // Orchestrators
     MealPlanGraphService,
+    FridgeScanGraphService,
   ],
   exports: [
     AiProviderService,
@@ -58,6 +74,7 @@ const AGENTS = [SupervisorAgent, NutritionAgent, AccountantAgent, ChefAgent, Eva
     RateLimitService,
     SingleAgentService,
     MealPlanGraphService,
+    FridgeScanGraphService,
   ],
 })
 export class AiCoreModule {}
