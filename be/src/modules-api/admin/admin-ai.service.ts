@@ -9,10 +9,17 @@
  * Khi admin thay đổi provider active → gọi AiProviderService.invalidateCache()
  * để client mới được tạo lại với cấu hình mới.
  */
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { PrismaService } from 'src/modules-system/prisma/prisma.service';
-import { AiProviderService } from 'src/modules-system/ai-core/ai-provider.service';
-import type { CreateAiProviderDto, CreateAiPromptDto } from './dto/admin-ai.dto';
+import { createCipheriv, randomBytes } from 'crypto';
+import type {
+  CreateAiProviderDto,
+  CreateAiPromptDto,
+} from './dto/admin-ai.dto';
 import type {
   AiProviderResponseDto,
   AiPromptResponseDto,
@@ -20,12 +27,26 @@ import type {
   ActivateResponseDto,
 } from './dto/admin-ai-response.dto';
 
+// Khóa mã hóa AES-256 — đọc từ ENCRYPTION_SECRET (cùng key mà ai-service dùng để decrypt)
+const ALGORITHM = 'aes-256-cbc';
+const ENC_KEY = process.env.ENCRYPTION_SECRET ?? '';
+const KEY_BUF = Buffer.alloc(32);
+Buffer.from(ENC_KEY).copy(KEY_BUF);
+
+/** Mã hóa API key bằng AES-256-CBC trước khi lưu vào DB */
+function encryptApiKey(plainText: string): string {
+  const iv = randomBytes(16);
+  const cipher = createCipheriv(ALGORITHM, KEY_BUF, iv);
+  const encrypted = Buffer.concat([
+    cipher.update(plainText, 'utf8'),
+    cipher.final(),
+  ]);
+  return `${iv.toString('hex')}:${encrypted.toString('hex')}`;
+}
+
 @Injectable()
 export class AdminAiService {
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly aiProviderService: AiProviderService,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   // ─────────────────────────────────────────────────────────
   // Quản lý AI Provider
@@ -57,7 +78,10 @@ export class AdminAiService {
    * API key thô sẽ được mã hóa AES-256 trước khi lưu vào DB.
    * Không tự động active — admin phải gọi endpoint activate riêng.
    */
-  async createProvider(dto: CreateAiProviderDto, activatedByUserId: string): Promise<AiProviderResponseDto> {
+  async createProvider(
+    dto: CreateAiProviderDto,
+    activatedByUserId: string,
+  ): Promise<AiProviderResponseDto> {
     // Kiểm tra trùng lặp provider + model
     const existing = await this.prisma.aiProviderConfig.findFirst({
       where: {
@@ -72,8 +96,8 @@ export class AdminAiService {
       );
     }
 
-    // Mã hóa API key trước khi lưu
-    const encryptedApiKey = AiProviderService.encrypt(dto.apiKey);
+    // Mã hóa API key trước khi lưu (AI Service sẽ decrypt khi đọc)
+    const encryptedApiKey = encryptApiKey(dto.apiKey);
 
     const provider = await this.prisma.aiProviderConfig.create({
       data: {
@@ -106,7 +130,10 @@ export class AdminAiService {
    * Hệ thống chỉ dùng 1 provider active tại 1 thời điểm.
    * Sau khi activate → xóa cache để client mới được tạo.
    */
-  async activateProvider(id: number, activatedByUserId: string): Promise<ActivateResponseDto> {
+  async activateProvider(
+    id: number,
+    activatedByUserId: string,
+  ): Promise<ActivateResponseDto> {
     const provider = await this.prisma.aiProviderConfig.findFirst({
       where: { id, deletedAt: null },
     });
@@ -130,10 +157,13 @@ export class AdminAiService {
       }),
     ]);
 
-    // Xóa cache để SingleAgentService tạo client mới với cấu hình vừa activate
-    this.aiProviderService.invalidateCache();
+    // Lưu ý: AI Service sẽ tự reload cấu hình từ DB trong lần gọi tiếp theo
+    // (không cần invalidate cache ở BE nữa vì AI logic đã tách sang ai-service)
 
-    return { success: true, message: `Đã kích hoạt provider: ${provider.provider} / ${provider.modelName}` } satisfies ActivateResponseDto;
+    return {
+      success: true,
+      message: `Đã kích hoạch provider: ${provider.provider} / ${provider.modelName}`,
+    } satisfies ActivateResponseDto;
   }
 
   /** Xóa mềm provider (không thể xóa provider đang active) */
@@ -196,7 +226,10 @@ export class AdminAiService {
   }
 
   /** Thêm system prompt mới (không tự động active) */
-  async createPrompt(dto: CreateAiPromptDto, createdByUserId: string): Promise<AiPromptResponseDto> {
+  async createPrompt(
+    dto: CreateAiPromptDto,
+    createdByUserId: string,
+  ): Promise<AiPromptResponseDto> {
     // Kiểm tra trùng agentType + version
     const existing = await this.prisma.aiSystemPrompt.findFirst({
       where: {
@@ -235,7 +268,10 @@ export class AdminAiService {
    * Kích hoạt 1 prompt cho agentType cụ thể.
    * Chỉ tắt prompt cùng agentType — các agentType khác không bị ảnh hưởng.
    */
-  async activatePrompt(id: number, activatedByUserId: string): Promise<ActivateResponseDto> {
+  async activatePrompt(
+    id: number,
+    activatedByUserId: string,
+  ): Promise<ActivateResponseDto> {
     const prompt = await this.prisma.aiSystemPrompt.findFirst({
       where: { id, deletedAt: null },
     });
