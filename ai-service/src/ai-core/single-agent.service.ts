@@ -1,4 +1,4 @@
-﻿/**
+/**
  * SingleAgentService — Lõi AI của Friggy (Cấp độ 1 — MVP)
  *
  * Đây là trái tim của toàn bộ hệ thống AI. Một AI duy nhất xử lý mọi yêu cầu
@@ -41,7 +41,16 @@ import { FridgeTools } from './tools/fridge.tools';
 import { UserTools } from './tools/user.tools';
 import { RecipeTools } from './tools/recipe.tools';
 import { MealPlanTools } from './tools/meal-plan.tools';
-import type { ChatCompletionMessageParam, ChatCompletionTool } from 'openai/resources/chat/completions';
+import { MealPlanGraphService } from './meal-plan-graph.service';
+import { v4 as uuid } from 'uuid';
+import type {
+  ChatCompletionMessageParam,
+  ChatCompletionTool,
+} from 'openai/resources/chat/completions';
+import {
+  buildHardenedSystemPrompt,
+  isResponseOffTopic,
+} from './guards/prompt-sanitizer';
 
 /**
  * Cấu trúc event được emit qua SSE stream
@@ -66,13 +75,15 @@ const TOOLS: ChatCompletionTool[] = [
     type: 'function',
     function: {
       name: 'get_fridge_items',
-      description: 'Lấy danh sách nguyên liệu đang có trong tủ lạnh của người dùng',
+      description:
+        'Lấy danh sách nguyên liệu đang có trong tủ lạnh của người dùng',
       parameters: {
         type: 'object',
         properties: {
           location: {
             type: 'string',
-            description: 'Vị trí lưu trữ: freezer (ngăn đông) | fridge (ngăn mát) | pantry (tủ khô). Bỏ trống để lấy tất cả.',
+            description:
+              'Vị trí lưu trữ: freezer (ngăn đông) | fridge (ngăn mát) | pantry (tủ khô). Bỏ trống để lấy tất cả.',
           },
         },
       },
@@ -82,13 +93,15 @@ const TOOLS: ChatCompletionTool[] = [
     type: 'function',
     function: {
       name: 'get_expiring_items',
-      description: 'Lấy danh sách nguyên liệu sắp hết hạn sử dụng trong N ngày tới',
+      description:
+        'Lấy danh sách nguyên liệu sắp hết hạn sử dụng trong N ngày tới',
       parameters: {
         type: 'object',
         properties: {
           withinDays: {
             type: 'number',
-            description: 'Số ngày muốn kiểm tra (ví dụ: 3 = lấy đồ hết hạn trong 3 ngày tới)',
+            description:
+              'Số ngày muốn kiểm tra (ví dụ: 3 = lấy đồ hết hạn trong 3 ngày tới)',
           },
         },
         required: ['withinDays'],
@@ -99,7 +112,8 @@ const TOOLS: ChatCompletionTool[] = [
     type: 'function',
     function: {
       name: 'get_available_ingredients',
-      description: 'Lấy danh sách tên nguyên liệu hiện đang có trong tủ lạnh (không kèm số lượng)',
+      description:
+        'Lấy danh sách tên nguyên liệu hiện đang có trong tủ lạnh (không kèm số lượng)',
       parameters: { type: 'object', properties: {} },
     },
   },
@@ -107,7 +121,8 @@ const TOOLS: ChatCompletionTool[] = [
     type: 'function',
     function: {
       name: 'get_fridge_stats',
-      description: 'Lấy thống kê tổng quan về tủ lạnh: tổng số items, số đồ sắp hết hạn, tỷ lệ lãng phí',
+      description:
+        'Lấy thống kê tổng quan về tủ lạnh: tổng số items, số đồ sắp hết hạn, tỷ lệ lãng phí',
       parameters: { type: 'object', properties: {} },
     },
   },
@@ -117,7 +132,8 @@ const TOOLS: ChatCompletionTool[] = [
     type: 'function',
     function: {
       name: 'get_user_preferences',
-      description: 'Lấy sở thích và mục tiêu nấu ăn của người dùng: ngân sách tuần, calo mục tiêu, phong cách ăn uống, trình độ nấu',
+      description:
+        'Lấy sở thích và mục tiêu nấu ăn của người dùng: ngân sách tuần, calo mục tiêu, phong cách ăn uống, trình độ nấu',
       parameters: { type: 'object', properties: {} },
     },
   },
@@ -125,7 +141,8 @@ const TOOLS: ChatCompletionTool[] = [
     type: 'function',
     function: {
       name: 'get_user_allergies',
-      description: 'Lấy danh sách nguyên liệu/thực phẩm mà người dùng bị dị ứng',
+      description:
+        'Lấy danh sách nguyên liệu/thực phẩm mà người dùng bị dị ứng',
       parameters: { type: 'object', properties: {} },
     },
   },
@@ -135,7 +152,8 @@ const TOOLS: ChatCompletionTool[] = [
     type: 'function',
     function: {
       name: 'search_recipes',
-      description: 'Tìm kiếm công thức nấu ăn phù hợp với danh sách nguyên liệu và điều kiện',
+      description:
+        'Tìm kiếm công thức nấu ăn phù hợp với danh sách nguyên liệu và điều kiện',
       parameters: {
         type: 'object',
         properties: {
@@ -146,7 +164,8 @@ const TOOLS: ChatCompletionTool[] = [
           },
           mealType: {
             type: 'string',
-            description: 'Loại bữa ăn: breakfast (sáng) | lunch (trưa) | dinner (tối) | snack (phụ)',
+            description:
+              'Loại bữa ăn: breakfast (sáng) | lunch (trưa) | dinner (tối) | snack (phụ)',
           },
           maxCost: {
             type: 'number',
@@ -161,10 +180,13 @@ const TOOLS: ChatCompletionTool[] = [
     type: 'function',
     function: {
       name: 'get_recipe_detail',
-      description: 'Lấy thông tin chi tiết của 1 công thức: danh sách nguyên liệu đầy đủ và các bước thực hiện',
+      description:
+        'Lấy thông tin chi tiết của 1 công thức: danh sách nguyên liệu đầy đủ và các bước thực hiện',
       parameters: {
         type: 'object',
-        properties: { recipeId: { type: 'string', description: 'ID công thức' } },
+        properties: {
+          recipeId: { type: 'string', description: 'ID công thức' },
+        },
         required: ['recipeId'],
       },
     },
@@ -188,10 +210,16 @@ const TOOLS: ChatCompletionTool[] = [
     type: 'function',
     function: {
       name: 'calculate_match_score',
-      description: 'Tính điểm phù hợp (%) giữa nguyên liệu trong tủ và nguyên liệu cần thiết của công thức',
+      description:
+        'Tính điểm phù hợp (%) giữa nguyên liệu trong tủ và nguyên liệu cần thiết của công thức',
       parameters: {
         type: 'object',
-        properties: { recipeId: { type: 'string', description: 'ID công thức cần kiểm tra' } },
+        properties: {
+          recipeId: {
+            type: 'string',
+            description: 'ID công thức cần kiểm tra',
+          },
+        },
         required: ['recipeId'],
       },
     },
@@ -200,7 +228,8 @@ const TOOLS: ChatCompletionTool[] = [
     type: 'function',
     function: {
       name: 'suggest_from_expiring',
-      description: 'Gợi ý công thức ưu tiên sử dụng nguyên liệu sắp hết hạn trong tủ để tránh lãng phí',
+      description:
+        'Gợi ý công thức ưu tiên sử dụng nguyên liệu sắp hết hạn trong tủ để tránh lãng phí',
       parameters: { type: 'object', properties: {} },
     },
   },
@@ -227,21 +256,37 @@ const TOOLS: ChatCompletionTool[] = [
     type: 'function',
     function: {
       name: 'save_weekly_plan',
-      description: 'Lưu thực đơn tuần đã được lập vào database để người dùng xem lại',
+      description:
+        'Lưu thực đơn tuần đã được lập vào database để người dùng xem lại',
       parameters: {
         type: 'object',
         properties: {
-          weekStartDate: { type: 'string', description: 'Ngày đầu tuần YYYY-MM-DD' },
-          totalBudget: { type: 'number', description: 'Tổng ngân sách tuần (VND)' },
+          weekStartDate: {
+            type: 'string',
+            description: 'Ngày đầu tuần YYYY-MM-DD',
+          },
+          totalBudget: {
+            type: 'number',
+            description: 'Tổng ngân sách tuần (VND)',
+          },
           slots: {
             type: 'array',
             description: 'Danh sách các slot bữa ăn trong tuần',
             items: {
               type: 'object',
               properties: {
-                dayOfWeek: { type: 'number', description: '1 = Thứ 2, 2 = Thứ 3, ..., 7 = Chủ nhật' },
-                mealType: { type: 'string', description: 'breakfast | lunch | dinner | snack' },
-                recipeId: { type: 'string', description: 'ID công thức được chọn' },
+                dayOfWeek: {
+                  type: 'number',
+                  description: '1 = Thứ 2, 2 = Thứ 3, ..., 7 = Chủ nhật',
+                },
+                mealType: {
+                  type: 'string',
+                  description: 'breakfast | lunch | dinner | snack',
+                },
+                recipeId: {
+                  type: 'string',
+                  description: 'ID công thức được chọn',
+                },
               },
               required: ['dayOfWeek', 'mealType', 'recipeId'],
             },
@@ -255,11 +300,16 @@ const TOOLS: ChatCompletionTool[] = [
     type: 'function',
     function: {
       name: 'validate_plan_budget',
-      description: 'Kiểm tra xem tổng chi phí của thực đơn tuần có vượt quá ngân sách người dùng không',
+      description:
+        'Kiểm tra xem tổng chi phí của thực đơn tuần có vượt quá ngân sách người dùng không',
       parameters: {
         type: 'object',
         properties: {
-          slots: { type: 'array', items: { type: 'object' }, description: 'Danh sách slot bữa ăn' },
+          slots: {
+            type: 'array',
+            items: { type: 'object' },
+            description: 'Danh sách slot bữa ăn',
+          },
           budget: { type: 'number', description: 'Ngân sách tối đa (VND)' },
         },
         required: ['slots', 'budget'],
@@ -270,12 +320,21 @@ const TOOLS: ChatCompletionTool[] = [
     type: 'function',
     function: {
       name: 'check_allergy_conflict',
-      description: 'Kiểm tra thực đơn có chứa nguyên liệu gây dị ứng cho người dùng không',
+      description:
+        'Kiểm tra thực đơn có chứa nguyên liệu gây dị ứng cho người dùng không',
       parameters: {
         type: 'object',
         properties: {
-          slots: { type: 'array', items: { type: 'object' }, description: 'Danh sách slot bữa ăn cần kiểm tra' },
-          allergies: { type: 'array', items: { type: 'string' }, description: 'Danh sách tên nguyên liệu gây dị ứng' },
+          slots: {
+            type: 'array',
+            items: { type: 'object' },
+            description: 'Danh sách slot bữa ăn cần kiểm tra',
+          },
+          allergies: {
+            type: 'array',
+            items: { type: 'string' },
+            description: 'Danh sách tên nguyên liệu gây dị ứng',
+          },
         },
         required: ['slots', 'allergies'],
       },
@@ -289,9 +348,32 @@ const TOOLS: ChatCompletionTool[] = [
       parameters: {
         type: 'object',
         properties: {
-          ingredientNames: { type: 'array', items: { type: 'string' }, description: 'Danh sách tên nguyên liệu' },
+          ingredientNames: {
+            type: 'array',
+            items: { type: 'string' },
+            description: 'Danh sách tên nguyên liệu',
+          },
         },
         required: ['ingredientNames'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'generate_weekly_meal_plan',
+      description:
+        'Lập thực đơn tuần đầy đủ (7 ngày × 3 bữa) cho người dùng. Gọi tool này khi user yêu cầu lập thực đơn, kế hoạch ăn uống cả tuần.',
+      parameters: {
+        type: 'object',
+        properties: {
+          budget: {
+            type: 'number',
+            description:
+              'Ngân sách thực phẩm cả tuần (VND). Mặc định 700000 nếu user không nêu rõ.',
+          },
+        },
+        required: [],
       },
     },
   },
@@ -310,6 +392,7 @@ export class SingleAgentService {
     private readonly userTools: UserTools,
     private readonly recipeTools: RecipeTools,
     private readonly mealPlanTools: MealPlanTools,
+    private readonly mealPlanGraph: MealPlanGraphService,
   ) {}
 
   // ─────────────────────────────────────────────────────────
@@ -340,8 +423,13 @@ export class SingleAgentService {
 
     // Chạy async — lỗi không được throw lên trực tiếp mà emit qua subject
     this.execute(params, subject).catch((err) => {
-      this.logger.error(`❌ Lỗi nghiêm trọng trong SingleAgent: ${err?.message ?? err}`);
-      subject.next({ event: 'error', data: err?.message ?? 'Đã xảy ra lỗi trong quá trình xử lý AI' });
+      this.logger.error(
+        `❌ Lỗi nghiêm trọng trong SingleAgent: ${err?.message ?? err}`,
+      );
+      subject.next({
+        event: 'error',
+        data: err?.message ?? 'Đã xảy ra lỗi trong quá trình xử lý AI',
+      });
       subject.complete();
     });
 
@@ -372,10 +460,13 @@ export class SingleAgentService {
     await this.rateLimitService.checkLimit(userId, featureType);
 
     // ── Bước 2: Lấy LLM client và system prompt song song ──
-    const [llmClient, systemPrompt] = await Promise.all([
+    const [llmClient, basePrompt] = await Promise.all([
       this.aiProvider.getActiveClient(),
       this.promptService.getActivePrompt('supervisor'),
     ]);
+
+    // Bọc system prompt với immutable header chống injection
+    const systemPrompt = buildHardenedSystemPrompt(basePrompt);
 
     this.logger.log(
       `🚀 Bắt đầu xử lý AI: userId=${userId} | model=${llmClient.modelName} | tính năng=${featureType}`,
@@ -386,7 +477,10 @@ export class SingleAgentService {
       // System prompt — định hình nhân cách và hành vi của AI
       { role: 'system', content: systemPrompt },
       // Lịch sử chat trước đó để AI có context
-      ...history.map((h) => ({ role: h.role, content: h.content } as ChatCompletionMessageParam)),
+      ...history.map(
+        (h) =>
+          ({ role: h.role, content: h.content }) as ChatCompletionMessageParam,
+      ),
     ];
 
     // Tin nhắn hiện tại của người dùng (có thể kèm ảnh)
@@ -396,7 +490,10 @@ export class SingleAgentService {
         role: 'user',
         content: [
           { type: 'text', text: message },
-          { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${imageBase64}` } },
+          {
+            type: 'image_url',
+            image_url: { url: `data:image/jpeg;base64,${imageBase64}` },
+          },
         ],
       });
     } else {
@@ -406,6 +503,7 @@ export class SingleAgentService {
     // ── Bước 4: Vòng lặp agentic (tối đa 10 lần để tránh infinite loop) ──
     let tokensUsed = 0;
     let remainingIterations = 10; // Giới hạn số vòng lặp
+    let fullText = ''; // Tích lũy toàn bộ response để check off-topic
 
     while (remainingIterations-- > 0) {
       // Gửi message lên AI và chờ phản hồi
@@ -434,6 +532,7 @@ export class SingleAgentService {
       // Stream text content về FE ngay khi có (không chờ hết)
       if (assistantMessage.content) {
         subject.next({ event: 'chunk', data: assistantMessage.content });
+        fullText += assistantMessage.content;
       }
 
       // Kiểm tra AI có gọi tool không
@@ -441,7 +540,9 @@ export class SingleAgentService {
 
       // Không có tool call hoặc AI đã hoàn thành → thoát vòng lặp
       if (toolCalls.length === 0 || choice.finish_reason === 'stop') {
-        this.logger.debug(`✅ AI hoàn thành sau ${10 - remainingIterations} vòng lặp`);
+        this.logger.debug(
+          `✅ AI hoàn thành sau ${10 - remainingIterations} vòng lặp`,
+        );
         break;
       }
 
@@ -458,7 +559,9 @@ export class SingleAgentService {
           toolArgs = {};
         }
 
-        this.logger.debug(`🔧 AI đang gọi tool: ${toolName} | args=${JSON.stringify(toolArgs)}`);
+        this.logger.log(
+          `🔧 AI đang gọi tool: ${toolName} | args=${JSON.stringify(toolArgs)}`,
+        );
 
         // Thông báo cho FE biết AI đang gọi tool nào
         subject.next({ event: 'tool_call', data: toolName });
@@ -469,7 +572,9 @@ export class SingleAgentService {
           toolResult = await this.executeTool(toolName, toolArgs, userId);
         } catch (err: any) {
           // Tool thất bại — trả về thông báo lỗi để AI xử lý tiếp (không crash)
-          toolResult = { error: err?.message ?? 'Không thể thực thi công cụ này' };
+          toolResult = {
+            error: err?.message ?? 'Không thể thực thi công cụ này',
+          };
           this.logger.warn(`⚠️ Tool [${toolName}] thất bại: ${err?.message}`);
         }
 
@@ -477,9 +582,10 @@ export class SingleAgentService {
         const resultStr = JSON.stringify(toolResult);
         subject.next({
           event: 'tool_result',
-          data: resultStr.length > 500
-            ? resultStr.substring(0, 500) + '... (đã rút gọn)'
-            : resultStr,
+          data:
+            resultStr.length > 500
+              ? resultStr.substring(0, 500) + '... (đã rút gọn)'
+              : resultStr,
         });
 
         // Feed kết quả tool lại cho AI để tiếp tục suy luận
@@ -498,6 +604,13 @@ export class SingleAgentService {
       `🏁 AI xử lý hoàn tất: userId=${userId} | tổng token=${tokensUsed}`,
     );
 
+    // ── Off-topic guard: log warning nếu AI bị jailbreak ──
+    if (isResponseOffTopic(fullText)) {
+      this.logger.warn(
+        `⚠️ [PromptGuard] Off-topic response detected | userId=${userId} | preview: ${fullText.slice(0, 100)}`,
+      );
+    }
+
     // ── Bước 6: Thông báo hoàn thành cho FE ──
     subject.next({ event: 'done', data: JSON.stringify({ tokensUsed }) });
     subject.complete();
@@ -515,7 +628,11 @@ export class SingleAgentService {
    * @param args   - Tham số do AI truyền vào (đã được parse từ JSON)
    * @param userId - ID người dùng để lọc dữ liệu đúng tủ lạnh
    */
-  private async executeTool(name: string, args: any, userId: string): Promise<any> {
+  private async executeTool(
+    name: string,
+    args: any,
+    userId: string,
+  ): Promise<any> {
     switch (name) {
       // ── Công cụ tủ lạnh ──────────────────────────────────
       case 'get_fridge_items':
@@ -547,7 +664,10 @@ export class SingleAgentService {
 
       case 'calculate_recipe_cost':
         // Mặc định 2 người ăn nếu AI không truyền servings
-        return this.recipeTools.calculateRecipeCost(args.recipeId, args.servings ?? 2);
+        return this.recipeTools.calculateRecipeCost(
+          args.recipeId,
+          args.servings ?? 2,
+        );
 
       case 'calculate_match_score':
         return this.recipeTools.calculateMatchScore(args.recipeId, userId);
@@ -570,9 +690,47 @@ export class SingleAgentService {
         return this.mealPlanTools.checkAllergyConflict(args);
 
       case 'get_nutrition_summary':
-        return this.mealPlanTools.getNutritionSummary(args.ingredientNames ?? []);
+        return this.mealPlanTools.getNutritionSummary(
+          args.ingredientNames ?? [],
+        );
 
-      // ── Tool không xác định ──────────────────────────────
+      // ── Tool tạo thực đơn tuần (AI Chat) ──────────────────────────────────
+      case 'generate_weekly_meal_plan': {
+        const budget = Number(args.budget ?? 700_000);
+        // Tuần tiếp theo (Thứ 2)
+        const today = new Date();
+        const daysUntilMonday = today.getDay() === 0 ? 1 : 8 - today.getDay();
+        const nextMonday = new Date(today);
+        nextMonday.setDate(today.getDate() + daysUntilMonday);
+        const weekStartDate = nextMonday.toISOString().split('T')[0];
+
+        this.logger.log(
+          `🍽️ [SingleAgent] Tạo thực đơn tuần: userId=${userId} | ngân sách=${budget} | tuần=${weekStartDate}`,
+        );
+
+        const result = await this.mealPlanGraph.run({
+          jobId: uuid(),
+          userId,
+          weekStartDate,
+          budget,
+        });
+
+        return {
+          success: true,
+          weekStartDate,
+          summary: `Đã lập thực đơn tuần từ ${weekStartDate} với ngân sách ${budget.toLocaleString('vi-VN')}đ`,
+          totalEstimatedCost: result.totalEstimatedCost,
+          planSummary: result.summary,
+          slots: result.slots?.slice(0, 6).map((s: any) => ({
+            date: s.date,
+            mealType: s.mealType,
+            recipeName: s.recipeName,
+            estimatedCost: s.estimatedCost,
+          })),
+        };
+      }
+
+      // ── Tool không xác định ──────────────────────────────────────────
       default:
         throw new Error(`Không tìm thấy tool: ${name}`);
     }
