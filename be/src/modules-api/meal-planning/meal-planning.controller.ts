@@ -31,7 +31,10 @@ import {
   ApiParam,
 } from '@nestjs/swagger';
 import type { Response } from 'express';
+import { UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
+import { AiUsageLimitGuard } from 'src/common/guards/ai-usage-limit.guard';
+import { AiFeature } from 'src/common/decorators/ai-feature.decorator';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import type { JwtPayload } from 'src/common/interfaces/jwt-payload.interface';
 import { RedisService } from 'src/modules-system/redis/redis.service';
@@ -65,7 +68,9 @@ export class MealPlanningController {
   // ─────────────────────────────────────────────────────────
 
   @Post('plans/generate')
-  @HttpCode(HttpStatus.ACCEPTED) // 202 Accepted — job đã nhận, đang xử lý background
+  @HttpCode(HttpStatus.ACCEPTED)
+  @UseGuards(AiUsageLimitGuard)
+  @AiFeature('meal_plan')
   @ApiOperation({
     summary: '[AI] Tạo thực đơn tuần bằng AI (Multi-Agent)',
     description: `Không chờ AI xử lý xong. Job được đẩy vào queue, trả về jobId ngay lập tức.
@@ -73,6 +78,7 @@ export class MealPlanningController {
   })
   @ApiResponse({ status: 202, description: 'Job đã được nhận vào queue', type: GeneratePlanResponseDto })
   @ApiResponse({ status: 401, description: 'Chưa đăng nhập' })
+  @ApiResponse({ status: 429, description: 'Vượt giới hạn AI usage tuần này' })
   async generatePlan(
     @CurrentUser() user: JwtPayload,
     @Body() dto: GenerateMealPlanDto,
@@ -271,12 +277,15 @@ export class MealPlanningController {
 
   @Post('slots/:id/regenerate')
   @HttpCode(HttpStatus.ACCEPTED)
+  @UseGuards(AiUsageLimitGuard)
+  @AiFeature('slot_regenerate')
   @ApiOperation({
     summary: '[AI] Gợi ý món thay thế cho 1 slot bữa ăn',
     description: 'AI tìm top 3 món thay thế phù hợp với tủ lạnh và ngân sách còn lại. Subscribe SSE để nhận kết quả.',
   })
   @ApiParam({ name: 'id', description: 'ID meal slot cần đổi món' })
   @ApiResponse({ status: 202, description: 'Job đã được nhận' })
+  @ApiResponse({ status: 429, description: 'Vượt giới hạn AI usage' })
   async regenerateSlot(
     @CurrentUser() user: JwtPayload,
     @Param('id') slotId: string,
@@ -343,11 +352,11 @@ export class MealPlanningController {
 
   @Post('plans/generate-from-expiring')
   @HttpCode(HttpStatus.ACCEPTED)
-  @ApiOperation({
-    summary: '[AI] Lập thực đơn từ nguyên liệu sắp hết hạn',
-    description: 'AI scan tủ lạnh tìm đồ sắp hết hạn và lập thực đơn tối ưu 1-3 ngày. Nhanh hơn thực đơn tuần (~5-10s).',
-  })
-  @ApiResponse({ status: 202, description: 'Job đã được nhận' })
+  @UseGuards(AiUsageLimitGuard)
+  @AiFeature('expiring_plan')
+  @ApiOperation({ summary: '[AI] Lập thực đơn từ nguyên liệu sắp hết hạn' })
+  @ApiResponse({ status: 202, description: 'Job đã nhận' })
+  @ApiResponse({ status: 429, description: 'Vượt giới hạn AI usage' })
   async generateFromExpiring(
     @CurrentUser() user: JwtPayload,
     @Body() dto: GenerateFromExpiringDto,

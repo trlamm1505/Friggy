@@ -100,6 +100,9 @@ export class AuthService {
           },
         });
       }
+
+      // Khởi tạo gói Free cho user mới
+      await this.assignFreePlan(user.id);
     } else {
       // Cập nhật lastLoginAt, và name nếu chưa có
       const updateData: any = { lastLoginAt: new Date() };
@@ -270,6 +273,9 @@ export class AuthService {
         },
         include: { role: true },
       });
+
+      // Khởi tạo gói Free cho user mới
+      await this.assignFreePlan(user.id);
     } else {
       if (user.status === 'suspended') {
         throw new ForbiddenException('Tài khoản của bạn đã bị khoá');
@@ -324,5 +330,38 @@ export class AuthService {
 
   async logout(dto: LogoutDto, userId: string): Promise<void> {
     await this.tokensService.revokeRefreshToken(dto.refreshToken, userId);
+  }
+
+  // ─────────────────────────────────────────────────────────
+  // HELPER: Khởi tạo gói Free cho user mới
+  // ─────────────────────────────────────────────────────────
+
+  private async assignFreePlan(userId: string): Promise<void> {
+    // Tìm plan có tên 'free' (hoặc plan đầu tiên nếu không có)
+    const freePlan = await this.prisma.subscriptionPlan.findFirst({
+      where: { name: 'free', isActive: true },
+    });
+
+    if (!freePlan) {
+      this.logger.warn(`⚠️ Không tìm thấy gói 'free' trong DB — bỏ qua khởi tạo subscription cho user ${userId}`);
+      return;
+    }
+
+    // Kiểm tra đã có subscription chưa (tránh duplicate)
+    const existing = await this.prisma.userSubscription.findUnique({ where: { userId } });
+    if (existing) return;
+
+    await this.prisma.userSubscription.create({
+      data: {
+        id: uuid(),
+        userId,
+        planId: freePlan.id,
+        startDate: new Date(),
+        endDate: null, // Free plan không hết hạn
+        status: 'active',
+      },
+    });
+
+    this.logger.log(`✅ Đã khởi tạo gói Free cho user ${userId}`);
   }
 }
