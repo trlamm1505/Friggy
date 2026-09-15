@@ -18,13 +18,15 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from 'src/modules-system/prisma/prisma.service';
 import { v4 as uuidv4 } from 'uuid';
-import { MEAL_PLAN_ROUTING_KEY } from 'src/common/constant/app.constant';
+import { MEAL_PLAN_ROUTING_KEY, AI_SLOT_REGENERATE_ROUTING_KEY, AI_EXPIRING_MEAL_ROUTING_KEY } from 'src/common/constant/app.constant';
 import { RabbitMqPublisherService } from 'src/modules-system/rabbit-mq/rabbit-mq-publisher.service';
 import type {
   GenerateMealPlanDto,
   UpdateMealPlanDto,
   UpdateMealSlotDto,
   CreateShoppingListDto,
+  RegenerateSlotDto,
+  GenerateFromExpiringDto,
 } from './dto/meal-planning.dto';
 
 @Injectable()
@@ -384,5 +386,88 @@ export class MealPlanningService {
       },
       select: { id: true, isPurchased: true, purchasedAt: true },
     });
+  }
+
+  // ─────────────────────────────────────────────────────────
+  // Phase 10.1 — POST /slots/:id/regenerate
+  // AI gợi ý top 3 món thay thế cho 1 slot
+  // ─────────────────────────────────────────────────────────
+
+  async regenerateSlot(userId: string, slotId: string, dto: RegenerateSlotDto) {
+    // Validate slot ownership qua plan — dùng include thay vì select để có relation
+    const slot = await this.prisma.mealSlot.findFirst({
+      where: {
+        id: slotId,
+        deletedAt: null,
+        dailyPlan: { weeklyPlan: { userId, deletedAt: null } },
+      },
+      include: {
+        recipe: true,
+        dailyPlan: {
+          include: {
+            weeklyPlan: {
+              select: { totalBudget: true, actualCost: true },
+            },
+          },
+        },
+      },
+    });
+    if (!slot) throw new NotFoundException('Không tìm thấy meal slot');
+
+    const jobId = uuidv4();
+    const budgetRemaining =
+      (slot.dailyPlan.weeklyPlan.totalBudget ?? 0) -
+      (slot.dailyPlan.weeklyPlan.actualCost ?? 0);
+
+    this.logger.log(
+      `🔄 [MealPlanning] Regenerate slot: slotId=${slotId} | userId=${userId} | jobId=${jobId}`,
+    );
+
+    await this.rabbitMq.publish(AI_SLOT_REGENERATE_ROUTING_KEY, {
+      jobId,
+      userId,
+      slotId,
+      currentRecipeName: slot.recipe?.title ?? null,
+      mealType: slot.mealType,
+      dayOfWeek: slot.dailyPlan.dayOfWeek, // dayOfWeek thuộc DailyPlan
+      budgetRemaining,
+      reason: dto.reason ?? 'want_different',
+    });
+
+    return {
+      jobId,
+      status: 'queued',
+      streamUrl: `/api/v1/meal-planning/slots/${slotId}/regenerate/${jobId}/stream`,
+      message: 'AI đang tìm món thay thế phù hợp...',
+    };
+  }
+
+  // ─────────────────────────────────────────────────────────
+  // Phase 10.2 — POST /plans/generate-from-expiring
+  // AI lập thực đơn N ngày từ nguyên liệu sắp hết hạn
+  // ─────────────────────────────────────────────────────────
+
+  async generateFromExpiring(userId: string, dto: GenerateFromExpiringDto) {
+    const jobId = uuidv4();
+    const withinDays = dto.withinDays ?? 3;
+    const days = dto.days ?? 2;
+
+    this.logger.log(
+      `⏰ [MealPlanning] Generate from expiring: userId=${userId} | withinDays=${withinDays} | days=${days} | jobId=${jobId}`,
+    );
+
+    await this.rabbitMq.publish(AI_EXPIRING_MEAL_ROUTING_KEY, {
+      jobId,
+      userId,
+      withinDays,
+      days,
+    });
+
+    return {
+      jobId,
+      status: 'queued',
+      streamUrl: `/api/v1/meal-planning/plans/generate-from-expiring/${jobId}/stream`,
+      message: `AI đang phân tích ${withinDays} ngày tới lập thực đơn ${days} ngày...`,
+    };
   }
 }

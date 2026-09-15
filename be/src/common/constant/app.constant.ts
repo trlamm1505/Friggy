@@ -32,6 +32,8 @@ export const FRIGGY_AI_EXCHANGE = 'friggy.ai';
 export const MEAL_PLAN_ROUTING_KEY = 'meal.plan.generate';
 export const AI_CHAT_ROUTING_KEY = 'ai.chat.message';
 export const FRIDGE_SCAN_ROUTING_KEY = 'fridge.scan';
+export const AI_SLOT_REGENERATE_ROUTING_KEY = 'ai.slot.regenerate';
+export const AI_EXPIRING_MEAL_ROUTING_KEY = 'ai.expiring.meal.plan';
 
 console.log(
   '\n',

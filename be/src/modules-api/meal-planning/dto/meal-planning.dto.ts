@@ -112,3 +112,48 @@ export class CreateShoppingListDto {
   @IsString()
   title?: string;
 }
+
+// ─────────────────────────────────────────────────────────
+// POST /meal-planning/slots/:id/regenerate  (Phase 10.1)
+// ─────────────────────────────────────────────────────────
+export class RegenerateSlotDto {
+  @ApiPropertyOptional({
+    description: 'Lý do muốn đổi món — AI sẽ tính đến khi gợi ý',
+    enum: ['no_ingredients', 'dislike', 'want_different', 'too_expensive'],
+    example: 'no_ingredients',
+  })
+  @IsOptional()
+  @IsEnum(['no_ingredients', 'dislike', 'want_different', 'too_expensive'])
+  reason?: string;
+}
+
+// ─────────────────────────────────────────────────────────
+// POST /meal-planning/plans/generate-from-expiring  (Phase 10.2)
+// ─────────────────────────────────────────────────────────
+export class GenerateFromExpiringDto {
+  @ApiPropertyOptional({
+    description: 'Nguyên liệu hết hạn trong N ngày tới (default: 3)',
+    example: 3,
+    minimum: 1,
+    maximum: 7,
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(7)
+  @Type(() => Number)
+  withinDays?: number;
+
+  @ApiPropertyOptional({
+    description: 'Lập thực đơn cho N ngày (default: 2, max: 3)',
+    example: 2,
+    minimum: 1,
+    maximum: 3,
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(3)
+  @Type(() => Number)
+  days?: number;
+}

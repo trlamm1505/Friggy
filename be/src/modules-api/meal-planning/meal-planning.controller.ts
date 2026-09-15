@@ -41,6 +41,8 @@ import {
   UpdateMealPlanDto,
   UpdateMealSlotDto,
   CreateShoppingListDto,
+  RegenerateSlotDto,
+  GenerateFromExpiringDto,
 } from './dto/meal-planning.dto';
 import {
   GeneratePlanResponseDto,
@@ -261,5 +263,146 @@ export class MealPlanningController {
     @Param('itemId', ParseIntPipe) itemId: number,
   ) {
     return this.mealPlanningService.toggleShoppingItem(user.sub, listId, itemId);
+  }
+
+  // ─────────────────────────────────────────────────────────
+  // Phase 10.1 — POST /slots/:id/regenerate
+  // ─────────────────────────────────────────────────────────
+
+  @Post('slots/:id/regenerate')
+  @HttpCode(HttpStatus.ACCEPTED)
+  @ApiOperation({
+    summary: '[AI] Gợi ý món thay thế cho 1 slot bữa ăn',
+    description: 'AI tìm top 3 món thay thế phù hợp với tủ lạnh và ngân sách còn lại. Subscribe SSE để nhận kết quả.',
+  })
+  @ApiParam({ name: 'id', description: 'ID meal slot cần đổi món' })
+  @ApiResponse({ status: 202, description: 'Job đã được nhận' })
+  async regenerateSlot(
+    @CurrentUser() user: JwtPayload,
+    @Param('id') slotId: string,
+    @Body() dto: RegenerateSlotDto,
+  ) {
+    return this.mealPlanningService.regenerateSlot(user.sub, slotId, dto);
+  }
+
+  @Get('slots/:id/regenerate/:jobId/stream')
+  @ApiOperation({ summary: '[AI] SSE stream kết quả regenerate slot' })
+  @ApiParam({ name: 'id', description: 'ID meal slot' })
+  @ApiParam({ name: 'jobId', description: 'ID job từ POST /slots/:id/regenerate' })
+  @ApiResponse({ status: 200, description: 'SSE stream (text/event-stream)' })
+  async streamRegenerateSlot(
+    @Param('jobId') jobId: string,
+    @Res() res: Response,
+  ): Promise<void> {
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no');
+    res.flushHeaders();
+
+    const channel = `slot_regenerate:${jobId}:result`;
+    const subscriber = this.redis.createSubscriber();
+    await subscriber.subscribe(channel);
+
+    const sendEvent = (eventName: string, data: unknown) => {
+      res.write(`event: ${eventName}\n`);
+      res.write(`data: ${JSON.stringify(data)}\n\n`);
+    };
+
+    sendEvent('connected', { jobId });
+
+    subscriber.on('message', (_ch: string, raw: string) => {
+      try {
+        const payload = JSON.parse(raw);
+        sendEvent(payload.event ?? 'result', payload);
+        if (payload.event === 'done' || payload.event === 'error') {
+          subscriber.unsubscribe(channel).catch(() => {});
+          subscriber.quit().catch(() => {});
+          res.end();
+        }
+      } catch { /* ignore */ }
+    });
+
+    const timeout = setTimeout(() => {
+      sendEvent('error', { message: 'Hết thời gian chờ' });
+      subscriber.unsubscribe(channel).catch(() => {});
+      subscriber.quit().catch(() => {});
+      res.end();
+    }, 2 * 60 * 1000); // 2 phút
+
+    res.on('close', () => {
+      clearTimeout(timeout);
+      subscriber.unsubscribe(channel).catch(() => {});
+      subscriber.quit().catch(() => {});
+    });
+  }
+
+  // ─────────────────────────────────────────────────────────
+  // Phase 10.2 — POST + SSE /plans/generate-from-expiring
+  // ─────────────────────────────────────────────────────────
+
+  @Post('plans/generate-from-expiring')
+  @HttpCode(HttpStatus.ACCEPTED)
+  @ApiOperation({
+    summary: '[AI] Lập thực đơn từ nguyên liệu sắp hết hạn',
+    description: 'AI scan tủ lạnh tìm đồ sắp hết hạn và lập thực đơn tối ưu 1-3 ngày. Nhanh hơn thực đơn tuần (~5-10s).',
+  })
+  @ApiResponse({ status: 202, description: 'Job đã được nhận' })
+  async generateFromExpiring(
+    @CurrentUser() user: JwtPayload,
+    @Body() dto: GenerateFromExpiringDto,
+  ) {
+    return this.mealPlanningService.generateFromExpiring(user.sub, dto);
+  }
+
+  @Get('plans/generate-from-expiring/:jobId/stream')
+  @ApiOperation({ summary: '[AI] SSE stream tiến độ lập thực đơn từ đồ sắp hết hạn' })
+  @ApiParam({ name: 'jobId', description: 'ID job từ POST /plans/generate-from-expiring' })
+  @ApiResponse({ status: 200, description: 'SSE stream (text/event-stream)' })
+  async streamExpiringMealPlan(
+    @Param('jobId') jobId: string,
+    @Res() res: Response,
+  ): Promise<void> {
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no');
+    res.flushHeaders();
+
+    const channel = `expiring_meal:${jobId}:progress`;
+    const subscriber = this.redis.createSubscriber();
+    await subscriber.subscribe(channel);
+
+    const sendEvent = (eventName: string, data: unknown) => {
+      res.write(`event: ${eventName}\n`);
+      res.write(`data: ${JSON.stringify(data)}\n\n`);
+    };
+
+    sendEvent('connected', { jobId });
+
+    subscriber.on('message', (_ch: string, raw: string) => {
+      try {
+        const payload = JSON.parse(raw);
+        sendEvent(payload.event ?? 'progress', payload);
+        if (payload.event === 'completed' || payload.event === 'failed') {
+          subscriber.unsubscribe(channel).catch(() => {});
+          subscriber.quit().catch(() => {});
+          res.end();
+        }
+      } catch { /* ignore */ }
+    });
+
+    const timeout = setTimeout(() => {
+      sendEvent('failed', { message: 'Hết thời gian chờ (3 phút)' });
+      subscriber.unsubscribe(channel).catch(() => {});
+      subscriber.quit().catch(() => {});
+      res.end();
+    }, 3 * 60 * 1000);
+
+    res.on('close', () => {
+      clearTimeout(timeout);
+      subscriber.unsubscribe(channel).catch(() => {});
+      subscriber.quit().catch(() => {});
+    });
   }
 }

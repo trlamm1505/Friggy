@@ -20,6 +20,8 @@ import { AiCoreModule } from 'src/ai-core/ai-core.module';
 import { MealPlanConsumer } from './meal-plan.consumer';
 import { FridgeScanConsumer } from './fridge-scan.consumer';
 import { AiChatConsumer } from './ai-chat.consumer';
+import { SlotRegenerateConsumer } from './slot-regenerate.consumer';
+import { ExpiringMealPlanConsumer } from './expiring-meal.consumer';
 
 @Module({
   imports: [
@@ -44,7 +46,7 @@ import { AiChatConsumer } from './ai-chat.consumer';
     }),
     AiCoreModule,
   ],
-  providers: [MealPlanConsumer, FridgeScanConsumer, AiChatConsumer],
+  providers: [MealPlanConsumer, FridgeScanConsumer, AiChatConsumer, SlotRegenerateConsumer, ExpiringMealPlanConsumer],
   exports: [RabbitMQModule],
 })
 export class RabbitMqConsumerModule {}
