@@ -21,11 +21,15 @@ export const FRIGGY_AI_EXCHANGE = 'friggy.ai';
 export const MEAL_PLAN_ROUTING_KEY = 'meal.plan.generate';
 export const AI_CHAT_ROUTING_KEY = 'ai.chat.message';
 export const FRIDGE_SCAN_ROUTING_KEY = 'fridge.scan';
+export const AI_SLOT_REGENERATE_ROUTING_KEY = 'ai.slot.regenerate';
+export const AI_EXPIRING_MEAL_ROUTING_KEY = 'ai.expiring.meal.plan';
 
 // Queue names — AI Service khai báo
 export const MEAL_PLAN_QUEUE_NAME = 'meal-plan-generate-queue';
 export const AI_CHAT_QUEUE_NAME = 'ai-chat-message-queue';
 export const FRIDGE_SCAN_QUEUE_NAME = 'fridge-scan-queue';
+export const AI_SLOT_REGENERATE_QUEUE_NAME = 'ai-slot-regenerate-queue';
+export const AI_EXPIRING_MEAL_QUEUE_NAME = 'ai-expiring-meal-queue';
 
 // ─── AI Encryption ───────────────────────────────────────────────────────────
 // Phải khớp với ENCRYPTION_SECRET trong be/.env
