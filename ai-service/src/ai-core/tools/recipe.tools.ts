@@ -1,13 +1,14 @@
-﻿/**
+/**
  * RecipeTools — Nhóm công cụ AI cho dữ liệu công thức nấu ăn
  *
- * Bao gồm 5 tools:
+ * Bao gồm 6 tools:
  * - search_recipes:        Tìm công thức theo nguyên liệu và điều kiện
  * - get_recipe_detail:     Lấy chi tiết 1 công thức (nguyên liệu, bước nấu)
  * - calculate_recipe_cost: Tính chi phí theo số khẩu phần
  * - calculate_match_score: Tính % nguyên liệu có sẵn trong tủ
  * - suggest_from_expiring: Gợi ý công thức dùng đồ sắp hết hạn
  * - get_nutrition_summary:  Tính tóm tắt dinh dưỡng của danh sách nguyên liệu
+ * - create_recipe:         Tạo công thức mới do AI tự nghĩ (isAiGenerated=true)
  *
  * Lưu ý về tên trường trong schema:
  * - Recipe.title (không phải name)
@@ -20,6 +21,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { RedisService } from 'src/redis/redis.service';
 import * as crypto from 'crypto';
+import { v4 as uuid } from 'uuid';
 
 // TTL cache cho dữ liệu công thức (10 phút — ít thay đổi hơn fridge)
 const RECIPE_CACHE_TTL = 600;
@@ -370,5 +372,55 @@ export class RecipeTools {
 
     await this.redis.set(cacheKey, result, RECIPE_CACHE_TTL);
     return result;
+  }
+
+  // ─────────────────────────────────────────────────────────
+  // Tool: create_recipe
+  // ─────────────────────────────────────────────────────────
+
+  /**
+   * Tạo công thức mới do AI tự nghĩ khi kho công thức không đủ đa dạng.
+   * Công thức được lưu với isAiGenerated=true, status='published' để dùng ngay.
+   *
+   * Gọi khi: ChefAgent trả về slot có recipeId=null (AI muốn tự nghĩ món mới).
+   *
+   * @param params.title         - Tên món ăn
+   * @param params.description   - Mô tả ngắn về món
+   * @param params.mealType      - Loại bữa (breakfast/lunch/dinner)
+   * @param params.cookingTime   - Thời gian nấu (phút)
+   * @param params.servings      - Số khẩu phần
+   * @param params.difficulty    - Độ khó (easy/medium/hard)
+   * @param params.estimatedCost - Chi phí ước tính (VND)
+   * @returns recipeId của công thức vừa tạo
+   */
+  async createRecipe(params: {
+    title: string;
+    description: string;
+    mealType: 'breakfast' | 'lunch' | 'dinner';
+    cookingTime: number;
+    servings: number;
+    difficulty: 'easy' | 'medium' | 'hard';
+    estimatedCost: number;
+  }): Promise<{ recipeId: string }> {
+    const recipe = await this.prisma.recipe.create({
+      data: {
+        id: uuid(),
+        title: params.title,
+        description: params.description,
+        mealType: params.mealType as any,
+        cookTimeMinutes: params.cookingTime,   // Schema: cookTimeMinutes (không phải cookingTime)
+        servings: params.servings,
+        difficultyLevel: params.difficulty as any, // Schema: difficultyLevel (không phải difficulty)
+        estimatedCost: params.estimatedCost,
+        isAiGenerated: true,
+        status: 'published' as any, // Published ngay để ChefAgent dùng được trong cùng pipeline
+      },
+    });
+
+    this.logger.log(
+      `🤖 [RecipeTools] Tạo công thức AI mới: "${recipe.title}" (id=${recipe.id}, mealType=${recipe.mealType}, cost=${recipe.estimatedCost?.toLocaleString('vi-VN')}đ)`,
+    );
+
+    return { recipeId: recipe.id };
   }
 }

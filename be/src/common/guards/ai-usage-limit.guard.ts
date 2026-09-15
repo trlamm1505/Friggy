@@ -65,7 +65,7 @@ export class AiUsageLimitGuard implements CanActivate {
       },
     });
 
-    const remaining = Math.max(0, limit - usedCount);
+    const remaining = limit === -1 ? -1 : Math.max(0, limit - usedCount);
 
     // ── Set header X-AI-Remaining ───────────────────────────
     const response = context.switchToHttp().getResponse();
@@ -73,7 +73,8 @@ export class AiUsageLimitGuard implements CanActivate {
     response.setHeader('X-AI-Limit', limit);
 
     // ── Kiểm tra giới hạn ───────────────────────────────────
-    if (usedCount >= limit) {
+    // limit = -1 → gói không giới hạn → bỏ qua check
+    if (limit !== -1 && usedCount >= limit) {
       this.logger.warn(
         `⛔ User ${userId} đã đạt giới hạn AI [${featureType}]: ${usedCount}/${limit}/tuần`,
       );

@@ -27,9 +27,11 @@ import { stripJsonFences } from '../../utils/json.utils';
 export interface MealSlot {
   dayOfWeek: number; // 0=CN, 1=T2, ..., 6=T7
   mealType: 'breakfast' | 'lunch' | 'dinner';
-  recipeId: string | null;
-  recipeName: string; // Tên món (để EvaluatorAgent đọc dễ hơn)
-  estimatedCost: number; // Chi phí ước tính (VND)
+  recipeId: string | null; // null = AI muốn tự nghĩ món mới
+  recipeName: string;      // Tên món (luôn có dù tự chọn hay tự nghĩ)
+  description?: string;    // Mô tả món — bắt buộc điền khi recipeId=null
+  cookingTime?: number;    // Thời gian nấu (phút) — bắt buộc điền khi recipeId=null
+  estimatedCost: number;   // Chi phí ước tính (VND)
   servings: number;
 }
 
@@ -94,7 +96,7 @@ Lập thực đơn tuần bắt đầu từ ${context.weekStartDate} với các 
 
 **Ngân sách (từ AccountantAgent):**
 - Mỗi bữa: ${budgetReport.perMealBudget.toLocaleString('vi-VN')}đ (${householdSize} người)
-- ID công thức trong ngân sách: ${[budgetReport.affordableRecipeIds].flat().slice(0, 20).join(', ') || 'Chưa có'}
+- ID công thức có sẵn trong ngân sách: ${[budgetReport.affordableRecipeIds].flat().slice(0, 20).join(', ') || 'Chưa có'}
 - Gợi ý tiết kiệm: ${budgetReport.recommendations}
 
 **Nguyên liệu trong tủ:** ${context.availableIngredients.slice(0, 15).join(', ')}
@@ -107,21 +109,43 @@ Lập thực đơn tuần bắt đầu từ ${context.weekStartDate} với các 
     }
 
 Hãy tạo thực đơn 7 ngày (Thứ 2 đến Chủ nhật) với 3 bữa/ngày.
-Danh sách recipeId hợp lệ (CHỈ dùng các ID này): ${[budgetReport.affordableRecipeIds].flat().slice(0, 15).join(', ')}
+
+**Hướng dẫn chọn món (quan trọng):**
+- ƯU TIÊN: Dùng recipeId có sẵn từ danh sách: ${[budgetReport.affordableRecipeIds].flat().slice(0, 15).join(', ')}
+- DỰ PHÒNG: Nếu không tìm được món phù hợp trong danh sách trên (ví dụ thiếu đa dạng, không đủ món cho bữa), hãy tự nghĩ món mới bằng cách đặt recipeId: null và điền đầy đủ recipeName, description, cookingTime.
+- Mỗi ngày nên có tối thiểu 1 món tự nghĩ để thực đơn đa dạng hơn.
 
 Bắt buộc trả về JSON object với cấu trúc CHÍNH XÁC như sau (không thay đổi tên field):
 {
   "slots": [
-    { "dayOfWeek": 1, "mealType": "breakfast", "recipeId": "<uuid từ danh sách trên>", "estimatedCost": 30000, "servings": 2 },
-    { "dayOfWeek": 1, "mealType": "lunch",     "recipeId": "<uuid>", "estimatedCost": 50000, "servings": 2 },
-    { "dayOfWeek": 1, "mealType": "dinner",    "recipeId": "<uuid>", "estimatedCost": 80000, "servings": 2 }
+    {
+      "dayOfWeek": 1,
+      "mealType": "breakfast",
+      "recipeId": "<uuid từ danh sách trên, hoặc null nếu tự nghĩ>",
+      "recipeName": "Tên món",
+      "description": "Mô tả ngắn (bắt buộc khi recipeId=null)",
+      "cookingTime": 20,
+      "estimatedCost": 30000,
+      "servings": 2
+    }
   ]
 }
 Ghi chú: dayOfWeek: 1=Thứ Hai, 2=Thứ Ba, ..., 7=Chủ Nhật. mealType chỉ dùng: breakfast/lunch/dinner.
     `.trim();
 
     const messages: ChatCompletionMessageParam[] = [
-      { role: 'system', content: systemPrompt },
+      {
+        role: 'system',
+        // Luôn override system prompt bằng instruction JSON-only cứng
+        // để AI không nói chuyện / thêm preamble trước JSON
+        content: [
+          systemPrompt,
+          '\n\n[QUAN TRỌNG] Bạn CHỈ được phép trả về JSON object thuần túy.',
+          'KHÔNG được thêm bất kỳ text giải thích nào trước hoặc sau JSON.',
+          'KHÔNG dùng markdown code fence (```json).',
+          'Response đầu tiên phải bắt đầu bằng ký tự { và kết thúc bằng }.',
+        ].join(' '),
+      },
       { role: 'user', content: userMessage },
     ];
 
@@ -129,7 +153,7 @@ Ghi chú: dayOfWeek: 1=Thứ Hai, 2=Thứ Ba, ..., 7=Chủ Nhật. mealType ch�
       model: llmClient.modelName,
       messages,
       response_format: { type: 'json_object' },
-      temperature: 0.7, // Nhiệt độ vừa phải → sáng tạo nhưng vẫn có cấu trúc
+      temperature: 0.5, // Giảm nhiệt độ → ít hallucinate, JSON ổn định hơn
     });
 
     const rawJson = response.choices[0]?.message?.content ?? '{}';
@@ -200,6 +224,39 @@ Ghi chú: dayOfWeek: 1=Thứ Hai, 2=Thứ Ba, ..., 7=Chủ Nhật. mealType ch�
         '⚠️ [ChefAgent] Không parse được JSON — dùng thực đơn trống',
       );
       this.logger.warn(`[ChefAgent DEBUG] rawJson: ${rawJson.slice(0, 200)}`);
+    }
+
+    // ─────────────────────────────────────────────────────────
+    // Hybrid fallback: tạo recipe mới cho slot AI tự nghĩ (recipeId=null)
+    // ─────────────────────────────────────────────────────────
+    const newRecipeCount = slots.filter((s) => !s.recipeId).length;
+    if (newRecipeCount > 0) {
+      this.logger.log(
+        `🤖 [ChefAgent] AI tự nghĩ ${newRecipeCount} món mới — đang tạo vào DB...`,
+      );
+    }
+
+    for (const slot of slots) {
+      if (!slot.recipeId && slot.recipeName) {
+        // AI không chọn được món từ kho → tự tạo recipe mới
+        try {
+          const { recipeId } = await this.recipeTools.createRecipe({
+            title: slot.recipeName,
+            description: slot.description ?? `Món ${slot.recipeName} do AI gợi ý`,
+            mealType: slot.mealType,
+            cookingTime: slot.cookingTime ?? 30,
+            servings: slot.servings ?? householdSize,
+            difficulty: 'medium',
+            estimatedCost: slot.estimatedCost ?? budgetReport.perMealBudget,
+          });
+          slot.recipeId = recipeId;
+        } catch (err) {
+          this.logger.error(
+            `❌ [ChefAgent] Không tạo được recipe cho slot "${slot.recipeName}": ${err}`,
+          );
+          // Giữ recipeId=null — slot sẽ bị bỏ qua khi lưu DB
+        }
+      }
     }
 
     // Tính tổng chi phí ước tính
