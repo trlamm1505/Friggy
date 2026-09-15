@@ -260,8 +260,8 @@ export type ShoppingListItemWhereInput = {
   isPurchased?: Prisma.BoolFilter<"ShoppingListItem"> | boolean
   purchasedAt?: Prisma.DateTimeNullableFilter<"ShoppingListItem"> | Date | string | null
   deletedAt?: Prisma.DateTimeNullableFilter<"ShoppingListItem"> | Date | string | null
-  shoppingList?: Prisma.XOR<Prisma.ShoppingListScalarRelationFilter, Prisma.ShoppingListWhereInput>
   ingredient?: Prisma.XOR<Prisma.IngredientScalarRelationFilter, Prisma.IngredientWhereInput>
+  shoppingList?: Prisma.XOR<Prisma.ShoppingListScalarRelationFilter, Prisma.ShoppingListWhereInput>
 }
 
 export type ShoppingListItemOrderByWithRelationInput = {
@@ -274,8 +274,8 @@ export type ShoppingListItemOrderByWithRelationInput = {
   isPurchased?: Prisma.SortOrder
   purchasedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   deletedAt?: Prisma.SortOrderInput | Prisma.SortOrder
-  shoppingList?: Prisma.ShoppingListOrderByWithRelationInput
   ingredient?: Prisma.IngredientOrderByWithRelationInput
+  shoppingList?: Prisma.ShoppingListOrderByWithRelationInput
   _relevance?: Prisma.ShoppingListItemOrderByRelevanceInput
 }
 
@@ -292,8 +292,8 @@ export type ShoppingListItemWhereUniqueInput = Prisma.AtLeast<{
   isPurchased?: Prisma.BoolFilter<"ShoppingListItem"> | boolean
   purchasedAt?: Prisma.DateTimeNullableFilter<"ShoppingListItem"> | Date | string | null
   deletedAt?: Prisma.DateTimeNullableFilter<"ShoppingListItem"> | Date | string | null
-  shoppingList?: Prisma.XOR<Prisma.ShoppingListScalarRelationFilter, Prisma.ShoppingListWhereInput>
   ingredient?: Prisma.XOR<Prisma.IngredientScalarRelationFilter, Prisma.IngredientWhereInput>
+  shoppingList?: Prisma.XOR<Prisma.ShoppingListScalarRelationFilter, Prisma.ShoppingListWhereInput>
 }, "id">
 
 export type ShoppingListItemOrderByWithAggregationInput = {
@@ -335,8 +335,8 @@ export type ShoppingListItemCreateInput = {
   isPurchased?: boolean
   purchasedAt?: Date | string | null
   deletedAt?: Date | string | null
-  shoppingList: Prisma.ShoppingListCreateNestedOneWithoutItemsInput
   ingredient: Prisma.IngredientCreateNestedOneWithoutShoppingItemsInput
+  shoppingList: Prisma.ShoppingListCreateNestedOneWithoutItemsInput
 }
 
 export type ShoppingListItemUncheckedCreateInput = {
@@ -358,8 +358,8 @@ export type ShoppingListItemUpdateInput = {
   isPurchased?: Prisma.BoolFieldUpdateOperationsInput | boolean
   purchasedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  shoppingList?: Prisma.ShoppingListUpdateOneRequiredWithoutItemsNestedInput
   ingredient?: Prisma.IngredientUpdateOneRequiredWithoutShoppingItemsNestedInput
+  shoppingList?: Prisma.ShoppingListUpdateOneRequiredWithoutItemsNestedInput
 }
 
 export type ShoppingListItemUncheckedUpdateInput = {
@@ -764,8 +764,8 @@ export type ShoppingListItemSelect<ExtArgs extends runtime.Types.Extensions.Inte
   isPurchased?: boolean
   purchasedAt?: boolean
   deletedAt?: boolean
-  shoppingList?: boolean | Prisma.ShoppingListDefaultArgs<ExtArgs>
   ingredient?: boolean | Prisma.IngredientDefaultArgs<ExtArgs>
+  shoppingList?: boolean | Prisma.ShoppingListDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["shoppingListItem"]>
 
 
@@ -784,15 +784,15 @@ export type ShoppingListItemSelectScalar = {
 
 export type ShoppingListItemOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "shoppingListId" | "ingredientId" | "quantity" | "unit" | "estimatedPrice" | "isPurchased" | "purchasedAt" | "deletedAt", ExtArgs["result"]["shoppingListItem"]>
 export type ShoppingListItemInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  shoppingList?: boolean | Prisma.ShoppingListDefaultArgs<ExtArgs>
   ingredient?: boolean | Prisma.IngredientDefaultArgs<ExtArgs>
+  shoppingList?: boolean | Prisma.ShoppingListDefaultArgs<ExtArgs>
 }
 
 export type $ShoppingListItemPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "ShoppingListItem"
   objects: {
-    shoppingList: Prisma.$ShoppingListPayload<ExtArgs>
     ingredient: Prisma.$IngredientPayload<ExtArgs>
+    shoppingList: Prisma.$ShoppingListPayload<ExtArgs>
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: number
@@ -1144,8 +1144,8 @@ readonly fields: ShoppingListItemFieldRefs;
  */
 export interface Prisma__ShoppingListItemClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
-  shoppingList<T extends Prisma.ShoppingListDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ShoppingListDefaultArgs<ExtArgs>>): Prisma.Prisma__ShoppingListClient<runtime.Types.Result.GetResult<Prisma.$ShoppingListPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   ingredient<T extends Prisma.IngredientDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.IngredientDefaultArgs<ExtArgs>>): Prisma.Prisma__IngredientClient<runtime.Types.Result.GetResult<Prisma.$IngredientPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  shoppingList<T extends Prisma.ShoppingListDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ShoppingListDefaultArgs<ExtArgs>>): Prisma.Prisma__ShoppingListClient<runtime.Types.Result.GetResult<Prisma.$ShoppingListPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.

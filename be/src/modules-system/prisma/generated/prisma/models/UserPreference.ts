@@ -55,16 +55,16 @@ export type UserPreferenceMinAggregateOutputType = {
   skillLevel: $Enums.SkillLevel | null
   householdSize: number | null
   aiPersonalityMode: $Enums.AiPersonalityMode | null
-  primaryGoal: string | null
-  cookingFrequency: string | null
-  height: number | null
-  weight: number | null
-  activityLevel: string | null
-  pushNotifications: boolean | null
-  expiryAlert: boolean | null
-  shoppingReminder: boolean | null
   updatedAt: Date | null
   deletedAt: Date | null
+  activityLevel: string | null
+  cookingFrequency: string | null
+  height: number | null
+  primaryGoal: string | null
+  weight: number | null
+  expiryAlert: boolean | null
+  pushNotifications: boolean | null
+  shoppingReminder: boolean | null
 }
 
 export type UserPreferenceMaxAggregateOutputType = {
@@ -78,16 +78,16 @@ export type UserPreferenceMaxAggregateOutputType = {
   skillLevel: $Enums.SkillLevel | null
   householdSize: number | null
   aiPersonalityMode: $Enums.AiPersonalityMode | null
-  primaryGoal: string | null
-  cookingFrequency: string | null
-  height: number | null
-  weight: number | null
-  activityLevel: string | null
-  pushNotifications: boolean | null
-  expiryAlert: boolean | null
-  shoppingReminder: boolean | null
   updatedAt: Date | null
   deletedAt: Date | null
+  activityLevel: string | null
+  cookingFrequency: string | null
+  height: number | null
+  primaryGoal: string | null
+  weight: number | null
+  expiryAlert: boolean | null
+  pushNotifications: boolean | null
+  shoppingReminder: boolean | null
 }
 
 export type UserPreferenceCountAggregateOutputType = {
@@ -101,16 +101,16 @@ export type UserPreferenceCountAggregateOutputType = {
   skillLevel: number
   householdSize: number
   aiPersonalityMode: number
-  primaryGoal: number
-  cookingFrequency: number
-  height: number
-  weight: number
-  activityLevel: number
-  pushNotifications: number
-  expiryAlert: number
-  shoppingReminder: number
   updatedAt: number
   deletedAt: number
+  activityLevel: number
+  cookingFrequency: number
+  height: number
+  primaryGoal: number
+  weight: number
+  expiryAlert: number
+  pushNotifications: number
+  shoppingReminder: number
   _all: number
 }
 
@@ -144,16 +144,16 @@ export type UserPreferenceMinAggregateInputType = {
   skillLevel?: true
   householdSize?: true
   aiPersonalityMode?: true
-  primaryGoal?: true
-  cookingFrequency?: true
-  height?: true
-  weight?: true
-  activityLevel?: true
-  pushNotifications?: true
-  expiryAlert?: true
-  shoppingReminder?: true
   updatedAt?: true
   deletedAt?: true
+  activityLevel?: true
+  cookingFrequency?: true
+  height?: true
+  primaryGoal?: true
+  weight?: true
+  expiryAlert?: true
+  pushNotifications?: true
+  shoppingReminder?: true
 }
 
 export type UserPreferenceMaxAggregateInputType = {
@@ -167,16 +167,16 @@ export type UserPreferenceMaxAggregateInputType = {
   skillLevel?: true
   householdSize?: true
   aiPersonalityMode?: true
-  primaryGoal?: true
-  cookingFrequency?: true
-  height?: true
-  weight?: true
-  activityLevel?: true
-  pushNotifications?: true
-  expiryAlert?: true
-  shoppingReminder?: true
   updatedAt?: true
   deletedAt?: true
+  activityLevel?: true
+  cookingFrequency?: true
+  height?: true
+  primaryGoal?: true
+  weight?: true
+  expiryAlert?: true
+  pushNotifications?: true
+  shoppingReminder?: true
 }
 
 export type UserPreferenceCountAggregateInputType = {
@@ -190,16 +190,16 @@ export type UserPreferenceCountAggregateInputType = {
   skillLevel?: true
   householdSize?: true
   aiPersonalityMode?: true
-  primaryGoal?: true
-  cookingFrequency?: true
-  height?: true
-  weight?: true
-  activityLevel?: true
-  pushNotifications?: true
-  expiryAlert?: true
-  shoppingReminder?: true
   updatedAt?: true
   deletedAt?: true
+  activityLevel?: true
+  cookingFrequency?: true
+  height?: true
+  primaryGoal?: true
+  weight?: true
+  expiryAlert?: true
+  pushNotifications?: true
+  shoppingReminder?: true
   _all?: true
 }
 
@@ -300,16 +300,16 @@ export type UserPreferenceGroupByOutputType = {
   skillLevel: $Enums.SkillLevel
   householdSize: number
   aiPersonalityMode: $Enums.AiPersonalityMode
-  primaryGoal: string | null
-  cookingFrequency: string | null
-  height: number | null
-  weight: number | null
-  activityLevel: string | null
-  pushNotifications: boolean
-  expiryAlert: boolean
-  shoppingReminder: boolean
   updatedAt: Date
   deletedAt: Date | null
+  activityLevel: string | null
+  cookingFrequency: string | null
+  height: number | null
+  primaryGoal: string | null
+  weight: number | null
+  expiryAlert: boolean
+  pushNotifications: boolean
+  shoppingReminder: boolean
   _count: UserPreferenceCountAggregateOutputType | null
   _avg: UserPreferenceAvgAggregateOutputType | null
   _sum: UserPreferenceSumAggregateOutputType | null
@@ -346,16 +346,16 @@ export type UserPreferenceWhereInput = {
   skillLevel?: Prisma.EnumSkillLevelFilter<"UserPreference"> | $Enums.SkillLevel
   householdSize?: Prisma.IntFilter<"UserPreference"> | number
   aiPersonalityMode?: Prisma.EnumAiPersonalityModeFilter<"UserPreference"> | $Enums.AiPersonalityMode
-  primaryGoal?: Prisma.StringNullableFilter<"UserPreference"> | string | null
-  cookingFrequency?: Prisma.StringNullableFilter<"UserPreference"> | string | null
-  height?: Prisma.IntNullableFilter<"UserPreference"> | number | null
-  weight?: Prisma.IntNullableFilter<"UserPreference"> | number | null
-  activityLevel?: Prisma.StringNullableFilter<"UserPreference"> | string | null
-  pushNotifications?: Prisma.BoolFilter<"UserPreference"> | boolean
-  expiryAlert?: Prisma.BoolFilter<"UserPreference"> | boolean
-  shoppingReminder?: Prisma.BoolFilter<"UserPreference"> | boolean
   updatedAt?: Prisma.DateTimeFilter<"UserPreference"> | Date | string
   deletedAt?: Prisma.DateTimeNullableFilter<"UserPreference"> | Date | string | null
+  activityLevel?: Prisma.StringNullableFilter<"UserPreference"> | string | null
+  cookingFrequency?: Prisma.StringNullableFilter<"UserPreference"> | string | null
+  height?: Prisma.IntNullableFilter<"UserPreference"> | number | null
+  primaryGoal?: Prisma.StringNullableFilter<"UserPreference"> | string | null
+  weight?: Prisma.IntNullableFilter<"UserPreference"> | number | null
+  expiryAlert?: Prisma.BoolFilter<"UserPreference"> | boolean
+  pushNotifications?: Prisma.BoolFilter<"UserPreference"> | boolean
+  shoppingReminder?: Prisma.BoolFilter<"UserPreference"> | boolean
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
 }
 
@@ -370,16 +370,16 @@ export type UserPreferenceOrderByWithRelationInput = {
   skillLevel?: Prisma.SortOrder
   householdSize?: Prisma.SortOrder
   aiPersonalityMode?: Prisma.SortOrder
-  primaryGoal?: Prisma.SortOrderInput | Prisma.SortOrder
-  cookingFrequency?: Prisma.SortOrderInput | Prisma.SortOrder
-  height?: Prisma.SortOrderInput | Prisma.SortOrder
-  weight?: Prisma.SortOrderInput | Prisma.SortOrder
-  activityLevel?: Prisma.SortOrderInput | Prisma.SortOrder
-  pushNotifications?: Prisma.SortOrder
-  expiryAlert?: Prisma.SortOrder
-  shoppingReminder?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  activityLevel?: Prisma.SortOrderInput | Prisma.SortOrder
+  cookingFrequency?: Prisma.SortOrderInput | Prisma.SortOrder
+  height?: Prisma.SortOrderInput | Prisma.SortOrder
+  primaryGoal?: Prisma.SortOrderInput | Prisma.SortOrder
+  weight?: Prisma.SortOrderInput | Prisma.SortOrder
+  expiryAlert?: Prisma.SortOrder
+  pushNotifications?: Prisma.SortOrder
+  shoppingReminder?: Prisma.SortOrder
   user?: Prisma.UserOrderByWithRelationInput
   _relevance?: Prisma.UserPreferenceOrderByRelevanceInput
 }
@@ -398,16 +398,16 @@ export type UserPreferenceWhereUniqueInput = Prisma.AtLeast<{
   skillLevel?: Prisma.EnumSkillLevelFilter<"UserPreference"> | $Enums.SkillLevel
   householdSize?: Prisma.IntFilter<"UserPreference"> | number
   aiPersonalityMode?: Prisma.EnumAiPersonalityModeFilter<"UserPreference"> | $Enums.AiPersonalityMode
-  primaryGoal?: Prisma.StringNullableFilter<"UserPreference"> | string | null
-  cookingFrequency?: Prisma.StringNullableFilter<"UserPreference"> | string | null
-  height?: Prisma.IntNullableFilter<"UserPreference"> | number | null
-  weight?: Prisma.IntNullableFilter<"UserPreference"> | number | null
-  activityLevel?: Prisma.StringNullableFilter<"UserPreference"> | string | null
-  pushNotifications?: Prisma.BoolFilter<"UserPreference"> | boolean
-  expiryAlert?: Prisma.BoolFilter<"UserPreference"> | boolean
-  shoppingReminder?: Prisma.BoolFilter<"UserPreference"> | boolean
   updatedAt?: Prisma.DateTimeFilter<"UserPreference"> | Date | string
   deletedAt?: Prisma.DateTimeNullableFilter<"UserPreference"> | Date | string | null
+  activityLevel?: Prisma.StringNullableFilter<"UserPreference"> | string | null
+  cookingFrequency?: Prisma.StringNullableFilter<"UserPreference"> | string | null
+  height?: Prisma.IntNullableFilter<"UserPreference"> | number | null
+  primaryGoal?: Prisma.StringNullableFilter<"UserPreference"> | string | null
+  weight?: Prisma.IntNullableFilter<"UserPreference"> | number | null
+  expiryAlert?: Prisma.BoolFilter<"UserPreference"> | boolean
+  pushNotifications?: Prisma.BoolFilter<"UserPreference"> | boolean
+  shoppingReminder?: Prisma.BoolFilter<"UserPreference"> | boolean
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
 }, "id" | "userId">
 
@@ -422,16 +422,16 @@ export type UserPreferenceOrderByWithAggregationInput = {
   skillLevel?: Prisma.SortOrder
   householdSize?: Prisma.SortOrder
   aiPersonalityMode?: Prisma.SortOrder
-  primaryGoal?: Prisma.SortOrderInput | Prisma.SortOrder
-  cookingFrequency?: Prisma.SortOrderInput | Prisma.SortOrder
-  height?: Prisma.SortOrderInput | Prisma.SortOrder
-  weight?: Prisma.SortOrderInput | Prisma.SortOrder
-  activityLevel?: Prisma.SortOrderInput | Prisma.SortOrder
-  pushNotifications?: Prisma.SortOrder
-  expiryAlert?: Prisma.SortOrder
-  shoppingReminder?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  activityLevel?: Prisma.SortOrderInput | Prisma.SortOrder
+  cookingFrequency?: Prisma.SortOrderInput | Prisma.SortOrder
+  height?: Prisma.SortOrderInput | Prisma.SortOrder
+  primaryGoal?: Prisma.SortOrderInput | Prisma.SortOrder
+  weight?: Prisma.SortOrderInput | Prisma.SortOrder
+  expiryAlert?: Prisma.SortOrder
+  pushNotifications?: Prisma.SortOrder
+  shoppingReminder?: Prisma.SortOrder
   _count?: Prisma.UserPreferenceCountOrderByAggregateInput
   _avg?: Prisma.UserPreferenceAvgOrderByAggregateInput
   _max?: Prisma.UserPreferenceMaxOrderByAggregateInput
@@ -453,16 +453,16 @@ export type UserPreferenceScalarWhereWithAggregatesInput = {
   skillLevel?: Prisma.EnumSkillLevelWithAggregatesFilter<"UserPreference"> | $Enums.SkillLevel
   householdSize?: Prisma.IntWithAggregatesFilter<"UserPreference"> | number
   aiPersonalityMode?: Prisma.EnumAiPersonalityModeWithAggregatesFilter<"UserPreference"> | $Enums.AiPersonalityMode
-  primaryGoal?: Prisma.StringNullableWithAggregatesFilter<"UserPreference"> | string | null
-  cookingFrequency?: Prisma.StringNullableWithAggregatesFilter<"UserPreference"> | string | null
-  height?: Prisma.IntNullableWithAggregatesFilter<"UserPreference"> | number | null
-  weight?: Prisma.IntNullableWithAggregatesFilter<"UserPreference"> | number | null
-  activityLevel?: Prisma.StringNullableWithAggregatesFilter<"UserPreference"> | string | null
-  pushNotifications?: Prisma.BoolWithAggregatesFilter<"UserPreference"> | boolean
-  expiryAlert?: Prisma.BoolWithAggregatesFilter<"UserPreference"> | boolean
-  shoppingReminder?: Prisma.BoolWithAggregatesFilter<"UserPreference"> | boolean
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"UserPreference"> | Date | string
   deletedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"UserPreference"> | Date | string | null
+  activityLevel?: Prisma.StringNullableWithAggregatesFilter<"UserPreference"> | string | null
+  cookingFrequency?: Prisma.StringNullableWithAggregatesFilter<"UserPreference"> | string | null
+  height?: Prisma.IntNullableWithAggregatesFilter<"UserPreference"> | number | null
+  primaryGoal?: Prisma.StringNullableWithAggregatesFilter<"UserPreference"> | string | null
+  weight?: Prisma.IntNullableWithAggregatesFilter<"UserPreference"> | number | null
+  expiryAlert?: Prisma.BoolWithAggregatesFilter<"UserPreference"> | boolean
+  pushNotifications?: Prisma.BoolWithAggregatesFilter<"UserPreference"> | boolean
+  shoppingReminder?: Prisma.BoolWithAggregatesFilter<"UserPreference"> | boolean
 }
 
 export type UserPreferenceCreateInput = {
@@ -475,16 +475,16 @@ export type UserPreferenceCreateInput = {
   skillLevel?: $Enums.SkillLevel
   householdSize?: number
   aiPersonalityMode?: $Enums.AiPersonalityMode
-  primaryGoal?: string | null
-  cookingFrequency?: string | null
-  height?: number | null
-  weight?: number | null
-  activityLevel?: string | null
-  pushNotifications?: boolean
-  expiryAlert?: boolean
-  shoppingReminder?: boolean
   updatedAt?: Date | string
   deletedAt?: Date | string | null
+  activityLevel?: string | null
+  cookingFrequency?: string | null
+  height?: number | null
+  primaryGoal?: string | null
+  weight?: number | null
+  expiryAlert?: boolean
+  pushNotifications?: boolean
+  shoppingReminder?: boolean
   user: Prisma.UserCreateNestedOneWithoutPreferencesInput
 }
 
@@ -499,16 +499,16 @@ export type UserPreferenceUncheckedCreateInput = {
   skillLevel?: $Enums.SkillLevel
   householdSize?: number
   aiPersonalityMode?: $Enums.AiPersonalityMode
-  primaryGoal?: string | null
-  cookingFrequency?: string | null
-  height?: number | null
-  weight?: number | null
-  activityLevel?: string | null
-  pushNotifications?: boolean
-  expiryAlert?: boolean
-  shoppingReminder?: boolean
   updatedAt?: Date | string
   deletedAt?: Date | string | null
+  activityLevel?: string | null
+  cookingFrequency?: string | null
+  height?: number | null
+  primaryGoal?: string | null
+  weight?: number | null
+  expiryAlert?: boolean
+  pushNotifications?: boolean
+  shoppingReminder?: boolean
 }
 
 export type UserPreferenceUpdateInput = {
@@ -521,16 +521,16 @@ export type UserPreferenceUpdateInput = {
   skillLevel?: Prisma.EnumSkillLevelFieldUpdateOperationsInput | $Enums.SkillLevel
   householdSize?: Prisma.IntFieldUpdateOperationsInput | number
   aiPersonalityMode?: Prisma.EnumAiPersonalityModeFieldUpdateOperationsInput | $Enums.AiPersonalityMode
-  primaryGoal?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  cookingFrequency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  height?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  weight?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  activityLevel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  pushNotifications?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  expiryAlert?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  shoppingReminder?: Prisma.BoolFieldUpdateOperationsInput | boolean
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activityLevel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cookingFrequency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  height?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  primaryGoal?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  weight?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  expiryAlert?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  pushNotifications?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  shoppingReminder?: Prisma.BoolFieldUpdateOperationsInput | boolean
   user?: Prisma.UserUpdateOneRequiredWithoutPreferencesNestedInput
 }
 
@@ -545,16 +545,16 @@ export type UserPreferenceUncheckedUpdateInput = {
   skillLevel?: Prisma.EnumSkillLevelFieldUpdateOperationsInput | $Enums.SkillLevel
   householdSize?: Prisma.IntFieldUpdateOperationsInput | number
   aiPersonalityMode?: Prisma.EnumAiPersonalityModeFieldUpdateOperationsInput | $Enums.AiPersonalityMode
-  primaryGoal?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  cookingFrequency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  height?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  weight?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  activityLevel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  pushNotifications?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  expiryAlert?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  shoppingReminder?: Prisma.BoolFieldUpdateOperationsInput | boolean
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activityLevel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cookingFrequency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  height?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  primaryGoal?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  weight?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  expiryAlert?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  pushNotifications?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  shoppingReminder?: Prisma.BoolFieldUpdateOperationsInput | boolean
 }
 
 export type UserPreferenceCreateManyInput = {
@@ -568,16 +568,16 @@ export type UserPreferenceCreateManyInput = {
   skillLevel?: $Enums.SkillLevel
   householdSize?: number
   aiPersonalityMode?: $Enums.AiPersonalityMode
-  primaryGoal?: string | null
-  cookingFrequency?: string | null
-  height?: number | null
-  weight?: number | null
-  activityLevel?: string | null
-  pushNotifications?: boolean
-  expiryAlert?: boolean
-  shoppingReminder?: boolean
   updatedAt?: Date | string
   deletedAt?: Date | string | null
+  activityLevel?: string | null
+  cookingFrequency?: string | null
+  height?: number | null
+  primaryGoal?: string | null
+  weight?: number | null
+  expiryAlert?: boolean
+  pushNotifications?: boolean
+  shoppingReminder?: boolean
 }
 
 export type UserPreferenceUpdateManyMutationInput = {
@@ -590,16 +590,16 @@ export type UserPreferenceUpdateManyMutationInput = {
   skillLevel?: Prisma.EnumSkillLevelFieldUpdateOperationsInput | $Enums.SkillLevel
   householdSize?: Prisma.IntFieldUpdateOperationsInput | number
   aiPersonalityMode?: Prisma.EnumAiPersonalityModeFieldUpdateOperationsInput | $Enums.AiPersonalityMode
-  primaryGoal?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  cookingFrequency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  height?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  weight?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  activityLevel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  pushNotifications?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  expiryAlert?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  shoppingReminder?: Prisma.BoolFieldUpdateOperationsInput | boolean
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activityLevel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cookingFrequency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  height?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  primaryGoal?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  weight?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  expiryAlert?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  pushNotifications?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  shoppingReminder?: Prisma.BoolFieldUpdateOperationsInput | boolean
 }
 
 export type UserPreferenceUncheckedUpdateManyInput = {
@@ -613,16 +613,16 @@ export type UserPreferenceUncheckedUpdateManyInput = {
   skillLevel?: Prisma.EnumSkillLevelFieldUpdateOperationsInput | $Enums.SkillLevel
   householdSize?: Prisma.IntFieldUpdateOperationsInput | number
   aiPersonalityMode?: Prisma.EnumAiPersonalityModeFieldUpdateOperationsInput | $Enums.AiPersonalityMode
-  primaryGoal?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  cookingFrequency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  height?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  weight?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  activityLevel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  pushNotifications?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  expiryAlert?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  shoppingReminder?: Prisma.BoolFieldUpdateOperationsInput | boolean
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activityLevel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cookingFrequency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  height?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  primaryGoal?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  weight?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  expiryAlert?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  pushNotifications?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  shoppingReminder?: Prisma.BoolFieldUpdateOperationsInput | boolean
 }
 
 export type UserPreferenceNullableScalarRelationFilter = {
@@ -647,16 +647,16 @@ export type UserPreferenceCountOrderByAggregateInput = {
   skillLevel?: Prisma.SortOrder
   householdSize?: Prisma.SortOrder
   aiPersonalityMode?: Prisma.SortOrder
-  primaryGoal?: Prisma.SortOrder
-  cookingFrequency?: Prisma.SortOrder
-  height?: Prisma.SortOrder
-  weight?: Prisma.SortOrder
-  activityLevel?: Prisma.SortOrder
-  pushNotifications?: Prisma.SortOrder
-  expiryAlert?: Prisma.SortOrder
-  shoppingReminder?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrder
+  activityLevel?: Prisma.SortOrder
+  cookingFrequency?: Prisma.SortOrder
+  height?: Prisma.SortOrder
+  primaryGoal?: Prisma.SortOrder
+  weight?: Prisma.SortOrder
+  expiryAlert?: Prisma.SortOrder
+  pushNotifications?: Prisma.SortOrder
+  shoppingReminder?: Prisma.SortOrder
 }
 
 export type UserPreferenceAvgOrderByAggregateInput = {
@@ -679,16 +679,16 @@ export type UserPreferenceMaxOrderByAggregateInput = {
   skillLevel?: Prisma.SortOrder
   householdSize?: Prisma.SortOrder
   aiPersonalityMode?: Prisma.SortOrder
-  primaryGoal?: Prisma.SortOrder
-  cookingFrequency?: Prisma.SortOrder
-  height?: Prisma.SortOrder
-  weight?: Prisma.SortOrder
-  activityLevel?: Prisma.SortOrder
-  pushNotifications?: Prisma.SortOrder
-  expiryAlert?: Prisma.SortOrder
-  shoppingReminder?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrder
+  activityLevel?: Prisma.SortOrder
+  cookingFrequency?: Prisma.SortOrder
+  height?: Prisma.SortOrder
+  primaryGoal?: Prisma.SortOrder
+  weight?: Prisma.SortOrder
+  expiryAlert?: Prisma.SortOrder
+  pushNotifications?: Prisma.SortOrder
+  shoppingReminder?: Prisma.SortOrder
 }
 
 export type UserPreferenceMinOrderByAggregateInput = {
@@ -702,16 +702,16 @@ export type UserPreferenceMinOrderByAggregateInput = {
   skillLevel?: Prisma.SortOrder
   householdSize?: Prisma.SortOrder
   aiPersonalityMode?: Prisma.SortOrder
-  primaryGoal?: Prisma.SortOrder
-  cookingFrequency?: Prisma.SortOrder
-  height?: Prisma.SortOrder
-  weight?: Prisma.SortOrder
-  activityLevel?: Prisma.SortOrder
-  pushNotifications?: Prisma.SortOrder
-  expiryAlert?: Prisma.SortOrder
-  shoppingReminder?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrder
+  activityLevel?: Prisma.SortOrder
+  cookingFrequency?: Prisma.SortOrder
+  height?: Prisma.SortOrder
+  primaryGoal?: Prisma.SortOrder
+  weight?: Prisma.SortOrder
+  expiryAlert?: Prisma.SortOrder
+  pushNotifications?: Prisma.SortOrder
+  shoppingReminder?: Prisma.SortOrder
 }
 
 export type UserPreferenceSumOrderByAggregateInput = {
@@ -785,16 +785,16 @@ export type UserPreferenceCreateWithoutUserInput = {
   skillLevel?: $Enums.SkillLevel
   householdSize?: number
   aiPersonalityMode?: $Enums.AiPersonalityMode
-  primaryGoal?: string | null
-  cookingFrequency?: string | null
-  height?: number | null
-  weight?: number | null
-  activityLevel?: string | null
-  pushNotifications?: boolean
-  expiryAlert?: boolean
-  shoppingReminder?: boolean
   updatedAt?: Date | string
   deletedAt?: Date | string | null
+  activityLevel?: string | null
+  cookingFrequency?: string | null
+  height?: number | null
+  primaryGoal?: string | null
+  weight?: number | null
+  expiryAlert?: boolean
+  pushNotifications?: boolean
+  shoppingReminder?: boolean
 }
 
 export type UserPreferenceUncheckedCreateWithoutUserInput = {
@@ -807,16 +807,16 @@ export type UserPreferenceUncheckedCreateWithoutUserInput = {
   skillLevel?: $Enums.SkillLevel
   householdSize?: number
   aiPersonalityMode?: $Enums.AiPersonalityMode
-  primaryGoal?: string | null
-  cookingFrequency?: string | null
-  height?: number | null
-  weight?: number | null
-  activityLevel?: string | null
-  pushNotifications?: boolean
-  expiryAlert?: boolean
-  shoppingReminder?: boolean
   updatedAt?: Date | string
   deletedAt?: Date | string | null
+  activityLevel?: string | null
+  cookingFrequency?: string | null
+  height?: number | null
+  primaryGoal?: string | null
+  weight?: number | null
+  expiryAlert?: boolean
+  pushNotifications?: boolean
+  shoppingReminder?: boolean
 }
 
 export type UserPreferenceCreateOrConnectWithoutUserInput = {
@@ -845,16 +845,16 @@ export type UserPreferenceUpdateWithoutUserInput = {
   skillLevel?: Prisma.EnumSkillLevelFieldUpdateOperationsInput | $Enums.SkillLevel
   householdSize?: Prisma.IntFieldUpdateOperationsInput | number
   aiPersonalityMode?: Prisma.EnumAiPersonalityModeFieldUpdateOperationsInput | $Enums.AiPersonalityMode
-  primaryGoal?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  cookingFrequency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  height?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  weight?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  activityLevel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  pushNotifications?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  expiryAlert?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  shoppingReminder?: Prisma.BoolFieldUpdateOperationsInput | boolean
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activityLevel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cookingFrequency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  height?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  primaryGoal?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  weight?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  expiryAlert?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  pushNotifications?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  shoppingReminder?: Prisma.BoolFieldUpdateOperationsInput | boolean
 }
 
 export type UserPreferenceUncheckedUpdateWithoutUserInput = {
@@ -867,16 +867,16 @@ export type UserPreferenceUncheckedUpdateWithoutUserInput = {
   skillLevel?: Prisma.EnumSkillLevelFieldUpdateOperationsInput | $Enums.SkillLevel
   householdSize?: Prisma.IntFieldUpdateOperationsInput | number
   aiPersonalityMode?: Prisma.EnumAiPersonalityModeFieldUpdateOperationsInput | $Enums.AiPersonalityMode
-  primaryGoal?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  cookingFrequency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  height?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  weight?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  activityLevel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  pushNotifications?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  expiryAlert?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  shoppingReminder?: Prisma.BoolFieldUpdateOperationsInput | boolean
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  activityLevel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cookingFrequency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  height?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  primaryGoal?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  weight?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  expiryAlert?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  pushNotifications?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  shoppingReminder?: Prisma.BoolFieldUpdateOperationsInput | boolean
 }
 
 
@@ -892,16 +892,16 @@ export type UserPreferenceSelect<ExtArgs extends runtime.Types.Extensions.Intern
   skillLevel?: boolean
   householdSize?: boolean
   aiPersonalityMode?: boolean
-  primaryGoal?: boolean
-  cookingFrequency?: boolean
-  height?: boolean
-  weight?: boolean
-  activityLevel?: boolean
-  pushNotifications?: boolean
-  expiryAlert?: boolean
-  shoppingReminder?: boolean
   updatedAt?: boolean
   deletedAt?: boolean
+  activityLevel?: boolean
+  cookingFrequency?: boolean
+  height?: boolean
+  primaryGoal?: boolean
+  weight?: boolean
+  expiryAlert?: boolean
+  pushNotifications?: boolean
+  shoppingReminder?: boolean
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["userPreference"]>
 
@@ -918,19 +918,19 @@ export type UserPreferenceSelectScalar = {
   skillLevel?: boolean
   householdSize?: boolean
   aiPersonalityMode?: boolean
-  primaryGoal?: boolean
-  cookingFrequency?: boolean
-  height?: boolean
-  weight?: boolean
-  activityLevel?: boolean
-  pushNotifications?: boolean
-  expiryAlert?: boolean
-  shoppingReminder?: boolean
   updatedAt?: boolean
   deletedAt?: boolean
+  activityLevel?: boolean
+  cookingFrequency?: boolean
+  height?: boolean
+  primaryGoal?: boolean
+  weight?: boolean
+  expiryAlert?: boolean
+  pushNotifications?: boolean
+  shoppingReminder?: boolean
 }
 
-export type UserPreferenceOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "weeklyBudget" | "dailyCalorieTarget" | "dietaryStyle" | "preferSimpleRecipes" | "maxCookTimeMinutes" | "skillLevel" | "householdSize" | "aiPersonalityMode" | "primaryGoal" | "cookingFrequency" | "height" | "weight" | "activityLevel" | "pushNotifications" | "expiryAlert" | "shoppingReminder" | "updatedAt" | "deletedAt", ExtArgs["result"]["userPreference"]>
+export type UserPreferenceOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "weeklyBudget" | "dailyCalorieTarget" | "dietaryStyle" | "preferSimpleRecipes" | "maxCookTimeMinutes" | "skillLevel" | "householdSize" | "aiPersonalityMode" | "updatedAt" | "deletedAt" | "activityLevel" | "cookingFrequency" | "height" | "primaryGoal" | "weight" | "expiryAlert" | "pushNotifications" | "shoppingReminder", ExtArgs["result"]["userPreference"]>
 export type UserPreferenceInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
 }
@@ -951,16 +951,16 @@ export type $UserPreferencePayload<ExtArgs extends runtime.Types.Extensions.Inte
     skillLevel: $Enums.SkillLevel
     householdSize: number
     aiPersonalityMode: $Enums.AiPersonalityMode
-    primaryGoal: string | null
-    cookingFrequency: string | null
-    height: number | null
-    weight: number | null
-    activityLevel: string | null
-    pushNotifications: boolean
-    expiryAlert: boolean
-    shoppingReminder: boolean
     updatedAt: Date
     deletedAt: Date | null
+    activityLevel: string | null
+    cookingFrequency: string | null
+    height: number | null
+    primaryGoal: string | null
+    weight: number | null
+    expiryAlert: boolean
+    pushNotifications: boolean
+    shoppingReminder: boolean
   }, ExtArgs["result"]["userPreference"]>
   composites: {}
 }
@@ -1341,16 +1341,16 @@ export interface UserPreferenceFieldRefs {
   readonly skillLevel: Prisma.FieldRef<"UserPreference", 'SkillLevel'>
   readonly householdSize: Prisma.FieldRef<"UserPreference", 'Int'>
   readonly aiPersonalityMode: Prisma.FieldRef<"UserPreference", 'AiPersonalityMode'>
-  readonly primaryGoal: Prisma.FieldRef<"UserPreference", 'String'>
-  readonly cookingFrequency: Prisma.FieldRef<"UserPreference", 'String'>
-  readonly height: Prisma.FieldRef<"UserPreference", 'Int'>
-  readonly weight: Prisma.FieldRef<"UserPreference", 'Int'>
-  readonly activityLevel: Prisma.FieldRef<"UserPreference", 'String'>
-  readonly pushNotifications: Prisma.FieldRef<"UserPreference", 'Boolean'>
-  readonly expiryAlert: Prisma.FieldRef<"UserPreference", 'Boolean'>
-  readonly shoppingReminder: Prisma.FieldRef<"UserPreference", 'Boolean'>
   readonly updatedAt: Prisma.FieldRef<"UserPreference", 'DateTime'>
   readonly deletedAt: Prisma.FieldRef<"UserPreference", 'DateTime'>
+  readonly activityLevel: Prisma.FieldRef<"UserPreference", 'String'>
+  readonly cookingFrequency: Prisma.FieldRef<"UserPreference", 'String'>
+  readonly height: Prisma.FieldRef<"UserPreference", 'Int'>
+  readonly primaryGoal: Prisma.FieldRef<"UserPreference", 'String'>
+  readonly weight: Prisma.FieldRef<"UserPreference", 'Int'>
+  readonly expiryAlert: Prisma.FieldRef<"UserPreference", 'Boolean'>
+  readonly pushNotifications: Prisma.FieldRef<"UserPreference", 'Boolean'>
+  readonly shoppingReminder: Prisma.FieldRef<"UserPreference", 'Boolean'>
 }
     
 
