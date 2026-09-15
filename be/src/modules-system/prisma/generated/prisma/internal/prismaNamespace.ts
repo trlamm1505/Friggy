@@ -431,6 +431,7 @@ export const ModelName = {
   IngredientPurchaseLink: 'IngredientPurchaseLink',
   AdminActivityLog: 'AdminActivityLog',
   Notification: 'Notification',
+  CronJobConfig: 'CronJobConfig',
   SubscriptionPlan: 'SubscriptionPlan',
   UserSubscription: 'UserSubscription'
 } as const
@@ -448,7 +449,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "role" | "user" | "otpVerification" | "userProfile" | "userPreference" | "refreshToken" | "ingredientCategory" | "ingredient" | "tag" | "recipe" | "recipeIngredient" | "recipeStep" | "recipeTag" | "userSavedRecipe" | "fridgeItem" | "ingredientScanLog" | "userAllergy" | "weeklyPlan" | "dailyPlan" | "mealSlot" | "shoppingList" | "shoppingListItem" | "aiSystemPrompt" | "chatSession" | "chatMessage" | "aiEvaluationLog" | "aiProviderConfig" | "aiUsageLog" | "sponsor" | "sponsorCampaign" | "campaignRecipe" | "ingredientPurchaseLink" | "adminActivityLog" | "notification" | "subscriptionPlan" | "userSubscription"
+    modelProps: "role" | "user" | "otpVerification" | "userProfile" | "userPreference" | "refreshToken" | "ingredientCategory" | "ingredient" | "tag" | "recipe" | "recipeIngredient" | "recipeStep" | "recipeTag" | "userSavedRecipe" | "fridgeItem" | "ingredientScanLog" | "userAllergy" | "weeklyPlan" | "dailyPlan" | "mealSlot" | "shoppingList" | "shoppingListItem" | "aiSystemPrompt" | "chatSession" | "chatMessage" | "aiEvaluationLog" | "aiProviderConfig" | "aiUsageLog" | "sponsor" | "sponsorCampaign" | "campaignRecipe" | "ingredientPurchaseLink" | "adminActivityLog" | "notification" | "cronJobConfig" | "subscriptionPlan" | "userSubscription"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -2696,6 +2697,72 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    CronJobConfig: {
+      payload: Prisma.$CronJobConfigPayload<ExtArgs>
+      fields: Prisma.CronJobConfigFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.CronJobConfigFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CronJobConfigPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.CronJobConfigFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CronJobConfigPayload>
+        }
+        findFirst: {
+          args: Prisma.CronJobConfigFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CronJobConfigPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.CronJobConfigFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CronJobConfigPayload>
+        }
+        findMany: {
+          args: Prisma.CronJobConfigFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CronJobConfigPayload>[]
+        }
+        create: {
+          args: Prisma.CronJobConfigCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CronJobConfigPayload>
+        }
+        createMany: {
+          args: Prisma.CronJobConfigCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        delete: {
+          args: Prisma.CronJobConfigDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CronJobConfigPayload>
+        }
+        update: {
+          args: Prisma.CronJobConfigUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CronJobConfigPayload>
+        }
+        deleteMany: {
+          args: Prisma.CronJobConfigDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.CronJobConfigUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        upsert: {
+          args: Prisma.CronJobConfigUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CronJobConfigPayload>
+        }
+        aggregate: {
+          args: Prisma.CronJobConfigAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateCronJobConfig>
+        }
+        groupBy: {
+          args: Prisma.CronJobConfigGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.CronJobConfigGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.CronJobConfigCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.CronJobConfigCountAggregateOutputType> | number
+        }
+      }
+    }
     SubscriptionPlan: {
       payload: Prisma.$SubscriptionPlanPayload<ExtArgs>
       fields: Prisma.SubscriptionPlanFieldRefs
@@ -2883,15 +2950,15 @@ export const UserScalarFieldEnum = {
   phone: 'phone',
   googleId: 'googleId',
   googleEmail: 'googleEmail',
-  name: 'name',
   authProvider: 'authProvider',
   status: 'status',
   roleId: 'roleId',
-  isOnboardingCompleted: 'isOnboardingCompleted',
   lastLoginAt: 'lastLoginAt',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
-  deletedAt: 'deletedAt'
+  deletedAt: 'deletedAt',
+  isOnboardingCompleted: 'isOnboardingCompleted',
+  name: 'name'
 } as const
 
 export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
@@ -2937,16 +3004,16 @@ export const UserPreferenceScalarFieldEnum = {
   skillLevel: 'skillLevel',
   householdSize: 'householdSize',
   aiPersonalityMode: 'aiPersonalityMode',
-  primaryGoal: 'primaryGoal',
+  updatedAt: 'updatedAt',
+  deletedAt: 'deletedAt',
+  activityLevel: 'activityLevel',
   cookingFrequency: 'cookingFrequency',
   height: 'height',
+  primaryGoal: 'primaryGoal',
   weight: 'weight',
-  activityLevel: 'activityLevel',
-  pushNotifications: 'pushNotifications',
   expiryAlert: 'expiryAlert',
-  shoppingReminder: 'shoppingReminder',
-  updatedAt: 'updatedAt',
-  deletedAt: 'deletedAt'
+  pushNotifications: 'pushNotifications',
+  shoppingReminder: 'shoppingReminder'
 } as const
 
 export type UserPreferenceScalarFieldEnum = (typeof UserPreferenceScalarFieldEnum)[keyof typeof UserPreferenceScalarFieldEnum]
@@ -3083,10 +3150,10 @@ export const FridgeItemScalarFieldEnum = {
   expiresAt: 'expiresAt',
   storageLocation: 'storageLocation',
   addedBy: 'addedBy',
-  consumedAt: 'consumedAt',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
-  deletedAt: 'deletedAt'
+  deletedAt: 'deletedAt',
+  consumedAt: 'consumedAt'
 } as const
 
 export type FridgeItemScalarFieldEnum = (typeof FridgeItemScalarFieldEnum)[keyof typeof FridgeItemScalarFieldEnum]
@@ -3096,9 +3163,6 @@ export const IngredientScanLogScalarFieldEnum = {
   id: 'id',
   userId: 'userId',
   imagePath: 'imagePath',
-  scanType: 'scanType',
-  rawText: 'rawText',
-  barcode: 'barcode',
   aiRawResponse: 'aiRawResponse',
   detectedItems: 'detectedItems',
   confirmedItems: 'confirmedItems',
@@ -3106,7 +3170,10 @@ export const IngredientScanLogScalarFieldEnum = {
   errorMessage: 'errorMessage',
   processedAt: 'processedAt',
   createdAt: 'createdAt',
-  deletedAt: 'deletedAt'
+  deletedAt: 'deletedAt',
+  barcode: 'barcode',
+  rawText: 'rawText',
+  scanType: 'scanType'
 } as const
 
 export type IngredientScanLogScalarFieldEnum = (typeof IngredientScanLogScalarFieldEnum)[keyof typeof IngredientScanLogScalarFieldEnum]
@@ -3385,6 +3452,20 @@ export const NotificationScalarFieldEnum = {
 export type NotificationScalarFieldEnum = (typeof NotificationScalarFieldEnum)[keyof typeof NotificationScalarFieldEnum]
 
 
+export const CronJobConfigScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  cronExpression: 'cronExpression',
+  isEnabled: 'isEnabled',
+  description: 'description',
+  lastRunAt: 'lastRunAt',
+  lastRunStatus: 'lastRunStatus',
+  updatedAt: 'updatedAt'
+} as const
+
+export type CronJobConfigScalarFieldEnum = (typeof CronJobConfigScalarFieldEnum)[keyof typeof CronJobConfigScalarFieldEnum]
+
+
 export const SubscriptionPlanScalarFieldEnum = {
   id: 'id',
   name: 'name',
@@ -3489,9 +3570,9 @@ export type UserProfileOrderByRelevanceFieldEnum = (typeof UserProfileOrderByRel
 export const UserPreferenceOrderByRelevanceFieldEnum = {
   id: 'id',
   userId: 'userId',
-  primaryGoal: 'primaryGoal',
+  activityLevel: 'activityLevel',
   cookingFrequency: 'cookingFrequency',
-  activityLevel: 'activityLevel'
+  primaryGoal: 'primaryGoal'
 } as const
 
 export type UserPreferenceOrderByRelevanceFieldEnum = (typeof UserPreferenceOrderByRelevanceFieldEnum)[keyof typeof UserPreferenceOrderByRelevanceFieldEnum]
@@ -3606,10 +3687,10 @@ export const IngredientScanLogOrderByRelevanceFieldEnum = {
   id: 'id',
   userId: 'userId',
   imagePath: 'imagePath',
-  scanType: 'scanType',
-  rawText: 'rawText',
+  errorMessage: 'errorMessage',
   barcode: 'barcode',
-  errorMessage: 'errorMessage'
+  rawText: 'rawText',
+  scanType: 'scanType'
 } as const
 
 export type IngredientScanLogOrderByRelevanceFieldEnum = (typeof IngredientScanLogOrderByRelevanceFieldEnum)[keyof typeof IngredientScanLogOrderByRelevanceFieldEnum]
@@ -3781,6 +3862,16 @@ export const NotificationOrderByRelevanceFieldEnum = {
 } as const
 
 export type NotificationOrderByRelevanceFieldEnum = (typeof NotificationOrderByRelevanceFieldEnum)[keyof typeof NotificationOrderByRelevanceFieldEnum]
+
+
+export const CronJobConfigOrderByRelevanceFieldEnum = {
+  name: 'name',
+  cronExpression: 'cronExpression',
+  description: 'description',
+  lastRunStatus: 'lastRunStatus'
+} as const
+
+export type CronJobConfigOrderByRelevanceFieldEnum = (typeof CronJobConfigOrderByRelevanceFieldEnum)[keyof typeof CronJobConfigOrderByRelevanceFieldEnum]
 
 
 export const SubscriptionPlanOrderByRelevanceFieldEnum = {
@@ -4251,6 +4342,7 @@ export type GlobalOmitConfig = {
   ingredientPurchaseLink?: Prisma.IngredientPurchaseLinkOmit
   adminActivityLog?: Prisma.AdminActivityLogOmit
   notification?: Prisma.NotificationOmit
+  cronJobConfig?: Prisma.CronJobConfigOmit
   subscriptionPlan?: Prisma.SubscriptionPlanOmit
   userSubscription?: Prisma.UserSubscriptionOmit
 }

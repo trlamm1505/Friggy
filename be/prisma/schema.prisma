@@ -622,6 +622,19 @@ model Notification {
   @@map("notifications")
 }
 
+model CronJobConfig {
+  id             Int       @id @default(autoincrement())
+  name           String    @unique @db.VarChar(100)
+  cronExpression String    @db.VarChar(50)
+  isEnabled      Boolean   @default(true)
+  description    String    @db.VarChar(255)
+  lastRunAt      DateTime?
+  lastRunStatus  String?   @db.VarChar(20) // success | failed
+  updatedAt      DateTime  @updatedAt
+
+  @@map("cron_job_configs")
+}
+
 model SubscriptionPlan {
   id             Int                @id @default(autoincrement())
   name           String             @unique @db.VarChar(50)

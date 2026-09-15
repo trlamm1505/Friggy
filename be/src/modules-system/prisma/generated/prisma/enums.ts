@@ -180,7 +180,9 @@ export const AgentType = {
   supervisor: 'supervisor',
   chef_agent: 'chef_agent',
   data_agent: 'data_agent',
-  evaluator: 'evaluator'
+  evaluator: 'evaluator',
+  nutrition_agent: 'nutrition_agent',
+  accountant_agent: 'accountant_agent'
 } as const
 
 export type AgentType = (typeof AgentType)[keyof typeof AgentType]

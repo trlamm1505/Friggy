@@ -260,8 +260,8 @@ export type SponsorCampaignWhereInput = {
   status?: Prisma.EnumCampaignStatusFilter<"SponsorCampaign"> | $Enums.CampaignStatus
   createdAt?: Prisma.DateTimeFilter<"SponsorCampaign"> | Date | string
   deletedAt?: Prisma.DateTimeNullableFilter<"SponsorCampaign"> | Date | string | null
-  sponsor?: Prisma.XOR<Prisma.SponsorScalarRelationFilter, Prisma.SponsorWhereInput>
   recipes?: Prisma.CampaignRecipeListRelationFilter
+  sponsor?: Prisma.XOR<Prisma.SponsorScalarRelationFilter, Prisma.SponsorWhereInput>
 }
 
 export type SponsorCampaignOrderByWithRelationInput = {
@@ -276,8 +276,8 @@ export type SponsorCampaignOrderByWithRelationInput = {
   status?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrderInput | Prisma.SortOrder
-  sponsor?: Prisma.SponsorOrderByWithRelationInput
   recipes?: Prisma.CampaignRecipeOrderByRelationAggregateInput
+  sponsor?: Prisma.SponsorOrderByWithRelationInput
   _relevance?: Prisma.SponsorCampaignOrderByRelevanceInput
 }
 
@@ -296,8 +296,8 @@ export type SponsorCampaignWhereUniqueInput = Prisma.AtLeast<{
   status?: Prisma.EnumCampaignStatusFilter<"SponsorCampaign"> | $Enums.CampaignStatus
   createdAt?: Prisma.DateTimeFilter<"SponsorCampaign"> | Date | string
   deletedAt?: Prisma.DateTimeNullableFilter<"SponsorCampaign"> | Date | string | null
-  sponsor?: Prisma.XOR<Prisma.SponsorScalarRelationFilter, Prisma.SponsorWhereInput>
   recipes?: Prisma.CampaignRecipeListRelationFilter
+  sponsor?: Prisma.XOR<Prisma.SponsorScalarRelationFilter, Prisma.SponsorWhereInput>
 }, "id">
 
 export type SponsorCampaignOrderByWithAggregationInput = {
@@ -347,8 +347,8 @@ export type SponsorCampaignCreateInput = {
   status: $Enums.CampaignStatus
   createdAt?: Date | string
   deletedAt?: Date | string | null
-  sponsor: Prisma.SponsorCreateNestedOneWithoutCampaignsInput
   recipes?: Prisma.CampaignRecipeCreateNestedManyWithoutCampaignInput
+  sponsor: Prisma.SponsorCreateNestedOneWithoutCampaignsInput
 }
 
 export type SponsorCampaignUncheckedCreateInput = {
@@ -377,8 +377,8 @@ export type SponsorCampaignUpdateInput = {
   status?: Prisma.EnumCampaignStatusFieldUpdateOperationsInput | $Enums.CampaignStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  sponsor?: Prisma.SponsorUpdateOneRequiredWithoutCampaignsNestedInput
   recipes?: Prisma.CampaignRecipeUpdateManyWithoutCampaignNestedInput
+  sponsor?: Prisma.SponsorUpdateOneRequiredWithoutCampaignsNestedInput
 }
 
 export type SponsorCampaignUncheckedUpdateInput = {
@@ -810,8 +810,8 @@ export type SponsorCampaignSelect<ExtArgs extends runtime.Types.Extensions.Inter
   status?: boolean
   createdAt?: boolean
   deletedAt?: boolean
-  sponsor?: boolean | Prisma.SponsorDefaultArgs<ExtArgs>
   recipes?: boolean | Prisma.SponsorCampaign$recipesArgs<ExtArgs>
+  sponsor?: boolean | Prisma.SponsorDefaultArgs<ExtArgs>
   _count?: boolean | Prisma.SponsorCampaignCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["sponsorCampaign"]>
 
@@ -833,16 +833,16 @@ export type SponsorCampaignSelectScalar = {
 
 export type SponsorCampaignOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "sponsorId" | "title" | "description" | "campaignType" | "targetAudience" | "startDate" | "endDate" | "status" | "createdAt" | "deletedAt", ExtArgs["result"]["sponsorCampaign"]>
 export type SponsorCampaignInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  sponsor?: boolean | Prisma.SponsorDefaultArgs<ExtArgs>
   recipes?: boolean | Prisma.SponsorCampaign$recipesArgs<ExtArgs>
+  sponsor?: boolean | Prisma.SponsorDefaultArgs<ExtArgs>
   _count?: boolean | Prisma.SponsorCampaignCountOutputTypeDefaultArgs<ExtArgs>
 }
 
 export type $SponsorCampaignPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "SponsorCampaign"
   objects: {
-    sponsor: Prisma.$SponsorPayload<ExtArgs>
     recipes: Prisma.$CampaignRecipePayload<ExtArgs>[]
+    sponsor: Prisma.$SponsorPayload<ExtArgs>
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1196,8 +1196,8 @@ readonly fields: SponsorCampaignFieldRefs;
  */
 export interface Prisma__SponsorCampaignClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
-  sponsor<T extends Prisma.SponsorDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.SponsorDefaultArgs<ExtArgs>>): Prisma.Prisma__SponsorClient<runtime.Types.Result.GetResult<Prisma.$SponsorPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   recipes<T extends Prisma.SponsorCampaign$recipesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.SponsorCampaign$recipesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CampaignRecipePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  sponsor<T extends Prisma.SponsorDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.SponsorDefaultArgs<ExtArgs>>): Prisma.Prisma__SponsorClient<runtime.Types.Result.GetResult<Prisma.$SponsorPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.

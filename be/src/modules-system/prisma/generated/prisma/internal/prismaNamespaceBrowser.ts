@@ -85,6 +85,7 @@ export const ModelName = {
   IngredientPurchaseLink: 'IngredientPurchaseLink',
   AdminActivityLog: 'AdminActivityLog',
   Notification: 'Notification',
+  CronJobConfig: 'CronJobConfig',
   SubscriptionPlan: 'SubscriptionPlan',
   UserSubscription: 'UserSubscription'
 } as const
@@ -121,15 +122,15 @@ export const UserScalarFieldEnum = {
   phone: 'phone',
   googleId: 'googleId',
   googleEmail: 'googleEmail',
-  name: 'name',
   authProvider: 'authProvider',
   status: 'status',
   roleId: 'roleId',
-  isOnboardingCompleted: 'isOnboardingCompleted',
   lastLoginAt: 'lastLoginAt',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
-  deletedAt: 'deletedAt'
+  deletedAt: 'deletedAt',
+  isOnboardingCompleted: 'isOnboardingCompleted',
+  name: 'name'
 } as const
 
 export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
@@ -175,16 +176,16 @@ export const UserPreferenceScalarFieldEnum = {
   skillLevel: 'skillLevel',
   householdSize: 'householdSize',
   aiPersonalityMode: 'aiPersonalityMode',
-  primaryGoal: 'primaryGoal',
+  updatedAt: 'updatedAt',
+  deletedAt: 'deletedAt',
+  activityLevel: 'activityLevel',
   cookingFrequency: 'cookingFrequency',
   height: 'height',
+  primaryGoal: 'primaryGoal',
   weight: 'weight',
-  activityLevel: 'activityLevel',
-  pushNotifications: 'pushNotifications',
   expiryAlert: 'expiryAlert',
-  shoppingReminder: 'shoppingReminder',
-  updatedAt: 'updatedAt',
-  deletedAt: 'deletedAt'
+  pushNotifications: 'pushNotifications',
+  shoppingReminder: 'shoppingReminder'
 } as const
 
 export type UserPreferenceScalarFieldEnum = (typeof UserPreferenceScalarFieldEnum)[keyof typeof UserPreferenceScalarFieldEnum]
@@ -321,10 +322,10 @@ export const FridgeItemScalarFieldEnum = {
   expiresAt: 'expiresAt',
   storageLocation: 'storageLocation',
   addedBy: 'addedBy',
-  consumedAt: 'consumedAt',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
-  deletedAt: 'deletedAt'
+  deletedAt: 'deletedAt',
+  consumedAt: 'consumedAt'
 } as const
 
 export type FridgeItemScalarFieldEnum = (typeof FridgeItemScalarFieldEnum)[keyof typeof FridgeItemScalarFieldEnum]
@@ -334,9 +335,6 @@ export const IngredientScanLogScalarFieldEnum = {
   id: 'id',
   userId: 'userId',
   imagePath: 'imagePath',
-  scanType: 'scanType',
-  rawText: 'rawText',
-  barcode: 'barcode',
   aiRawResponse: 'aiRawResponse',
   detectedItems: 'detectedItems',
   confirmedItems: 'confirmedItems',
@@ -344,7 +342,10 @@ export const IngredientScanLogScalarFieldEnum = {
   errorMessage: 'errorMessage',
   processedAt: 'processedAt',
   createdAt: 'createdAt',
-  deletedAt: 'deletedAt'
+  deletedAt: 'deletedAt',
+  barcode: 'barcode',
+  rawText: 'rawText',
+  scanType: 'scanType'
 } as const
 
 export type IngredientScanLogScalarFieldEnum = (typeof IngredientScanLogScalarFieldEnum)[keyof typeof IngredientScanLogScalarFieldEnum]
@@ -623,6 +624,20 @@ export const NotificationScalarFieldEnum = {
 export type NotificationScalarFieldEnum = (typeof NotificationScalarFieldEnum)[keyof typeof NotificationScalarFieldEnum]
 
 
+export const CronJobConfigScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  cronExpression: 'cronExpression',
+  isEnabled: 'isEnabled',
+  description: 'description',
+  lastRunAt: 'lastRunAt',
+  lastRunStatus: 'lastRunStatus',
+  updatedAt: 'updatedAt'
+} as const
+
+export type CronJobConfigScalarFieldEnum = (typeof CronJobConfigScalarFieldEnum)[keyof typeof CronJobConfigScalarFieldEnum]
+
+
 export const SubscriptionPlanScalarFieldEnum = {
   id: 'id',
   name: 'name',
@@ -727,9 +742,9 @@ export type UserProfileOrderByRelevanceFieldEnum = (typeof UserProfileOrderByRel
 export const UserPreferenceOrderByRelevanceFieldEnum = {
   id: 'id',
   userId: 'userId',
-  primaryGoal: 'primaryGoal',
+  activityLevel: 'activityLevel',
   cookingFrequency: 'cookingFrequency',
-  activityLevel: 'activityLevel'
+  primaryGoal: 'primaryGoal'
 } as const
 
 export type UserPreferenceOrderByRelevanceFieldEnum = (typeof UserPreferenceOrderByRelevanceFieldEnum)[keyof typeof UserPreferenceOrderByRelevanceFieldEnum]
@@ -844,10 +859,10 @@ export const IngredientScanLogOrderByRelevanceFieldEnum = {
   id: 'id',
   userId: 'userId',
   imagePath: 'imagePath',
-  scanType: 'scanType',
-  rawText: 'rawText',
+  errorMessage: 'errorMessage',
   barcode: 'barcode',
-  errorMessage: 'errorMessage'
+  rawText: 'rawText',
+  scanType: 'scanType'
 } as const
 
 export type IngredientScanLogOrderByRelevanceFieldEnum = (typeof IngredientScanLogOrderByRelevanceFieldEnum)[keyof typeof IngredientScanLogOrderByRelevanceFieldEnum]
@@ -1019,6 +1034,16 @@ export const NotificationOrderByRelevanceFieldEnum = {
 } as const
 
 export type NotificationOrderByRelevanceFieldEnum = (typeof NotificationOrderByRelevanceFieldEnum)[keyof typeof NotificationOrderByRelevanceFieldEnum]
+
+
+export const CronJobConfigOrderByRelevanceFieldEnum = {
+  name: 'name',
+  cronExpression: 'cronExpression',
+  description: 'description',
+  lastRunStatus: 'lastRunStatus'
+} as const
+
+export type CronJobConfigOrderByRelevanceFieldEnum = (typeof CronJobConfigOrderByRelevanceFieldEnum)[keyof typeof CronJobConfigOrderByRelevanceFieldEnum]
 
 
 export const SubscriptionPlanOrderByRelevanceFieldEnum = {

@@ -210,6 +210,11 @@ export type AdminActivityLog = Prisma.AdminActivityLogModel
  */
 export type Notification = Prisma.NotificationModel
 /**
+ * Model CronJobConfig
+ * 
+ */
+export type CronJobConfig = Prisma.CronJobConfigModel
+/**
  * Model SubscriptionPlan
  * 
  */

@@ -39,15 +39,15 @@ export type UserMinAggregateOutputType = {
   phone: string | null
   googleId: string | null
   googleEmail: string | null
-  name: string | null
   authProvider: $Enums.AuthProvider | null
   status: $Enums.UserStatus | null
   roleId: number | null
-  isOnboardingCompleted: boolean | null
   lastLoginAt: Date | null
   createdAt: Date | null
   updatedAt: Date | null
   deletedAt: Date | null
+  isOnboardingCompleted: boolean | null
+  name: string | null
 }
 
 export type UserMaxAggregateOutputType = {
@@ -55,15 +55,15 @@ export type UserMaxAggregateOutputType = {
   phone: string | null
   googleId: string | null
   googleEmail: string | null
-  name: string | null
   authProvider: $Enums.AuthProvider | null
   status: $Enums.UserStatus | null
   roleId: number | null
-  isOnboardingCompleted: boolean | null
   lastLoginAt: Date | null
   createdAt: Date | null
   updatedAt: Date | null
   deletedAt: Date | null
+  isOnboardingCompleted: boolean | null
+  name: string | null
 }
 
 export type UserCountAggregateOutputType = {
@@ -71,15 +71,15 @@ export type UserCountAggregateOutputType = {
   phone: number
   googleId: number
   googleEmail: number
-  name: number
   authProvider: number
   status: number
   roleId: number
-  isOnboardingCompleted: number
   lastLoginAt: number
   createdAt: number
   updatedAt: number
   deletedAt: number
+  isOnboardingCompleted: number
+  name: number
   _all: number
 }
 
@@ -97,15 +97,15 @@ export type UserMinAggregateInputType = {
   phone?: true
   googleId?: true
   googleEmail?: true
-  name?: true
   authProvider?: true
   status?: true
   roleId?: true
-  isOnboardingCompleted?: true
   lastLoginAt?: true
   createdAt?: true
   updatedAt?: true
   deletedAt?: true
+  isOnboardingCompleted?: true
+  name?: true
 }
 
 export type UserMaxAggregateInputType = {
@@ -113,15 +113,15 @@ export type UserMaxAggregateInputType = {
   phone?: true
   googleId?: true
   googleEmail?: true
-  name?: true
   authProvider?: true
   status?: true
   roleId?: true
-  isOnboardingCompleted?: true
   lastLoginAt?: true
   createdAt?: true
   updatedAt?: true
   deletedAt?: true
+  isOnboardingCompleted?: true
+  name?: true
 }
 
 export type UserCountAggregateInputType = {
@@ -129,15 +129,15 @@ export type UserCountAggregateInputType = {
   phone?: true
   googleId?: true
   googleEmail?: true
-  name?: true
   authProvider?: true
   status?: true
   roleId?: true
-  isOnboardingCompleted?: true
   lastLoginAt?: true
   createdAt?: true
   updatedAt?: true
   deletedAt?: true
+  isOnboardingCompleted?: true
+  name?: true
   _all?: true
 }
 
@@ -232,15 +232,15 @@ export type UserGroupByOutputType = {
   phone: string | null
   googleId: string | null
   googleEmail: string | null
-  name: string | null
   authProvider: $Enums.AuthProvider
   status: $Enums.UserStatus
   roleId: number
-  isOnboardingCompleted: boolean
   lastLoginAt: Date | null
   createdAt: Date
   updatedAt: Date
   deletedAt: Date | null
+  isOnboardingCompleted: boolean
+  name: string | null
   _count: UserCountAggregateOutputType | null
   _avg: UserAvgAggregateOutputType | null
   _sum: UserSumAggregateOutputType | null
@@ -271,33 +271,33 @@ export type UserWhereInput = {
   phone?: Prisma.StringNullableFilter<"User"> | string | null
   googleId?: Prisma.StringNullableFilter<"User"> | string | null
   googleEmail?: Prisma.StringNullableFilter<"User"> | string | null
-  name?: Prisma.StringNullableFilter<"User"> | string | null
   authProvider?: Prisma.EnumAuthProviderFilter<"User"> | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFilter<"User"> | $Enums.UserStatus
   roleId?: Prisma.IntFilter<"User"> | number
-  isOnboardingCompleted?: Prisma.BoolFilter<"User"> | boolean
   lastLoginAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string
   deletedAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
-  role?: Prisma.XOR<Prisma.RoleScalarRelationFilter, Prisma.RoleWhereInput>
-  profile?: Prisma.XOR<Prisma.UserProfileNullableScalarRelationFilter, Prisma.UserProfileWhereInput> | null
-  preferences?: Prisma.XOR<Prisma.UserPreferenceNullableScalarRelationFilter, Prisma.UserPreferenceWhereInput> | null
-  refreshTokens?: Prisma.RefreshTokenListRelationFilter
+  isOnboardingCompleted?: Prisma.BoolFilter<"User"> | boolean
+  name?: Prisma.StringNullableFilter<"User"> | string | null
+  adminLogs?: Prisma.AdminActivityLogListRelationFilter
+  activatedConfigs?: Prisma.AiProviderConfigListRelationFilter
+  activatedPrompts?: Prisma.AiSystemPromptListRelationFilter
+  aiUsageLogs?: Prisma.AiUsageLogListRelationFilter
+  chatSessions?: Prisma.ChatSessionListRelationFilter
   fridgeItems?: Prisma.FridgeItemListRelationFilter
   scanLogs?: Prisma.IngredientScanLogListRelationFilter
-  allergies?: Prisma.UserAllergyListRelationFilter
-  weeklyPlans?: Prisma.WeeklyPlanListRelationFilter
-  shoppingLists?: Prisma.ShoppingListListRelationFilter
-  chatSessions?: Prisma.ChatSessionListRelationFilter
-  savedRecipes?: Prisma.UserSavedRecipeListRelationFilter
-  authoredRecipes?: Prisma.RecipeListRelationFilter
-  adminLogs?: Prisma.AdminActivityLogListRelationFilter
   notifications?: Prisma.NotificationListRelationFilter
+  authoredRecipes?: Prisma.RecipeListRelationFilter
+  refreshTokens?: Prisma.RefreshTokenListRelationFilter
+  shoppingLists?: Prisma.ShoppingListListRelationFilter
+  allergies?: Prisma.UserAllergyListRelationFilter
+  preferences?: Prisma.XOR<Prisma.UserPreferenceNullableScalarRelationFilter, Prisma.UserPreferenceWhereInput> | null
+  profile?: Prisma.XOR<Prisma.UserProfileNullableScalarRelationFilter, Prisma.UserProfileWhereInput> | null
+  savedRecipes?: Prisma.UserSavedRecipeListRelationFilter
   subscription?: Prisma.XOR<Prisma.UserSubscriptionNullableScalarRelationFilter, Prisma.UserSubscriptionWhereInput> | null
-  aiUsageLogs?: Prisma.AiUsageLogListRelationFilter
-  activatedPrompts?: Prisma.AiSystemPromptListRelationFilter
-  activatedConfigs?: Prisma.AiProviderConfigListRelationFilter
+  role?: Prisma.XOR<Prisma.RoleScalarRelationFilter, Prisma.RoleWhereInput>
+  weeklyPlans?: Prisma.WeeklyPlanListRelationFilter
 }
 
 export type UserOrderByWithRelationInput = {
@@ -305,33 +305,33 @@ export type UserOrderByWithRelationInput = {
   phone?: Prisma.SortOrderInput | Prisma.SortOrder
   googleId?: Prisma.SortOrderInput | Prisma.SortOrder
   googleEmail?: Prisma.SortOrderInput | Prisma.SortOrder
-  name?: Prisma.SortOrderInput | Prisma.SortOrder
   authProvider?: Prisma.SortOrder
   status?: Prisma.SortOrder
   roleId?: Prisma.SortOrder
-  isOnboardingCompleted?: Prisma.SortOrder
   lastLoginAt?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrderInput | Prisma.SortOrder
-  role?: Prisma.RoleOrderByWithRelationInput
-  profile?: Prisma.UserProfileOrderByWithRelationInput
-  preferences?: Prisma.UserPreferenceOrderByWithRelationInput
-  refreshTokens?: Prisma.RefreshTokenOrderByRelationAggregateInput
+  isOnboardingCompleted?: Prisma.SortOrder
+  name?: Prisma.SortOrderInput | Prisma.SortOrder
+  adminLogs?: Prisma.AdminActivityLogOrderByRelationAggregateInput
+  activatedConfigs?: Prisma.AiProviderConfigOrderByRelationAggregateInput
+  activatedPrompts?: Prisma.AiSystemPromptOrderByRelationAggregateInput
+  aiUsageLogs?: Prisma.AiUsageLogOrderByRelationAggregateInput
+  chatSessions?: Prisma.ChatSessionOrderByRelationAggregateInput
   fridgeItems?: Prisma.FridgeItemOrderByRelationAggregateInput
   scanLogs?: Prisma.IngredientScanLogOrderByRelationAggregateInput
-  allergies?: Prisma.UserAllergyOrderByRelationAggregateInput
-  weeklyPlans?: Prisma.WeeklyPlanOrderByRelationAggregateInput
-  shoppingLists?: Prisma.ShoppingListOrderByRelationAggregateInput
-  chatSessions?: Prisma.ChatSessionOrderByRelationAggregateInput
-  savedRecipes?: Prisma.UserSavedRecipeOrderByRelationAggregateInput
-  authoredRecipes?: Prisma.RecipeOrderByRelationAggregateInput
-  adminLogs?: Prisma.AdminActivityLogOrderByRelationAggregateInput
   notifications?: Prisma.NotificationOrderByRelationAggregateInput
+  authoredRecipes?: Prisma.RecipeOrderByRelationAggregateInput
+  refreshTokens?: Prisma.RefreshTokenOrderByRelationAggregateInput
+  shoppingLists?: Prisma.ShoppingListOrderByRelationAggregateInput
+  allergies?: Prisma.UserAllergyOrderByRelationAggregateInput
+  preferences?: Prisma.UserPreferenceOrderByWithRelationInput
+  profile?: Prisma.UserProfileOrderByWithRelationInput
+  savedRecipes?: Prisma.UserSavedRecipeOrderByRelationAggregateInput
   subscription?: Prisma.UserSubscriptionOrderByWithRelationInput
-  aiUsageLogs?: Prisma.AiUsageLogOrderByRelationAggregateInput
-  activatedPrompts?: Prisma.AiSystemPromptOrderByRelationAggregateInput
-  activatedConfigs?: Prisma.AiProviderConfigOrderByRelationAggregateInput
+  role?: Prisma.RoleOrderByWithRelationInput
+  weeklyPlans?: Prisma.WeeklyPlanOrderByRelationAggregateInput
   _relevance?: Prisma.UserOrderByRelevanceInput
 }
 
@@ -343,33 +343,33 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   OR?: Prisma.UserWhereInput[]
   NOT?: Prisma.UserWhereInput | Prisma.UserWhereInput[]
   googleEmail?: Prisma.StringNullableFilter<"User"> | string | null
-  name?: Prisma.StringNullableFilter<"User"> | string | null
   authProvider?: Prisma.EnumAuthProviderFilter<"User"> | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFilter<"User"> | $Enums.UserStatus
   roleId?: Prisma.IntFilter<"User"> | number
-  isOnboardingCompleted?: Prisma.BoolFilter<"User"> | boolean
   lastLoginAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string
   deletedAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
-  role?: Prisma.XOR<Prisma.RoleScalarRelationFilter, Prisma.RoleWhereInput>
-  profile?: Prisma.XOR<Prisma.UserProfileNullableScalarRelationFilter, Prisma.UserProfileWhereInput> | null
-  preferences?: Prisma.XOR<Prisma.UserPreferenceNullableScalarRelationFilter, Prisma.UserPreferenceWhereInput> | null
-  refreshTokens?: Prisma.RefreshTokenListRelationFilter
+  isOnboardingCompleted?: Prisma.BoolFilter<"User"> | boolean
+  name?: Prisma.StringNullableFilter<"User"> | string | null
+  adminLogs?: Prisma.AdminActivityLogListRelationFilter
+  activatedConfigs?: Prisma.AiProviderConfigListRelationFilter
+  activatedPrompts?: Prisma.AiSystemPromptListRelationFilter
+  aiUsageLogs?: Prisma.AiUsageLogListRelationFilter
+  chatSessions?: Prisma.ChatSessionListRelationFilter
   fridgeItems?: Prisma.FridgeItemListRelationFilter
   scanLogs?: Prisma.IngredientScanLogListRelationFilter
-  allergies?: Prisma.UserAllergyListRelationFilter
-  weeklyPlans?: Prisma.WeeklyPlanListRelationFilter
-  shoppingLists?: Prisma.ShoppingListListRelationFilter
-  chatSessions?: Prisma.ChatSessionListRelationFilter
-  savedRecipes?: Prisma.UserSavedRecipeListRelationFilter
-  authoredRecipes?: Prisma.RecipeListRelationFilter
-  adminLogs?: Prisma.AdminActivityLogListRelationFilter
   notifications?: Prisma.NotificationListRelationFilter
+  authoredRecipes?: Prisma.RecipeListRelationFilter
+  refreshTokens?: Prisma.RefreshTokenListRelationFilter
+  shoppingLists?: Prisma.ShoppingListListRelationFilter
+  allergies?: Prisma.UserAllergyListRelationFilter
+  preferences?: Prisma.XOR<Prisma.UserPreferenceNullableScalarRelationFilter, Prisma.UserPreferenceWhereInput> | null
+  profile?: Prisma.XOR<Prisma.UserProfileNullableScalarRelationFilter, Prisma.UserProfileWhereInput> | null
+  savedRecipes?: Prisma.UserSavedRecipeListRelationFilter
   subscription?: Prisma.XOR<Prisma.UserSubscriptionNullableScalarRelationFilter, Prisma.UserSubscriptionWhereInput> | null
-  aiUsageLogs?: Prisma.AiUsageLogListRelationFilter
-  activatedPrompts?: Prisma.AiSystemPromptListRelationFilter
-  activatedConfigs?: Prisma.AiProviderConfigListRelationFilter
+  role?: Prisma.XOR<Prisma.RoleScalarRelationFilter, Prisma.RoleWhereInput>
+  weeklyPlans?: Prisma.WeeklyPlanListRelationFilter
 }, "id" | "phone" | "googleId">
 
 export type UserOrderByWithAggregationInput = {
@@ -377,15 +377,15 @@ export type UserOrderByWithAggregationInput = {
   phone?: Prisma.SortOrderInput | Prisma.SortOrder
   googleId?: Prisma.SortOrderInput | Prisma.SortOrder
   googleEmail?: Prisma.SortOrderInput | Prisma.SortOrder
-  name?: Prisma.SortOrderInput | Prisma.SortOrder
   authProvider?: Prisma.SortOrder
   status?: Prisma.SortOrder
   roleId?: Prisma.SortOrder
-  isOnboardingCompleted?: Prisma.SortOrder
   lastLoginAt?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  isOnboardingCompleted?: Prisma.SortOrder
+  name?: Prisma.SortOrderInput | Prisma.SortOrder
   _count?: Prisma.UserCountOrderByAggregateInput
   _avg?: Prisma.UserAvgOrderByAggregateInput
   _max?: Prisma.UserMaxOrderByAggregateInput
@@ -401,15 +401,15 @@ export type UserScalarWhereWithAggregatesInput = {
   phone?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
   googleId?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
   googleEmail?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
-  name?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
   authProvider?: Prisma.EnumAuthProviderWithAggregatesFilter<"User"> | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusWithAggregatesFilter<"User"> | $Enums.UserStatus
   roleId?: Prisma.IntWithAggregatesFilter<"User"> | number
-  isOnboardingCompleted?: Prisma.BoolWithAggregatesFilter<"User"> | boolean
   lastLoginAt?: Prisma.DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"User"> | Date | string
   deletedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
+  isOnboardingCompleted?: Prisma.BoolWithAggregatesFilter<"User"> | boolean
+  name?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
 }
 
 export type UserCreateInput = {
@@ -417,32 +417,32 @@ export type UserCreateInput = {
   phone?: string | null
   googleId?: string | null
   googleEmail?: string | null
-  name?: string | null
   authProvider: $Enums.AuthProvider
   status?: $Enums.UserStatus
-  isOnboardingCompleted?: boolean
   lastLoginAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
-  role: Prisma.RoleCreateNestedOneWithoutUsersInput
-  profile?: Prisma.UserProfileCreateNestedOneWithoutUserInput
-  preferences?: Prisma.UserPreferenceCreateNestedOneWithoutUserInput
-  refreshTokens?: Prisma.RefreshTokenCreateNestedManyWithoutUserInput
+  isOnboardingCompleted?: boolean
+  name?: string | null
+  adminLogs?: Prisma.AdminActivityLogCreateNestedManyWithoutAdminInput
+  activatedConfigs?: Prisma.AiProviderConfigCreateNestedManyWithoutActivatedByUserInput
+  activatedPrompts?: Prisma.AiSystemPromptCreateNestedManyWithoutActivatedByUserInput
+  aiUsageLogs?: Prisma.AiUsageLogCreateNestedManyWithoutUserInput
+  chatSessions?: Prisma.ChatSessionCreateNestedManyWithoutUserInput
   fridgeItems?: Prisma.FridgeItemCreateNestedManyWithoutUserInput
   scanLogs?: Prisma.IngredientScanLogCreateNestedManyWithoutUserInput
-  allergies?: Prisma.UserAllergyCreateNestedManyWithoutUserInput
-  weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutUserInput
-  shoppingLists?: Prisma.ShoppingListCreateNestedManyWithoutUserInput
-  chatSessions?: Prisma.ChatSessionCreateNestedManyWithoutUserInput
-  savedRecipes?: Prisma.UserSavedRecipeCreateNestedManyWithoutUserInput
-  authoredRecipes?: Prisma.RecipeCreateNestedManyWithoutAuthorInput
-  adminLogs?: Prisma.AdminActivityLogCreateNestedManyWithoutAdminInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  authoredRecipes?: Prisma.RecipeCreateNestedManyWithoutAuthorInput
+  refreshTokens?: Prisma.RefreshTokenCreateNestedManyWithoutUserInput
+  shoppingLists?: Prisma.ShoppingListCreateNestedManyWithoutUserInput
+  allergies?: Prisma.UserAllergyCreateNestedManyWithoutUserInput
+  preferences?: Prisma.UserPreferenceCreateNestedOneWithoutUserInput
+  profile?: Prisma.UserProfileCreateNestedOneWithoutUserInput
+  savedRecipes?: Prisma.UserSavedRecipeCreateNestedManyWithoutUserInput
   subscription?: Prisma.UserSubscriptionCreateNestedOneWithoutUserInput
-  aiUsageLogs?: Prisma.AiUsageLogCreateNestedManyWithoutUserInput
-  activatedPrompts?: Prisma.AiSystemPromptCreateNestedManyWithoutActivatedByUserInput
-  activatedConfigs?: Prisma.AiProviderConfigCreateNestedManyWithoutActivatedByUserInput
+  role: Prisma.RoleCreateNestedOneWithoutUsersInput
+  weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateInput = {
@@ -450,32 +450,32 @@ export type UserUncheckedCreateInput = {
   phone?: string | null
   googleId?: string | null
   googleEmail?: string | null
-  name?: string | null
   authProvider: $Enums.AuthProvider
   status?: $Enums.UserStatus
   roleId: number
-  isOnboardingCompleted?: boolean
   lastLoginAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
-  profile?: Prisma.UserProfileUncheckedCreateNestedOneWithoutUserInput
-  preferences?: Prisma.UserPreferenceUncheckedCreateNestedOneWithoutUserInput
-  refreshTokens?: Prisma.RefreshTokenUncheckedCreateNestedManyWithoutUserInput
+  isOnboardingCompleted?: boolean
+  name?: string | null
+  adminLogs?: Prisma.AdminActivityLogUncheckedCreateNestedManyWithoutAdminInput
+  activatedConfigs?: Prisma.AiProviderConfigUncheckedCreateNestedManyWithoutActivatedByUserInput
+  activatedPrompts?: Prisma.AiSystemPromptUncheckedCreateNestedManyWithoutActivatedByUserInput
+  aiUsageLogs?: Prisma.AiUsageLogUncheckedCreateNestedManyWithoutUserInput
+  chatSessions?: Prisma.ChatSessionUncheckedCreateNestedManyWithoutUserInput
   fridgeItems?: Prisma.FridgeItemUncheckedCreateNestedManyWithoutUserInput
   scanLogs?: Prisma.IngredientScanLogUncheckedCreateNestedManyWithoutUserInput
-  allergies?: Prisma.UserAllergyUncheckedCreateNestedManyWithoutUserInput
-  weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutUserInput
-  shoppingLists?: Prisma.ShoppingListUncheckedCreateNestedManyWithoutUserInput
-  chatSessions?: Prisma.ChatSessionUncheckedCreateNestedManyWithoutUserInput
-  savedRecipes?: Prisma.UserSavedRecipeUncheckedCreateNestedManyWithoutUserInput
-  authoredRecipes?: Prisma.RecipeUncheckedCreateNestedManyWithoutAuthorInput
-  adminLogs?: Prisma.AdminActivityLogUncheckedCreateNestedManyWithoutAdminInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  authoredRecipes?: Prisma.RecipeUncheckedCreateNestedManyWithoutAuthorInput
+  refreshTokens?: Prisma.RefreshTokenUncheckedCreateNestedManyWithoutUserInput
+  shoppingLists?: Prisma.ShoppingListUncheckedCreateNestedManyWithoutUserInput
+  allergies?: Prisma.UserAllergyUncheckedCreateNestedManyWithoutUserInput
+  preferences?: Prisma.UserPreferenceUncheckedCreateNestedOneWithoutUserInput
+  profile?: Prisma.UserProfileUncheckedCreateNestedOneWithoutUserInput
+  savedRecipes?: Prisma.UserSavedRecipeUncheckedCreateNestedManyWithoutUserInput
   subscription?: Prisma.UserSubscriptionUncheckedCreateNestedOneWithoutUserInput
-  aiUsageLogs?: Prisma.AiUsageLogUncheckedCreateNestedManyWithoutUserInput
-  activatedPrompts?: Prisma.AiSystemPromptUncheckedCreateNestedManyWithoutActivatedByUserInput
-  activatedConfigs?: Prisma.AiProviderConfigUncheckedCreateNestedManyWithoutActivatedByUserInput
+  weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserUpdateInput = {
@@ -483,32 +483,32 @@ export type UserUpdateInput = {
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   googleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   googleEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
-  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
-  profile?: Prisma.UserProfileUpdateOneWithoutUserNestedInput
-  preferences?: Prisma.UserPreferenceUpdateOneWithoutUserNestedInput
-  refreshTokens?: Prisma.RefreshTokenUpdateManyWithoutUserNestedInput
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  adminLogs?: Prisma.AdminActivityLogUpdateManyWithoutAdminNestedInput
+  activatedConfigs?: Prisma.AiProviderConfigUpdateManyWithoutActivatedByUserNestedInput
+  activatedPrompts?: Prisma.AiSystemPromptUpdateManyWithoutActivatedByUserNestedInput
+  aiUsageLogs?: Prisma.AiUsageLogUpdateManyWithoutUserNestedInput
+  chatSessions?: Prisma.ChatSessionUpdateManyWithoutUserNestedInput
   fridgeItems?: Prisma.FridgeItemUpdateManyWithoutUserNestedInput
   scanLogs?: Prisma.IngredientScanLogUpdateManyWithoutUserNestedInput
-  allergies?: Prisma.UserAllergyUpdateManyWithoutUserNestedInput
-  weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutUserNestedInput
-  shoppingLists?: Prisma.ShoppingListUpdateManyWithoutUserNestedInput
-  chatSessions?: Prisma.ChatSessionUpdateManyWithoutUserNestedInput
-  savedRecipes?: Prisma.UserSavedRecipeUpdateManyWithoutUserNestedInput
-  authoredRecipes?: Prisma.RecipeUpdateManyWithoutAuthorNestedInput
-  adminLogs?: Prisma.AdminActivityLogUpdateManyWithoutAdminNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  authoredRecipes?: Prisma.RecipeUpdateManyWithoutAuthorNestedInput
+  refreshTokens?: Prisma.RefreshTokenUpdateManyWithoutUserNestedInput
+  shoppingLists?: Prisma.ShoppingListUpdateManyWithoutUserNestedInput
+  allergies?: Prisma.UserAllergyUpdateManyWithoutUserNestedInput
+  preferences?: Prisma.UserPreferenceUpdateOneWithoutUserNestedInput
+  profile?: Prisma.UserProfileUpdateOneWithoutUserNestedInput
+  savedRecipes?: Prisma.UserSavedRecipeUpdateManyWithoutUserNestedInput
   subscription?: Prisma.UserSubscriptionUpdateOneWithoutUserNestedInput
-  aiUsageLogs?: Prisma.AiUsageLogUpdateManyWithoutUserNestedInput
-  activatedPrompts?: Prisma.AiSystemPromptUpdateManyWithoutActivatedByUserNestedInput
-  activatedConfigs?: Prisma.AiProviderConfigUpdateManyWithoutActivatedByUserNestedInput
+  role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
+  weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateInput = {
@@ -516,32 +516,32 @@ export type UserUncheckedUpdateInput = {
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   googleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   googleEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   roleId?: Prisma.IntFieldUpdateOperationsInput | number
-  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  profile?: Prisma.UserProfileUncheckedUpdateOneWithoutUserNestedInput
-  preferences?: Prisma.UserPreferenceUncheckedUpdateOneWithoutUserNestedInput
-  refreshTokens?: Prisma.RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  adminLogs?: Prisma.AdminActivityLogUncheckedUpdateManyWithoutAdminNestedInput
+  activatedConfigs?: Prisma.AiProviderConfigUncheckedUpdateManyWithoutActivatedByUserNestedInput
+  activatedPrompts?: Prisma.AiSystemPromptUncheckedUpdateManyWithoutActivatedByUserNestedInput
+  aiUsageLogs?: Prisma.AiUsageLogUncheckedUpdateManyWithoutUserNestedInput
+  chatSessions?: Prisma.ChatSessionUncheckedUpdateManyWithoutUserNestedInput
   fridgeItems?: Prisma.FridgeItemUncheckedUpdateManyWithoutUserNestedInput
   scanLogs?: Prisma.IngredientScanLogUncheckedUpdateManyWithoutUserNestedInput
-  allergies?: Prisma.UserAllergyUncheckedUpdateManyWithoutUserNestedInput
-  weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutUserNestedInput
-  shoppingLists?: Prisma.ShoppingListUncheckedUpdateManyWithoutUserNestedInput
-  chatSessions?: Prisma.ChatSessionUncheckedUpdateManyWithoutUserNestedInput
-  savedRecipes?: Prisma.UserSavedRecipeUncheckedUpdateManyWithoutUserNestedInput
-  authoredRecipes?: Prisma.RecipeUncheckedUpdateManyWithoutAuthorNestedInput
-  adminLogs?: Prisma.AdminActivityLogUncheckedUpdateManyWithoutAdminNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  authoredRecipes?: Prisma.RecipeUncheckedUpdateManyWithoutAuthorNestedInput
+  refreshTokens?: Prisma.RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
+  shoppingLists?: Prisma.ShoppingListUncheckedUpdateManyWithoutUserNestedInput
+  allergies?: Prisma.UserAllergyUncheckedUpdateManyWithoutUserNestedInput
+  preferences?: Prisma.UserPreferenceUncheckedUpdateOneWithoutUserNestedInput
+  profile?: Prisma.UserProfileUncheckedUpdateOneWithoutUserNestedInput
+  savedRecipes?: Prisma.UserSavedRecipeUncheckedUpdateManyWithoutUserNestedInput
   subscription?: Prisma.UserSubscriptionUncheckedUpdateOneWithoutUserNestedInput
-  aiUsageLogs?: Prisma.AiUsageLogUncheckedUpdateManyWithoutUserNestedInput
-  activatedPrompts?: Prisma.AiSystemPromptUncheckedUpdateManyWithoutActivatedByUserNestedInput
-  activatedConfigs?: Prisma.AiProviderConfigUncheckedUpdateManyWithoutActivatedByUserNestedInput
+  weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateManyInput = {
@@ -549,15 +549,15 @@ export type UserCreateManyInput = {
   phone?: string | null
   googleId?: string | null
   googleEmail?: string | null
-  name?: string | null
   authProvider: $Enums.AuthProvider
   status?: $Enums.UserStatus
   roleId: number
-  isOnboardingCompleted?: boolean
   lastLoginAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
+  isOnboardingCompleted?: boolean
+  name?: string | null
 }
 
 export type UserUpdateManyMutationInput = {
@@ -565,14 +565,14 @@ export type UserUpdateManyMutationInput = {
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   googleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   googleEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
-  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type UserUncheckedUpdateManyInput = {
@@ -580,15 +580,15 @@ export type UserUncheckedUpdateManyInput = {
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   googleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   googleEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   roleId?: Prisma.IntFieldUpdateOperationsInput | number
-  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type UserListRelationFilter = {
@@ -612,15 +612,15 @@ export type UserCountOrderByAggregateInput = {
   phone?: Prisma.SortOrder
   googleId?: Prisma.SortOrder
   googleEmail?: Prisma.SortOrder
-  name?: Prisma.SortOrder
   authProvider?: Prisma.SortOrder
   status?: Prisma.SortOrder
   roleId?: Prisma.SortOrder
-  isOnboardingCompleted?: Prisma.SortOrder
   lastLoginAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrder
+  isOnboardingCompleted?: Prisma.SortOrder
+  name?: Prisma.SortOrder
 }
 
 export type UserAvgOrderByAggregateInput = {
@@ -632,15 +632,15 @@ export type UserMaxOrderByAggregateInput = {
   phone?: Prisma.SortOrder
   googleId?: Prisma.SortOrder
   googleEmail?: Prisma.SortOrder
-  name?: Prisma.SortOrder
   authProvider?: Prisma.SortOrder
   status?: Prisma.SortOrder
   roleId?: Prisma.SortOrder
-  isOnboardingCompleted?: Prisma.SortOrder
   lastLoginAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrder
+  isOnboardingCompleted?: Prisma.SortOrder
+  name?: Prisma.SortOrder
 }
 
 export type UserMinOrderByAggregateInput = {
@@ -648,15 +648,15 @@ export type UserMinOrderByAggregateInput = {
   phone?: Prisma.SortOrder
   googleId?: Prisma.SortOrder
   googleEmail?: Prisma.SortOrder
-  name?: Prisma.SortOrder
   authProvider?: Prisma.SortOrder
   status?: Prisma.SortOrder
   roleId?: Prisma.SortOrder
-  isOnboardingCompleted?: Prisma.SortOrder
   lastLoginAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrder
+  isOnboardingCompleted?: Prisma.SortOrder
+  name?: Prisma.SortOrder
 }
 
 export type UserSumOrderByAggregateInput = {
@@ -980,31 +980,31 @@ export type UserCreateWithoutRoleInput = {
   phone?: string | null
   googleId?: string | null
   googleEmail?: string | null
-  name?: string | null
   authProvider: $Enums.AuthProvider
   status?: $Enums.UserStatus
-  isOnboardingCompleted?: boolean
   lastLoginAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
-  profile?: Prisma.UserProfileCreateNestedOneWithoutUserInput
-  preferences?: Prisma.UserPreferenceCreateNestedOneWithoutUserInput
-  refreshTokens?: Prisma.RefreshTokenCreateNestedManyWithoutUserInput
+  isOnboardingCompleted?: boolean
+  name?: string | null
+  adminLogs?: Prisma.AdminActivityLogCreateNestedManyWithoutAdminInput
+  activatedConfigs?: Prisma.AiProviderConfigCreateNestedManyWithoutActivatedByUserInput
+  activatedPrompts?: Prisma.AiSystemPromptCreateNestedManyWithoutActivatedByUserInput
+  aiUsageLogs?: Prisma.AiUsageLogCreateNestedManyWithoutUserInput
+  chatSessions?: Prisma.ChatSessionCreateNestedManyWithoutUserInput
   fridgeItems?: Prisma.FridgeItemCreateNestedManyWithoutUserInput
   scanLogs?: Prisma.IngredientScanLogCreateNestedManyWithoutUserInput
-  allergies?: Prisma.UserAllergyCreateNestedManyWithoutUserInput
-  weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutUserInput
-  shoppingLists?: Prisma.ShoppingListCreateNestedManyWithoutUserInput
-  chatSessions?: Prisma.ChatSessionCreateNestedManyWithoutUserInput
-  savedRecipes?: Prisma.UserSavedRecipeCreateNestedManyWithoutUserInput
-  authoredRecipes?: Prisma.RecipeCreateNestedManyWithoutAuthorInput
-  adminLogs?: Prisma.AdminActivityLogCreateNestedManyWithoutAdminInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  authoredRecipes?: Prisma.RecipeCreateNestedManyWithoutAuthorInput
+  refreshTokens?: Prisma.RefreshTokenCreateNestedManyWithoutUserInput
+  shoppingLists?: Prisma.ShoppingListCreateNestedManyWithoutUserInput
+  allergies?: Prisma.UserAllergyCreateNestedManyWithoutUserInput
+  preferences?: Prisma.UserPreferenceCreateNestedOneWithoutUserInput
+  profile?: Prisma.UserProfileCreateNestedOneWithoutUserInput
+  savedRecipes?: Prisma.UserSavedRecipeCreateNestedManyWithoutUserInput
   subscription?: Prisma.UserSubscriptionCreateNestedOneWithoutUserInput
-  aiUsageLogs?: Prisma.AiUsageLogCreateNestedManyWithoutUserInput
-  activatedPrompts?: Prisma.AiSystemPromptCreateNestedManyWithoutActivatedByUserInput
-  activatedConfigs?: Prisma.AiProviderConfigCreateNestedManyWithoutActivatedByUserInput
+  weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutRoleInput = {
@@ -1012,31 +1012,31 @@ export type UserUncheckedCreateWithoutRoleInput = {
   phone?: string | null
   googleId?: string | null
   googleEmail?: string | null
-  name?: string | null
   authProvider: $Enums.AuthProvider
   status?: $Enums.UserStatus
-  isOnboardingCompleted?: boolean
   lastLoginAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
-  profile?: Prisma.UserProfileUncheckedCreateNestedOneWithoutUserInput
-  preferences?: Prisma.UserPreferenceUncheckedCreateNestedOneWithoutUserInput
-  refreshTokens?: Prisma.RefreshTokenUncheckedCreateNestedManyWithoutUserInput
+  isOnboardingCompleted?: boolean
+  name?: string | null
+  adminLogs?: Prisma.AdminActivityLogUncheckedCreateNestedManyWithoutAdminInput
+  activatedConfigs?: Prisma.AiProviderConfigUncheckedCreateNestedManyWithoutActivatedByUserInput
+  activatedPrompts?: Prisma.AiSystemPromptUncheckedCreateNestedManyWithoutActivatedByUserInput
+  aiUsageLogs?: Prisma.AiUsageLogUncheckedCreateNestedManyWithoutUserInput
+  chatSessions?: Prisma.ChatSessionUncheckedCreateNestedManyWithoutUserInput
   fridgeItems?: Prisma.FridgeItemUncheckedCreateNestedManyWithoutUserInput
   scanLogs?: Prisma.IngredientScanLogUncheckedCreateNestedManyWithoutUserInput
-  allergies?: Prisma.UserAllergyUncheckedCreateNestedManyWithoutUserInput
-  weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutUserInput
-  shoppingLists?: Prisma.ShoppingListUncheckedCreateNestedManyWithoutUserInput
-  chatSessions?: Prisma.ChatSessionUncheckedCreateNestedManyWithoutUserInput
-  savedRecipes?: Prisma.UserSavedRecipeUncheckedCreateNestedManyWithoutUserInput
-  authoredRecipes?: Prisma.RecipeUncheckedCreateNestedManyWithoutAuthorInput
-  adminLogs?: Prisma.AdminActivityLogUncheckedCreateNestedManyWithoutAdminInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  authoredRecipes?: Prisma.RecipeUncheckedCreateNestedManyWithoutAuthorInput
+  refreshTokens?: Prisma.RefreshTokenUncheckedCreateNestedManyWithoutUserInput
+  shoppingLists?: Prisma.ShoppingListUncheckedCreateNestedManyWithoutUserInput
+  allergies?: Prisma.UserAllergyUncheckedCreateNestedManyWithoutUserInput
+  preferences?: Prisma.UserPreferenceUncheckedCreateNestedOneWithoutUserInput
+  profile?: Prisma.UserProfileUncheckedCreateNestedOneWithoutUserInput
+  savedRecipes?: Prisma.UserSavedRecipeUncheckedCreateNestedManyWithoutUserInput
   subscription?: Prisma.UserSubscriptionUncheckedCreateNestedOneWithoutUserInput
-  aiUsageLogs?: Prisma.AiUsageLogUncheckedCreateNestedManyWithoutUserInput
-  activatedPrompts?: Prisma.AiSystemPromptUncheckedCreateNestedManyWithoutActivatedByUserInput
-  activatedConfigs?: Prisma.AiProviderConfigUncheckedCreateNestedManyWithoutActivatedByUserInput
+  weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutRoleInput = {
@@ -1073,15 +1073,15 @@ export type UserScalarWhereInput = {
   phone?: Prisma.StringNullableFilter<"User"> | string | null
   googleId?: Prisma.StringNullableFilter<"User"> | string | null
   googleEmail?: Prisma.StringNullableFilter<"User"> | string | null
-  name?: Prisma.StringNullableFilter<"User"> | string | null
   authProvider?: Prisma.EnumAuthProviderFilter<"User"> | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFilter<"User"> | $Enums.UserStatus
   roleId?: Prisma.IntFilter<"User"> | number
-  isOnboardingCompleted?: Prisma.BoolFilter<"User"> | boolean
   lastLoginAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string
   deletedAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
+  isOnboardingCompleted?: Prisma.BoolFilter<"User"> | boolean
+  name?: Prisma.StringNullableFilter<"User"> | string | null
 }
 
 export type UserCreateWithoutProfileInput = {
@@ -1089,31 +1089,31 @@ export type UserCreateWithoutProfileInput = {
   phone?: string | null
   googleId?: string | null
   googleEmail?: string | null
-  name?: string | null
   authProvider: $Enums.AuthProvider
   status?: $Enums.UserStatus
-  isOnboardingCompleted?: boolean
   lastLoginAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
-  role: Prisma.RoleCreateNestedOneWithoutUsersInput
-  preferences?: Prisma.UserPreferenceCreateNestedOneWithoutUserInput
-  refreshTokens?: Prisma.RefreshTokenCreateNestedManyWithoutUserInput
+  isOnboardingCompleted?: boolean
+  name?: string | null
+  adminLogs?: Prisma.AdminActivityLogCreateNestedManyWithoutAdminInput
+  activatedConfigs?: Prisma.AiProviderConfigCreateNestedManyWithoutActivatedByUserInput
+  activatedPrompts?: Prisma.AiSystemPromptCreateNestedManyWithoutActivatedByUserInput
+  aiUsageLogs?: Prisma.AiUsageLogCreateNestedManyWithoutUserInput
+  chatSessions?: Prisma.ChatSessionCreateNestedManyWithoutUserInput
   fridgeItems?: Prisma.FridgeItemCreateNestedManyWithoutUserInput
   scanLogs?: Prisma.IngredientScanLogCreateNestedManyWithoutUserInput
-  allergies?: Prisma.UserAllergyCreateNestedManyWithoutUserInput
-  weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutUserInput
-  shoppingLists?: Prisma.ShoppingListCreateNestedManyWithoutUserInput
-  chatSessions?: Prisma.ChatSessionCreateNestedManyWithoutUserInput
-  savedRecipes?: Prisma.UserSavedRecipeCreateNestedManyWithoutUserInput
-  authoredRecipes?: Prisma.RecipeCreateNestedManyWithoutAuthorInput
-  adminLogs?: Prisma.AdminActivityLogCreateNestedManyWithoutAdminInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  authoredRecipes?: Prisma.RecipeCreateNestedManyWithoutAuthorInput
+  refreshTokens?: Prisma.RefreshTokenCreateNestedManyWithoutUserInput
+  shoppingLists?: Prisma.ShoppingListCreateNestedManyWithoutUserInput
+  allergies?: Prisma.UserAllergyCreateNestedManyWithoutUserInput
+  preferences?: Prisma.UserPreferenceCreateNestedOneWithoutUserInput
+  savedRecipes?: Prisma.UserSavedRecipeCreateNestedManyWithoutUserInput
   subscription?: Prisma.UserSubscriptionCreateNestedOneWithoutUserInput
-  aiUsageLogs?: Prisma.AiUsageLogCreateNestedManyWithoutUserInput
-  activatedPrompts?: Prisma.AiSystemPromptCreateNestedManyWithoutActivatedByUserInput
-  activatedConfigs?: Prisma.AiProviderConfigCreateNestedManyWithoutActivatedByUserInput
+  role: Prisma.RoleCreateNestedOneWithoutUsersInput
+  weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutProfileInput = {
@@ -1121,31 +1121,31 @@ export type UserUncheckedCreateWithoutProfileInput = {
   phone?: string | null
   googleId?: string | null
   googleEmail?: string | null
-  name?: string | null
   authProvider: $Enums.AuthProvider
   status?: $Enums.UserStatus
   roleId: number
-  isOnboardingCompleted?: boolean
   lastLoginAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
-  preferences?: Prisma.UserPreferenceUncheckedCreateNestedOneWithoutUserInput
-  refreshTokens?: Prisma.RefreshTokenUncheckedCreateNestedManyWithoutUserInput
+  isOnboardingCompleted?: boolean
+  name?: string | null
+  adminLogs?: Prisma.AdminActivityLogUncheckedCreateNestedManyWithoutAdminInput
+  activatedConfigs?: Prisma.AiProviderConfigUncheckedCreateNestedManyWithoutActivatedByUserInput
+  activatedPrompts?: Prisma.AiSystemPromptUncheckedCreateNestedManyWithoutActivatedByUserInput
+  aiUsageLogs?: Prisma.AiUsageLogUncheckedCreateNestedManyWithoutUserInput
+  chatSessions?: Prisma.ChatSessionUncheckedCreateNestedManyWithoutUserInput
   fridgeItems?: Prisma.FridgeItemUncheckedCreateNestedManyWithoutUserInput
   scanLogs?: Prisma.IngredientScanLogUncheckedCreateNestedManyWithoutUserInput
-  allergies?: Prisma.UserAllergyUncheckedCreateNestedManyWithoutUserInput
-  weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutUserInput
-  shoppingLists?: Prisma.ShoppingListUncheckedCreateNestedManyWithoutUserInput
-  chatSessions?: Prisma.ChatSessionUncheckedCreateNestedManyWithoutUserInput
-  savedRecipes?: Prisma.UserSavedRecipeUncheckedCreateNestedManyWithoutUserInput
-  authoredRecipes?: Prisma.RecipeUncheckedCreateNestedManyWithoutAuthorInput
-  adminLogs?: Prisma.AdminActivityLogUncheckedCreateNestedManyWithoutAdminInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  authoredRecipes?: Prisma.RecipeUncheckedCreateNestedManyWithoutAuthorInput
+  refreshTokens?: Prisma.RefreshTokenUncheckedCreateNestedManyWithoutUserInput
+  shoppingLists?: Prisma.ShoppingListUncheckedCreateNestedManyWithoutUserInput
+  allergies?: Prisma.UserAllergyUncheckedCreateNestedManyWithoutUserInput
+  preferences?: Prisma.UserPreferenceUncheckedCreateNestedOneWithoutUserInput
+  savedRecipes?: Prisma.UserSavedRecipeUncheckedCreateNestedManyWithoutUserInput
   subscription?: Prisma.UserSubscriptionUncheckedCreateNestedOneWithoutUserInput
-  aiUsageLogs?: Prisma.AiUsageLogUncheckedCreateNestedManyWithoutUserInput
-  activatedPrompts?: Prisma.AiSystemPromptUncheckedCreateNestedManyWithoutActivatedByUserInput
-  activatedConfigs?: Prisma.AiProviderConfigUncheckedCreateNestedManyWithoutActivatedByUserInput
+  weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutProfileInput = {
@@ -1169,31 +1169,31 @@ export type UserUpdateWithoutProfileInput = {
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   googleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   googleEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
-  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
-  preferences?: Prisma.UserPreferenceUpdateOneWithoutUserNestedInput
-  refreshTokens?: Prisma.RefreshTokenUpdateManyWithoutUserNestedInput
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  adminLogs?: Prisma.AdminActivityLogUpdateManyWithoutAdminNestedInput
+  activatedConfigs?: Prisma.AiProviderConfigUpdateManyWithoutActivatedByUserNestedInput
+  activatedPrompts?: Prisma.AiSystemPromptUpdateManyWithoutActivatedByUserNestedInput
+  aiUsageLogs?: Prisma.AiUsageLogUpdateManyWithoutUserNestedInput
+  chatSessions?: Prisma.ChatSessionUpdateManyWithoutUserNestedInput
   fridgeItems?: Prisma.FridgeItemUpdateManyWithoutUserNestedInput
   scanLogs?: Prisma.IngredientScanLogUpdateManyWithoutUserNestedInput
-  allergies?: Prisma.UserAllergyUpdateManyWithoutUserNestedInput
-  weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutUserNestedInput
-  shoppingLists?: Prisma.ShoppingListUpdateManyWithoutUserNestedInput
-  chatSessions?: Prisma.ChatSessionUpdateManyWithoutUserNestedInput
-  savedRecipes?: Prisma.UserSavedRecipeUpdateManyWithoutUserNestedInput
-  authoredRecipes?: Prisma.RecipeUpdateManyWithoutAuthorNestedInput
-  adminLogs?: Prisma.AdminActivityLogUpdateManyWithoutAdminNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  authoredRecipes?: Prisma.RecipeUpdateManyWithoutAuthorNestedInput
+  refreshTokens?: Prisma.RefreshTokenUpdateManyWithoutUserNestedInput
+  shoppingLists?: Prisma.ShoppingListUpdateManyWithoutUserNestedInput
+  allergies?: Prisma.UserAllergyUpdateManyWithoutUserNestedInput
+  preferences?: Prisma.UserPreferenceUpdateOneWithoutUserNestedInput
+  savedRecipes?: Prisma.UserSavedRecipeUpdateManyWithoutUserNestedInput
   subscription?: Prisma.UserSubscriptionUpdateOneWithoutUserNestedInput
-  aiUsageLogs?: Prisma.AiUsageLogUpdateManyWithoutUserNestedInput
-  activatedPrompts?: Prisma.AiSystemPromptUpdateManyWithoutActivatedByUserNestedInput
-  activatedConfigs?: Prisma.AiProviderConfigUpdateManyWithoutActivatedByUserNestedInput
+  role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
+  weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutProfileInput = {
@@ -1201,31 +1201,31 @@ export type UserUncheckedUpdateWithoutProfileInput = {
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   googleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   googleEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   roleId?: Prisma.IntFieldUpdateOperationsInput | number
-  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  preferences?: Prisma.UserPreferenceUncheckedUpdateOneWithoutUserNestedInput
-  refreshTokens?: Prisma.RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  adminLogs?: Prisma.AdminActivityLogUncheckedUpdateManyWithoutAdminNestedInput
+  activatedConfigs?: Prisma.AiProviderConfigUncheckedUpdateManyWithoutActivatedByUserNestedInput
+  activatedPrompts?: Prisma.AiSystemPromptUncheckedUpdateManyWithoutActivatedByUserNestedInput
+  aiUsageLogs?: Prisma.AiUsageLogUncheckedUpdateManyWithoutUserNestedInput
+  chatSessions?: Prisma.ChatSessionUncheckedUpdateManyWithoutUserNestedInput
   fridgeItems?: Prisma.FridgeItemUncheckedUpdateManyWithoutUserNestedInput
   scanLogs?: Prisma.IngredientScanLogUncheckedUpdateManyWithoutUserNestedInput
-  allergies?: Prisma.UserAllergyUncheckedUpdateManyWithoutUserNestedInput
-  weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutUserNestedInput
-  shoppingLists?: Prisma.ShoppingListUncheckedUpdateManyWithoutUserNestedInput
-  chatSessions?: Prisma.ChatSessionUncheckedUpdateManyWithoutUserNestedInput
-  savedRecipes?: Prisma.UserSavedRecipeUncheckedUpdateManyWithoutUserNestedInput
-  authoredRecipes?: Prisma.RecipeUncheckedUpdateManyWithoutAuthorNestedInput
-  adminLogs?: Prisma.AdminActivityLogUncheckedUpdateManyWithoutAdminNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  authoredRecipes?: Prisma.RecipeUncheckedUpdateManyWithoutAuthorNestedInput
+  refreshTokens?: Prisma.RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
+  shoppingLists?: Prisma.ShoppingListUncheckedUpdateManyWithoutUserNestedInput
+  allergies?: Prisma.UserAllergyUncheckedUpdateManyWithoutUserNestedInput
+  preferences?: Prisma.UserPreferenceUncheckedUpdateOneWithoutUserNestedInput
+  savedRecipes?: Prisma.UserSavedRecipeUncheckedUpdateManyWithoutUserNestedInput
   subscription?: Prisma.UserSubscriptionUncheckedUpdateOneWithoutUserNestedInput
-  aiUsageLogs?: Prisma.AiUsageLogUncheckedUpdateManyWithoutUserNestedInput
-  activatedPrompts?: Prisma.AiSystemPromptUncheckedUpdateManyWithoutActivatedByUserNestedInput
-  activatedConfigs?: Prisma.AiProviderConfigUncheckedUpdateManyWithoutActivatedByUserNestedInput
+  weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutPreferencesInput = {
@@ -1233,31 +1233,31 @@ export type UserCreateWithoutPreferencesInput = {
   phone?: string | null
   googleId?: string | null
   googleEmail?: string | null
-  name?: string | null
   authProvider: $Enums.AuthProvider
   status?: $Enums.UserStatus
-  isOnboardingCompleted?: boolean
   lastLoginAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
-  role: Prisma.RoleCreateNestedOneWithoutUsersInput
-  profile?: Prisma.UserProfileCreateNestedOneWithoutUserInput
-  refreshTokens?: Prisma.RefreshTokenCreateNestedManyWithoutUserInput
+  isOnboardingCompleted?: boolean
+  name?: string | null
+  adminLogs?: Prisma.AdminActivityLogCreateNestedManyWithoutAdminInput
+  activatedConfigs?: Prisma.AiProviderConfigCreateNestedManyWithoutActivatedByUserInput
+  activatedPrompts?: Prisma.AiSystemPromptCreateNestedManyWithoutActivatedByUserInput
+  aiUsageLogs?: Prisma.AiUsageLogCreateNestedManyWithoutUserInput
+  chatSessions?: Prisma.ChatSessionCreateNestedManyWithoutUserInput
   fridgeItems?: Prisma.FridgeItemCreateNestedManyWithoutUserInput
   scanLogs?: Prisma.IngredientScanLogCreateNestedManyWithoutUserInput
-  allergies?: Prisma.UserAllergyCreateNestedManyWithoutUserInput
-  weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutUserInput
-  shoppingLists?: Prisma.ShoppingListCreateNestedManyWithoutUserInput
-  chatSessions?: Prisma.ChatSessionCreateNestedManyWithoutUserInput
-  savedRecipes?: Prisma.UserSavedRecipeCreateNestedManyWithoutUserInput
-  authoredRecipes?: Prisma.RecipeCreateNestedManyWithoutAuthorInput
-  adminLogs?: Prisma.AdminActivityLogCreateNestedManyWithoutAdminInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  authoredRecipes?: Prisma.RecipeCreateNestedManyWithoutAuthorInput
+  refreshTokens?: Prisma.RefreshTokenCreateNestedManyWithoutUserInput
+  shoppingLists?: Prisma.ShoppingListCreateNestedManyWithoutUserInput
+  allergies?: Prisma.UserAllergyCreateNestedManyWithoutUserInput
+  profile?: Prisma.UserProfileCreateNestedOneWithoutUserInput
+  savedRecipes?: Prisma.UserSavedRecipeCreateNestedManyWithoutUserInput
   subscription?: Prisma.UserSubscriptionCreateNestedOneWithoutUserInput
-  aiUsageLogs?: Prisma.AiUsageLogCreateNestedManyWithoutUserInput
-  activatedPrompts?: Prisma.AiSystemPromptCreateNestedManyWithoutActivatedByUserInput
-  activatedConfigs?: Prisma.AiProviderConfigCreateNestedManyWithoutActivatedByUserInput
+  role: Prisma.RoleCreateNestedOneWithoutUsersInput
+  weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutPreferencesInput = {
@@ -1265,31 +1265,31 @@ export type UserUncheckedCreateWithoutPreferencesInput = {
   phone?: string | null
   googleId?: string | null
   googleEmail?: string | null
-  name?: string | null
   authProvider: $Enums.AuthProvider
   status?: $Enums.UserStatus
   roleId: number
-  isOnboardingCompleted?: boolean
   lastLoginAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
-  profile?: Prisma.UserProfileUncheckedCreateNestedOneWithoutUserInput
-  refreshTokens?: Prisma.RefreshTokenUncheckedCreateNestedManyWithoutUserInput
+  isOnboardingCompleted?: boolean
+  name?: string | null
+  adminLogs?: Prisma.AdminActivityLogUncheckedCreateNestedManyWithoutAdminInput
+  activatedConfigs?: Prisma.AiProviderConfigUncheckedCreateNestedManyWithoutActivatedByUserInput
+  activatedPrompts?: Prisma.AiSystemPromptUncheckedCreateNestedManyWithoutActivatedByUserInput
+  aiUsageLogs?: Prisma.AiUsageLogUncheckedCreateNestedManyWithoutUserInput
+  chatSessions?: Prisma.ChatSessionUncheckedCreateNestedManyWithoutUserInput
   fridgeItems?: Prisma.FridgeItemUncheckedCreateNestedManyWithoutUserInput
   scanLogs?: Prisma.IngredientScanLogUncheckedCreateNestedManyWithoutUserInput
-  allergies?: Prisma.UserAllergyUncheckedCreateNestedManyWithoutUserInput
-  weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutUserInput
-  shoppingLists?: Prisma.ShoppingListUncheckedCreateNestedManyWithoutUserInput
-  chatSessions?: Prisma.ChatSessionUncheckedCreateNestedManyWithoutUserInput
-  savedRecipes?: Prisma.UserSavedRecipeUncheckedCreateNestedManyWithoutUserInput
-  authoredRecipes?: Prisma.RecipeUncheckedCreateNestedManyWithoutAuthorInput
-  adminLogs?: Prisma.AdminActivityLogUncheckedCreateNestedManyWithoutAdminInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  authoredRecipes?: Prisma.RecipeUncheckedCreateNestedManyWithoutAuthorInput
+  refreshTokens?: Prisma.RefreshTokenUncheckedCreateNestedManyWithoutUserInput
+  shoppingLists?: Prisma.ShoppingListUncheckedCreateNestedManyWithoutUserInput
+  allergies?: Prisma.UserAllergyUncheckedCreateNestedManyWithoutUserInput
+  profile?: Prisma.UserProfileUncheckedCreateNestedOneWithoutUserInput
+  savedRecipes?: Prisma.UserSavedRecipeUncheckedCreateNestedManyWithoutUserInput
   subscription?: Prisma.UserSubscriptionUncheckedCreateNestedOneWithoutUserInput
-  aiUsageLogs?: Prisma.AiUsageLogUncheckedCreateNestedManyWithoutUserInput
-  activatedPrompts?: Prisma.AiSystemPromptUncheckedCreateNestedManyWithoutActivatedByUserInput
-  activatedConfigs?: Prisma.AiProviderConfigUncheckedCreateNestedManyWithoutActivatedByUserInput
+  weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutPreferencesInput = {
@@ -1313,31 +1313,31 @@ export type UserUpdateWithoutPreferencesInput = {
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   googleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   googleEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
-  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
-  profile?: Prisma.UserProfileUpdateOneWithoutUserNestedInput
-  refreshTokens?: Prisma.RefreshTokenUpdateManyWithoutUserNestedInput
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  adminLogs?: Prisma.AdminActivityLogUpdateManyWithoutAdminNestedInput
+  activatedConfigs?: Prisma.AiProviderConfigUpdateManyWithoutActivatedByUserNestedInput
+  activatedPrompts?: Prisma.AiSystemPromptUpdateManyWithoutActivatedByUserNestedInput
+  aiUsageLogs?: Prisma.AiUsageLogUpdateManyWithoutUserNestedInput
+  chatSessions?: Prisma.ChatSessionUpdateManyWithoutUserNestedInput
   fridgeItems?: Prisma.FridgeItemUpdateManyWithoutUserNestedInput
   scanLogs?: Prisma.IngredientScanLogUpdateManyWithoutUserNestedInput
-  allergies?: Prisma.UserAllergyUpdateManyWithoutUserNestedInput
-  weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutUserNestedInput
-  shoppingLists?: Prisma.ShoppingListUpdateManyWithoutUserNestedInput
-  chatSessions?: Prisma.ChatSessionUpdateManyWithoutUserNestedInput
-  savedRecipes?: Prisma.UserSavedRecipeUpdateManyWithoutUserNestedInput
-  authoredRecipes?: Prisma.RecipeUpdateManyWithoutAuthorNestedInput
-  adminLogs?: Prisma.AdminActivityLogUpdateManyWithoutAdminNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  authoredRecipes?: Prisma.RecipeUpdateManyWithoutAuthorNestedInput
+  refreshTokens?: Prisma.RefreshTokenUpdateManyWithoutUserNestedInput
+  shoppingLists?: Prisma.ShoppingListUpdateManyWithoutUserNestedInput
+  allergies?: Prisma.UserAllergyUpdateManyWithoutUserNestedInput
+  profile?: Prisma.UserProfileUpdateOneWithoutUserNestedInput
+  savedRecipes?: Prisma.UserSavedRecipeUpdateManyWithoutUserNestedInput
   subscription?: Prisma.UserSubscriptionUpdateOneWithoutUserNestedInput
-  aiUsageLogs?: Prisma.AiUsageLogUpdateManyWithoutUserNestedInput
-  activatedPrompts?: Prisma.AiSystemPromptUpdateManyWithoutActivatedByUserNestedInput
-  activatedConfigs?: Prisma.AiProviderConfigUpdateManyWithoutActivatedByUserNestedInput
+  role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
+  weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutPreferencesInput = {
@@ -1345,31 +1345,31 @@ export type UserUncheckedUpdateWithoutPreferencesInput = {
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   googleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   googleEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   roleId?: Prisma.IntFieldUpdateOperationsInput | number
-  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  profile?: Prisma.UserProfileUncheckedUpdateOneWithoutUserNestedInput
-  refreshTokens?: Prisma.RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  adminLogs?: Prisma.AdminActivityLogUncheckedUpdateManyWithoutAdminNestedInput
+  activatedConfigs?: Prisma.AiProviderConfigUncheckedUpdateManyWithoutActivatedByUserNestedInput
+  activatedPrompts?: Prisma.AiSystemPromptUncheckedUpdateManyWithoutActivatedByUserNestedInput
+  aiUsageLogs?: Prisma.AiUsageLogUncheckedUpdateManyWithoutUserNestedInput
+  chatSessions?: Prisma.ChatSessionUncheckedUpdateManyWithoutUserNestedInput
   fridgeItems?: Prisma.FridgeItemUncheckedUpdateManyWithoutUserNestedInput
   scanLogs?: Prisma.IngredientScanLogUncheckedUpdateManyWithoutUserNestedInput
-  allergies?: Prisma.UserAllergyUncheckedUpdateManyWithoutUserNestedInput
-  weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutUserNestedInput
-  shoppingLists?: Prisma.ShoppingListUncheckedUpdateManyWithoutUserNestedInput
-  chatSessions?: Prisma.ChatSessionUncheckedUpdateManyWithoutUserNestedInput
-  savedRecipes?: Prisma.UserSavedRecipeUncheckedUpdateManyWithoutUserNestedInput
-  authoredRecipes?: Prisma.RecipeUncheckedUpdateManyWithoutAuthorNestedInput
-  adminLogs?: Prisma.AdminActivityLogUncheckedUpdateManyWithoutAdminNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  authoredRecipes?: Prisma.RecipeUncheckedUpdateManyWithoutAuthorNestedInput
+  refreshTokens?: Prisma.RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
+  shoppingLists?: Prisma.ShoppingListUncheckedUpdateManyWithoutUserNestedInput
+  allergies?: Prisma.UserAllergyUncheckedUpdateManyWithoutUserNestedInput
+  profile?: Prisma.UserProfileUncheckedUpdateOneWithoutUserNestedInput
+  savedRecipes?: Prisma.UserSavedRecipeUncheckedUpdateManyWithoutUserNestedInput
   subscription?: Prisma.UserSubscriptionUncheckedUpdateOneWithoutUserNestedInput
-  aiUsageLogs?: Prisma.AiUsageLogUncheckedUpdateManyWithoutUserNestedInput
-  activatedPrompts?: Prisma.AiSystemPromptUncheckedUpdateManyWithoutActivatedByUserNestedInput
-  activatedConfigs?: Prisma.AiProviderConfigUncheckedUpdateManyWithoutActivatedByUserNestedInput
+  weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutRefreshTokensInput = {
@@ -1377,31 +1377,31 @@ export type UserCreateWithoutRefreshTokensInput = {
   phone?: string | null
   googleId?: string | null
   googleEmail?: string | null
-  name?: string | null
   authProvider: $Enums.AuthProvider
   status?: $Enums.UserStatus
-  isOnboardingCompleted?: boolean
   lastLoginAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
-  role: Prisma.RoleCreateNestedOneWithoutUsersInput
-  profile?: Prisma.UserProfileCreateNestedOneWithoutUserInput
-  preferences?: Prisma.UserPreferenceCreateNestedOneWithoutUserInput
+  isOnboardingCompleted?: boolean
+  name?: string | null
+  adminLogs?: Prisma.AdminActivityLogCreateNestedManyWithoutAdminInput
+  activatedConfigs?: Prisma.AiProviderConfigCreateNestedManyWithoutActivatedByUserInput
+  activatedPrompts?: Prisma.AiSystemPromptCreateNestedManyWithoutActivatedByUserInput
+  aiUsageLogs?: Prisma.AiUsageLogCreateNestedManyWithoutUserInput
+  chatSessions?: Prisma.ChatSessionCreateNestedManyWithoutUserInput
   fridgeItems?: Prisma.FridgeItemCreateNestedManyWithoutUserInput
   scanLogs?: Prisma.IngredientScanLogCreateNestedManyWithoutUserInput
-  allergies?: Prisma.UserAllergyCreateNestedManyWithoutUserInput
-  weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutUserInput
-  shoppingLists?: Prisma.ShoppingListCreateNestedManyWithoutUserInput
-  chatSessions?: Prisma.ChatSessionCreateNestedManyWithoutUserInput
-  savedRecipes?: Prisma.UserSavedRecipeCreateNestedManyWithoutUserInput
-  authoredRecipes?: Prisma.RecipeCreateNestedManyWithoutAuthorInput
-  adminLogs?: Prisma.AdminActivityLogCreateNestedManyWithoutAdminInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  authoredRecipes?: Prisma.RecipeCreateNestedManyWithoutAuthorInput
+  shoppingLists?: Prisma.ShoppingListCreateNestedManyWithoutUserInput
+  allergies?: Prisma.UserAllergyCreateNestedManyWithoutUserInput
+  preferences?: Prisma.UserPreferenceCreateNestedOneWithoutUserInput
+  profile?: Prisma.UserProfileCreateNestedOneWithoutUserInput
+  savedRecipes?: Prisma.UserSavedRecipeCreateNestedManyWithoutUserInput
   subscription?: Prisma.UserSubscriptionCreateNestedOneWithoutUserInput
-  aiUsageLogs?: Prisma.AiUsageLogCreateNestedManyWithoutUserInput
-  activatedPrompts?: Prisma.AiSystemPromptCreateNestedManyWithoutActivatedByUserInput
-  activatedConfigs?: Prisma.AiProviderConfigCreateNestedManyWithoutActivatedByUserInput
+  role: Prisma.RoleCreateNestedOneWithoutUsersInput
+  weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutRefreshTokensInput = {
@@ -1409,31 +1409,31 @@ export type UserUncheckedCreateWithoutRefreshTokensInput = {
   phone?: string | null
   googleId?: string | null
   googleEmail?: string | null
-  name?: string | null
   authProvider: $Enums.AuthProvider
   status?: $Enums.UserStatus
   roleId: number
-  isOnboardingCompleted?: boolean
   lastLoginAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
-  profile?: Prisma.UserProfileUncheckedCreateNestedOneWithoutUserInput
-  preferences?: Prisma.UserPreferenceUncheckedCreateNestedOneWithoutUserInput
+  isOnboardingCompleted?: boolean
+  name?: string | null
+  adminLogs?: Prisma.AdminActivityLogUncheckedCreateNestedManyWithoutAdminInput
+  activatedConfigs?: Prisma.AiProviderConfigUncheckedCreateNestedManyWithoutActivatedByUserInput
+  activatedPrompts?: Prisma.AiSystemPromptUncheckedCreateNestedManyWithoutActivatedByUserInput
+  aiUsageLogs?: Prisma.AiUsageLogUncheckedCreateNestedManyWithoutUserInput
+  chatSessions?: Prisma.ChatSessionUncheckedCreateNestedManyWithoutUserInput
   fridgeItems?: Prisma.FridgeItemUncheckedCreateNestedManyWithoutUserInput
   scanLogs?: Prisma.IngredientScanLogUncheckedCreateNestedManyWithoutUserInput
-  allergies?: Prisma.UserAllergyUncheckedCreateNestedManyWithoutUserInput
-  weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutUserInput
-  shoppingLists?: Prisma.ShoppingListUncheckedCreateNestedManyWithoutUserInput
-  chatSessions?: Prisma.ChatSessionUncheckedCreateNestedManyWithoutUserInput
-  savedRecipes?: Prisma.UserSavedRecipeUncheckedCreateNestedManyWithoutUserInput
-  authoredRecipes?: Prisma.RecipeUncheckedCreateNestedManyWithoutAuthorInput
-  adminLogs?: Prisma.AdminActivityLogUncheckedCreateNestedManyWithoutAdminInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  authoredRecipes?: Prisma.RecipeUncheckedCreateNestedManyWithoutAuthorInput
+  shoppingLists?: Prisma.ShoppingListUncheckedCreateNestedManyWithoutUserInput
+  allergies?: Prisma.UserAllergyUncheckedCreateNestedManyWithoutUserInput
+  preferences?: Prisma.UserPreferenceUncheckedCreateNestedOneWithoutUserInput
+  profile?: Prisma.UserProfileUncheckedCreateNestedOneWithoutUserInput
+  savedRecipes?: Prisma.UserSavedRecipeUncheckedCreateNestedManyWithoutUserInput
   subscription?: Prisma.UserSubscriptionUncheckedCreateNestedOneWithoutUserInput
-  aiUsageLogs?: Prisma.AiUsageLogUncheckedCreateNestedManyWithoutUserInput
-  activatedPrompts?: Prisma.AiSystemPromptUncheckedCreateNestedManyWithoutActivatedByUserInput
-  activatedConfigs?: Prisma.AiProviderConfigUncheckedCreateNestedManyWithoutActivatedByUserInput
+  weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutRefreshTokensInput = {
@@ -1457,31 +1457,31 @@ export type UserUpdateWithoutRefreshTokensInput = {
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   googleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   googleEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
-  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
-  profile?: Prisma.UserProfileUpdateOneWithoutUserNestedInput
-  preferences?: Prisma.UserPreferenceUpdateOneWithoutUserNestedInput
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  adminLogs?: Prisma.AdminActivityLogUpdateManyWithoutAdminNestedInput
+  activatedConfigs?: Prisma.AiProviderConfigUpdateManyWithoutActivatedByUserNestedInput
+  activatedPrompts?: Prisma.AiSystemPromptUpdateManyWithoutActivatedByUserNestedInput
+  aiUsageLogs?: Prisma.AiUsageLogUpdateManyWithoutUserNestedInput
+  chatSessions?: Prisma.ChatSessionUpdateManyWithoutUserNestedInput
   fridgeItems?: Prisma.FridgeItemUpdateManyWithoutUserNestedInput
   scanLogs?: Prisma.IngredientScanLogUpdateManyWithoutUserNestedInput
-  allergies?: Prisma.UserAllergyUpdateManyWithoutUserNestedInput
-  weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutUserNestedInput
-  shoppingLists?: Prisma.ShoppingListUpdateManyWithoutUserNestedInput
-  chatSessions?: Prisma.ChatSessionUpdateManyWithoutUserNestedInput
-  savedRecipes?: Prisma.UserSavedRecipeUpdateManyWithoutUserNestedInput
-  authoredRecipes?: Prisma.RecipeUpdateManyWithoutAuthorNestedInput
-  adminLogs?: Prisma.AdminActivityLogUpdateManyWithoutAdminNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  authoredRecipes?: Prisma.RecipeUpdateManyWithoutAuthorNestedInput
+  shoppingLists?: Prisma.ShoppingListUpdateManyWithoutUserNestedInput
+  allergies?: Prisma.UserAllergyUpdateManyWithoutUserNestedInput
+  preferences?: Prisma.UserPreferenceUpdateOneWithoutUserNestedInput
+  profile?: Prisma.UserProfileUpdateOneWithoutUserNestedInput
+  savedRecipes?: Prisma.UserSavedRecipeUpdateManyWithoutUserNestedInput
   subscription?: Prisma.UserSubscriptionUpdateOneWithoutUserNestedInput
-  aiUsageLogs?: Prisma.AiUsageLogUpdateManyWithoutUserNestedInput
-  activatedPrompts?: Prisma.AiSystemPromptUpdateManyWithoutActivatedByUserNestedInput
-  activatedConfigs?: Prisma.AiProviderConfigUpdateManyWithoutActivatedByUserNestedInput
+  role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
+  weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutRefreshTokensInput = {
@@ -1489,31 +1489,31 @@ export type UserUncheckedUpdateWithoutRefreshTokensInput = {
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   googleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   googleEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   roleId?: Prisma.IntFieldUpdateOperationsInput | number
-  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  profile?: Prisma.UserProfileUncheckedUpdateOneWithoutUserNestedInput
-  preferences?: Prisma.UserPreferenceUncheckedUpdateOneWithoutUserNestedInput
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  adminLogs?: Prisma.AdminActivityLogUncheckedUpdateManyWithoutAdminNestedInput
+  activatedConfigs?: Prisma.AiProviderConfigUncheckedUpdateManyWithoutActivatedByUserNestedInput
+  activatedPrompts?: Prisma.AiSystemPromptUncheckedUpdateManyWithoutActivatedByUserNestedInput
+  aiUsageLogs?: Prisma.AiUsageLogUncheckedUpdateManyWithoutUserNestedInput
+  chatSessions?: Prisma.ChatSessionUncheckedUpdateManyWithoutUserNestedInput
   fridgeItems?: Prisma.FridgeItemUncheckedUpdateManyWithoutUserNestedInput
   scanLogs?: Prisma.IngredientScanLogUncheckedUpdateManyWithoutUserNestedInput
-  allergies?: Prisma.UserAllergyUncheckedUpdateManyWithoutUserNestedInput
-  weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutUserNestedInput
-  shoppingLists?: Prisma.ShoppingListUncheckedUpdateManyWithoutUserNestedInput
-  chatSessions?: Prisma.ChatSessionUncheckedUpdateManyWithoutUserNestedInput
-  savedRecipes?: Prisma.UserSavedRecipeUncheckedUpdateManyWithoutUserNestedInput
-  authoredRecipes?: Prisma.RecipeUncheckedUpdateManyWithoutAuthorNestedInput
-  adminLogs?: Prisma.AdminActivityLogUncheckedUpdateManyWithoutAdminNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  authoredRecipes?: Prisma.RecipeUncheckedUpdateManyWithoutAuthorNestedInput
+  shoppingLists?: Prisma.ShoppingListUncheckedUpdateManyWithoutUserNestedInput
+  allergies?: Prisma.UserAllergyUncheckedUpdateManyWithoutUserNestedInput
+  preferences?: Prisma.UserPreferenceUncheckedUpdateOneWithoutUserNestedInput
+  profile?: Prisma.UserProfileUncheckedUpdateOneWithoutUserNestedInput
+  savedRecipes?: Prisma.UserSavedRecipeUncheckedUpdateManyWithoutUserNestedInput
   subscription?: Prisma.UserSubscriptionUncheckedUpdateOneWithoutUserNestedInput
-  aiUsageLogs?: Prisma.AiUsageLogUncheckedUpdateManyWithoutUserNestedInput
-  activatedPrompts?: Prisma.AiSystemPromptUncheckedUpdateManyWithoutActivatedByUserNestedInput
-  activatedConfigs?: Prisma.AiProviderConfigUncheckedUpdateManyWithoutActivatedByUserNestedInput
+  weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutAuthoredRecipesInput = {
@@ -1521,31 +1521,31 @@ export type UserCreateWithoutAuthoredRecipesInput = {
   phone?: string | null
   googleId?: string | null
   googleEmail?: string | null
-  name?: string | null
   authProvider: $Enums.AuthProvider
   status?: $Enums.UserStatus
-  isOnboardingCompleted?: boolean
   lastLoginAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
-  role: Prisma.RoleCreateNestedOneWithoutUsersInput
-  profile?: Prisma.UserProfileCreateNestedOneWithoutUserInput
-  preferences?: Prisma.UserPreferenceCreateNestedOneWithoutUserInput
-  refreshTokens?: Prisma.RefreshTokenCreateNestedManyWithoutUserInput
+  isOnboardingCompleted?: boolean
+  name?: string | null
+  adminLogs?: Prisma.AdminActivityLogCreateNestedManyWithoutAdminInput
+  activatedConfigs?: Prisma.AiProviderConfigCreateNestedManyWithoutActivatedByUserInput
+  activatedPrompts?: Prisma.AiSystemPromptCreateNestedManyWithoutActivatedByUserInput
+  aiUsageLogs?: Prisma.AiUsageLogCreateNestedManyWithoutUserInput
+  chatSessions?: Prisma.ChatSessionCreateNestedManyWithoutUserInput
   fridgeItems?: Prisma.FridgeItemCreateNestedManyWithoutUserInput
   scanLogs?: Prisma.IngredientScanLogCreateNestedManyWithoutUserInput
-  allergies?: Prisma.UserAllergyCreateNestedManyWithoutUserInput
-  weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutUserInput
-  shoppingLists?: Prisma.ShoppingListCreateNestedManyWithoutUserInput
-  chatSessions?: Prisma.ChatSessionCreateNestedManyWithoutUserInput
-  savedRecipes?: Prisma.UserSavedRecipeCreateNestedManyWithoutUserInput
-  adminLogs?: Prisma.AdminActivityLogCreateNestedManyWithoutAdminInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  refreshTokens?: Prisma.RefreshTokenCreateNestedManyWithoutUserInput
+  shoppingLists?: Prisma.ShoppingListCreateNestedManyWithoutUserInput
+  allergies?: Prisma.UserAllergyCreateNestedManyWithoutUserInput
+  preferences?: Prisma.UserPreferenceCreateNestedOneWithoutUserInput
+  profile?: Prisma.UserProfileCreateNestedOneWithoutUserInput
+  savedRecipes?: Prisma.UserSavedRecipeCreateNestedManyWithoutUserInput
   subscription?: Prisma.UserSubscriptionCreateNestedOneWithoutUserInput
-  aiUsageLogs?: Prisma.AiUsageLogCreateNestedManyWithoutUserInput
-  activatedPrompts?: Prisma.AiSystemPromptCreateNestedManyWithoutActivatedByUserInput
-  activatedConfigs?: Prisma.AiProviderConfigCreateNestedManyWithoutActivatedByUserInput
+  role: Prisma.RoleCreateNestedOneWithoutUsersInput
+  weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutAuthoredRecipesInput = {
@@ -1553,31 +1553,31 @@ export type UserUncheckedCreateWithoutAuthoredRecipesInput = {
   phone?: string | null
   googleId?: string | null
   googleEmail?: string | null
-  name?: string | null
   authProvider: $Enums.AuthProvider
   status?: $Enums.UserStatus
   roleId: number
-  isOnboardingCompleted?: boolean
   lastLoginAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
-  profile?: Prisma.UserProfileUncheckedCreateNestedOneWithoutUserInput
-  preferences?: Prisma.UserPreferenceUncheckedCreateNestedOneWithoutUserInput
-  refreshTokens?: Prisma.RefreshTokenUncheckedCreateNestedManyWithoutUserInput
+  isOnboardingCompleted?: boolean
+  name?: string | null
+  adminLogs?: Prisma.AdminActivityLogUncheckedCreateNestedManyWithoutAdminInput
+  activatedConfigs?: Prisma.AiProviderConfigUncheckedCreateNestedManyWithoutActivatedByUserInput
+  activatedPrompts?: Prisma.AiSystemPromptUncheckedCreateNestedManyWithoutActivatedByUserInput
+  aiUsageLogs?: Prisma.AiUsageLogUncheckedCreateNestedManyWithoutUserInput
+  chatSessions?: Prisma.ChatSessionUncheckedCreateNestedManyWithoutUserInput
   fridgeItems?: Prisma.FridgeItemUncheckedCreateNestedManyWithoutUserInput
   scanLogs?: Prisma.IngredientScanLogUncheckedCreateNestedManyWithoutUserInput
-  allergies?: Prisma.UserAllergyUncheckedCreateNestedManyWithoutUserInput
-  weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutUserInput
-  shoppingLists?: Prisma.ShoppingListUncheckedCreateNestedManyWithoutUserInput
-  chatSessions?: Prisma.ChatSessionUncheckedCreateNestedManyWithoutUserInput
-  savedRecipes?: Prisma.UserSavedRecipeUncheckedCreateNestedManyWithoutUserInput
-  adminLogs?: Prisma.AdminActivityLogUncheckedCreateNestedManyWithoutAdminInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  refreshTokens?: Prisma.RefreshTokenUncheckedCreateNestedManyWithoutUserInput
+  shoppingLists?: Prisma.ShoppingListUncheckedCreateNestedManyWithoutUserInput
+  allergies?: Prisma.UserAllergyUncheckedCreateNestedManyWithoutUserInput
+  preferences?: Prisma.UserPreferenceUncheckedCreateNestedOneWithoutUserInput
+  profile?: Prisma.UserProfileUncheckedCreateNestedOneWithoutUserInput
+  savedRecipes?: Prisma.UserSavedRecipeUncheckedCreateNestedManyWithoutUserInput
   subscription?: Prisma.UserSubscriptionUncheckedCreateNestedOneWithoutUserInput
-  aiUsageLogs?: Prisma.AiUsageLogUncheckedCreateNestedManyWithoutUserInput
-  activatedPrompts?: Prisma.AiSystemPromptUncheckedCreateNestedManyWithoutActivatedByUserInput
-  activatedConfigs?: Prisma.AiProviderConfigUncheckedCreateNestedManyWithoutActivatedByUserInput
+  weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutAuthoredRecipesInput = {
@@ -1601,31 +1601,31 @@ export type UserUpdateWithoutAuthoredRecipesInput = {
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   googleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   googleEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
-  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
-  profile?: Prisma.UserProfileUpdateOneWithoutUserNestedInput
-  preferences?: Prisma.UserPreferenceUpdateOneWithoutUserNestedInput
-  refreshTokens?: Prisma.RefreshTokenUpdateManyWithoutUserNestedInput
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  adminLogs?: Prisma.AdminActivityLogUpdateManyWithoutAdminNestedInput
+  activatedConfigs?: Prisma.AiProviderConfigUpdateManyWithoutActivatedByUserNestedInput
+  activatedPrompts?: Prisma.AiSystemPromptUpdateManyWithoutActivatedByUserNestedInput
+  aiUsageLogs?: Prisma.AiUsageLogUpdateManyWithoutUserNestedInput
+  chatSessions?: Prisma.ChatSessionUpdateManyWithoutUserNestedInput
   fridgeItems?: Prisma.FridgeItemUpdateManyWithoutUserNestedInput
   scanLogs?: Prisma.IngredientScanLogUpdateManyWithoutUserNestedInput
-  allergies?: Prisma.UserAllergyUpdateManyWithoutUserNestedInput
-  weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutUserNestedInput
-  shoppingLists?: Prisma.ShoppingListUpdateManyWithoutUserNestedInput
-  chatSessions?: Prisma.ChatSessionUpdateManyWithoutUserNestedInput
-  savedRecipes?: Prisma.UserSavedRecipeUpdateManyWithoutUserNestedInput
-  adminLogs?: Prisma.AdminActivityLogUpdateManyWithoutAdminNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  refreshTokens?: Prisma.RefreshTokenUpdateManyWithoutUserNestedInput
+  shoppingLists?: Prisma.ShoppingListUpdateManyWithoutUserNestedInput
+  allergies?: Prisma.UserAllergyUpdateManyWithoutUserNestedInput
+  preferences?: Prisma.UserPreferenceUpdateOneWithoutUserNestedInput
+  profile?: Prisma.UserProfileUpdateOneWithoutUserNestedInput
+  savedRecipes?: Prisma.UserSavedRecipeUpdateManyWithoutUserNestedInput
   subscription?: Prisma.UserSubscriptionUpdateOneWithoutUserNestedInput
-  aiUsageLogs?: Prisma.AiUsageLogUpdateManyWithoutUserNestedInput
-  activatedPrompts?: Prisma.AiSystemPromptUpdateManyWithoutActivatedByUserNestedInput
-  activatedConfigs?: Prisma.AiProviderConfigUpdateManyWithoutActivatedByUserNestedInput
+  role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
+  weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutAuthoredRecipesInput = {
@@ -1633,31 +1633,31 @@ export type UserUncheckedUpdateWithoutAuthoredRecipesInput = {
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   googleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   googleEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   roleId?: Prisma.IntFieldUpdateOperationsInput | number
-  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  profile?: Prisma.UserProfileUncheckedUpdateOneWithoutUserNestedInput
-  preferences?: Prisma.UserPreferenceUncheckedUpdateOneWithoutUserNestedInput
-  refreshTokens?: Prisma.RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  adminLogs?: Prisma.AdminActivityLogUncheckedUpdateManyWithoutAdminNestedInput
+  activatedConfigs?: Prisma.AiProviderConfigUncheckedUpdateManyWithoutActivatedByUserNestedInput
+  activatedPrompts?: Prisma.AiSystemPromptUncheckedUpdateManyWithoutActivatedByUserNestedInput
+  aiUsageLogs?: Prisma.AiUsageLogUncheckedUpdateManyWithoutUserNestedInput
+  chatSessions?: Prisma.ChatSessionUncheckedUpdateManyWithoutUserNestedInput
   fridgeItems?: Prisma.FridgeItemUncheckedUpdateManyWithoutUserNestedInput
   scanLogs?: Prisma.IngredientScanLogUncheckedUpdateManyWithoutUserNestedInput
-  allergies?: Prisma.UserAllergyUncheckedUpdateManyWithoutUserNestedInput
-  weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutUserNestedInput
-  shoppingLists?: Prisma.ShoppingListUncheckedUpdateManyWithoutUserNestedInput
-  chatSessions?: Prisma.ChatSessionUncheckedUpdateManyWithoutUserNestedInput
-  savedRecipes?: Prisma.UserSavedRecipeUncheckedUpdateManyWithoutUserNestedInput
-  adminLogs?: Prisma.AdminActivityLogUncheckedUpdateManyWithoutAdminNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  refreshTokens?: Prisma.RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
+  shoppingLists?: Prisma.ShoppingListUncheckedUpdateManyWithoutUserNestedInput
+  allergies?: Prisma.UserAllergyUncheckedUpdateManyWithoutUserNestedInput
+  preferences?: Prisma.UserPreferenceUncheckedUpdateOneWithoutUserNestedInput
+  profile?: Prisma.UserProfileUncheckedUpdateOneWithoutUserNestedInput
+  savedRecipes?: Prisma.UserSavedRecipeUncheckedUpdateManyWithoutUserNestedInput
   subscription?: Prisma.UserSubscriptionUncheckedUpdateOneWithoutUserNestedInput
-  aiUsageLogs?: Prisma.AiUsageLogUncheckedUpdateManyWithoutUserNestedInput
-  activatedPrompts?: Prisma.AiSystemPromptUncheckedUpdateManyWithoutActivatedByUserNestedInput
-  activatedConfigs?: Prisma.AiProviderConfigUncheckedUpdateManyWithoutActivatedByUserNestedInput
+  weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutSavedRecipesInput = {
@@ -1665,31 +1665,31 @@ export type UserCreateWithoutSavedRecipesInput = {
   phone?: string | null
   googleId?: string | null
   googleEmail?: string | null
-  name?: string | null
   authProvider: $Enums.AuthProvider
   status?: $Enums.UserStatus
-  isOnboardingCompleted?: boolean
   lastLoginAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
-  role: Prisma.RoleCreateNestedOneWithoutUsersInput
-  profile?: Prisma.UserProfileCreateNestedOneWithoutUserInput
-  preferences?: Prisma.UserPreferenceCreateNestedOneWithoutUserInput
-  refreshTokens?: Prisma.RefreshTokenCreateNestedManyWithoutUserInput
+  isOnboardingCompleted?: boolean
+  name?: string | null
+  adminLogs?: Prisma.AdminActivityLogCreateNestedManyWithoutAdminInput
+  activatedConfigs?: Prisma.AiProviderConfigCreateNestedManyWithoutActivatedByUserInput
+  activatedPrompts?: Prisma.AiSystemPromptCreateNestedManyWithoutActivatedByUserInput
+  aiUsageLogs?: Prisma.AiUsageLogCreateNestedManyWithoutUserInput
+  chatSessions?: Prisma.ChatSessionCreateNestedManyWithoutUserInput
   fridgeItems?: Prisma.FridgeItemCreateNestedManyWithoutUserInput
   scanLogs?: Prisma.IngredientScanLogCreateNestedManyWithoutUserInput
-  allergies?: Prisma.UserAllergyCreateNestedManyWithoutUserInput
-  weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutUserInput
-  shoppingLists?: Prisma.ShoppingListCreateNestedManyWithoutUserInput
-  chatSessions?: Prisma.ChatSessionCreateNestedManyWithoutUserInput
-  authoredRecipes?: Prisma.RecipeCreateNestedManyWithoutAuthorInput
-  adminLogs?: Prisma.AdminActivityLogCreateNestedManyWithoutAdminInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  authoredRecipes?: Prisma.RecipeCreateNestedManyWithoutAuthorInput
+  refreshTokens?: Prisma.RefreshTokenCreateNestedManyWithoutUserInput
+  shoppingLists?: Prisma.ShoppingListCreateNestedManyWithoutUserInput
+  allergies?: Prisma.UserAllergyCreateNestedManyWithoutUserInput
+  preferences?: Prisma.UserPreferenceCreateNestedOneWithoutUserInput
+  profile?: Prisma.UserProfileCreateNestedOneWithoutUserInput
   subscription?: Prisma.UserSubscriptionCreateNestedOneWithoutUserInput
-  aiUsageLogs?: Prisma.AiUsageLogCreateNestedManyWithoutUserInput
-  activatedPrompts?: Prisma.AiSystemPromptCreateNestedManyWithoutActivatedByUserInput
-  activatedConfigs?: Prisma.AiProviderConfigCreateNestedManyWithoutActivatedByUserInput
+  role: Prisma.RoleCreateNestedOneWithoutUsersInput
+  weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutSavedRecipesInput = {
@@ -1697,31 +1697,31 @@ export type UserUncheckedCreateWithoutSavedRecipesInput = {
   phone?: string | null
   googleId?: string | null
   googleEmail?: string | null
-  name?: string | null
   authProvider: $Enums.AuthProvider
   status?: $Enums.UserStatus
   roleId: number
-  isOnboardingCompleted?: boolean
   lastLoginAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
-  profile?: Prisma.UserProfileUncheckedCreateNestedOneWithoutUserInput
-  preferences?: Prisma.UserPreferenceUncheckedCreateNestedOneWithoutUserInput
-  refreshTokens?: Prisma.RefreshTokenUncheckedCreateNestedManyWithoutUserInput
+  isOnboardingCompleted?: boolean
+  name?: string | null
+  adminLogs?: Prisma.AdminActivityLogUncheckedCreateNestedManyWithoutAdminInput
+  activatedConfigs?: Prisma.AiProviderConfigUncheckedCreateNestedManyWithoutActivatedByUserInput
+  activatedPrompts?: Prisma.AiSystemPromptUncheckedCreateNestedManyWithoutActivatedByUserInput
+  aiUsageLogs?: Prisma.AiUsageLogUncheckedCreateNestedManyWithoutUserInput
+  chatSessions?: Prisma.ChatSessionUncheckedCreateNestedManyWithoutUserInput
   fridgeItems?: Prisma.FridgeItemUncheckedCreateNestedManyWithoutUserInput
   scanLogs?: Prisma.IngredientScanLogUncheckedCreateNestedManyWithoutUserInput
-  allergies?: Prisma.UserAllergyUncheckedCreateNestedManyWithoutUserInput
-  weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutUserInput
-  shoppingLists?: Prisma.ShoppingListUncheckedCreateNestedManyWithoutUserInput
-  chatSessions?: Prisma.ChatSessionUncheckedCreateNestedManyWithoutUserInput
-  authoredRecipes?: Prisma.RecipeUncheckedCreateNestedManyWithoutAuthorInput
-  adminLogs?: Prisma.AdminActivityLogUncheckedCreateNestedManyWithoutAdminInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  authoredRecipes?: Prisma.RecipeUncheckedCreateNestedManyWithoutAuthorInput
+  refreshTokens?: Prisma.RefreshTokenUncheckedCreateNestedManyWithoutUserInput
+  shoppingLists?: Prisma.ShoppingListUncheckedCreateNestedManyWithoutUserInput
+  allergies?: Prisma.UserAllergyUncheckedCreateNestedManyWithoutUserInput
+  preferences?: Prisma.UserPreferenceUncheckedCreateNestedOneWithoutUserInput
+  profile?: Prisma.UserProfileUncheckedCreateNestedOneWithoutUserInput
   subscription?: Prisma.UserSubscriptionUncheckedCreateNestedOneWithoutUserInput
-  aiUsageLogs?: Prisma.AiUsageLogUncheckedCreateNestedManyWithoutUserInput
-  activatedPrompts?: Prisma.AiSystemPromptUncheckedCreateNestedManyWithoutActivatedByUserInput
-  activatedConfigs?: Prisma.AiProviderConfigUncheckedCreateNestedManyWithoutActivatedByUserInput
+  weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutSavedRecipesInput = {
@@ -1745,31 +1745,31 @@ export type UserUpdateWithoutSavedRecipesInput = {
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   googleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   googleEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
-  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
-  profile?: Prisma.UserProfileUpdateOneWithoutUserNestedInput
-  preferences?: Prisma.UserPreferenceUpdateOneWithoutUserNestedInput
-  refreshTokens?: Prisma.RefreshTokenUpdateManyWithoutUserNestedInput
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  adminLogs?: Prisma.AdminActivityLogUpdateManyWithoutAdminNestedInput
+  activatedConfigs?: Prisma.AiProviderConfigUpdateManyWithoutActivatedByUserNestedInput
+  activatedPrompts?: Prisma.AiSystemPromptUpdateManyWithoutActivatedByUserNestedInput
+  aiUsageLogs?: Prisma.AiUsageLogUpdateManyWithoutUserNestedInput
+  chatSessions?: Prisma.ChatSessionUpdateManyWithoutUserNestedInput
   fridgeItems?: Prisma.FridgeItemUpdateManyWithoutUserNestedInput
   scanLogs?: Prisma.IngredientScanLogUpdateManyWithoutUserNestedInput
-  allergies?: Prisma.UserAllergyUpdateManyWithoutUserNestedInput
-  weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutUserNestedInput
-  shoppingLists?: Prisma.ShoppingListUpdateManyWithoutUserNestedInput
-  chatSessions?: Prisma.ChatSessionUpdateManyWithoutUserNestedInput
-  authoredRecipes?: Prisma.RecipeUpdateManyWithoutAuthorNestedInput
-  adminLogs?: Prisma.AdminActivityLogUpdateManyWithoutAdminNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  authoredRecipes?: Prisma.RecipeUpdateManyWithoutAuthorNestedInput
+  refreshTokens?: Prisma.RefreshTokenUpdateManyWithoutUserNestedInput
+  shoppingLists?: Prisma.ShoppingListUpdateManyWithoutUserNestedInput
+  allergies?: Prisma.UserAllergyUpdateManyWithoutUserNestedInput
+  preferences?: Prisma.UserPreferenceUpdateOneWithoutUserNestedInput
+  profile?: Prisma.UserProfileUpdateOneWithoutUserNestedInput
   subscription?: Prisma.UserSubscriptionUpdateOneWithoutUserNestedInput
-  aiUsageLogs?: Prisma.AiUsageLogUpdateManyWithoutUserNestedInput
-  activatedPrompts?: Prisma.AiSystemPromptUpdateManyWithoutActivatedByUserNestedInput
-  activatedConfigs?: Prisma.AiProviderConfigUpdateManyWithoutActivatedByUserNestedInput
+  role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
+  weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutSavedRecipesInput = {
@@ -1777,31 +1777,31 @@ export type UserUncheckedUpdateWithoutSavedRecipesInput = {
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   googleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   googleEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   roleId?: Prisma.IntFieldUpdateOperationsInput | number
-  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  profile?: Prisma.UserProfileUncheckedUpdateOneWithoutUserNestedInput
-  preferences?: Prisma.UserPreferenceUncheckedUpdateOneWithoutUserNestedInput
-  refreshTokens?: Prisma.RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  adminLogs?: Prisma.AdminActivityLogUncheckedUpdateManyWithoutAdminNestedInput
+  activatedConfigs?: Prisma.AiProviderConfigUncheckedUpdateManyWithoutActivatedByUserNestedInput
+  activatedPrompts?: Prisma.AiSystemPromptUncheckedUpdateManyWithoutActivatedByUserNestedInput
+  aiUsageLogs?: Prisma.AiUsageLogUncheckedUpdateManyWithoutUserNestedInput
+  chatSessions?: Prisma.ChatSessionUncheckedUpdateManyWithoutUserNestedInput
   fridgeItems?: Prisma.FridgeItemUncheckedUpdateManyWithoutUserNestedInput
   scanLogs?: Prisma.IngredientScanLogUncheckedUpdateManyWithoutUserNestedInput
-  allergies?: Prisma.UserAllergyUncheckedUpdateManyWithoutUserNestedInput
-  weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutUserNestedInput
-  shoppingLists?: Prisma.ShoppingListUncheckedUpdateManyWithoutUserNestedInput
-  chatSessions?: Prisma.ChatSessionUncheckedUpdateManyWithoutUserNestedInput
-  authoredRecipes?: Prisma.RecipeUncheckedUpdateManyWithoutAuthorNestedInput
-  adminLogs?: Prisma.AdminActivityLogUncheckedUpdateManyWithoutAdminNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  authoredRecipes?: Prisma.RecipeUncheckedUpdateManyWithoutAuthorNestedInput
+  refreshTokens?: Prisma.RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
+  shoppingLists?: Prisma.ShoppingListUncheckedUpdateManyWithoutUserNestedInput
+  allergies?: Prisma.UserAllergyUncheckedUpdateManyWithoutUserNestedInput
+  preferences?: Prisma.UserPreferenceUncheckedUpdateOneWithoutUserNestedInput
+  profile?: Prisma.UserProfileUncheckedUpdateOneWithoutUserNestedInput
   subscription?: Prisma.UserSubscriptionUncheckedUpdateOneWithoutUserNestedInput
-  aiUsageLogs?: Prisma.AiUsageLogUncheckedUpdateManyWithoutUserNestedInput
-  activatedPrompts?: Prisma.AiSystemPromptUncheckedUpdateManyWithoutActivatedByUserNestedInput
-  activatedConfigs?: Prisma.AiProviderConfigUncheckedUpdateManyWithoutActivatedByUserNestedInput
+  weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutFridgeItemsInput = {
@@ -1809,31 +1809,31 @@ export type UserCreateWithoutFridgeItemsInput = {
   phone?: string | null
   googleId?: string | null
   googleEmail?: string | null
-  name?: string | null
   authProvider: $Enums.AuthProvider
   status?: $Enums.UserStatus
-  isOnboardingCompleted?: boolean
   lastLoginAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
-  role: Prisma.RoleCreateNestedOneWithoutUsersInput
-  profile?: Prisma.UserProfileCreateNestedOneWithoutUserInput
-  preferences?: Prisma.UserPreferenceCreateNestedOneWithoutUserInput
-  refreshTokens?: Prisma.RefreshTokenCreateNestedManyWithoutUserInput
-  scanLogs?: Prisma.IngredientScanLogCreateNestedManyWithoutUserInput
-  allergies?: Prisma.UserAllergyCreateNestedManyWithoutUserInput
-  weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutUserInput
-  shoppingLists?: Prisma.ShoppingListCreateNestedManyWithoutUserInput
-  chatSessions?: Prisma.ChatSessionCreateNestedManyWithoutUserInput
-  savedRecipes?: Prisma.UserSavedRecipeCreateNestedManyWithoutUserInput
-  authoredRecipes?: Prisma.RecipeCreateNestedManyWithoutAuthorInput
+  isOnboardingCompleted?: boolean
+  name?: string | null
   adminLogs?: Prisma.AdminActivityLogCreateNestedManyWithoutAdminInput
-  notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
-  subscription?: Prisma.UserSubscriptionCreateNestedOneWithoutUserInput
-  aiUsageLogs?: Prisma.AiUsageLogCreateNestedManyWithoutUserInput
-  activatedPrompts?: Prisma.AiSystemPromptCreateNestedManyWithoutActivatedByUserInput
   activatedConfigs?: Prisma.AiProviderConfigCreateNestedManyWithoutActivatedByUserInput
+  activatedPrompts?: Prisma.AiSystemPromptCreateNestedManyWithoutActivatedByUserInput
+  aiUsageLogs?: Prisma.AiUsageLogCreateNestedManyWithoutUserInput
+  chatSessions?: Prisma.ChatSessionCreateNestedManyWithoutUserInput
+  scanLogs?: Prisma.IngredientScanLogCreateNestedManyWithoutUserInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  authoredRecipes?: Prisma.RecipeCreateNestedManyWithoutAuthorInput
+  refreshTokens?: Prisma.RefreshTokenCreateNestedManyWithoutUserInput
+  shoppingLists?: Prisma.ShoppingListCreateNestedManyWithoutUserInput
+  allergies?: Prisma.UserAllergyCreateNestedManyWithoutUserInput
+  preferences?: Prisma.UserPreferenceCreateNestedOneWithoutUserInput
+  profile?: Prisma.UserProfileCreateNestedOneWithoutUserInput
+  savedRecipes?: Prisma.UserSavedRecipeCreateNestedManyWithoutUserInput
+  subscription?: Prisma.UserSubscriptionCreateNestedOneWithoutUserInput
+  role: Prisma.RoleCreateNestedOneWithoutUsersInput
+  weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutFridgeItemsInput = {
@@ -1841,31 +1841,31 @@ export type UserUncheckedCreateWithoutFridgeItemsInput = {
   phone?: string | null
   googleId?: string | null
   googleEmail?: string | null
-  name?: string | null
   authProvider: $Enums.AuthProvider
   status?: $Enums.UserStatus
   roleId: number
-  isOnboardingCompleted?: boolean
   lastLoginAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
-  profile?: Prisma.UserProfileUncheckedCreateNestedOneWithoutUserInput
-  preferences?: Prisma.UserPreferenceUncheckedCreateNestedOneWithoutUserInput
-  refreshTokens?: Prisma.RefreshTokenUncheckedCreateNestedManyWithoutUserInput
-  scanLogs?: Prisma.IngredientScanLogUncheckedCreateNestedManyWithoutUserInput
-  allergies?: Prisma.UserAllergyUncheckedCreateNestedManyWithoutUserInput
-  weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutUserInput
-  shoppingLists?: Prisma.ShoppingListUncheckedCreateNestedManyWithoutUserInput
-  chatSessions?: Prisma.ChatSessionUncheckedCreateNestedManyWithoutUserInput
-  savedRecipes?: Prisma.UserSavedRecipeUncheckedCreateNestedManyWithoutUserInput
-  authoredRecipes?: Prisma.RecipeUncheckedCreateNestedManyWithoutAuthorInput
+  isOnboardingCompleted?: boolean
+  name?: string | null
   adminLogs?: Prisma.AdminActivityLogUncheckedCreateNestedManyWithoutAdminInput
-  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
-  subscription?: Prisma.UserSubscriptionUncheckedCreateNestedOneWithoutUserInput
-  aiUsageLogs?: Prisma.AiUsageLogUncheckedCreateNestedManyWithoutUserInput
-  activatedPrompts?: Prisma.AiSystemPromptUncheckedCreateNestedManyWithoutActivatedByUserInput
   activatedConfigs?: Prisma.AiProviderConfigUncheckedCreateNestedManyWithoutActivatedByUserInput
+  activatedPrompts?: Prisma.AiSystemPromptUncheckedCreateNestedManyWithoutActivatedByUserInput
+  aiUsageLogs?: Prisma.AiUsageLogUncheckedCreateNestedManyWithoutUserInput
+  chatSessions?: Prisma.ChatSessionUncheckedCreateNestedManyWithoutUserInput
+  scanLogs?: Prisma.IngredientScanLogUncheckedCreateNestedManyWithoutUserInput
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  authoredRecipes?: Prisma.RecipeUncheckedCreateNestedManyWithoutAuthorInput
+  refreshTokens?: Prisma.RefreshTokenUncheckedCreateNestedManyWithoutUserInput
+  shoppingLists?: Prisma.ShoppingListUncheckedCreateNestedManyWithoutUserInput
+  allergies?: Prisma.UserAllergyUncheckedCreateNestedManyWithoutUserInput
+  preferences?: Prisma.UserPreferenceUncheckedCreateNestedOneWithoutUserInput
+  profile?: Prisma.UserProfileUncheckedCreateNestedOneWithoutUserInput
+  savedRecipes?: Prisma.UserSavedRecipeUncheckedCreateNestedManyWithoutUserInput
+  subscription?: Prisma.UserSubscriptionUncheckedCreateNestedOneWithoutUserInput
+  weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutFridgeItemsInput = {
@@ -1889,31 +1889,31 @@ export type UserUpdateWithoutFridgeItemsInput = {
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   googleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   googleEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
-  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
-  profile?: Prisma.UserProfileUpdateOneWithoutUserNestedInput
-  preferences?: Prisma.UserPreferenceUpdateOneWithoutUserNestedInput
-  refreshTokens?: Prisma.RefreshTokenUpdateManyWithoutUserNestedInput
-  scanLogs?: Prisma.IngredientScanLogUpdateManyWithoutUserNestedInput
-  allergies?: Prisma.UserAllergyUpdateManyWithoutUserNestedInput
-  weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutUserNestedInput
-  shoppingLists?: Prisma.ShoppingListUpdateManyWithoutUserNestedInput
-  chatSessions?: Prisma.ChatSessionUpdateManyWithoutUserNestedInput
-  savedRecipes?: Prisma.UserSavedRecipeUpdateManyWithoutUserNestedInput
-  authoredRecipes?: Prisma.RecipeUpdateManyWithoutAuthorNestedInput
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   adminLogs?: Prisma.AdminActivityLogUpdateManyWithoutAdminNestedInput
-  notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
-  subscription?: Prisma.UserSubscriptionUpdateOneWithoutUserNestedInput
-  aiUsageLogs?: Prisma.AiUsageLogUpdateManyWithoutUserNestedInput
-  activatedPrompts?: Prisma.AiSystemPromptUpdateManyWithoutActivatedByUserNestedInput
   activatedConfigs?: Prisma.AiProviderConfigUpdateManyWithoutActivatedByUserNestedInput
+  activatedPrompts?: Prisma.AiSystemPromptUpdateManyWithoutActivatedByUserNestedInput
+  aiUsageLogs?: Prisma.AiUsageLogUpdateManyWithoutUserNestedInput
+  chatSessions?: Prisma.ChatSessionUpdateManyWithoutUserNestedInput
+  scanLogs?: Prisma.IngredientScanLogUpdateManyWithoutUserNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  authoredRecipes?: Prisma.RecipeUpdateManyWithoutAuthorNestedInput
+  refreshTokens?: Prisma.RefreshTokenUpdateManyWithoutUserNestedInput
+  shoppingLists?: Prisma.ShoppingListUpdateManyWithoutUserNestedInput
+  allergies?: Prisma.UserAllergyUpdateManyWithoutUserNestedInput
+  preferences?: Prisma.UserPreferenceUpdateOneWithoutUserNestedInput
+  profile?: Prisma.UserProfileUpdateOneWithoutUserNestedInput
+  savedRecipes?: Prisma.UserSavedRecipeUpdateManyWithoutUserNestedInput
+  subscription?: Prisma.UserSubscriptionUpdateOneWithoutUserNestedInput
+  role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
+  weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutFridgeItemsInput = {
@@ -1921,31 +1921,31 @@ export type UserUncheckedUpdateWithoutFridgeItemsInput = {
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   googleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   googleEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   roleId?: Prisma.IntFieldUpdateOperationsInput | number
-  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  profile?: Prisma.UserProfileUncheckedUpdateOneWithoutUserNestedInput
-  preferences?: Prisma.UserPreferenceUncheckedUpdateOneWithoutUserNestedInput
-  refreshTokens?: Prisma.RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
-  scanLogs?: Prisma.IngredientScanLogUncheckedUpdateManyWithoutUserNestedInput
-  allergies?: Prisma.UserAllergyUncheckedUpdateManyWithoutUserNestedInput
-  weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutUserNestedInput
-  shoppingLists?: Prisma.ShoppingListUncheckedUpdateManyWithoutUserNestedInput
-  chatSessions?: Prisma.ChatSessionUncheckedUpdateManyWithoutUserNestedInput
-  savedRecipes?: Prisma.UserSavedRecipeUncheckedUpdateManyWithoutUserNestedInput
-  authoredRecipes?: Prisma.RecipeUncheckedUpdateManyWithoutAuthorNestedInput
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   adminLogs?: Prisma.AdminActivityLogUncheckedUpdateManyWithoutAdminNestedInput
-  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
-  subscription?: Prisma.UserSubscriptionUncheckedUpdateOneWithoutUserNestedInput
-  aiUsageLogs?: Prisma.AiUsageLogUncheckedUpdateManyWithoutUserNestedInput
-  activatedPrompts?: Prisma.AiSystemPromptUncheckedUpdateManyWithoutActivatedByUserNestedInput
   activatedConfigs?: Prisma.AiProviderConfigUncheckedUpdateManyWithoutActivatedByUserNestedInput
+  activatedPrompts?: Prisma.AiSystemPromptUncheckedUpdateManyWithoutActivatedByUserNestedInput
+  aiUsageLogs?: Prisma.AiUsageLogUncheckedUpdateManyWithoutUserNestedInput
+  chatSessions?: Prisma.ChatSessionUncheckedUpdateManyWithoutUserNestedInput
+  scanLogs?: Prisma.IngredientScanLogUncheckedUpdateManyWithoutUserNestedInput
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  authoredRecipes?: Prisma.RecipeUncheckedUpdateManyWithoutAuthorNestedInput
+  refreshTokens?: Prisma.RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
+  shoppingLists?: Prisma.ShoppingListUncheckedUpdateManyWithoutUserNestedInput
+  allergies?: Prisma.UserAllergyUncheckedUpdateManyWithoutUserNestedInput
+  preferences?: Prisma.UserPreferenceUncheckedUpdateOneWithoutUserNestedInput
+  profile?: Prisma.UserProfileUncheckedUpdateOneWithoutUserNestedInput
+  savedRecipes?: Prisma.UserSavedRecipeUncheckedUpdateManyWithoutUserNestedInput
+  subscription?: Prisma.UserSubscriptionUncheckedUpdateOneWithoutUserNestedInput
+  weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutScanLogsInput = {
@@ -1953,31 +1953,31 @@ export type UserCreateWithoutScanLogsInput = {
   phone?: string | null
   googleId?: string | null
   googleEmail?: string | null
-  name?: string | null
   authProvider: $Enums.AuthProvider
   status?: $Enums.UserStatus
-  isOnboardingCompleted?: boolean
   lastLoginAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
-  role: Prisma.RoleCreateNestedOneWithoutUsersInput
-  profile?: Prisma.UserProfileCreateNestedOneWithoutUserInput
-  preferences?: Prisma.UserPreferenceCreateNestedOneWithoutUserInput
-  refreshTokens?: Prisma.RefreshTokenCreateNestedManyWithoutUserInput
-  fridgeItems?: Prisma.FridgeItemCreateNestedManyWithoutUserInput
-  allergies?: Prisma.UserAllergyCreateNestedManyWithoutUserInput
-  weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutUserInput
-  shoppingLists?: Prisma.ShoppingListCreateNestedManyWithoutUserInput
-  chatSessions?: Prisma.ChatSessionCreateNestedManyWithoutUserInput
-  savedRecipes?: Prisma.UserSavedRecipeCreateNestedManyWithoutUserInput
-  authoredRecipes?: Prisma.RecipeCreateNestedManyWithoutAuthorInput
+  isOnboardingCompleted?: boolean
+  name?: string | null
   adminLogs?: Prisma.AdminActivityLogCreateNestedManyWithoutAdminInput
-  notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
-  subscription?: Prisma.UserSubscriptionCreateNestedOneWithoutUserInput
-  aiUsageLogs?: Prisma.AiUsageLogCreateNestedManyWithoutUserInput
-  activatedPrompts?: Prisma.AiSystemPromptCreateNestedManyWithoutActivatedByUserInput
   activatedConfigs?: Prisma.AiProviderConfigCreateNestedManyWithoutActivatedByUserInput
+  activatedPrompts?: Prisma.AiSystemPromptCreateNestedManyWithoutActivatedByUserInput
+  aiUsageLogs?: Prisma.AiUsageLogCreateNestedManyWithoutUserInput
+  chatSessions?: Prisma.ChatSessionCreateNestedManyWithoutUserInput
+  fridgeItems?: Prisma.FridgeItemCreateNestedManyWithoutUserInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  authoredRecipes?: Prisma.RecipeCreateNestedManyWithoutAuthorInput
+  refreshTokens?: Prisma.RefreshTokenCreateNestedManyWithoutUserInput
+  shoppingLists?: Prisma.ShoppingListCreateNestedManyWithoutUserInput
+  allergies?: Prisma.UserAllergyCreateNestedManyWithoutUserInput
+  preferences?: Prisma.UserPreferenceCreateNestedOneWithoutUserInput
+  profile?: Prisma.UserProfileCreateNestedOneWithoutUserInput
+  savedRecipes?: Prisma.UserSavedRecipeCreateNestedManyWithoutUserInput
+  subscription?: Prisma.UserSubscriptionCreateNestedOneWithoutUserInput
+  role: Prisma.RoleCreateNestedOneWithoutUsersInput
+  weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutScanLogsInput = {
@@ -1985,31 +1985,31 @@ export type UserUncheckedCreateWithoutScanLogsInput = {
   phone?: string | null
   googleId?: string | null
   googleEmail?: string | null
-  name?: string | null
   authProvider: $Enums.AuthProvider
   status?: $Enums.UserStatus
   roleId: number
-  isOnboardingCompleted?: boolean
   lastLoginAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
-  profile?: Prisma.UserProfileUncheckedCreateNestedOneWithoutUserInput
-  preferences?: Prisma.UserPreferenceUncheckedCreateNestedOneWithoutUserInput
-  refreshTokens?: Prisma.RefreshTokenUncheckedCreateNestedManyWithoutUserInput
-  fridgeItems?: Prisma.FridgeItemUncheckedCreateNestedManyWithoutUserInput
-  allergies?: Prisma.UserAllergyUncheckedCreateNestedManyWithoutUserInput
-  weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutUserInput
-  shoppingLists?: Prisma.ShoppingListUncheckedCreateNestedManyWithoutUserInput
-  chatSessions?: Prisma.ChatSessionUncheckedCreateNestedManyWithoutUserInput
-  savedRecipes?: Prisma.UserSavedRecipeUncheckedCreateNestedManyWithoutUserInput
-  authoredRecipes?: Prisma.RecipeUncheckedCreateNestedManyWithoutAuthorInput
+  isOnboardingCompleted?: boolean
+  name?: string | null
   adminLogs?: Prisma.AdminActivityLogUncheckedCreateNestedManyWithoutAdminInput
-  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
-  subscription?: Prisma.UserSubscriptionUncheckedCreateNestedOneWithoutUserInput
-  aiUsageLogs?: Prisma.AiUsageLogUncheckedCreateNestedManyWithoutUserInput
-  activatedPrompts?: Prisma.AiSystemPromptUncheckedCreateNestedManyWithoutActivatedByUserInput
   activatedConfigs?: Prisma.AiProviderConfigUncheckedCreateNestedManyWithoutActivatedByUserInput
+  activatedPrompts?: Prisma.AiSystemPromptUncheckedCreateNestedManyWithoutActivatedByUserInput
+  aiUsageLogs?: Prisma.AiUsageLogUncheckedCreateNestedManyWithoutUserInput
+  chatSessions?: Prisma.ChatSessionUncheckedCreateNestedManyWithoutUserInput
+  fridgeItems?: Prisma.FridgeItemUncheckedCreateNestedManyWithoutUserInput
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  authoredRecipes?: Prisma.RecipeUncheckedCreateNestedManyWithoutAuthorInput
+  refreshTokens?: Prisma.RefreshTokenUncheckedCreateNestedManyWithoutUserInput
+  shoppingLists?: Prisma.ShoppingListUncheckedCreateNestedManyWithoutUserInput
+  allergies?: Prisma.UserAllergyUncheckedCreateNestedManyWithoutUserInput
+  preferences?: Prisma.UserPreferenceUncheckedCreateNestedOneWithoutUserInput
+  profile?: Prisma.UserProfileUncheckedCreateNestedOneWithoutUserInput
+  savedRecipes?: Prisma.UserSavedRecipeUncheckedCreateNestedManyWithoutUserInput
+  subscription?: Prisma.UserSubscriptionUncheckedCreateNestedOneWithoutUserInput
+  weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutScanLogsInput = {
@@ -2033,31 +2033,31 @@ export type UserUpdateWithoutScanLogsInput = {
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   googleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   googleEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
-  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
-  profile?: Prisma.UserProfileUpdateOneWithoutUserNestedInput
-  preferences?: Prisma.UserPreferenceUpdateOneWithoutUserNestedInput
-  refreshTokens?: Prisma.RefreshTokenUpdateManyWithoutUserNestedInput
-  fridgeItems?: Prisma.FridgeItemUpdateManyWithoutUserNestedInput
-  allergies?: Prisma.UserAllergyUpdateManyWithoutUserNestedInput
-  weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutUserNestedInput
-  shoppingLists?: Prisma.ShoppingListUpdateManyWithoutUserNestedInput
-  chatSessions?: Prisma.ChatSessionUpdateManyWithoutUserNestedInput
-  savedRecipes?: Prisma.UserSavedRecipeUpdateManyWithoutUserNestedInput
-  authoredRecipes?: Prisma.RecipeUpdateManyWithoutAuthorNestedInput
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   adminLogs?: Prisma.AdminActivityLogUpdateManyWithoutAdminNestedInput
-  notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
-  subscription?: Prisma.UserSubscriptionUpdateOneWithoutUserNestedInput
-  aiUsageLogs?: Prisma.AiUsageLogUpdateManyWithoutUserNestedInput
-  activatedPrompts?: Prisma.AiSystemPromptUpdateManyWithoutActivatedByUserNestedInput
   activatedConfigs?: Prisma.AiProviderConfigUpdateManyWithoutActivatedByUserNestedInput
+  activatedPrompts?: Prisma.AiSystemPromptUpdateManyWithoutActivatedByUserNestedInput
+  aiUsageLogs?: Prisma.AiUsageLogUpdateManyWithoutUserNestedInput
+  chatSessions?: Prisma.ChatSessionUpdateManyWithoutUserNestedInput
+  fridgeItems?: Prisma.FridgeItemUpdateManyWithoutUserNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  authoredRecipes?: Prisma.RecipeUpdateManyWithoutAuthorNestedInput
+  refreshTokens?: Prisma.RefreshTokenUpdateManyWithoutUserNestedInput
+  shoppingLists?: Prisma.ShoppingListUpdateManyWithoutUserNestedInput
+  allergies?: Prisma.UserAllergyUpdateManyWithoutUserNestedInput
+  preferences?: Prisma.UserPreferenceUpdateOneWithoutUserNestedInput
+  profile?: Prisma.UserProfileUpdateOneWithoutUserNestedInput
+  savedRecipes?: Prisma.UserSavedRecipeUpdateManyWithoutUserNestedInput
+  subscription?: Prisma.UserSubscriptionUpdateOneWithoutUserNestedInput
+  role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
+  weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutScanLogsInput = {
@@ -2065,31 +2065,31 @@ export type UserUncheckedUpdateWithoutScanLogsInput = {
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   googleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   googleEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   roleId?: Prisma.IntFieldUpdateOperationsInput | number
-  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  profile?: Prisma.UserProfileUncheckedUpdateOneWithoutUserNestedInput
-  preferences?: Prisma.UserPreferenceUncheckedUpdateOneWithoutUserNestedInput
-  refreshTokens?: Prisma.RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
-  fridgeItems?: Prisma.FridgeItemUncheckedUpdateManyWithoutUserNestedInput
-  allergies?: Prisma.UserAllergyUncheckedUpdateManyWithoutUserNestedInput
-  weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutUserNestedInput
-  shoppingLists?: Prisma.ShoppingListUncheckedUpdateManyWithoutUserNestedInput
-  chatSessions?: Prisma.ChatSessionUncheckedUpdateManyWithoutUserNestedInput
-  savedRecipes?: Prisma.UserSavedRecipeUncheckedUpdateManyWithoutUserNestedInput
-  authoredRecipes?: Prisma.RecipeUncheckedUpdateManyWithoutAuthorNestedInput
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   adminLogs?: Prisma.AdminActivityLogUncheckedUpdateManyWithoutAdminNestedInput
-  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
-  subscription?: Prisma.UserSubscriptionUncheckedUpdateOneWithoutUserNestedInput
-  aiUsageLogs?: Prisma.AiUsageLogUncheckedUpdateManyWithoutUserNestedInput
-  activatedPrompts?: Prisma.AiSystemPromptUncheckedUpdateManyWithoutActivatedByUserNestedInput
   activatedConfigs?: Prisma.AiProviderConfigUncheckedUpdateManyWithoutActivatedByUserNestedInput
+  activatedPrompts?: Prisma.AiSystemPromptUncheckedUpdateManyWithoutActivatedByUserNestedInput
+  aiUsageLogs?: Prisma.AiUsageLogUncheckedUpdateManyWithoutUserNestedInput
+  chatSessions?: Prisma.ChatSessionUncheckedUpdateManyWithoutUserNestedInput
+  fridgeItems?: Prisma.FridgeItemUncheckedUpdateManyWithoutUserNestedInput
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  authoredRecipes?: Prisma.RecipeUncheckedUpdateManyWithoutAuthorNestedInput
+  refreshTokens?: Prisma.RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
+  shoppingLists?: Prisma.ShoppingListUncheckedUpdateManyWithoutUserNestedInput
+  allergies?: Prisma.UserAllergyUncheckedUpdateManyWithoutUserNestedInput
+  preferences?: Prisma.UserPreferenceUncheckedUpdateOneWithoutUserNestedInput
+  profile?: Prisma.UserProfileUncheckedUpdateOneWithoutUserNestedInput
+  savedRecipes?: Prisma.UserSavedRecipeUncheckedUpdateManyWithoutUserNestedInput
+  subscription?: Prisma.UserSubscriptionUncheckedUpdateOneWithoutUserNestedInput
+  weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutAllergiesInput = {
@@ -2097,31 +2097,31 @@ export type UserCreateWithoutAllergiesInput = {
   phone?: string | null
   googleId?: string | null
   googleEmail?: string | null
-  name?: string | null
   authProvider: $Enums.AuthProvider
   status?: $Enums.UserStatus
-  isOnboardingCompleted?: boolean
   lastLoginAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
-  role: Prisma.RoleCreateNestedOneWithoutUsersInput
-  profile?: Prisma.UserProfileCreateNestedOneWithoutUserInput
-  preferences?: Prisma.UserPreferenceCreateNestedOneWithoutUserInput
-  refreshTokens?: Prisma.RefreshTokenCreateNestedManyWithoutUserInput
+  isOnboardingCompleted?: boolean
+  name?: string | null
+  adminLogs?: Prisma.AdminActivityLogCreateNestedManyWithoutAdminInput
+  activatedConfigs?: Prisma.AiProviderConfigCreateNestedManyWithoutActivatedByUserInput
+  activatedPrompts?: Prisma.AiSystemPromptCreateNestedManyWithoutActivatedByUserInput
+  aiUsageLogs?: Prisma.AiUsageLogCreateNestedManyWithoutUserInput
+  chatSessions?: Prisma.ChatSessionCreateNestedManyWithoutUserInput
   fridgeItems?: Prisma.FridgeItemCreateNestedManyWithoutUserInput
   scanLogs?: Prisma.IngredientScanLogCreateNestedManyWithoutUserInput
-  weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutUserInput
-  shoppingLists?: Prisma.ShoppingListCreateNestedManyWithoutUserInput
-  chatSessions?: Prisma.ChatSessionCreateNestedManyWithoutUserInput
-  savedRecipes?: Prisma.UserSavedRecipeCreateNestedManyWithoutUserInput
-  authoredRecipes?: Prisma.RecipeCreateNestedManyWithoutAuthorInput
-  adminLogs?: Prisma.AdminActivityLogCreateNestedManyWithoutAdminInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  authoredRecipes?: Prisma.RecipeCreateNestedManyWithoutAuthorInput
+  refreshTokens?: Prisma.RefreshTokenCreateNestedManyWithoutUserInput
+  shoppingLists?: Prisma.ShoppingListCreateNestedManyWithoutUserInput
+  preferences?: Prisma.UserPreferenceCreateNestedOneWithoutUserInput
+  profile?: Prisma.UserProfileCreateNestedOneWithoutUserInput
+  savedRecipes?: Prisma.UserSavedRecipeCreateNestedManyWithoutUserInput
   subscription?: Prisma.UserSubscriptionCreateNestedOneWithoutUserInput
-  aiUsageLogs?: Prisma.AiUsageLogCreateNestedManyWithoutUserInput
-  activatedPrompts?: Prisma.AiSystemPromptCreateNestedManyWithoutActivatedByUserInput
-  activatedConfigs?: Prisma.AiProviderConfigCreateNestedManyWithoutActivatedByUserInput
+  role: Prisma.RoleCreateNestedOneWithoutUsersInput
+  weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutAllergiesInput = {
@@ -2129,31 +2129,31 @@ export type UserUncheckedCreateWithoutAllergiesInput = {
   phone?: string | null
   googleId?: string | null
   googleEmail?: string | null
-  name?: string | null
   authProvider: $Enums.AuthProvider
   status?: $Enums.UserStatus
   roleId: number
-  isOnboardingCompleted?: boolean
   lastLoginAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
-  profile?: Prisma.UserProfileUncheckedCreateNestedOneWithoutUserInput
-  preferences?: Prisma.UserPreferenceUncheckedCreateNestedOneWithoutUserInput
-  refreshTokens?: Prisma.RefreshTokenUncheckedCreateNestedManyWithoutUserInput
+  isOnboardingCompleted?: boolean
+  name?: string | null
+  adminLogs?: Prisma.AdminActivityLogUncheckedCreateNestedManyWithoutAdminInput
+  activatedConfigs?: Prisma.AiProviderConfigUncheckedCreateNestedManyWithoutActivatedByUserInput
+  activatedPrompts?: Prisma.AiSystemPromptUncheckedCreateNestedManyWithoutActivatedByUserInput
+  aiUsageLogs?: Prisma.AiUsageLogUncheckedCreateNestedManyWithoutUserInput
+  chatSessions?: Prisma.ChatSessionUncheckedCreateNestedManyWithoutUserInput
   fridgeItems?: Prisma.FridgeItemUncheckedCreateNestedManyWithoutUserInput
   scanLogs?: Prisma.IngredientScanLogUncheckedCreateNestedManyWithoutUserInput
-  weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutUserInput
-  shoppingLists?: Prisma.ShoppingListUncheckedCreateNestedManyWithoutUserInput
-  chatSessions?: Prisma.ChatSessionUncheckedCreateNestedManyWithoutUserInput
-  savedRecipes?: Prisma.UserSavedRecipeUncheckedCreateNestedManyWithoutUserInput
-  authoredRecipes?: Prisma.RecipeUncheckedCreateNestedManyWithoutAuthorInput
-  adminLogs?: Prisma.AdminActivityLogUncheckedCreateNestedManyWithoutAdminInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  authoredRecipes?: Prisma.RecipeUncheckedCreateNestedManyWithoutAuthorInput
+  refreshTokens?: Prisma.RefreshTokenUncheckedCreateNestedManyWithoutUserInput
+  shoppingLists?: Prisma.ShoppingListUncheckedCreateNestedManyWithoutUserInput
+  preferences?: Prisma.UserPreferenceUncheckedCreateNestedOneWithoutUserInput
+  profile?: Prisma.UserProfileUncheckedCreateNestedOneWithoutUserInput
+  savedRecipes?: Prisma.UserSavedRecipeUncheckedCreateNestedManyWithoutUserInput
   subscription?: Prisma.UserSubscriptionUncheckedCreateNestedOneWithoutUserInput
-  aiUsageLogs?: Prisma.AiUsageLogUncheckedCreateNestedManyWithoutUserInput
-  activatedPrompts?: Prisma.AiSystemPromptUncheckedCreateNestedManyWithoutActivatedByUserInput
-  activatedConfigs?: Prisma.AiProviderConfigUncheckedCreateNestedManyWithoutActivatedByUserInput
+  weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutAllergiesInput = {
@@ -2177,31 +2177,31 @@ export type UserUpdateWithoutAllergiesInput = {
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   googleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   googleEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
-  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
-  profile?: Prisma.UserProfileUpdateOneWithoutUserNestedInput
-  preferences?: Prisma.UserPreferenceUpdateOneWithoutUserNestedInput
-  refreshTokens?: Prisma.RefreshTokenUpdateManyWithoutUserNestedInput
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  adminLogs?: Prisma.AdminActivityLogUpdateManyWithoutAdminNestedInput
+  activatedConfigs?: Prisma.AiProviderConfigUpdateManyWithoutActivatedByUserNestedInput
+  activatedPrompts?: Prisma.AiSystemPromptUpdateManyWithoutActivatedByUserNestedInput
+  aiUsageLogs?: Prisma.AiUsageLogUpdateManyWithoutUserNestedInput
+  chatSessions?: Prisma.ChatSessionUpdateManyWithoutUserNestedInput
   fridgeItems?: Prisma.FridgeItemUpdateManyWithoutUserNestedInput
   scanLogs?: Prisma.IngredientScanLogUpdateManyWithoutUserNestedInput
-  weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutUserNestedInput
-  shoppingLists?: Prisma.ShoppingListUpdateManyWithoutUserNestedInput
-  chatSessions?: Prisma.ChatSessionUpdateManyWithoutUserNestedInput
-  savedRecipes?: Prisma.UserSavedRecipeUpdateManyWithoutUserNestedInput
-  authoredRecipes?: Prisma.RecipeUpdateManyWithoutAuthorNestedInput
-  adminLogs?: Prisma.AdminActivityLogUpdateManyWithoutAdminNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  authoredRecipes?: Prisma.RecipeUpdateManyWithoutAuthorNestedInput
+  refreshTokens?: Prisma.RefreshTokenUpdateManyWithoutUserNestedInput
+  shoppingLists?: Prisma.ShoppingListUpdateManyWithoutUserNestedInput
+  preferences?: Prisma.UserPreferenceUpdateOneWithoutUserNestedInput
+  profile?: Prisma.UserProfileUpdateOneWithoutUserNestedInput
+  savedRecipes?: Prisma.UserSavedRecipeUpdateManyWithoutUserNestedInput
   subscription?: Prisma.UserSubscriptionUpdateOneWithoutUserNestedInput
-  aiUsageLogs?: Prisma.AiUsageLogUpdateManyWithoutUserNestedInput
-  activatedPrompts?: Prisma.AiSystemPromptUpdateManyWithoutActivatedByUserNestedInput
-  activatedConfigs?: Prisma.AiProviderConfigUpdateManyWithoutActivatedByUserNestedInput
+  role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
+  weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutAllergiesInput = {
@@ -2209,31 +2209,31 @@ export type UserUncheckedUpdateWithoutAllergiesInput = {
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   googleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   googleEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   roleId?: Prisma.IntFieldUpdateOperationsInput | number
-  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  profile?: Prisma.UserProfileUncheckedUpdateOneWithoutUserNestedInput
-  preferences?: Prisma.UserPreferenceUncheckedUpdateOneWithoutUserNestedInput
-  refreshTokens?: Prisma.RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  adminLogs?: Prisma.AdminActivityLogUncheckedUpdateManyWithoutAdminNestedInput
+  activatedConfigs?: Prisma.AiProviderConfigUncheckedUpdateManyWithoutActivatedByUserNestedInput
+  activatedPrompts?: Prisma.AiSystemPromptUncheckedUpdateManyWithoutActivatedByUserNestedInput
+  aiUsageLogs?: Prisma.AiUsageLogUncheckedUpdateManyWithoutUserNestedInput
+  chatSessions?: Prisma.ChatSessionUncheckedUpdateManyWithoutUserNestedInput
   fridgeItems?: Prisma.FridgeItemUncheckedUpdateManyWithoutUserNestedInput
   scanLogs?: Prisma.IngredientScanLogUncheckedUpdateManyWithoutUserNestedInput
-  weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutUserNestedInput
-  shoppingLists?: Prisma.ShoppingListUncheckedUpdateManyWithoutUserNestedInput
-  chatSessions?: Prisma.ChatSessionUncheckedUpdateManyWithoutUserNestedInput
-  savedRecipes?: Prisma.UserSavedRecipeUncheckedUpdateManyWithoutUserNestedInput
-  authoredRecipes?: Prisma.RecipeUncheckedUpdateManyWithoutAuthorNestedInput
-  adminLogs?: Prisma.AdminActivityLogUncheckedUpdateManyWithoutAdminNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  authoredRecipes?: Prisma.RecipeUncheckedUpdateManyWithoutAuthorNestedInput
+  refreshTokens?: Prisma.RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
+  shoppingLists?: Prisma.ShoppingListUncheckedUpdateManyWithoutUserNestedInput
+  preferences?: Prisma.UserPreferenceUncheckedUpdateOneWithoutUserNestedInput
+  profile?: Prisma.UserProfileUncheckedUpdateOneWithoutUserNestedInput
+  savedRecipes?: Prisma.UserSavedRecipeUncheckedUpdateManyWithoutUserNestedInput
   subscription?: Prisma.UserSubscriptionUncheckedUpdateOneWithoutUserNestedInput
-  aiUsageLogs?: Prisma.AiUsageLogUncheckedUpdateManyWithoutUserNestedInput
-  activatedPrompts?: Prisma.AiSystemPromptUncheckedUpdateManyWithoutActivatedByUserNestedInput
-  activatedConfigs?: Prisma.AiProviderConfigUncheckedUpdateManyWithoutActivatedByUserNestedInput
+  weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutWeeklyPlansInput = {
@@ -2241,31 +2241,31 @@ export type UserCreateWithoutWeeklyPlansInput = {
   phone?: string | null
   googleId?: string | null
   googleEmail?: string | null
-  name?: string | null
   authProvider: $Enums.AuthProvider
   status?: $Enums.UserStatus
-  isOnboardingCompleted?: boolean
   lastLoginAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
-  role: Prisma.RoleCreateNestedOneWithoutUsersInput
-  profile?: Prisma.UserProfileCreateNestedOneWithoutUserInput
-  preferences?: Prisma.UserPreferenceCreateNestedOneWithoutUserInput
-  refreshTokens?: Prisma.RefreshTokenCreateNestedManyWithoutUserInput
+  isOnboardingCompleted?: boolean
+  name?: string | null
+  adminLogs?: Prisma.AdminActivityLogCreateNestedManyWithoutAdminInput
+  activatedConfigs?: Prisma.AiProviderConfigCreateNestedManyWithoutActivatedByUserInput
+  activatedPrompts?: Prisma.AiSystemPromptCreateNestedManyWithoutActivatedByUserInput
+  aiUsageLogs?: Prisma.AiUsageLogCreateNestedManyWithoutUserInput
+  chatSessions?: Prisma.ChatSessionCreateNestedManyWithoutUserInput
   fridgeItems?: Prisma.FridgeItemCreateNestedManyWithoutUserInput
   scanLogs?: Prisma.IngredientScanLogCreateNestedManyWithoutUserInput
-  allergies?: Prisma.UserAllergyCreateNestedManyWithoutUserInput
-  shoppingLists?: Prisma.ShoppingListCreateNestedManyWithoutUserInput
-  chatSessions?: Prisma.ChatSessionCreateNestedManyWithoutUserInput
-  savedRecipes?: Prisma.UserSavedRecipeCreateNestedManyWithoutUserInput
-  authoredRecipes?: Prisma.RecipeCreateNestedManyWithoutAuthorInput
-  adminLogs?: Prisma.AdminActivityLogCreateNestedManyWithoutAdminInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  authoredRecipes?: Prisma.RecipeCreateNestedManyWithoutAuthorInput
+  refreshTokens?: Prisma.RefreshTokenCreateNestedManyWithoutUserInput
+  shoppingLists?: Prisma.ShoppingListCreateNestedManyWithoutUserInput
+  allergies?: Prisma.UserAllergyCreateNestedManyWithoutUserInput
+  preferences?: Prisma.UserPreferenceCreateNestedOneWithoutUserInput
+  profile?: Prisma.UserProfileCreateNestedOneWithoutUserInput
+  savedRecipes?: Prisma.UserSavedRecipeCreateNestedManyWithoutUserInput
   subscription?: Prisma.UserSubscriptionCreateNestedOneWithoutUserInput
-  aiUsageLogs?: Prisma.AiUsageLogCreateNestedManyWithoutUserInput
-  activatedPrompts?: Prisma.AiSystemPromptCreateNestedManyWithoutActivatedByUserInput
-  activatedConfigs?: Prisma.AiProviderConfigCreateNestedManyWithoutActivatedByUserInput
+  role: Prisma.RoleCreateNestedOneWithoutUsersInput
 }
 
 export type UserUncheckedCreateWithoutWeeklyPlansInput = {
@@ -2273,31 +2273,31 @@ export type UserUncheckedCreateWithoutWeeklyPlansInput = {
   phone?: string | null
   googleId?: string | null
   googleEmail?: string | null
-  name?: string | null
   authProvider: $Enums.AuthProvider
   status?: $Enums.UserStatus
   roleId: number
-  isOnboardingCompleted?: boolean
   lastLoginAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
-  profile?: Prisma.UserProfileUncheckedCreateNestedOneWithoutUserInput
-  preferences?: Prisma.UserPreferenceUncheckedCreateNestedOneWithoutUserInput
-  refreshTokens?: Prisma.RefreshTokenUncheckedCreateNestedManyWithoutUserInput
+  isOnboardingCompleted?: boolean
+  name?: string | null
+  adminLogs?: Prisma.AdminActivityLogUncheckedCreateNestedManyWithoutAdminInput
+  activatedConfigs?: Prisma.AiProviderConfigUncheckedCreateNestedManyWithoutActivatedByUserInput
+  activatedPrompts?: Prisma.AiSystemPromptUncheckedCreateNestedManyWithoutActivatedByUserInput
+  aiUsageLogs?: Prisma.AiUsageLogUncheckedCreateNestedManyWithoutUserInput
+  chatSessions?: Prisma.ChatSessionUncheckedCreateNestedManyWithoutUserInput
   fridgeItems?: Prisma.FridgeItemUncheckedCreateNestedManyWithoutUserInput
   scanLogs?: Prisma.IngredientScanLogUncheckedCreateNestedManyWithoutUserInput
-  allergies?: Prisma.UserAllergyUncheckedCreateNestedManyWithoutUserInput
-  shoppingLists?: Prisma.ShoppingListUncheckedCreateNestedManyWithoutUserInput
-  chatSessions?: Prisma.ChatSessionUncheckedCreateNestedManyWithoutUserInput
-  savedRecipes?: Prisma.UserSavedRecipeUncheckedCreateNestedManyWithoutUserInput
-  authoredRecipes?: Prisma.RecipeUncheckedCreateNestedManyWithoutAuthorInput
-  adminLogs?: Prisma.AdminActivityLogUncheckedCreateNestedManyWithoutAdminInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  authoredRecipes?: Prisma.RecipeUncheckedCreateNestedManyWithoutAuthorInput
+  refreshTokens?: Prisma.RefreshTokenUncheckedCreateNestedManyWithoutUserInput
+  shoppingLists?: Prisma.ShoppingListUncheckedCreateNestedManyWithoutUserInput
+  allergies?: Prisma.UserAllergyUncheckedCreateNestedManyWithoutUserInput
+  preferences?: Prisma.UserPreferenceUncheckedCreateNestedOneWithoutUserInput
+  profile?: Prisma.UserProfileUncheckedCreateNestedOneWithoutUserInput
+  savedRecipes?: Prisma.UserSavedRecipeUncheckedCreateNestedManyWithoutUserInput
   subscription?: Prisma.UserSubscriptionUncheckedCreateNestedOneWithoutUserInput
-  aiUsageLogs?: Prisma.AiUsageLogUncheckedCreateNestedManyWithoutUserInput
-  activatedPrompts?: Prisma.AiSystemPromptUncheckedCreateNestedManyWithoutActivatedByUserInput
-  activatedConfigs?: Prisma.AiProviderConfigUncheckedCreateNestedManyWithoutActivatedByUserInput
 }
 
 export type UserCreateOrConnectWithoutWeeklyPlansInput = {
@@ -2321,31 +2321,31 @@ export type UserUpdateWithoutWeeklyPlansInput = {
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   googleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   googleEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
-  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
-  profile?: Prisma.UserProfileUpdateOneWithoutUserNestedInput
-  preferences?: Prisma.UserPreferenceUpdateOneWithoutUserNestedInput
-  refreshTokens?: Prisma.RefreshTokenUpdateManyWithoutUserNestedInput
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  adminLogs?: Prisma.AdminActivityLogUpdateManyWithoutAdminNestedInput
+  activatedConfigs?: Prisma.AiProviderConfigUpdateManyWithoutActivatedByUserNestedInput
+  activatedPrompts?: Prisma.AiSystemPromptUpdateManyWithoutActivatedByUserNestedInput
+  aiUsageLogs?: Prisma.AiUsageLogUpdateManyWithoutUserNestedInput
+  chatSessions?: Prisma.ChatSessionUpdateManyWithoutUserNestedInput
   fridgeItems?: Prisma.FridgeItemUpdateManyWithoutUserNestedInput
   scanLogs?: Prisma.IngredientScanLogUpdateManyWithoutUserNestedInput
-  allergies?: Prisma.UserAllergyUpdateManyWithoutUserNestedInput
-  shoppingLists?: Prisma.ShoppingListUpdateManyWithoutUserNestedInput
-  chatSessions?: Prisma.ChatSessionUpdateManyWithoutUserNestedInput
-  savedRecipes?: Prisma.UserSavedRecipeUpdateManyWithoutUserNestedInput
-  authoredRecipes?: Prisma.RecipeUpdateManyWithoutAuthorNestedInput
-  adminLogs?: Prisma.AdminActivityLogUpdateManyWithoutAdminNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  authoredRecipes?: Prisma.RecipeUpdateManyWithoutAuthorNestedInput
+  refreshTokens?: Prisma.RefreshTokenUpdateManyWithoutUserNestedInput
+  shoppingLists?: Prisma.ShoppingListUpdateManyWithoutUserNestedInput
+  allergies?: Prisma.UserAllergyUpdateManyWithoutUserNestedInput
+  preferences?: Prisma.UserPreferenceUpdateOneWithoutUserNestedInput
+  profile?: Prisma.UserProfileUpdateOneWithoutUserNestedInput
+  savedRecipes?: Prisma.UserSavedRecipeUpdateManyWithoutUserNestedInput
   subscription?: Prisma.UserSubscriptionUpdateOneWithoutUserNestedInput
-  aiUsageLogs?: Prisma.AiUsageLogUpdateManyWithoutUserNestedInput
-  activatedPrompts?: Prisma.AiSystemPromptUpdateManyWithoutActivatedByUserNestedInput
-  activatedConfigs?: Prisma.AiProviderConfigUpdateManyWithoutActivatedByUserNestedInput
+  role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
 }
 
 export type UserUncheckedUpdateWithoutWeeklyPlansInput = {
@@ -2353,31 +2353,31 @@ export type UserUncheckedUpdateWithoutWeeklyPlansInput = {
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   googleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   googleEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   roleId?: Prisma.IntFieldUpdateOperationsInput | number
-  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  profile?: Prisma.UserProfileUncheckedUpdateOneWithoutUserNestedInput
-  preferences?: Prisma.UserPreferenceUncheckedUpdateOneWithoutUserNestedInput
-  refreshTokens?: Prisma.RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  adminLogs?: Prisma.AdminActivityLogUncheckedUpdateManyWithoutAdminNestedInput
+  activatedConfigs?: Prisma.AiProviderConfigUncheckedUpdateManyWithoutActivatedByUserNestedInput
+  activatedPrompts?: Prisma.AiSystemPromptUncheckedUpdateManyWithoutActivatedByUserNestedInput
+  aiUsageLogs?: Prisma.AiUsageLogUncheckedUpdateManyWithoutUserNestedInput
+  chatSessions?: Prisma.ChatSessionUncheckedUpdateManyWithoutUserNestedInput
   fridgeItems?: Prisma.FridgeItemUncheckedUpdateManyWithoutUserNestedInput
   scanLogs?: Prisma.IngredientScanLogUncheckedUpdateManyWithoutUserNestedInput
-  allergies?: Prisma.UserAllergyUncheckedUpdateManyWithoutUserNestedInput
-  shoppingLists?: Prisma.ShoppingListUncheckedUpdateManyWithoutUserNestedInput
-  chatSessions?: Prisma.ChatSessionUncheckedUpdateManyWithoutUserNestedInput
-  savedRecipes?: Prisma.UserSavedRecipeUncheckedUpdateManyWithoutUserNestedInput
-  authoredRecipes?: Prisma.RecipeUncheckedUpdateManyWithoutAuthorNestedInput
-  adminLogs?: Prisma.AdminActivityLogUncheckedUpdateManyWithoutAdminNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  authoredRecipes?: Prisma.RecipeUncheckedUpdateManyWithoutAuthorNestedInput
+  refreshTokens?: Prisma.RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
+  shoppingLists?: Prisma.ShoppingListUncheckedUpdateManyWithoutUserNestedInput
+  allergies?: Prisma.UserAllergyUncheckedUpdateManyWithoutUserNestedInput
+  preferences?: Prisma.UserPreferenceUncheckedUpdateOneWithoutUserNestedInput
+  profile?: Prisma.UserProfileUncheckedUpdateOneWithoutUserNestedInput
+  savedRecipes?: Prisma.UserSavedRecipeUncheckedUpdateManyWithoutUserNestedInput
   subscription?: Prisma.UserSubscriptionUncheckedUpdateOneWithoutUserNestedInput
-  aiUsageLogs?: Prisma.AiUsageLogUncheckedUpdateManyWithoutUserNestedInput
-  activatedPrompts?: Prisma.AiSystemPromptUncheckedUpdateManyWithoutActivatedByUserNestedInput
-  activatedConfigs?: Prisma.AiProviderConfigUncheckedUpdateManyWithoutActivatedByUserNestedInput
 }
 
 export type UserCreateWithoutShoppingListsInput = {
@@ -2385,31 +2385,31 @@ export type UserCreateWithoutShoppingListsInput = {
   phone?: string | null
   googleId?: string | null
   googleEmail?: string | null
-  name?: string | null
   authProvider: $Enums.AuthProvider
   status?: $Enums.UserStatus
-  isOnboardingCompleted?: boolean
   lastLoginAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
-  role: Prisma.RoleCreateNestedOneWithoutUsersInput
-  profile?: Prisma.UserProfileCreateNestedOneWithoutUserInput
-  preferences?: Prisma.UserPreferenceCreateNestedOneWithoutUserInput
-  refreshTokens?: Prisma.RefreshTokenCreateNestedManyWithoutUserInput
+  isOnboardingCompleted?: boolean
+  name?: string | null
+  adminLogs?: Prisma.AdminActivityLogCreateNestedManyWithoutAdminInput
+  activatedConfigs?: Prisma.AiProviderConfigCreateNestedManyWithoutActivatedByUserInput
+  activatedPrompts?: Prisma.AiSystemPromptCreateNestedManyWithoutActivatedByUserInput
+  aiUsageLogs?: Prisma.AiUsageLogCreateNestedManyWithoutUserInput
+  chatSessions?: Prisma.ChatSessionCreateNestedManyWithoutUserInput
   fridgeItems?: Prisma.FridgeItemCreateNestedManyWithoutUserInput
   scanLogs?: Prisma.IngredientScanLogCreateNestedManyWithoutUserInput
-  allergies?: Prisma.UserAllergyCreateNestedManyWithoutUserInput
-  weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutUserInput
-  chatSessions?: Prisma.ChatSessionCreateNestedManyWithoutUserInput
-  savedRecipes?: Prisma.UserSavedRecipeCreateNestedManyWithoutUserInput
-  authoredRecipes?: Prisma.RecipeCreateNestedManyWithoutAuthorInput
-  adminLogs?: Prisma.AdminActivityLogCreateNestedManyWithoutAdminInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  authoredRecipes?: Prisma.RecipeCreateNestedManyWithoutAuthorInput
+  refreshTokens?: Prisma.RefreshTokenCreateNestedManyWithoutUserInput
+  allergies?: Prisma.UserAllergyCreateNestedManyWithoutUserInput
+  preferences?: Prisma.UserPreferenceCreateNestedOneWithoutUserInput
+  profile?: Prisma.UserProfileCreateNestedOneWithoutUserInput
+  savedRecipes?: Prisma.UserSavedRecipeCreateNestedManyWithoutUserInput
   subscription?: Prisma.UserSubscriptionCreateNestedOneWithoutUserInput
-  aiUsageLogs?: Prisma.AiUsageLogCreateNestedManyWithoutUserInput
-  activatedPrompts?: Prisma.AiSystemPromptCreateNestedManyWithoutActivatedByUserInput
-  activatedConfigs?: Prisma.AiProviderConfigCreateNestedManyWithoutActivatedByUserInput
+  role: Prisma.RoleCreateNestedOneWithoutUsersInput
+  weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutShoppingListsInput = {
@@ -2417,31 +2417,31 @@ export type UserUncheckedCreateWithoutShoppingListsInput = {
   phone?: string | null
   googleId?: string | null
   googleEmail?: string | null
-  name?: string | null
   authProvider: $Enums.AuthProvider
   status?: $Enums.UserStatus
   roleId: number
-  isOnboardingCompleted?: boolean
   lastLoginAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
-  profile?: Prisma.UserProfileUncheckedCreateNestedOneWithoutUserInput
-  preferences?: Prisma.UserPreferenceUncheckedCreateNestedOneWithoutUserInput
-  refreshTokens?: Prisma.RefreshTokenUncheckedCreateNestedManyWithoutUserInput
+  isOnboardingCompleted?: boolean
+  name?: string | null
+  adminLogs?: Prisma.AdminActivityLogUncheckedCreateNestedManyWithoutAdminInput
+  activatedConfigs?: Prisma.AiProviderConfigUncheckedCreateNestedManyWithoutActivatedByUserInput
+  activatedPrompts?: Prisma.AiSystemPromptUncheckedCreateNestedManyWithoutActivatedByUserInput
+  aiUsageLogs?: Prisma.AiUsageLogUncheckedCreateNestedManyWithoutUserInput
+  chatSessions?: Prisma.ChatSessionUncheckedCreateNestedManyWithoutUserInput
   fridgeItems?: Prisma.FridgeItemUncheckedCreateNestedManyWithoutUserInput
   scanLogs?: Prisma.IngredientScanLogUncheckedCreateNestedManyWithoutUserInput
-  allergies?: Prisma.UserAllergyUncheckedCreateNestedManyWithoutUserInput
-  weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutUserInput
-  chatSessions?: Prisma.ChatSessionUncheckedCreateNestedManyWithoutUserInput
-  savedRecipes?: Prisma.UserSavedRecipeUncheckedCreateNestedManyWithoutUserInput
-  authoredRecipes?: Prisma.RecipeUncheckedCreateNestedManyWithoutAuthorInput
-  adminLogs?: Prisma.AdminActivityLogUncheckedCreateNestedManyWithoutAdminInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  authoredRecipes?: Prisma.RecipeUncheckedCreateNestedManyWithoutAuthorInput
+  refreshTokens?: Prisma.RefreshTokenUncheckedCreateNestedManyWithoutUserInput
+  allergies?: Prisma.UserAllergyUncheckedCreateNestedManyWithoutUserInput
+  preferences?: Prisma.UserPreferenceUncheckedCreateNestedOneWithoutUserInput
+  profile?: Prisma.UserProfileUncheckedCreateNestedOneWithoutUserInput
+  savedRecipes?: Prisma.UserSavedRecipeUncheckedCreateNestedManyWithoutUserInput
   subscription?: Prisma.UserSubscriptionUncheckedCreateNestedOneWithoutUserInput
-  aiUsageLogs?: Prisma.AiUsageLogUncheckedCreateNestedManyWithoutUserInput
-  activatedPrompts?: Prisma.AiSystemPromptUncheckedCreateNestedManyWithoutActivatedByUserInput
-  activatedConfigs?: Prisma.AiProviderConfigUncheckedCreateNestedManyWithoutActivatedByUserInput
+  weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutShoppingListsInput = {
@@ -2465,31 +2465,31 @@ export type UserUpdateWithoutShoppingListsInput = {
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   googleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   googleEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
-  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
-  profile?: Prisma.UserProfileUpdateOneWithoutUserNestedInput
-  preferences?: Prisma.UserPreferenceUpdateOneWithoutUserNestedInput
-  refreshTokens?: Prisma.RefreshTokenUpdateManyWithoutUserNestedInput
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  adminLogs?: Prisma.AdminActivityLogUpdateManyWithoutAdminNestedInput
+  activatedConfigs?: Prisma.AiProviderConfigUpdateManyWithoutActivatedByUserNestedInput
+  activatedPrompts?: Prisma.AiSystemPromptUpdateManyWithoutActivatedByUserNestedInput
+  aiUsageLogs?: Prisma.AiUsageLogUpdateManyWithoutUserNestedInput
+  chatSessions?: Prisma.ChatSessionUpdateManyWithoutUserNestedInput
   fridgeItems?: Prisma.FridgeItemUpdateManyWithoutUserNestedInput
   scanLogs?: Prisma.IngredientScanLogUpdateManyWithoutUserNestedInput
-  allergies?: Prisma.UserAllergyUpdateManyWithoutUserNestedInput
-  weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutUserNestedInput
-  chatSessions?: Prisma.ChatSessionUpdateManyWithoutUserNestedInput
-  savedRecipes?: Prisma.UserSavedRecipeUpdateManyWithoutUserNestedInput
-  authoredRecipes?: Prisma.RecipeUpdateManyWithoutAuthorNestedInput
-  adminLogs?: Prisma.AdminActivityLogUpdateManyWithoutAdminNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  authoredRecipes?: Prisma.RecipeUpdateManyWithoutAuthorNestedInput
+  refreshTokens?: Prisma.RefreshTokenUpdateManyWithoutUserNestedInput
+  allergies?: Prisma.UserAllergyUpdateManyWithoutUserNestedInput
+  preferences?: Prisma.UserPreferenceUpdateOneWithoutUserNestedInput
+  profile?: Prisma.UserProfileUpdateOneWithoutUserNestedInput
+  savedRecipes?: Prisma.UserSavedRecipeUpdateManyWithoutUserNestedInput
   subscription?: Prisma.UserSubscriptionUpdateOneWithoutUserNestedInput
-  aiUsageLogs?: Prisma.AiUsageLogUpdateManyWithoutUserNestedInput
-  activatedPrompts?: Prisma.AiSystemPromptUpdateManyWithoutActivatedByUserNestedInput
-  activatedConfigs?: Prisma.AiProviderConfigUpdateManyWithoutActivatedByUserNestedInput
+  role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
+  weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutShoppingListsInput = {
@@ -2497,31 +2497,31 @@ export type UserUncheckedUpdateWithoutShoppingListsInput = {
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   googleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   googleEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   roleId?: Prisma.IntFieldUpdateOperationsInput | number
-  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  profile?: Prisma.UserProfileUncheckedUpdateOneWithoutUserNestedInput
-  preferences?: Prisma.UserPreferenceUncheckedUpdateOneWithoutUserNestedInput
-  refreshTokens?: Prisma.RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  adminLogs?: Prisma.AdminActivityLogUncheckedUpdateManyWithoutAdminNestedInput
+  activatedConfigs?: Prisma.AiProviderConfigUncheckedUpdateManyWithoutActivatedByUserNestedInput
+  activatedPrompts?: Prisma.AiSystemPromptUncheckedUpdateManyWithoutActivatedByUserNestedInput
+  aiUsageLogs?: Prisma.AiUsageLogUncheckedUpdateManyWithoutUserNestedInput
+  chatSessions?: Prisma.ChatSessionUncheckedUpdateManyWithoutUserNestedInput
   fridgeItems?: Prisma.FridgeItemUncheckedUpdateManyWithoutUserNestedInput
   scanLogs?: Prisma.IngredientScanLogUncheckedUpdateManyWithoutUserNestedInput
-  allergies?: Prisma.UserAllergyUncheckedUpdateManyWithoutUserNestedInput
-  weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutUserNestedInput
-  chatSessions?: Prisma.ChatSessionUncheckedUpdateManyWithoutUserNestedInput
-  savedRecipes?: Prisma.UserSavedRecipeUncheckedUpdateManyWithoutUserNestedInput
-  authoredRecipes?: Prisma.RecipeUncheckedUpdateManyWithoutAuthorNestedInput
-  adminLogs?: Prisma.AdminActivityLogUncheckedUpdateManyWithoutAdminNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  authoredRecipes?: Prisma.RecipeUncheckedUpdateManyWithoutAuthorNestedInput
+  refreshTokens?: Prisma.RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
+  allergies?: Prisma.UserAllergyUncheckedUpdateManyWithoutUserNestedInput
+  preferences?: Prisma.UserPreferenceUncheckedUpdateOneWithoutUserNestedInput
+  profile?: Prisma.UserProfileUncheckedUpdateOneWithoutUserNestedInput
+  savedRecipes?: Prisma.UserSavedRecipeUncheckedUpdateManyWithoutUserNestedInput
   subscription?: Prisma.UserSubscriptionUncheckedUpdateOneWithoutUserNestedInput
-  aiUsageLogs?: Prisma.AiUsageLogUncheckedUpdateManyWithoutUserNestedInput
-  activatedPrompts?: Prisma.AiSystemPromptUncheckedUpdateManyWithoutActivatedByUserNestedInput
-  activatedConfigs?: Prisma.AiProviderConfigUncheckedUpdateManyWithoutActivatedByUserNestedInput
+  weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutActivatedPromptsInput = {
@@ -2529,31 +2529,31 @@ export type UserCreateWithoutActivatedPromptsInput = {
   phone?: string | null
   googleId?: string | null
   googleEmail?: string | null
-  name?: string | null
   authProvider: $Enums.AuthProvider
   status?: $Enums.UserStatus
-  isOnboardingCompleted?: boolean
   lastLoginAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
-  role: Prisma.RoleCreateNestedOneWithoutUsersInput
-  profile?: Prisma.UserProfileCreateNestedOneWithoutUserInput
-  preferences?: Prisma.UserPreferenceCreateNestedOneWithoutUserInput
-  refreshTokens?: Prisma.RefreshTokenCreateNestedManyWithoutUserInput
+  isOnboardingCompleted?: boolean
+  name?: string | null
+  adminLogs?: Prisma.AdminActivityLogCreateNestedManyWithoutAdminInput
+  activatedConfigs?: Prisma.AiProviderConfigCreateNestedManyWithoutActivatedByUserInput
+  aiUsageLogs?: Prisma.AiUsageLogCreateNestedManyWithoutUserInput
+  chatSessions?: Prisma.ChatSessionCreateNestedManyWithoutUserInput
   fridgeItems?: Prisma.FridgeItemCreateNestedManyWithoutUserInput
   scanLogs?: Prisma.IngredientScanLogCreateNestedManyWithoutUserInput
-  allergies?: Prisma.UserAllergyCreateNestedManyWithoutUserInput
-  weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutUserInput
-  shoppingLists?: Prisma.ShoppingListCreateNestedManyWithoutUserInput
-  chatSessions?: Prisma.ChatSessionCreateNestedManyWithoutUserInput
-  savedRecipes?: Prisma.UserSavedRecipeCreateNestedManyWithoutUserInput
-  authoredRecipes?: Prisma.RecipeCreateNestedManyWithoutAuthorInput
-  adminLogs?: Prisma.AdminActivityLogCreateNestedManyWithoutAdminInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  authoredRecipes?: Prisma.RecipeCreateNestedManyWithoutAuthorInput
+  refreshTokens?: Prisma.RefreshTokenCreateNestedManyWithoutUserInput
+  shoppingLists?: Prisma.ShoppingListCreateNestedManyWithoutUserInput
+  allergies?: Prisma.UserAllergyCreateNestedManyWithoutUserInput
+  preferences?: Prisma.UserPreferenceCreateNestedOneWithoutUserInput
+  profile?: Prisma.UserProfileCreateNestedOneWithoutUserInput
+  savedRecipes?: Prisma.UserSavedRecipeCreateNestedManyWithoutUserInput
   subscription?: Prisma.UserSubscriptionCreateNestedOneWithoutUserInput
-  aiUsageLogs?: Prisma.AiUsageLogCreateNestedManyWithoutUserInput
-  activatedConfigs?: Prisma.AiProviderConfigCreateNestedManyWithoutActivatedByUserInput
+  role: Prisma.RoleCreateNestedOneWithoutUsersInput
+  weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutActivatedPromptsInput = {
@@ -2561,31 +2561,31 @@ export type UserUncheckedCreateWithoutActivatedPromptsInput = {
   phone?: string | null
   googleId?: string | null
   googleEmail?: string | null
-  name?: string | null
   authProvider: $Enums.AuthProvider
   status?: $Enums.UserStatus
   roleId: number
-  isOnboardingCompleted?: boolean
   lastLoginAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
-  profile?: Prisma.UserProfileUncheckedCreateNestedOneWithoutUserInput
-  preferences?: Prisma.UserPreferenceUncheckedCreateNestedOneWithoutUserInput
-  refreshTokens?: Prisma.RefreshTokenUncheckedCreateNestedManyWithoutUserInput
+  isOnboardingCompleted?: boolean
+  name?: string | null
+  adminLogs?: Prisma.AdminActivityLogUncheckedCreateNestedManyWithoutAdminInput
+  activatedConfigs?: Prisma.AiProviderConfigUncheckedCreateNestedManyWithoutActivatedByUserInput
+  aiUsageLogs?: Prisma.AiUsageLogUncheckedCreateNestedManyWithoutUserInput
+  chatSessions?: Prisma.ChatSessionUncheckedCreateNestedManyWithoutUserInput
   fridgeItems?: Prisma.FridgeItemUncheckedCreateNestedManyWithoutUserInput
   scanLogs?: Prisma.IngredientScanLogUncheckedCreateNestedManyWithoutUserInput
-  allergies?: Prisma.UserAllergyUncheckedCreateNestedManyWithoutUserInput
-  weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutUserInput
-  shoppingLists?: Prisma.ShoppingListUncheckedCreateNestedManyWithoutUserInput
-  chatSessions?: Prisma.ChatSessionUncheckedCreateNestedManyWithoutUserInput
-  savedRecipes?: Prisma.UserSavedRecipeUncheckedCreateNestedManyWithoutUserInput
-  authoredRecipes?: Prisma.RecipeUncheckedCreateNestedManyWithoutAuthorInput
-  adminLogs?: Prisma.AdminActivityLogUncheckedCreateNestedManyWithoutAdminInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  authoredRecipes?: Prisma.RecipeUncheckedCreateNestedManyWithoutAuthorInput
+  refreshTokens?: Prisma.RefreshTokenUncheckedCreateNestedManyWithoutUserInput
+  shoppingLists?: Prisma.ShoppingListUncheckedCreateNestedManyWithoutUserInput
+  allergies?: Prisma.UserAllergyUncheckedCreateNestedManyWithoutUserInput
+  preferences?: Prisma.UserPreferenceUncheckedCreateNestedOneWithoutUserInput
+  profile?: Prisma.UserProfileUncheckedCreateNestedOneWithoutUserInput
+  savedRecipes?: Prisma.UserSavedRecipeUncheckedCreateNestedManyWithoutUserInput
   subscription?: Prisma.UserSubscriptionUncheckedCreateNestedOneWithoutUserInput
-  aiUsageLogs?: Prisma.AiUsageLogUncheckedCreateNestedManyWithoutUserInput
-  activatedConfigs?: Prisma.AiProviderConfigUncheckedCreateNestedManyWithoutActivatedByUserInput
+  weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutActivatedPromptsInput = {
@@ -2609,31 +2609,31 @@ export type UserUpdateWithoutActivatedPromptsInput = {
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   googleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   googleEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
-  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
-  profile?: Prisma.UserProfileUpdateOneWithoutUserNestedInput
-  preferences?: Prisma.UserPreferenceUpdateOneWithoutUserNestedInput
-  refreshTokens?: Prisma.RefreshTokenUpdateManyWithoutUserNestedInput
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  adminLogs?: Prisma.AdminActivityLogUpdateManyWithoutAdminNestedInput
+  activatedConfigs?: Prisma.AiProviderConfigUpdateManyWithoutActivatedByUserNestedInput
+  aiUsageLogs?: Prisma.AiUsageLogUpdateManyWithoutUserNestedInput
+  chatSessions?: Prisma.ChatSessionUpdateManyWithoutUserNestedInput
   fridgeItems?: Prisma.FridgeItemUpdateManyWithoutUserNestedInput
   scanLogs?: Prisma.IngredientScanLogUpdateManyWithoutUserNestedInput
-  allergies?: Prisma.UserAllergyUpdateManyWithoutUserNestedInput
-  weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutUserNestedInput
-  shoppingLists?: Prisma.ShoppingListUpdateManyWithoutUserNestedInput
-  chatSessions?: Prisma.ChatSessionUpdateManyWithoutUserNestedInput
-  savedRecipes?: Prisma.UserSavedRecipeUpdateManyWithoutUserNestedInput
-  authoredRecipes?: Prisma.RecipeUpdateManyWithoutAuthorNestedInput
-  adminLogs?: Prisma.AdminActivityLogUpdateManyWithoutAdminNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  authoredRecipes?: Prisma.RecipeUpdateManyWithoutAuthorNestedInput
+  refreshTokens?: Prisma.RefreshTokenUpdateManyWithoutUserNestedInput
+  shoppingLists?: Prisma.ShoppingListUpdateManyWithoutUserNestedInput
+  allergies?: Prisma.UserAllergyUpdateManyWithoutUserNestedInput
+  preferences?: Prisma.UserPreferenceUpdateOneWithoutUserNestedInput
+  profile?: Prisma.UserProfileUpdateOneWithoutUserNestedInput
+  savedRecipes?: Prisma.UserSavedRecipeUpdateManyWithoutUserNestedInput
   subscription?: Prisma.UserSubscriptionUpdateOneWithoutUserNestedInput
-  aiUsageLogs?: Prisma.AiUsageLogUpdateManyWithoutUserNestedInput
-  activatedConfigs?: Prisma.AiProviderConfigUpdateManyWithoutActivatedByUserNestedInput
+  role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
+  weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutActivatedPromptsInput = {
@@ -2641,31 +2641,31 @@ export type UserUncheckedUpdateWithoutActivatedPromptsInput = {
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   googleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   googleEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   roleId?: Prisma.IntFieldUpdateOperationsInput | number
-  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  profile?: Prisma.UserProfileUncheckedUpdateOneWithoutUserNestedInput
-  preferences?: Prisma.UserPreferenceUncheckedUpdateOneWithoutUserNestedInput
-  refreshTokens?: Prisma.RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  adminLogs?: Prisma.AdminActivityLogUncheckedUpdateManyWithoutAdminNestedInput
+  activatedConfigs?: Prisma.AiProviderConfigUncheckedUpdateManyWithoutActivatedByUserNestedInput
+  aiUsageLogs?: Prisma.AiUsageLogUncheckedUpdateManyWithoutUserNestedInput
+  chatSessions?: Prisma.ChatSessionUncheckedUpdateManyWithoutUserNestedInput
   fridgeItems?: Prisma.FridgeItemUncheckedUpdateManyWithoutUserNestedInput
   scanLogs?: Prisma.IngredientScanLogUncheckedUpdateManyWithoutUserNestedInput
-  allergies?: Prisma.UserAllergyUncheckedUpdateManyWithoutUserNestedInput
-  weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutUserNestedInput
-  shoppingLists?: Prisma.ShoppingListUncheckedUpdateManyWithoutUserNestedInput
-  chatSessions?: Prisma.ChatSessionUncheckedUpdateManyWithoutUserNestedInput
-  savedRecipes?: Prisma.UserSavedRecipeUncheckedUpdateManyWithoutUserNestedInput
-  authoredRecipes?: Prisma.RecipeUncheckedUpdateManyWithoutAuthorNestedInput
-  adminLogs?: Prisma.AdminActivityLogUncheckedUpdateManyWithoutAdminNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  authoredRecipes?: Prisma.RecipeUncheckedUpdateManyWithoutAuthorNestedInput
+  refreshTokens?: Prisma.RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
+  shoppingLists?: Prisma.ShoppingListUncheckedUpdateManyWithoutUserNestedInput
+  allergies?: Prisma.UserAllergyUncheckedUpdateManyWithoutUserNestedInput
+  preferences?: Prisma.UserPreferenceUncheckedUpdateOneWithoutUserNestedInput
+  profile?: Prisma.UserProfileUncheckedUpdateOneWithoutUserNestedInput
+  savedRecipes?: Prisma.UserSavedRecipeUncheckedUpdateManyWithoutUserNestedInput
   subscription?: Prisma.UserSubscriptionUncheckedUpdateOneWithoutUserNestedInput
-  aiUsageLogs?: Prisma.AiUsageLogUncheckedUpdateManyWithoutUserNestedInput
-  activatedConfigs?: Prisma.AiProviderConfigUncheckedUpdateManyWithoutActivatedByUserNestedInput
+  weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutChatSessionsInput = {
@@ -2673,31 +2673,31 @@ export type UserCreateWithoutChatSessionsInput = {
   phone?: string | null
   googleId?: string | null
   googleEmail?: string | null
-  name?: string | null
   authProvider: $Enums.AuthProvider
   status?: $Enums.UserStatus
-  isOnboardingCompleted?: boolean
   lastLoginAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
-  role: Prisma.RoleCreateNestedOneWithoutUsersInput
-  profile?: Prisma.UserProfileCreateNestedOneWithoutUserInput
-  preferences?: Prisma.UserPreferenceCreateNestedOneWithoutUserInput
-  refreshTokens?: Prisma.RefreshTokenCreateNestedManyWithoutUserInput
+  isOnboardingCompleted?: boolean
+  name?: string | null
+  adminLogs?: Prisma.AdminActivityLogCreateNestedManyWithoutAdminInput
+  activatedConfigs?: Prisma.AiProviderConfigCreateNestedManyWithoutActivatedByUserInput
+  activatedPrompts?: Prisma.AiSystemPromptCreateNestedManyWithoutActivatedByUserInput
+  aiUsageLogs?: Prisma.AiUsageLogCreateNestedManyWithoutUserInput
   fridgeItems?: Prisma.FridgeItemCreateNestedManyWithoutUserInput
   scanLogs?: Prisma.IngredientScanLogCreateNestedManyWithoutUserInput
-  allergies?: Prisma.UserAllergyCreateNestedManyWithoutUserInput
-  weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutUserInput
-  shoppingLists?: Prisma.ShoppingListCreateNestedManyWithoutUserInput
-  savedRecipes?: Prisma.UserSavedRecipeCreateNestedManyWithoutUserInput
-  authoredRecipes?: Prisma.RecipeCreateNestedManyWithoutAuthorInput
-  adminLogs?: Prisma.AdminActivityLogCreateNestedManyWithoutAdminInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  authoredRecipes?: Prisma.RecipeCreateNestedManyWithoutAuthorInput
+  refreshTokens?: Prisma.RefreshTokenCreateNestedManyWithoutUserInput
+  shoppingLists?: Prisma.ShoppingListCreateNestedManyWithoutUserInput
+  allergies?: Prisma.UserAllergyCreateNestedManyWithoutUserInput
+  preferences?: Prisma.UserPreferenceCreateNestedOneWithoutUserInput
+  profile?: Prisma.UserProfileCreateNestedOneWithoutUserInput
+  savedRecipes?: Prisma.UserSavedRecipeCreateNestedManyWithoutUserInput
   subscription?: Prisma.UserSubscriptionCreateNestedOneWithoutUserInput
-  aiUsageLogs?: Prisma.AiUsageLogCreateNestedManyWithoutUserInput
-  activatedPrompts?: Prisma.AiSystemPromptCreateNestedManyWithoutActivatedByUserInput
-  activatedConfigs?: Prisma.AiProviderConfigCreateNestedManyWithoutActivatedByUserInput
+  role: Prisma.RoleCreateNestedOneWithoutUsersInput
+  weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutChatSessionsInput = {
@@ -2705,31 +2705,31 @@ export type UserUncheckedCreateWithoutChatSessionsInput = {
   phone?: string | null
   googleId?: string | null
   googleEmail?: string | null
-  name?: string | null
   authProvider: $Enums.AuthProvider
   status?: $Enums.UserStatus
   roleId: number
-  isOnboardingCompleted?: boolean
   lastLoginAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
-  profile?: Prisma.UserProfileUncheckedCreateNestedOneWithoutUserInput
-  preferences?: Prisma.UserPreferenceUncheckedCreateNestedOneWithoutUserInput
-  refreshTokens?: Prisma.RefreshTokenUncheckedCreateNestedManyWithoutUserInput
+  isOnboardingCompleted?: boolean
+  name?: string | null
+  adminLogs?: Prisma.AdminActivityLogUncheckedCreateNestedManyWithoutAdminInput
+  activatedConfigs?: Prisma.AiProviderConfigUncheckedCreateNestedManyWithoutActivatedByUserInput
+  activatedPrompts?: Prisma.AiSystemPromptUncheckedCreateNestedManyWithoutActivatedByUserInput
+  aiUsageLogs?: Prisma.AiUsageLogUncheckedCreateNestedManyWithoutUserInput
   fridgeItems?: Prisma.FridgeItemUncheckedCreateNestedManyWithoutUserInput
   scanLogs?: Prisma.IngredientScanLogUncheckedCreateNestedManyWithoutUserInput
-  allergies?: Prisma.UserAllergyUncheckedCreateNestedManyWithoutUserInput
-  weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutUserInput
-  shoppingLists?: Prisma.ShoppingListUncheckedCreateNestedManyWithoutUserInput
-  savedRecipes?: Prisma.UserSavedRecipeUncheckedCreateNestedManyWithoutUserInput
-  authoredRecipes?: Prisma.RecipeUncheckedCreateNestedManyWithoutAuthorInput
-  adminLogs?: Prisma.AdminActivityLogUncheckedCreateNestedManyWithoutAdminInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  authoredRecipes?: Prisma.RecipeUncheckedCreateNestedManyWithoutAuthorInput
+  refreshTokens?: Prisma.RefreshTokenUncheckedCreateNestedManyWithoutUserInput
+  shoppingLists?: Prisma.ShoppingListUncheckedCreateNestedManyWithoutUserInput
+  allergies?: Prisma.UserAllergyUncheckedCreateNestedManyWithoutUserInput
+  preferences?: Prisma.UserPreferenceUncheckedCreateNestedOneWithoutUserInput
+  profile?: Prisma.UserProfileUncheckedCreateNestedOneWithoutUserInput
+  savedRecipes?: Prisma.UserSavedRecipeUncheckedCreateNestedManyWithoutUserInput
   subscription?: Prisma.UserSubscriptionUncheckedCreateNestedOneWithoutUserInput
-  aiUsageLogs?: Prisma.AiUsageLogUncheckedCreateNestedManyWithoutUserInput
-  activatedPrompts?: Prisma.AiSystemPromptUncheckedCreateNestedManyWithoutActivatedByUserInput
-  activatedConfigs?: Prisma.AiProviderConfigUncheckedCreateNestedManyWithoutActivatedByUserInput
+  weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutChatSessionsInput = {
@@ -2753,31 +2753,31 @@ export type UserUpdateWithoutChatSessionsInput = {
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   googleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   googleEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
-  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
-  profile?: Prisma.UserProfileUpdateOneWithoutUserNestedInput
-  preferences?: Prisma.UserPreferenceUpdateOneWithoutUserNestedInput
-  refreshTokens?: Prisma.RefreshTokenUpdateManyWithoutUserNestedInput
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  adminLogs?: Prisma.AdminActivityLogUpdateManyWithoutAdminNestedInput
+  activatedConfigs?: Prisma.AiProviderConfigUpdateManyWithoutActivatedByUserNestedInput
+  activatedPrompts?: Prisma.AiSystemPromptUpdateManyWithoutActivatedByUserNestedInput
+  aiUsageLogs?: Prisma.AiUsageLogUpdateManyWithoutUserNestedInput
   fridgeItems?: Prisma.FridgeItemUpdateManyWithoutUserNestedInput
   scanLogs?: Prisma.IngredientScanLogUpdateManyWithoutUserNestedInput
-  allergies?: Prisma.UserAllergyUpdateManyWithoutUserNestedInput
-  weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutUserNestedInput
-  shoppingLists?: Prisma.ShoppingListUpdateManyWithoutUserNestedInput
-  savedRecipes?: Prisma.UserSavedRecipeUpdateManyWithoutUserNestedInput
-  authoredRecipes?: Prisma.RecipeUpdateManyWithoutAuthorNestedInput
-  adminLogs?: Prisma.AdminActivityLogUpdateManyWithoutAdminNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  authoredRecipes?: Prisma.RecipeUpdateManyWithoutAuthorNestedInput
+  refreshTokens?: Prisma.RefreshTokenUpdateManyWithoutUserNestedInput
+  shoppingLists?: Prisma.ShoppingListUpdateManyWithoutUserNestedInput
+  allergies?: Prisma.UserAllergyUpdateManyWithoutUserNestedInput
+  preferences?: Prisma.UserPreferenceUpdateOneWithoutUserNestedInput
+  profile?: Prisma.UserProfileUpdateOneWithoutUserNestedInput
+  savedRecipes?: Prisma.UserSavedRecipeUpdateManyWithoutUserNestedInput
   subscription?: Prisma.UserSubscriptionUpdateOneWithoutUserNestedInput
-  aiUsageLogs?: Prisma.AiUsageLogUpdateManyWithoutUserNestedInput
-  activatedPrompts?: Prisma.AiSystemPromptUpdateManyWithoutActivatedByUserNestedInput
-  activatedConfigs?: Prisma.AiProviderConfigUpdateManyWithoutActivatedByUserNestedInput
+  role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
+  weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutChatSessionsInput = {
@@ -2785,31 +2785,31 @@ export type UserUncheckedUpdateWithoutChatSessionsInput = {
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   googleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   googleEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   roleId?: Prisma.IntFieldUpdateOperationsInput | number
-  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  profile?: Prisma.UserProfileUncheckedUpdateOneWithoutUserNestedInput
-  preferences?: Prisma.UserPreferenceUncheckedUpdateOneWithoutUserNestedInput
-  refreshTokens?: Prisma.RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  adminLogs?: Prisma.AdminActivityLogUncheckedUpdateManyWithoutAdminNestedInput
+  activatedConfigs?: Prisma.AiProviderConfigUncheckedUpdateManyWithoutActivatedByUserNestedInput
+  activatedPrompts?: Prisma.AiSystemPromptUncheckedUpdateManyWithoutActivatedByUserNestedInput
+  aiUsageLogs?: Prisma.AiUsageLogUncheckedUpdateManyWithoutUserNestedInput
   fridgeItems?: Prisma.FridgeItemUncheckedUpdateManyWithoutUserNestedInput
   scanLogs?: Prisma.IngredientScanLogUncheckedUpdateManyWithoutUserNestedInput
-  allergies?: Prisma.UserAllergyUncheckedUpdateManyWithoutUserNestedInput
-  weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutUserNestedInput
-  shoppingLists?: Prisma.ShoppingListUncheckedUpdateManyWithoutUserNestedInput
-  savedRecipes?: Prisma.UserSavedRecipeUncheckedUpdateManyWithoutUserNestedInput
-  authoredRecipes?: Prisma.RecipeUncheckedUpdateManyWithoutAuthorNestedInput
-  adminLogs?: Prisma.AdminActivityLogUncheckedUpdateManyWithoutAdminNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  authoredRecipes?: Prisma.RecipeUncheckedUpdateManyWithoutAuthorNestedInput
+  refreshTokens?: Prisma.RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
+  shoppingLists?: Prisma.ShoppingListUncheckedUpdateManyWithoutUserNestedInput
+  allergies?: Prisma.UserAllergyUncheckedUpdateManyWithoutUserNestedInput
+  preferences?: Prisma.UserPreferenceUncheckedUpdateOneWithoutUserNestedInput
+  profile?: Prisma.UserProfileUncheckedUpdateOneWithoutUserNestedInput
+  savedRecipes?: Prisma.UserSavedRecipeUncheckedUpdateManyWithoutUserNestedInput
   subscription?: Prisma.UserSubscriptionUncheckedUpdateOneWithoutUserNestedInput
-  aiUsageLogs?: Prisma.AiUsageLogUncheckedUpdateManyWithoutUserNestedInput
-  activatedPrompts?: Prisma.AiSystemPromptUncheckedUpdateManyWithoutActivatedByUserNestedInput
-  activatedConfigs?: Prisma.AiProviderConfigUncheckedUpdateManyWithoutActivatedByUserNestedInput
+  weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutActivatedConfigsInput = {
@@ -2817,31 +2817,31 @@ export type UserCreateWithoutActivatedConfigsInput = {
   phone?: string | null
   googleId?: string | null
   googleEmail?: string | null
-  name?: string | null
   authProvider: $Enums.AuthProvider
   status?: $Enums.UserStatus
-  isOnboardingCompleted?: boolean
   lastLoginAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
-  role: Prisma.RoleCreateNestedOneWithoutUsersInput
-  profile?: Prisma.UserProfileCreateNestedOneWithoutUserInput
-  preferences?: Prisma.UserPreferenceCreateNestedOneWithoutUserInput
-  refreshTokens?: Prisma.RefreshTokenCreateNestedManyWithoutUserInput
+  isOnboardingCompleted?: boolean
+  name?: string | null
+  adminLogs?: Prisma.AdminActivityLogCreateNestedManyWithoutAdminInput
+  activatedPrompts?: Prisma.AiSystemPromptCreateNestedManyWithoutActivatedByUserInput
+  aiUsageLogs?: Prisma.AiUsageLogCreateNestedManyWithoutUserInput
+  chatSessions?: Prisma.ChatSessionCreateNestedManyWithoutUserInput
   fridgeItems?: Prisma.FridgeItemCreateNestedManyWithoutUserInput
   scanLogs?: Prisma.IngredientScanLogCreateNestedManyWithoutUserInput
-  allergies?: Prisma.UserAllergyCreateNestedManyWithoutUserInput
-  weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutUserInput
-  shoppingLists?: Prisma.ShoppingListCreateNestedManyWithoutUserInput
-  chatSessions?: Prisma.ChatSessionCreateNestedManyWithoutUserInput
-  savedRecipes?: Prisma.UserSavedRecipeCreateNestedManyWithoutUserInput
-  authoredRecipes?: Prisma.RecipeCreateNestedManyWithoutAuthorInput
-  adminLogs?: Prisma.AdminActivityLogCreateNestedManyWithoutAdminInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  authoredRecipes?: Prisma.RecipeCreateNestedManyWithoutAuthorInput
+  refreshTokens?: Prisma.RefreshTokenCreateNestedManyWithoutUserInput
+  shoppingLists?: Prisma.ShoppingListCreateNestedManyWithoutUserInput
+  allergies?: Prisma.UserAllergyCreateNestedManyWithoutUserInput
+  preferences?: Prisma.UserPreferenceCreateNestedOneWithoutUserInput
+  profile?: Prisma.UserProfileCreateNestedOneWithoutUserInput
+  savedRecipes?: Prisma.UserSavedRecipeCreateNestedManyWithoutUserInput
   subscription?: Prisma.UserSubscriptionCreateNestedOneWithoutUserInput
-  aiUsageLogs?: Prisma.AiUsageLogCreateNestedManyWithoutUserInput
-  activatedPrompts?: Prisma.AiSystemPromptCreateNestedManyWithoutActivatedByUserInput
+  role: Prisma.RoleCreateNestedOneWithoutUsersInput
+  weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutActivatedConfigsInput = {
@@ -2849,31 +2849,31 @@ export type UserUncheckedCreateWithoutActivatedConfigsInput = {
   phone?: string | null
   googleId?: string | null
   googleEmail?: string | null
-  name?: string | null
   authProvider: $Enums.AuthProvider
   status?: $Enums.UserStatus
   roleId: number
-  isOnboardingCompleted?: boolean
   lastLoginAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
-  profile?: Prisma.UserProfileUncheckedCreateNestedOneWithoutUserInput
-  preferences?: Prisma.UserPreferenceUncheckedCreateNestedOneWithoutUserInput
-  refreshTokens?: Prisma.RefreshTokenUncheckedCreateNestedManyWithoutUserInput
+  isOnboardingCompleted?: boolean
+  name?: string | null
+  adminLogs?: Prisma.AdminActivityLogUncheckedCreateNestedManyWithoutAdminInput
+  activatedPrompts?: Prisma.AiSystemPromptUncheckedCreateNestedManyWithoutActivatedByUserInput
+  aiUsageLogs?: Prisma.AiUsageLogUncheckedCreateNestedManyWithoutUserInput
+  chatSessions?: Prisma.ChatSessionUncheckedCreateNestedManyWithoutUserInput
   fridgeItems?: Prisma.FridgeItemUncheckedCreateNestedManyWithoutUserInput
   scanLogs?: Prisma.IngredientScanLogUncheckedCreateNestedManyWithoutUserInput
-  allergies?: Prisma.UserAllergyUncheckedCreateNestedManyWithoutUserInput
-  weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutUserInput
-  shoppingLists?: Prisma.ShoppingListUncheckedCreateNestedManyWithoutUserInput
-  chatSessions?: Prisma.ChatSessionUncheckedCreateNestedManyWithoutUserInput
-  savedRecipes?: Prisma.UserSavedRecipeUncheckedCreateNestedManyWithoutUserInput
-  authoredRecipes?: Prisma.RecipeUncheckedCreateNestedManyWithoutAuthorInput
-  adminLogs?: Prisma.AdminActivityLogUncheckedCreateNestedManyWithoutAdminInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  authoredRecipes?: Prisma.RecipeUncheckedCreateNestedManyWithoutAuthorInput
+  refreshTokens?: Prisma.RefreshTokenUncheckedCreateNestedManyWithoutUserInput
+  shoppingLists?: Prisma.ShoppingListUncheckedCreateNestedManyWithoutUserInput
+  allergies?: Prisma.UserAllergyUncheckedCreateNestedManyWithoutUserInput
+  preferences?: Prisma.UserPreferenceUncheckedCreateNestedOneWithoutUserInput
+  profile?: Prisma.UserProfileUncheckedCreateNestedOneWithoutUserInput
+  savedRecipes?: Prisma.UserSavedRecipeUncheckedCreateNestedManyWithoutUserInput
   subscription?: Prisma.UserSubscriptionUncheckedCreateNestedOneWithoutUserInput
-  aiUsageLogs?: Prisma.AiUsageLogUncheckedCreateNestedManyWithoutUserInput
-  activatedPrompts?: Prisma.AiSystemPromptUncheckedCreateNestedManyWithoutActivatedByUserInput
+  weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutActivatedConfigsInput = {
@@ -2897,31 +2897,31 @@ export type UserUpdateWithoutActivatedConfigsInput = {
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   googleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   googleEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
-  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
-  profile?: Prisma.UserProfileUpdateOneWithoutUserNestedInput
-  preferences?: Prisma.UserPreferenceUpdateOneWithoutUserNestedInput
-  refreshTokens?: Prisma.RefreshTokenUpdateManyWithoutUserNestedInput
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  adminLogs?: Prisma.AdminActivityLogUpdateManyWithoutAdminNestedInput
+  activatedPrompts?: Prisma.AiSystemPromptUpdateManyWithoutActivatedByUserNestedInput
+  aiUsageLogs?: Prisma.AiUsageLogUpdateManyWithoutUserNestedInput
+  chatSessions?: Prisma.ChatSessionUpdateManyWithoutUserNestedInput
   fridgeItems?: Prisma.FridgeItemUpdateManyWithoutUserNestedInput
   scanLogs?: Prisma.IngredientScanLogUpdateManyWithoutUserNestedInput
-  allergies?: Prisma.UserAllergyUpdateManyWithoutUserNestedInput
-  weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutUserNestedInput
-  shoppingLists?: Prisma.ShoppingListUpdateManyWithoutUserNestedInput
-  chatSessions?: Prisma.ChatSessionUpdateManyWithoutUserNestedInput
-  savedRecipes?: Prisma.UserSavedRecipeUpdateManyWithoutUserNestedInput
-  authoredRecipes?: Prisma.RecipeUpdateManyWithoutAuthorNestedInput
-  adminLogs?: Prisma.AdminActivityLogUpdateManyWithoutAdminNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  authoredRecipes?: Prisma.RecipeUpdateManyWithoutAuthorNestedInput
+  refreshTokens?: Prisma.RefreshTokenUpdateManyWithoutUserNestedInput
+  shoppingLists?: Prisma.ShoppingListUpdateManyWithoutUserNestedInput
+  allergies?: Prisma.UserAllergyUpdateManyWithoutUserNestedInput
+  preferences?: Prisma.UserPreferenceUpdateOneWithoutUserNestedInput
+  profile?: Prisma.UserProfileUpdateOneWithoutUserNestedInput
+  savedRecipes?: Prisma.UserSavedRecipeUpdateManyWithoutUserNestedInput
   subscription?: Prisma.UserSubscriptionUpdateOneWithoutUserNestedInput
-  aiUsageLogs?: Prisma.AiUsageLogUpdateManyWithoutUserNestedInput
-  activatedPrompts?: Prisma.AiSystemPromptUpdateManyWithoutActivatedByUserNestedInput
+  role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
+  weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutActivatedConfigsInput = {
@@ -2929,31 +2929,31 @@ export type UserUncheckedUpdateWithoutActivatedConfigsInput = {
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   googleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   googleEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   roleId?: Prisma.IntFieldUpdateOperationsInput | number
-  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  profile?: Prisma.UserProfileUncheckedUpdateOneWithoutUserNestedInput
-  preferences?: Prisma.UserPreferenceUncheckedUpdateOneWithoutUserNestedInput
-  refreshTokens?: Prisma.RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  adminLogs?: Prisma.AdminActivityLogUncheckedUpdateManyWithoutAdminNestedInput
+  activatedPrompts?: Prisma.AiSystemPromptUncheckedUpdateManyWithoutActivatedByUserNestedInput
+  aiUsageLogs?: Prisma.AiUsageLogUncheckedUpdateManyWithoutUserNestedInput
+  chatSessions?: Prisma.ChatSessionUncheckedUpdateManyWithoutUserNestedInput
   fridgeItems?: Prisma.FridgeItemUncheckedUpdateManyWithoutUserNestedInput
   scanLogs?: Prisma.IngredientScanLogUncheckedUpdateManyWithoutUserNestedInput
-  allergies?: Prisma.UserAllergyUncheckedUpdateManyWithoutUserNestedInput
-  weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutUserNestedInput
-  shoppingLists?: Prisma.ShoppingListUncheckedUpdateManyWithoutUserNestedInput
-  chatSessions?: Prisma.ChatSessionUncheckedUpdateManyWithoutUserNestedInput
-  savedRecipes?: Prisma.UserSavedRecipeUncheckedUpdateManyWithoutUserNestedInput
-  authoredRecipes?: Prisma.RecipeUncheckedUpdateManyWithoutAuthorNestedInput
-  adminLogs?: Prisma.AdminActivityLogUncheckedUpdateManyWithoutAdminNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  authoredRecipes?: Prisma.RecipeUncheckedUpdateManyWithoutAuthorNestedInput
+  refreshTokens?: Prisma.RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
+  shoppingLists?: Prisma.ShoppingListUncheckedUpdateManyWithoutUserNestedInput
+  allergies?: Prisma.UserAllergyUncheckedUpdateManyWithoutUserNestedInput
+  preferences?: Prisma.UserPreferenceUncheckedUpdateOneWithoutUserNestedInput
+  profile?: Prisma.UserProfileUncheckedUpdateOneWithoutUserNestedInput
+  savedRecipes?: Prisma.UserSavedRecipeUncheckedUpdateManyWithoutUserNestedInput
   subscription?: Prisma.UserSubscriptionUncheckedUpdateOneWithoutUserNestedInput
-  aiUsageLogs?: Prisma.AiUsageLogUncheckedUpdateManyWithoutUserNestedInput
-  activatedPrompts?: Prisma.AiSystemPromptUncheckedUpdateManyWithoutActivatedByUserNestedInput
+  weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutAiUsageLogsInput = {
@@ -2961,31 +2961,31 @@ export type UserCreateWithoutAiUsageLogsInput = {
   phone?: string | null
   googleId?: string | null
   googleEmail?: string | null
-  name?: string | null
   authProvider: $Enums.AuthProvider
   status?: $Enums.UserStatus
-  isOnboardingCompleted?: boolean
   lastLoginAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
-  role: Prisma.RoleCreateNestedOneWithoutUsersInput
-  profile?: Prisma.UserProfileCreateNestedOneWithoutUserInput
-  preferences?: Prisma.UserPreferenceCreateNestedOneWithoutUserInput
-  refreshTokens?: Prisma.RefreshTokenCreateNestedManyWithoutUserInput
+  isOnboardingCompleted?: boolean
+  name?: string | null
+  adminLogs?: Prisma.AdminActivityLogCreateNestedManyWithoutAdminInput
+  activatedConfigs?: Prisma.AiProviderConfigCreateNestedManyWithoutActivatedByUserInput
+  activatedPrompts?: Prisma.AiSystemPromptCreateNestedManyWithoutActivatedByUserInput
+  chatSessions?: Prisma.ChatSessionCreateNestedManyWithoutUserInput
   fridgeItems?: Prisma.FridgeItemCreateNestedManyWithoutUserInput
   scanLogs?: Prisma.IngredientScanLogCreateNestedManyWithoutUserInput
-  allergies?: Prisma.UserAllergyCreateNestedManyWithoutUserInput
-  weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutUserInput
-  shoppingLists?: Prisma.ShoppingListCreateNestedManyWithoutUserInput
-  chatSessions?: Prisma.ChatSessionCreateNestedManyWithoutUserInput
-  savedRecipes?: Prisma.UserSavedRecipeCreateNestedManyWithoutUserInput
-  authoredRecipes?: Prisma.RecipeCreateNestedManyWithoutAuthorInput
-  adminLogs?: Prisma.AdminActivityLogCreateNestedManyWithoutAdminInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  authoredRecipes?: Prisma.RecipeCreateNestedManyWithoutAuthorInput
+  refreshTokens?: Prisma.RefreshTokenCreateNestedManyWithoutUserInput
+  shoppingLists?: Prisma.ShoppingListCreateNestedManyWithoutUserInput
+  allergies?: Prisma.UserAllergyCreateNestedManyWithoutUserInput
+  preferences?: Prisma.UserPreferenceCreateNestedOneWithoutUserInput
+  profile?: Prisma.UserProfileCreateNestedOneWithoutUserInput
+  savedRecipes?: Prisma.UserSavedRecipeCreateNestedManyWithoutUserInput
   subscription?: Prisma.UserSubscriptionCreateNestedOneWithoutUserInput
-  activatedPrompts?: Prisma.AiSystemPromptCreateNestedManyWithoutActivatedByUserInput
-  activatedConfigs?: Prisma.AiProviderConfigCreateNestedManyWithoutActivatedByUserInput
+  role: Prisma.RoleCreateNestedOneWithoutUsersInput
+  weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutAiUsageLogsInput = {
@@ -2993,31 +2993,31 @@ export type UserUncheckedCreateWithoutAiUsageLogsInput = {
   phone?: string | null
   googleId?: string | null
   googleEmail?: string | null
-  name?: string | null
   authProvider: $Enums.AuthProvider
   status?: $Enums.UserStatus
   roleId: number
-  isOnboardingCompleted?: boolean
   lastLoginAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
-  profile?: Prisma.UserProfileUncheckedCreateNestedOneWithoutUserInput
-  preferences?: Prisma.UserPreferenceUncheckedCreateNestedOneWithoutUserInput
-  refreshTokens?: Prisma.RefreshTokenUncheckedCreateNestedManyWithoutUserInput
+  isOnboardingCompleted?: boolean
+  name?: string | null
+  adminLogs?: Prisma.AdminActivityLogUncheckedCreateNestedManyWithoutAdminInput
+  activatedConfigs?: Prisma.AiProviderConfigUncheckedCreateNestedManyWithoutActivatedByUserInput
+  activatedPrompts?: Prisma.AiSystemPromptUncheckedCreateNestedManyWithoutActivatedByUserInput
+  chatSessions?: Prisma.ChatSessionUncheckedCreateNestedManyWithoutUserInput
   fridgeItems?: Prisma.FridgeItemUncheckedCreateNestedManyWithoutUserInput
   scanLogs?: Prisma.IngredientScanLogUncheckedCreateNestedManyWithoutUserInput
-  allergies?: Prisma.UserAllergyUncheckedCreateNestedManyWithoutUserInput
-  weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutUserInput
-  shoppingLists?: Prisma.ShoppingListUncheckedCreateNestedManyWithoutUserInput
-  chatSessions?: Prisma.ChatSessionUncheckedCreateNestedManyWithoutUserInput
-  savedRecipes?: Prisma.UserSavedRecipeUncheckedCreateNestedManyWithoutUserInput
-  authoredRecipes?: Prisma.RecipeUncheckedCreateNestedManyWithoutAuthorInput
-  adminLogs?: Prisma.AdminActivityLogUncheckedCreateNestedManyWithoutAdminInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  authoredRecipes?: Prisma.RecipeUncheckedCreateNestedManyWithoutAuthorInput
+  refreshTokens?: Prisma.RefreshTokenUncheckedCreateNestedManyWithoutUserInput
+  shoppingLists?: Prisma.ShoppingListUncheckedCreateNestedManyWithoutUserInput
+  allergies?: Prisma.UserAllergyUncheckedCreateNestedManyWithoutUserInput
+  preferences?: Prisma.UserPreferenceUncheckedCreateNestedOneWithoutUserInput
+  profile?: Prisma.UserProfileUncheckedCreateNestedOneWithoutUserInput
+  savedRecipes?: Prisma.UserSavedRecipeUncheckedCreateNestedManyWithoutUserInput
   subscription?: Prisma.UserSubscriptionUncheckedCreateNestedOneWithoutUserInput
-  activatedPrompts?: Prisma.AiSystemPromptUncheckedCreateNestedManyWithoutActivatedByUserInput
-  activatedConfigs?: Prisma.AiProviderConfigUncheckedCreateNestedManyWithoutActivatedByUserInput
+  weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutAiUsageLogsInput = {
@@ -3041,31 +3041,31 @@ export type UserUpdateWithoutAiUsageLogsInput = {
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   googleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   googleEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
-  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
-  profile?: Prisma.UserProfileUpdateOneWithoutUserNestedInput
-  preferences?: Prisma.UserPreferenceUpdateOneWithoutUserNestedInput
-  refreshTokens?: Prisma.RefreshTokenUpdateManyWithoutUserNestedInput
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  adminLogs?: Prisma.AdminActivityLogUpdateManyWithoutAdminNestedInput
+  activatedConfigs?: Prisma.AiProviderConfigUpdateManyWithoutActivatedByUserNestedInput
+  activatedPrompts?: Prisma.AiSystemPromptUpdateManyWithoutActivatedByUserNestedInput
+  chatSessions?: Prisma.ChatSessionUpdateManyWithoutUserNestedInput
   fridgeItems?: Prisma.FridgeItemUpdateManyWithoutUserNestedInput
   scanLogs?: Prisma.IngredientScanLogUpdateManyWithoutUserNestedInput
-  allergies?: Prisma.UserAllergyUpdateManyWithoutUserNestedInput
-  weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutUserNestedInput
-  shoppingLists?: Prisma.ShoppingListUpdateManyWithoutUserNestedInput
-  chatSessions?: Prisma.ChatSessionUpdateManyWithoutUserNestedInput
-  savedRecipes?: Prisma.UserSavedRecipeUpdateManyWithoutUserNestedInput
-  authoredRecipes?: Prisma.RecipeUpdateManyWithoutAuthorNestedInput
-  adminLogs?: Prisma.AdminActivityLogUpdateManyWithoutAdminNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  authoredRecipes?: Prisma.RecipeUpdateManyWithoutAuthorNestedInput
+  refreshTokens?: Prisma.RefreshTokenUpdateManyWithoutUserNestedInput
+  shoppingLists?: Prisma.ShoppingListUpdateManyWithoutUserNestedInput
+  allergies?: Prisma.UserAllergyUpdateManyWithoutUserNestedInput
+  preferences?: Prisma.UserPreferenceUpdateOneWithoutUserNestedInput
+  profile?: Prisma.UserProfileUpdateOneWithoutUserNestedInput
+  savedRecipes?: Prisma.UserSavedRecipeUpdateManyWithoutUserNestedInput
   subscription?: Prisma.UserSubscriptionUpdateOneWithoutUserNestedInput
-  activatedPrompts?: Prisma.AiSystemPromptUpdateManyWithoutActivatedByUserNestedInput
-  activatedConfigs?: Prisma.AiProviderConfigUpdateManyWithoutActivatedByUserNestedInput
+  role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
+  weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutAiUsageLogsInput = {
@@ -3073,31 +3073,31 @@ export type UserUncheckedUpdateWithoutAiUsageLogsInput = {
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   googleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   googleEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   roleId?: Prisma.IntFieldUpdateOperationsInput | number
-  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  profile?: Prisma.UserProfileUncheckedUpdateOneWithoutUserNestedInput
-  preferences?: Prisma.UserPreferenceUncheckedUpdateOneWithoutUserNestedInput
-  refreshTokens?: Prisma.RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  adminLogs?: Prisma.AdminActivityLogUncheckedUpdateManyWithoutAdminNestedInput
+  activatedConfigs?: Prisma.AiProviderConfigUncheckedUpdateManyWithoutActivatedByUserNestedInput
+  activatedPrompts?: Prisma.AiSystemPromptUncheckedUpdateManyWithoutActivatedByUserNestedInput
+  chatSessions?: Prisma.ChatSessionUncheckedUpdateManyWithoutUserNestedInput
   fridgeItems?: Prisma.FridgeItemUncheckedUpdateManyWithoutUserNestedInput
   scanLogs?: Prisma.IngredientScanLogUncheckedUpdateManyWithoutUserNestedInput
-  allergies?: Prisma.UserAllergyUncheckedUpdateManyWithoutUserNestedInput
-  weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutUserNestedInput
-  shoppingLists?: Prisma.ShoppingListUncheckedUpdateManyWithoutUserNestedInput
-  chatSessions?: Prisma.ChatSessionUncheckedUpdateManyWithoutUserNestedInput
-  savedRecipes?: Prisma.UserSavedRecipeUncheckedUpdateManyWithoutUserNestedInput
-  authoredRecipes?: Prisma.RecipeUncheckedUpdateManyWithoutAuthorNestedInput
-  adminLogs?: Prisma.AdminActivityLogUncheckedUpdateManyWithoutAdminNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  authoredRecipes?: Prisma.RecipeUncheckedUpdateManyWithoutAuthorNestedInput
+  refreshTokens?: Prisma.RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
+  shoppingLists?: Prisma.ShoppingListUncheckedUpdateManyWithoutUserNestedInput
+  allergies?: Prisma.UserAllergyUncheckedUpdateManyWithoutUserNestedInput
+  preferences?: Prisma.UserPreferenceUncheckedUpdateOneWithoutUserNestedInput
+  profile?: Prisma.UserProfileUncheckedUpdateOneWithoutUserNestedInput
+  savedRecipes?: Prisma.UserSavedRecipeUncheckedUpdateManyWithoutUserNestedInput
   subscription?: Prisma.UserSubscriptionUncheckedUpdateOneWithoutUserNestedInput
-  activatedPrompts?: Prisma.AiSystemPromptUncheckedUpdateManyWithoutActivatedByUserNestedInput
-  activatedConfigs?: Prisma.AiProviderConfigUncheckedUpdateManyWithoutActivatedByUserNestedInput
+  weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutAdminLogsInput = {
@@ -3105,31 +3105,31 @@ export type UserCreateWithoutAdminLogsInput = {
   phone?: string | null
   googleId?: string | null
   googleEmail?: string | null
-  name?: string | null
   authProvider: $Enums.AuthProvider
   status?: $Enums.UserStatus
-  isOnboardingCompleted?: boolean
   lastLoginAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
-  role: Prisma.RoleCreateNestedOneWithoutUsersInput
-  profile?: Prisma.UserProfileCreateNestedOneWithoutUserInput
-  preferences?: Prisma.UserPreferenceCreateNestedOneWithoutUserInput
-  refreshTokens?: Prisma.RefreshTokenCreateNestedManyWithoutUserInput
+  isOnboardingCompleted?: boolean
+  name?: string | null
+  activatedConfigs?: Prisma.AiProviderConfigCreateNestedManyWithoutActivatedByUserInput
+  activatedPrompts?: Prisma.AiSystemPromptCreateNestedManyWithoutActivatedByUserInput
+  aiUsageLogs?: Prisma.AiUsageLogCreateNestedManyWithoutUserInput
+  chatSessions?: Prisma.ChatSessionCreateNestedManyWithoutUserInput
   fridgeItems?: Prisma.FridgeItemCreateNestedManyWithoutUserInput
   scanLogs?: Prisma.IngredientScanLogCreateNestedManyWithoutUserInput
-  allergies?: Prisma.UserAllergyCreateNestedManyWithoutUserInput
-  weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutUserInput
-  shoppingLists?: Prisma.ShoppingListCreateNestedManyWithoutUserInput
-  chatSessions?: Prisma.ChatSessionCreateNestedManyWithoutUserInput
-  savedRecipes?: Prisma.UserSavedRecipeCreateNestedManyWithoutUserInput
-  authoredRecipes?: Prisma.RecipeCreateNestedManyWithoutAuthorInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  authoredRecipes?: Prisma.RecipeCreateNestedManyWithoutAuthorInput
+  refreshTokens?: Prisma.RefreshTokenCreateNestedManyWithoutUserInput
+  shoppingLists?: Prisma.ShoppingListCreateNestedManyWithoutUserInput
+  allergies?: Prisma.UserAllergyCreateNestedManyWithoutUserInput
+  preferences?: Prisma.UserPreferenceCreateNestedOneWithoutUserInput
+  profile?: Prisma.UserProfileCreateNestedOneWithoutUserInput
+  savedRecipes?: Prisma.UserSavedRecipeCreateNestedManyWithoutUserInput
   subscription?: Prisma.UserSubscriptionCreateNestedOneWithoutUserInput
-  aiUsageLogs?: Prisma.AiUsageLogCreateNestedManyWithoutUserInput
-  activatedPrompts?: Prisma.AiSystemPromptCreateNestedManyWithoutActivatedByUserInput
-  activatedConfigs?: Prisma.AiProviderConfigCreateNestedManyWithoutActivatedByUserInput
+  role: Prisma.RoleCreateNestedOneWithoutUsersInput
+  weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutAdminLogsInput = {
@@ -3137,31 +3137,31 @@ export type UserUncheckedCreateWithoutAdminLogsInput = {
   phone?: string | null
   googleId?: string | null
   googleEmail?: string | null
-  name?: string | null
   authProvider: $Enums.AuthProvider
   status?: $Enums.UserStatus
   roleId: number
-  isOnboardingCompleted?: boolean
   lastLoginAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
-  profile?: Prisma.UserProfileUncheckedCreateNestedOneWithoutUserInput
-  preferences?: Prisma.UserPreferenceUncheckedCreateNestedOneWithoutUserInput
-  refreshTokens?: Prisma.RefreshTokenUncheckedCreateNestedManyWithoutUserInput
+  isOnboardingCompleted?: boolean
+  name?: string | null
+  activatedConfigs?: Prisma.AiProviderConfigUncheckedCreateNestedManyWithoutActivatedByUserInput
+  activatedPrompts?: Prisma.AiSystemPromptUncheckedCreateNestedManyWithoutActivatedByUserInput
+  aiUsageLogs?: Prisma.AiUsageLogUncheckedCreateNestedManyWithoutUserInput
+  chatSessions?: Prisma.ChatSessionUncheckedCreateNestedManyWithoutUserInput
   fridgeItems?: Prisma.FridgeItemUncheckedCreateNestedManyWithoutUserInput
   scanLogs?: Prisma.IngredientScanLogUncheckedCreateNestedManyWithoutUserInput
-  allergies?: Prisma.UserAllergyUncheckedCreateNestedManyWithoutUserInput
-  weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutUserInput
-  shoppingLists?: Prisma.ShoppingListUncheckedCreateNestedManyWithoutUserInput
-  chatSessions?: Prisma.ChatSessionUncheckedCreateNestedManyWithoutUserInput
-  savedRecipes?: Prisma.UserSavedRecipeUncheckedCreateNestedManyWithoutUserInput
-  authoredRecipes?: Prisma.RecipeUncheckedCreateNestedManyWithoutAuthorInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  authoredRecipes?: Prisma.RecipeUncheckedCreateNestedManyWithoutAuthorInput
+  refreshTokens?: Prisma.RefreshTokenUncheckedCreateNestedManyWithoutUserInput
+  shoppingLists?: Prisma.ShoppingListUncheckedCreateNestedManyWithoutUserInput
+  allergies?: Prisma.UserAllergyUncheckedCreateNestedManyWithoutUserInput
+  preferences?: Prisma.UserPreferenceUncheckedCreateNestedOneWithoutUserInput
+  profile?: Prisma.UserProfileUncheckedCreateNestedOneWithoutUserInput
+  savedRecipes?: Prisma.UserSavedRecipeUncheckedCreateNestedManyWithoutUserInput
   subscription?: Prisma.UserSubscriptionUncheckedCreateNestedOneWithoutUserInput
-  aiUsageLogs?: Prisma.AiUsageLogUncheckedCreateNestedManyWithoutUserInput
-  activatedPrompts?: Prisma.AiSystemPromptUncheckedCreateNestedManyWithoutActivatedByUserInput
-  activatedConfigs?: Prisma.AiProviderConfigUncheckedCreateNestedManyWithoutActivatedByUserInput
+  weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutAdminLogsInput = {
@@ -3185,31 +3185,31 @@ export type UserUpdateWithoutAdminLogsInput = {
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   googleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   googleEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
-  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
-  profile?: Prisma.UserProfileUpdateOneWithoutUserNestedInput
-  preferences?: Prisma.UserPreferenceUpdateOneWithoutUserNestedInput
-  refreshTokens?: Prisma.RefreshTokenUpdateManyWithoutUserNestedInput
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activatedConfigs?: Prisma.AiProviderConfigUpdateManyWithoutActivatedByUserNestedInput
+  activatedPrompts?: Prisma.AiSystemPromptUpdateManyWithoutActivatedByUserNestedInput
+  aiUsageLogs?: Prisma.AiUsageLogUpdateManyWithoutUserNestedInput
+  chatSessions?: Prisma.ChatSessionUpdateManyWithoutUserNestedInput
   fridgeItems?: Prisma.FridgeItemUpdateManyWithoutUserNestedInput
   scanLogs?: Prisma.IngredientScanLogUpdateManyWithoutUserNestedInput
-  allergies?: Prisma.UserAllergyUpdateManyWithoutUserNestedInput
-  weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutUserNestedInput
-  shoppingLists?: Prisma.ShoppingListUpdateManyWithoutUserNestedInput
-  chatSessions?: Prisma.ChatSessionUpdateManyWithoutUserNestedInput
-  savedRecipes?: Prisma.UserSavedRecipeUpdateManyWithoutUserNestedInput
-  authoredRecipes?: Prisma.RecipeUpdateManyWithoutAuthorNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  authoredRecipes?: Prisma.RecipeUpdateManyWithoutAuthorNestedInput
+  refreshTokens?: Prisma.RefreshTokenUpdateManyWithoutUserNestedInput
+  shoppingLists?: Prisma.ShoppingListUpdateManyWithoutUserNestedInput
+  allergies?: Prisma.UserAllergyUpdateManyWithoutUserNestedInput
+  preferences?: Prisma.UserPreferenceUpdateOneWithoutUserNestedInput
+  profile?: Prisma.UserProfileUpdateOneWithoutUserNestedInput
+  savedRecipes?: Prisma.UserSavedRecipeUpdateManyWithoutUserNestedInput
   subscription?: Prisma.UserSubscriptionUpdateOneWithoutUserNestedInput
-  aiUsageLogs?: Prisma.AiUsageLogUpdateManyWithoutUserNestedInput
-  activatedPrompts?: Prisma.AiSystemPromptUpdateManyWithoutActivatedByUserNestedInput
-  activatedConfigs?: Prisma.AiProviderConfigUpdateManyWithoutActivatedByUserNestedInput
+  role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
+  weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutAdminLogsInput = {
@@ -3217,31 +3217,31 @@ export type UserUncheckedUpdateWithoutAdminLogsInput = {
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   googleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   googleEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   roleId?: Prisma.IntFieldUpdateOperationsInput | number
-  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  profile?: Prisma.UserProfileUncheckedUpdateOneWithoutUserNestedInput
-  preferences?: Prisma.UserPreferenceUncheckedUpdateOneWithoutUserNestedInput
-  refreshTokens?: Prisma.RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activatedConfigs?: Prisma.AiProviderConfigUncheckedUpdateManyWithoutActivatedByUserNestedInput
+  activatedPrompts?: Prisma.AiSystemPromptUncheckedUpdateManyWithoutActivatedByUserNestedInput
+  aiUsageLogs?: Prisma.AiUsageLogUncheckedUpdateManyWithoutUserNestedInput
+  chatSessions?: Prisma.ChatSessionUncheckedUpdateManyWithoutUserNestedInput
   fridgeItems?: Prisma.FridgeItemUncheckedUpdateManyWithoutUserNestedInput
   scanLogs?: Prisma.IngredientScanLogUncheckedUpdateManyWithoutUserNestedInput
-  allergies?: Prisma.UserAllergyUncheckedUpdateManyWithoutUserNestedInput
-  weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutUserNestedInput
-  shoppingLists?: Prisma.ShoppingListUncheckedUpdateManyWithoutUserNestedInput
-  chatSessions?: Prisma.ChatSessionUncheckedUpdateManyWithoutUserNestedInput
-  savedRecipes?: Prisma.UserSavedRecipeUncheckedUpdateManyWithoutUserNestedInput
-  authoredRecipes?: Prisma.RecipeUncheckedUpdateManyWithoutAuthorNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  authoredRecipes?: Prisma.RecipeUncheckedUpdateManyWithoutAuthorNestedInput
+  refreshTokens?: Prisma.RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
+  shoppingLists?: Prisma.ShoppingListUncheckedUpdateManyWithoutUserNestedInput
+  allergies?: Prisma.UserAllergyUncheckedUpdateManyWithoutUserNestedInput
+  preferences?: Prisma.UserPreferenceUncheckedUpdateOneWithoutUserNestedInput
+  profile?: Prisma.UserProfileUncheckedUpdateOneWithoutUserNestedInput
+  savedRecipes?: Prisma.UserSavedRecipeUncheckedUpdateManyWithoutUserNestedInput
   subscription?: Prisma.UserSubscriptionUncheckedUpdateOneWithoutUserNestedInput
-  aiUsageLogs?: Prisma.AiUsageLogUncheckedUpdateManyWithoutUserNestedInput
-  activatedPrompts?: Prisma.AiSystemPromptUncheckedUpdateManyWithoutActivatedByUserNestedInput
-  activatedConfigs?: Prisma.AiProviderConfigUncheckedUpdateManyWithoutActivatedByUserNestedInput
+  weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutNotificationsInput = {
@@ -3249,31 +3249,31 @@ export type UserCreateWithoutNotificationsInput = {
   phone?: string | null
   googleId?: string | null
   googleEmail?: string | null
-  name?: string | null
   authProvider: $Enums.AuthProvider
   status?: $Enums.UserStatus
-  isOnboardingCompleted?: boolean
   lastLoginAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
-  role: Prisma.RoleCreateNestedOneWithoutUsersInput
-  profile?: Prisma.UserProfileCreateNestedOneWithoutUserInput
-  preferences?: Prisma.UserPreferenceCreateNestedOneWithoutUserInput
-  refreshTokens?: Prisma.RefreshTokenCreateNestedManyWithoutUserInput
+  isOnboardingCompleted?: boolean
+  name?: string | null
+  adminLogs?: Prisma.AdminActivityLogCreateNestedManyWithoutAdminInput
+  activatedConfigs?: Prisma.AiProviderConfigCreateNestedManyWithoutActivatedByUserInput
+  activatedPrompts?: Prisma.AiSystemPromptCreateNestedManyWithoutActivatedByUserInput
+  aiUsageLogs?: Prisma.AiUsageLogCreateNestedManyWithoutUserInput
+  chatSessions?: Prisma.ChatSessionCreateNestedManyWithoutUserInput
   fridgeItems?: Prisma.FridgeItemCreateNestedManyWithoutUserInput
   scanLogs?: Prisma.IngredientScanLogCreateNestedManyWithoutUserInput
-  allergies?: Prisma.UserAllergyCreateNestedManyWithoutUserInput
-  weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutUserInput
-  shoppingLists?: Prisma.ShoppingListCreateNestedManyWithoutUserInput
-  chatSessions?: Prisma.ChatSessionCreateNestedManyWithoutUserInput
-  savedRecipes?: Prisma.UserSavedRecipeCreateNestedManyWithoutUserInput
   authoredRecipes?: Prisma.RecipeCreateNestedManyWithoutAuthorInput
-  adminLogs?: Prisma.AdminActivityLogCreateNestedManyWithoutAdminInput
+  refreshTokens?: Prisma.RefreshTokenCreateNestedManyWithoutUserInput
+  shoppingLists?: Prisma.ShoppingListCreateNestedManyWithoutUserInput
+  allergies?: Prisma.UserAllergyCreateNestedManyWithoutUserInput
+  preferences?: Prisma.UserPreferenceCreateNestedOneWithoutUserInput
+  profile?: Prisma.UserProfileCreateNestedOneWithoutUserInput
+  savedRecipes?: Prisma.UserSavedRecipeCreateNestedManyWithoutUserInput
   subscription?: Prisma.UserSubscriptionCreateNestedOneWithoutUserInput
-  aiUsageLogs?: Prisma.AiUsageLogCreateNestedManyWithoutUserInput
-  activatedPrompts?: Prisma.AiSystemPromptCreateNestedManyWithoutActivatedByUserInput
-  activatedConfigs?: Prisma.AiProviderConfigCreateNestedManyWithoutActivatedByUserInput
+  role: Prisma.RoleCreateNestedOneWithoutUsersInput
+  weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutNotificationsInput = {
@@ -3281,31 +3281,31 @@ export type UserUncheckedCreateWithoutNotificationsInput = {
   phone?: string | null
   googleId?: string | null
   googleEmail?: string | null
-  name?: string | null
   authProvider: $Enums.AuthProvider
   status?: $Enums.UserStatus
   roleId: number
-  isOnboardingCompleted?: boolean
   lastLoginAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
-  profile?: Prisma.UserProfileUncheckedCreateNestedOneWithoutUserInput
-  preferences?: Prisma.UserPreferenceUncheckedCreateNestedOneWithoutUserInput
-  refreshTokens?: Prisma.RefreshTokenUncheckedCreateNestedManyWithoutUserInput
+  isOnboardingCompleted?: boolean
+  name?: string | null
+  adminLogs?: Prisma.AdminActivityLogUncheckedCreateNestedManyWithoutAdminInput
+  activatedConfigs?: Prisma.AiProviderConfigUncheckedCreateNestedManyWithoutActivatedByUserInput
+  activatedPrompts?: Prisma.AiSystemPromptUncheckedCreateNestedManyWithoutActivatedByUserInput
+  aiUsageLogs?: Prisma.AiUsageLogUncheckedCreateNestedManyWithoutUserInput
+  chatSessions?: Prisma.ChatSessionUncheckedCreateNestedManyWithoutUserInput
   fridgeItems?: Prisma.FridgeItemUncheckedCreateNestedManyWithoutUserInput
   scanLogs?: Prisma.IngredientScanLogUncheckedCreateNestedManyWithoutUserInput
-  allergies?: Prisma.UserAllergyUncheckedCreateNestedManyWithoutUserInput
-  weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutUserInput
-  shoppingLists?: Prisma.ShoppingListUncheckedCreateNestedManyWithoutUserInput
-  chatSessions?: Prisma.ChatSessionUncheckedCreateNestedManyWithoutUserInput
-  savedRecipes?: Prisma.UserSavedRecipeUncheckedCreateNestedManyWithoutUserInput
   authoredRecipes?: Prisma.RecipeUncheckedCreateNestedManyWithoutAuthorInput
-  adminLogs?: Prisma.AdminActivityLogUncheckedCreateNestedManyWithoutAdminInput
+  refreshTokens?: Prisma.RefreshTokenUncheckedCreateNestedManyWithoutUserInput
+  shoppingLists?: Prisma.ShoppingListUncheckedCreateNestedManyWithoutUserInput
+  allergies?: Prisma.UserAllergyUncheckedCreateNestedManyWithoutUserInput
+  preferences?: Prisma.UserPreferenceUncheckedCreateNestedOneWithoutUserInput
+  profile?: Prisma.UserProfileUncheckedCreateNestedOneWithoutUserInput
+  savedRecipes?: Prisma.UserSavedRecipeUncheckedCreateNestedManyWithoutUserInput
   subscription?: Prisma.UserSubscriptionUncheckedCreateNestedOneWithoutUserInput
-  aiUsageLogs?: Prisma.AiUsageLogUncheckedCreateNestedManyWithoutUserInput
-  activatedPrompts?: Prisma.AiSystemPromptUncheckedCreateNestedManyWithoutActivatedByUserInput
-  activatedConfigs?: Prisma.AiProviderConfigUncheckedCreateNestedManyWithoutActivatedByUserInput
+  weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutNotificationsInput = {
@@ -3329,31 +3329,31 @@ export type UserUpdateWithoutNotificationsInput = {
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   googleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   googleEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
-  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
-  profile?: Prisma.UserProfileUpdateOneWithoutUserNestedInput
-  preferences?: Prisma.UserPreferenceUpdateOneWithoutUserNestedInput
-  refreshTokens?: Prisma.RefreshTokenUpdateManyWithoutUserNestedInput
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  adminLogs?: Prisma.AdminActivityLogUpdateManyWithoutAdminNestedInput
+  activatedConfigs?: Prisma.AiProviderConfigUpdateManyWithoutActivatedByUserNestedInput
+  activatedPrompts?: Prisma.AiSystemPromptUpdateManyWithoutActivatedByUserNestedInput
+  aiUsageLogs?: Prisma.AiUsageLogUpdateManyWithoutUserNestedInput
+  chatSessions?: Prisma.ChatSessionUpdateManyWithoutUserNestedInput
   fridgeItems?: Prisma.FridgeItemUpdateManyWithoutUserNestedInput
   scanLogs?: Prisma.IngredientScanLogUpdateManyWithoutUserNestedInput
-  allergies?: Prisma.UserAllergyUpdateManyWithoutUserNestedInput
-  weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutUserNestedInput
-  shoppingLists?: Prisma.ShoppingListUpdateManyWithoutUserNestedInput
-  chatSessions?: Prisma.ChatSessionUpdateManyWithoutUserNestedInput
-  savedRecipes?: Prisma.UserSavedRecipeUpdateManyWithoutUserNestedInput
   authoredRecipes?: Prisma.RecipeUpdateManyWithoutAuthorNestedInput
-  adminLogs?: Prisma.AdminActivityLogUpdateManyWithoutAdminNestedInput
+  refreshTokens?: Prisma.RefreshTokenUpdateManyWithoutUserNestedInput
+  shoppingLists?: Prisma.ShoppingListUpdateManyWithoutUserNestedInput
+  allergies?: Prisma.UserAllergyUpdateManyWithoutUserNestedInput
+  preferences?: Prisma.UserPreferenceUpdateOneWithoutUserNestedInput
+  profile?: Prisma.UserProfileUpdateOneWithoutUserNestedInput
+  savedRecipes?: Prisma.UserSavedRecipeUpdateManyWithoutUserNestedInput
   subscription?: Prisma.UserSubscriptionUpdateOneWithoutUserNestedInput
-  aiUsageLogs?: Prisma.AiUsageLogUpdateManyWithoutUserNestedInput
-  activatedPrompts?: Prisma.AiSystemPromptUpdateManyWithoutActivatedByUserNestedInput
-  activatedConfigs?: Prisma.AiProviderConfigUpdateManyWithoutActivatedByUserNestedInput
+  role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
+  weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutNotificationsInput = {
@@ -3361,31 +3361,31 @@ export type UserUncheckedUpdateWithoutNotificationsInput = {
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   googleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   googleEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   roleId?: Prisma.IntFieldUpdateOperationsInput | number
-  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  profile?: Prisma.UserProfileUncheckedUpdateOneWithoutUserNestedInput
-  preferences?: Prisma.UserPreferenceUncheckedUpdateOneWithoutUserNestedInput
-  refreshTokens?: Prisma.RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  adminLogs?: Prisma.AdminActivityLogUncheckedUpdateManyWithoutAdminNestedInput
+  activatedConfigs?: Prisma.AiProviderConfigUncheckedUpdateManyWithoutActivatedByUserNestedInput
+  activatedPrompts?: Prisma.AiSystemPromptUncheckedUpdateManyWithoutActivatedByUserNestedInput
+  aiUsageLogs?: Prisma.AiUsageLogUncheckedUpdateManyWithoutUserNestedInput
+  chatSessions?: Prisma.ChatSessionUncheckedUpdateManyWithoutUserNestedInput
   fridgeItems?: Prisma.FridgeItemUncheckedUpdateManyWithoutUserNestedInput
   scanLogs?: Prisma.IngredientScanLogUncheckedUpdateManyWithoutUserNestedInput
-  allergies?: Prisma.UserAllergyUncheckedUpdateManyWithoutUserNestedInput
-  weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutUserNestedInput
-  shoppingLists?: Prisma.ShoppingListUncheckedUpdateManyWithoutUserNestedInput
-  chatSessions?: Prisma.ChatSessionUncheckedUpdateManyWithoutUserNestedInput
-  savedRecipes?: Prisma.UserSavedRecipeUncheckedUpdateManyWithoutUserNestedInput
   authoredRecipes?: Prisma.RecipeUncheckedUpdateManyWithoutAuthorNestedInput
-  adminLogs?: Prisma.AdminActivityLogUncheckedUpdateManyWithoutAdminNestedInput
+  refreshTokens?: Prisma.RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
+  shoppingLists?: Prisma.ShoppingListUncheckedUpdateManyWithoutUserNestedInput
+  allergies?: Prisma.UserAllergyUncheckedUpdateManyWithoutUserNestedInput
+  preferences?: Prisma.UserPreferenceUncheckedUpdateOneWithoutUserNestedInput
+  profile?: Prisma.UserProfileUncheckedUpdateOneWithoutUserNestedInput
+  savedRecipes?: Prisma.UserSavedRecipeUncheckedUpdateManyWithoutUserNestedInput
   subscription?: Prisma.UserSubscriptionUncheckedUpdateOneWithoutUserNestedInput
-  aiUsageLogs?: Prisma.AiUsageLogUncheckedUpdateManyWithoutUserNestedInput
-  activatedPrompts?: Prisma.AiSystemPromptUncheckedUpdateManyWithoutActivatedByUserNestedInput
-  activatedConfigs?: Prisma.AiProviderConfigUncheckedUpdateManyWithoutActivatedByUserNestedInput
+  weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutSubscriptionInput = {
@@ -3393,31 +3393,31 @@ export type UserCreateWithoutSubscriptionInput = {
   phone?: string | null
   googleId?: string | null
   googleEmail?: string | null
-  name?: string | null
   authProvider: $Enums.AuthProvider
   status?: $Enums.UserStatus
-  isOnboardingCompleted?: boolean
   lastLoginAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
-  role: Prisma.RoleCreateNestedOneWithoutUsersInput
-  profile?: Prisma.UserProfileCreateNestedOneWithoutUserInput
-  preferences?: Prisma.UserPreferenceCreateNestedOneWithoutUserInput
-  refreshTokens?: Prisma.RefreshTokenCreateNestedManyWithoutUserInput
+  isOnboardingCompleted?: boolean
+  name?: string | null
+  adminLogs?: Prisma.AdminActivityLogCreateNestedManyWithoutAdminInput
+  activatedConfigs?: Prisma.AiProviderConfigCreateNestedManyWithoutActivatedByUserInput
+  activatedPrompts?: Prisma.AiSystemPromptCreateNestedManyWithoutActivatedByUserInput
+  aiUsageLogs?: Prisma.AiUsageLogCreateNestedManyWithoutUserInput
+  chatSessions?: Prisma.ChatSessionCreateNestedManyWithoutUserInput
   fridgeItems?: Prisma.FridgeItemCreateNestedManyWithoutUserInput
   scanLogs?: Prisma.IngredientScanLogCreateNestedManyWithoutUserInput
-  allergies?: Prisma.UserAllergyCreateNestedManyWithoutUserInput
-  weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutUserInput
-  shoppingLists?: Prisma.ShoppingListCreateNestedManyWithoutUserInput
-  chatSessions?: Prisma.ChatSessionCreateNestedManyWithoutUserInput
-  savedRecipes?: Prisma.UserSavedRecipeCreateNestedManyWithoutUserInput
-  authoredRecipes?: Prisma.RecipeCreateNestedManyWithoutAuthorInput
-  adminLogs?: Prisma.AdminActivityLogCreateNestedManyWithoutAdminInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
-  aiUsageLogs?: Prisma.AiUsageLogCreateNestedManyWithoutUserInput
-  activatedPrompts?: Prisma.AiSystemPromptCreateNestedManyWithoutActivatedByUserInput
-  activatedConfigs?: Prisma.AiProviderConfigCreateNestedManyWithoutActivatedByUserInput
+  authoredRecipes?: Prisma.RecipeCreateNestedManyWithoutAuthorInput
+  refreshTokens?: Prisma.RefreshTokenCreateNestedManyWithoutUserInput
+  shoppingLists?: Prisma.ShoppingListCreateNestedManyWithoutUserInput
+  allergies?: Prisma.UserAllergyCreateNestedManyWithoutUserInput
+  preferences?: Prisma.UserPreferenceCreateNestedOneWithoutUserInput
+  profile?: Prisma.UserProfileCreateNestedOneWithoutUserInput
+  savedRecipes?: Prisma.UserSavedRecipeCreateNestedManyWithoutUserInput
+  role: Prisma.RoleCreateNestedOneWithoutUsersInput
+  weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutSubscriptionInput = {
@@ -3425,31 +3425,31 @@ export type UserUncheckedCreateWithoutSubscriptionInput = {
   phone?: string | null
   googleId?: string | null
   googleEmail?: string | null
-  name?: string | null
   authProvider: $Enums.AuthProvider
   status?: $Enums.UserStatus
   roleId: number
-  isOnboardingCompleted?: boolean
   lastLoginAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
-  profile?: Prisma.UserProfileUncheckedCreateNestedOneWithoutUserInput
-  preferences?: Prisma.UserPreferenceUncheckedCreateNestedOneWithoutUserInput
-  refreshTokens?: Prisma.RefreshTokenUncheckedCreateNestedManyWithoutUserInput
+  isOnboardingCompleted?: boolean
+  name?: string | null
+  adminLogs?: Prisma.AdminActivityLogUncheckedCreateNestedManyWithoutAdminInput
+  activatedConfigs?: Prisma.AiProviderConfigUncheckedCreateNestedManyWithoutActivatedByUserInput
+  activatedPrompts?: Prisma.AiSystemPromptUncheckedCreateNestedManyWithoutActivatedByUserInput
+  aiUsageLogs?: Prisma.AiUsageLogUncheckedCreateNestedManyWithoutUserInput
+  chatSessions?: Prisma.ChatSessionUncheckedCreateNestedManyWithoutUserInput
   fridgeItems?: Prisma.FridgeItemUncheckedCreateNestedManyWithoutUserInput
   scanLogs?: Prisma.IngredientScanLogUncheckedCreateNestedManyWithoutUserInput
-  allergies?: Prisma.UserAllergyUncheckedCreateNestedManyWithoutUserInput
-  weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutUserInput
-  shoppingLists?: Prisma.ShoppingListUncheckedCreateNestedManyWithoutUserInput
-  chatSessions?: Prisma.ChatSessionUncheckedCreateNestedManyWithoutUserInput
-  savedRecipes?: Prisma.UserSavedRecipeUncheckedCreateNestedManyWithoutUserInput
-  authoredRecipes?: Prisma.RecipeUncheckedCreateNestedManyWithoutAuthorInput
-  adminLogs?: Prisma.AdminActivityLogUncheckedCreateNestedManyWithoutAdminInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
-  aiUsageLogs?: Prisma.AiUsageLogUncheckedCreateNestedManyWithoutUserInput
-  activatedPrompts?: Prisma.AiSystemPromptUncheckedCreateNestedManyWithoutActivatedByUserInput
-  activatedConfigs?: Prisma.AiProviderConfigUncheckedCreateNestedManyWithoutActivatedByUserInput
+  authoredRecipes?: Prisma.RecipeUncheckedCreateNestedManyWithoutAuthorInput
+  refreshTokens?: Prisma.RefreshTokenUncheckedCreateNestedManyWithoutUserInput
+  shoppingLists?: Prisma.ShoppingListUncheckedCreateNestedManyWithoutUserInput
+  allergies?: Prisma.UserAllergyUncheckedCreateNestedManyWithoutUserInput
+  preferences?: Prisma.UserPreferenceUncheckedCreateNestedOneWithoutUserInput
+  profile?: Prisma.UserProfileUncheckedCreateNestedOneWithoutUserInput
+  savedRecipes?: Prisma.UserSavedRecipeUncheckedCreateNestedManyWithoutUserInput
+  weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutSubscriptionInput = {
@@ -3473,31 +3473,31 @@ export type UserUpdateWithoutSubscriptionInput = {
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   googleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   googleEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
-  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
-  profile?: Prisma.UserProfileUpdateOneWithoutUserNestedInput
-  preferences?: Prisma.UserPreferenceUpdateOneWithoutUserNestedInput
-  refreshTokens?: Prisma.RefreshTokenUpdateManyWithoutUserNestedInput
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  adminLogs?: Prisma.AdminActivityLogUpdateManyWithoutAdminNestedInput
+  activatedConfigs?: Prisma.AiProviderConfigUpdateManyWithoutActivatedByUserNestedInput
+  activatedPrompts?: Prisma.AiSystemPromptUpdateManyWithoutActivatedByUserNestedInput
+  aiUsageLogs?: Prisma.AiUsageLogUpdateManyWithoutUserNestedInput
+  chatSessions?: Prisma.ChatSessionUpdateManyWithoutUserNestedInput
   fridgeItems?: Prisma.FridgeItemUpdateManyWithoutUserNestedInput
   scanLogs?: Prisma.IngredientScanLogUpdateManyWithoutUserNestedInput
-  allergies?: Prisma.UserAllergyUpdateManyWithoutUserNestedInput
-  weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutUserNestedInput
-  shoppingLists?: Prisma.ShoppingListUpdateManyWithoutUserNestedInput
-  chatSessions?: Prisma.ChatSessionUpdateManyWithoutUserNestedInput
-  savedRecipes?: Prisma.UserSavedRecipeUpdateManyWithoutUserNestedInput
-  authoredRecipes?: Prisma.RecipeUpdateManyWithoutAuthorNestedInput
-  adminLogs?: Prisma.AdminActivityLogUpdateManyWithoutAdminNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
-  aiUsageLogs?: Prisma.AiUsageLogUpdateManyWithoutUserNestedInput
-  activatedPrompts?: Prisma.AiSystemPromptUpdateManyWithoutActivatedByUserNestedInput
-  activatedConfigs?: Prisma.AiProviderConfigUpdateManyWithoutActivatedByUserNestedInput
+  authoredRecipes?: Prisma.RecipeUpdateManyWithoutAuthorNestedInput
+  refreshTokens?: Prisma.RefreshTokenUpdateManyWithoutUserNestedInput
+  shoppingLists?: Prisma.ShoppingListUpdateManyWithoutUserNestedInput
+  allergies?: Prisma.UserAllergyUpdateManyWithoutUserNestedInput
+  preferences?: Prisma.UserPreferenceUpdateOneWithoutUserNestedInput
+  profile?: Prisma.UserProfileUpdateOneWithoutUserNestedInput
+  savedRecipes?: Prisma.UserSavedRecipeUpdateManyWithoutUserNestedInput
+  role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
+  weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutSubscriptionInput = {
@@ -3505,31 +3505,31 @@ export type UserUncheckedUpdateWithoutSubscriptionInput = {
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   googleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   googleEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
   roleId?: Prisma.IntFieldUpdateOperationsInput | number
-  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  profile?: Prisma.UserProfileUncheckedUpdateOneWithoutUserNestedInput
-  preferences?: Prisma.UserPreferenceUncheckedUpdateOneWithoutUserNestedInput
-  refreshTokens?: Prisma.RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  adminLogs?: Prisma.AdminActivityLogUncheckedUpdateManyWithoutAdminNestedInput
+  activatedConfigs?: Prisma.AiProviderConfigUncheckedUpdateManyWithoutActivatedByUserNestedInput
+  activatedPrompts?: Prisma.AiSystemPromptUncheckedUpdateManyWithoutActivatedByUserNestedInput
+  aiUsageLogs?: Prisma.AiUsageLogUncheckedUpdateManyWithoutUserNestedInput
+  chatSessions?: Prisma.ChatSessionUncheckedUpdateManyWithoutUserNestedInput
   fridgeItems?: Prisma.FridgeItemUncheckedUpdateManyWithoutUserNestedInput
   scanLogs?: Prisma.IngredientScanLogUncheckedUpdateManyWithoutUserNestedInput
-  allergies?: Prisma.UserAllergyUncheckedUpdateManyWithoutUserNestedInput
-  weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutUserNestedInput
-  shoppingLists?: Prisma.ShoppingListUncheckedUpdateManyWithoutUserNestedInput
-  chatSessions?: Prisma.ChatSessionUncheckedUpdateManyWithoutUserNestedInput
-  savedRecipes?: Prisma.UserSavedRecipeUncheckedUpdateManyWithoutUserNestedInput
-  authoredRecipes?: Prisma.RecipeUncheckedUpdateManyWithoutAuthorNestedInput
-  adminLogs?: Prisma.AdminActivityLogUncheckedUpdateManyWithoutAdminNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
-  aiUsageLogs?: Prisma.AiUsageLogUncheckedUpdateManyWithoutUserNestedInput
-  activatedPrompts?: Prisma.AiSystemPromptUncheckedUpdateManyWithoutActivatedByUserNestedInput
-  activatedConfigs?: Prisma.AiProviderConfigUncheckedUpdateManyWithoutActivatedByUserNestedInput
+  authoredRecipes?: Prisma.RecipeUncheckedUpdateManyWithoutAuthorNestedInput
+  refreshTokens?: Prisma.RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
+  shoppingLists?: Prisma.ShoppingListUncheckedUpdateManyWithoutUserNestedInput
+  allergies?: Prisma.UserAllergyUncheckedUpdateManyWithoutUserNestedInput
+  preferences?: Prisma.UserPreferenceUncheckedUpdateOneWithoutUserNestedInput
+  profile?: Prisma.UserProfileUncheckedUpdateOneWithoutUserNestedInput
+  savedRecipes?: Prisma.UserSavedRecipeUncheckedUpdateManyWithoutUserNestedInput
+  weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateManyRoleInput = {
@@ -3537,14 +3537,14 @@ export type UserCreateManyRoleInput = {
   phone?: string | null
   googleId?: string | null
   googleEmail?: string | null
-  name?: string | null
   authProvider: $Enums.AuthProvider
   status?: $Enums.UserStatus
-  isOnboardingCompleted?: boolean
   lastLoginAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
+  isOnboardingCompleted?: boolean
+  name?: string | null
 }
 
 export type UserUpdateWithoutRoleInput = {
@@ -3552,31 +3552,31 @@ export type UserUpdateWithoutRoleInput = {
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   googleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   googleEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
-  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  profile?: Prisma.UserProfileUpdateOneWithoutUserNestedInput
-  preferences?: Prisma.UserPreferenceUpdateOneWithoutUserNestedInput
-  refreshTokens?: Prisma.RefreshTokenUpdateManyWithoutUserNestedInput
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  adminLogs?: Prisma.AdminActivityLogUpdateManyWithoutAdminNestedInput
+  activatedConfigs?: Prisma.AiProviderConfigUpdateManyWithoutActivatedByUserNestedInput
+  activatedPrompts?: Prisma.AiSystemPromptUpdateManyWithoutActivatedByUserNestedInput
+  aiUsageLogs?: Prisma.AiUsageLogUpdateManyWithoutUserNestedInput
+  chatSessions?: Prisma.ChatSessionUpdateManyWithoutUserNestedInput
   fridgeItems?: Prisma.FridgeItemUpdateManyWithoutUserNestedInput
   scanLogs?: Prisma.IngredientScanLogUpdateManyWithoutUserNestedInput
-  allergies?: Prisma.UserAllergyUpdateManyWithoutUserNestedInput
-  weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutUserNestedInput
-  shoppingLists?: Prisma.ShoppingListUpdateManyWithoutUserNestedInput
-  chatSessions?: Prisma.ChatSessionUpdateManyWithoutUserNestedInput
-  savedRecipes?: Prisma.UserSavedRecipeUpdateManyWithoutUserNestedInput
-  authoredRecipes?: Prisma.RecipeUpdateManyWithoutAuthorNestedInput
-  adminLogs?: Prisma.AdminActivityLogUpdateManyWithoutAdminNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  authoredRecipes?: Prisma.RecipeUpdateManyWithoutAuthorNestedInput
+  refreshTokens?: Prisma.RefreshTokenUpdateManyWithoutUserNestedInput
+  shoppingLists?: Prisma.ShoppingListUpdateManyWithoutUserNestedInput
+  allergies?: Prisma.UserAllergyUpdateManyWithoutUserNestedInput
+  preferences?: Prisma.UserPreferenceUpdateOneWithoutUserNestedInput
+  profile?: Prisma.UserProfileUpdateOneWithoutUserNestedInput
+  savedRecipes?: Prisma.UserSavedRecipeUpdateManyWithoutUserNestedInput
   subscription?: Prisma.UserSubscriptionUpdateOneWithoutUserNestedInput
-  aiUsageLogs?: Prisma.AiUsageLogUpdateManyWithoutUserNestedInput
-  activatedPrompts?: Prisma.AiSystemPromptUpdateManyWithoutActivatedByUserNestedInput
-  activatedConfigs?: Prisma.AiProviderConfigUpdateManyWithoutActivatedByUserNestedInput
+  weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutRoleInput = {
@@ -3584,31 +3584,31 @@ export type UserUncheckedUpdateWithoutRoleInput = {
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   googleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   googleEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
-  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  profile?: Prisma.UserProfileUncheckedUpdateOneWithoutUserNestedInput
-  preferences?: Prisma.UserPreferenceUncheckedUpdateOneWithoutUserNestedInput
-  refreshTokens?: Prisma.RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  adminLogs?: Prisma.AdminActivityLogUncheckedUpdateManyWithoutAdminNestedInput
+  activatedConfigs?: Prisma.AiProviderConfigUncheckedUpdateManyWithoutActivatedByUserNestedInput
+  activatedPrompts?: Prisma.AiSystemPromptUncheckedUpdateManyWithoutActivatedByUserNestedInput
+  aiUsageLogs?: Prisma.AiUsageLogUncheckedUpdateManyWithoutUserNestedInput
+  chatSessions?: Prisma.ChatSessionUncheckedUpdateManyWithoutUserNestedInput
   fridgeItems?: Prisma.FridgeItemUncheckedUpdateManyWithoutUserNestedInput
   scanLogs?: Prisma.IngredientScanLogUncheckedUpdateManyWithoutUserNestedInput
-  allergies?: Prisma.UserAllergyUncheckedUpdateManyWithoutUserNestedInput
-  weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutUserNestedInput
-  shoppingLists?: Prisma.ShoppingListUncheckedUpdateManyWithoutUserNestedInput
-  chatSessions?: Prisma.ChatSessionUncheckedUpdateManyWithoutUserNestedInput
-  savedRecipes?: Prisma.UserSavedRecipeUncheckedUpdateManyWithoutUserNestedInput
-  authoredRecipes?: Prisma.RecipeUncheckedUpdateManyWithoutAuthorNestedInput
-  adminLogs?: Prisma.AdminActivityLogUncheckedUpdateManyWithoutAdminNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  authoredRecipes?: Prisma.RecipeUncheckedUpdateManyWithoutAuthorNestedInput
+  refreshTokens?: Prisma.RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
+  shoppingLists?: Prisma.ShoppingListUncheckedUpdateManyWithoutUserNestedInput
+  allergies?: Prisma.UserAllergyUncheckedUpdateManyWithoutUserNestedInput
+  preferences?: Prisma.UserPreferenceUncheckedUpdateOneWithoutUserNestedInput
+  profile?: Prisma.UserProfileUncheckedUpdateOneWithoutUserNestedInput
+  savedRecipes?: Prisma.UserSavedRecipeUncheckedUpdateManyWithoutUserNestedInput
   subscription?: Prisma.UserSubscriptionUncheckedUpdateOneWithoutUserNestedInput
-  aiUsageLogs?: Prisma.AiUsageLogUncheckedUpdateManyWithoutUserNestedInput
-  activatedPrompts?: Prisma.AiSystemPromptUncheckedUpdateManyWithoutActivatedByUserNestedInput
-  activatedConfigs?: Prisma.AiProviderConfigUncheckedUpdateManyWithoutActivatedByUserNestedInput
+  weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateManyWithoutRoleInput = {
@@ -3616,14 +3616,14 @@ export type UserUncheckedUpdateManyWithoutRoleInput = {
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   googleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   googleEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
-  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 
@@ -3632,37 +3632,37 @@ export type UserUncheckedUpdateManyWithoutRoleInput = {
  */
 
 export type UserCountOutputType = {
-  refreshTokens: number
+  adminLogs: number
+  activatedConfigs: number
+  activatedPrompts: number
+  aiUsageLogs: number
+  chatSessions: number
   fridgeItems: number
   scanLogs: number
-  allergies: number
-  weeklyPlans: number
-  shoppingLists: number
-  chatSessions: number
-  savedRecipes: number
-  authoredRecipes: number
-  adminLogs: number
   notifications: number
-  aiUsageLogs: number
-  activatedPrompts: number
-  activatedConfigs: number
+  authoredRecipes: number
+  refreshTokens: number
+  shoppingLists: number
+  allergies: number
+  savedRecipes: number
+  weeklyPlans: number
 }
 
 export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  refreshTokens?: boolean | UserCountOutputTypeCountRefreshTokensArgs
+  adminLogs?: boolean | UserCountOutputTypeCountAdminLogsArgs
+  activatedConfigs?: boolean | UserCountOutputTypeCountActivatedConfigsArgs
+  activatedPrompts?: boolean | UserCountOutputTypeCountActivatedPromptsArgs
+  aiUsageLogs?: boolean | UserCountOutputTypeCountAiUsageLogsArgs
+  chatSessions?: boolean | UserCountOutputTypeCountChatSessionsArgs
   fridgeItems?: boolean | UserCountOutputTypeCountFridgeItemsArgs
   scanLogs?: boolean | UserCountOutputTypeCountScanLogsArgs
-  allergies?: boolean | UserCountOutputTypeCountAllergiesArgs
-  weeklyPlans?: boolean | UserCountOutputTypeCountWeeklyPlansArgs
-  shoppingLists?: boolean | UserCountOutputTypeCountShoppingListsArgs
-  chatSessions?: boolean | UserCountOutputTypeCountChatSessionsArgs
-  savedRecipes?: boolean | UserCountOutputTypeCountSavedRecipesArgs
-  authoredRecipes?: boolean | UserCountOutputTypeCountAuthoredRecipesArgs
-  adminLogs?: boolean | UserCountOutputTypeCountAdminLogsArgs
   notifications?: boolean | UserCountOutputTypeCountNotificationsArgs
-  aiUsageLogs?: boolean | UserCountOutputTypeCountAiUsageLogsArgs
-  activatedPrompts?: boolean | UserCountOutputTypeCountActivatedPromptsArgs
-  activatedConfigs?: boolean | UserCountOutputTypeCountActivatedConfigsArgs
+  authoredRecipes?: boolean | UserCountOutputTypeCountAuthoredRecipesArgs
+  refreshTokens?: boolean | UserCountOutputTypeCountRefreshTokensArgs
+  shoppingLists?: boolean | UserCountOutputTypeCountShoppingListsArgs
+  allergies?: boolean | UserCountOutputTypeCountAllergiesArgs
+  savedRecipes?: boolean | UserCountOutputTypeCountSavedRecipesArgs
+  weeklyPlans?: boolean | UserCountOutputTypeCountWeeklyPlansArgs
 }
 
 /**
@@ -3678,8 +3678,36 @@ export type UserCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Extensi
 /**
  * UserCountOutputType without action
  */
-export type UserCountOutputTypeCountRefreshTokensArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.RefreshTokenWhereInput
+export type UserCountOutputTypeCountAdminLogsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.AdminActivityLogWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountActivatedConfigsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.AiProviderConfigWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountActivatedPromptsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.AiSystemPromptWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountAiUsageLogsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.AiUsageLogWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountChatSessionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.ChatSessionWhereInput
 }
 
 /**
@@ -3699,36 +3727,8 @@ export type UserCountOutputTypeCountScanLogsArgs<ExtArgs extends runtime.Types.E
 /**
  * UserCountOutputType without action
  */
-export type UserCountOutputTypeCountAllergiesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.UserAllergyWhereInput
-}
-
-/**
- * UserCountOutputType without action
- */
-export type UserCountOutputTypeCountWeeklyPlansArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.WeeklyPlanWhereInput
-}
-
-/**
- * UserCountOutputType without action
- */
-export type UserCountOutputTypeCountShoppingListsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.ShoppingListWhereInput
-}
-
-/**
- * UserCountOutputType without action
- */
-export type UserCountOutputTypeCountChatSessionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.ChatSessionWhereInput
-}
-
-/**
- * UserCountOutputType without action
- */
-export type UserCountOutputTypeCountSavedRecipesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.UserSavedRecipeWhereInput
+export type UserCountOutputTypeCountNotificationsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.NotificationWhereInput
 }
 
 /**
@@ -3741,36 +3741,36 @@ export type UserCountOutputTypeCountAuthoredRecipesArgs<ExtArgs extends runtime.
 /**
  * UserCountOutputType without action
  */
-export type UserCountOutputTypeCountAdminLogsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.AdminActivityLogWhereInput
+export type UserCountOutputTypeCountRefreshTokensArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.RefreshTokenWhereInput
 }
 
 /**
  * UserCountOutputType without action
  */
-export type UserCountOutputTypeCountNotificationsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.NotificationWhereInput
+export type UserCountOutputTypeCountShoppingListsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.ShoppingListWhereInput
 }
 
 /**
  * UserCountOutputType without action
  */
-export type UserCountOutputTypeCountAiUsageLogsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.AiUsageLogWhereInput
+export type UserCountOutputTypeCountAllergiesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.UserAllergyWhereInput
 }
 
 /**
  * UserCountOutputType without action
  */
-export type UserCountOutputTypeCountActivatedPromptsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.AiSystemPromptWhereInput
+export type UserCountOutputTypeCountSavedRecipesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.UserSavedRecipeWhereInput
 }
 
 /**
  * UserCountOutputType without action
  */
-export type UserCountOutputTypeCountActivatedConfigsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.AiProviderConfigWhereInput
+export type UserCountOutputTypeCountWeeklyPlansArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.WeeklyPlanWhereInput
 }
 
 
@@ -3779,33 +3779,33 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   phone?: boolean
   googleId?: boolean
   googleEmail?: boolean
-  name?: boolean
   authProvider?: boolean
   status?: boolean
   roleId?: boolean
-  isOnboardingCompleted?: boolean
   lastLoginAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   deletedAt?: boolean
-  role?: boolean | Prisma.RoleDefaultArgs<ExtArgs>
-  profile?: boolean | Prisma.User$profileArgs<ExtArgs>
-  preferences?: boolean | Prisma.User$preferencesArgs<ExtArgs>
-  refreshTokens?: boolean | Prisma.User$refreshTokensArgs<ExtArgs>
+  isOnboardingCompleted?: boolean
+  name?: boolean
+  adminLogs?: boolean | Prisma.User$adminLogsArgs<ExtArgs>
+  activatedConfigs?: boolean | Prisma.User$activatedConfigsArgs<ExtArgs>
+  activatedPrompts?: boolean | Prisma.User$activatedPromptsArgs<ExtArgs>
+  aiUsageLogs?: boolean | Prisma.User$aiUsageLogsArgs<ExtArgs>
+  chatSessions?: boolean | Prisma.User$chatSessionsArgs<ExtArgs>
   fridgeItems?: boolean | Prisma.User$fridgeItemsArgs<ExtArgs>
   scanLogs?: boolean | Prisma.User$scanLogsArgs<ExtArgs>
-  allergies?: boolean | Prisma.User$allergiesArgs<ExtArgs>
-  weeklyPlans?: boolean | Prisma.User$weeklyPlansArgs<ExtArgs>
-  shoppingLists?: boolean | Prisma.User$shoppingListsArgs<ExtArgs>
-  chatSessions?: boolean | Prisma.User$chatSessionsArgs<ExtArgs>
-  savedRecipes?: boolean | Prisma.User$savedRecipesArgs<ExtArgs>
-  authoredRecipes?: boolean | Prisma.User$authoredRecipesArgs<ExtArgs>
-  adminLogs?: boolean | Prisma.User$adminLogsArgs<ExtArgs>
   notifications?: boolean | Prisma.User$notificationsArgs<ExtArgs>
+  authoredRecipes?: boolean | Prisma.User$authoredRecipesArgs<ExtArgs>
+  refreshTokens?: boolean | Prisma.User$refreshTokensArgs<ExtArgs>
+  shoppingLists?: boolean | Prisma.User$shoppingListsArgs<ExtArgs>
+  allergies?: boolean | Prisma.User$allergiesArgs<ExtArgs>
+  preferences?: boolean | Prisma.User$preferencesArgs<ExtArgs>
+  profile?: boolean | Prisma.User$profileArgs<ExtArgs>
+  savedRecipes?: boolean | Prisma.User$savedRecipesArgs<ExtArgs>
   subscription?: boolean | Prisma.User$subscriptionArgs<ExtArgs>
-  aiUsageLogs?: boolean | Prisma.User$aiUsageLogsArgs<ExtArgs>
-  activatedPrompts?: boolean | Prisma.User$activatedPromptsArgs<ExtArgs>
-  activatedConfigs?: boolean | Prisma.User$activatedConfigsArgs<ExtArgs>
+  role?: boolean | Prisma.RoleDefaultArgs<ExtArgs>
+  weeklyPlans?: boolean | Prisma.User$weeklyPlansArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["user"]>
 
@@ -3816,76 +3816,76 @@ export type UserSelectScalar = {
   phone?: boolean
   googleId?: boolean
   googleEmail?: boolean
-  name?: boolean
   authProvider?: boolean
   status?: boolean
   roleId?: boolean
-  isOnboardingCompleted?: boolean
   lastLoginAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   deletedAt?: boolean
+  isOnboardingCompleted?: boolean
+  name?: boolean
 }
 
-export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "phone" | "googleId" | "googleEmail" | "name" | "authProvider" | "status" | "roleId" | "isOnboardingCompleted" | "lastLoginAt" | "createdAt" | "updatedAt" | "deletedAt", ExtArgs["result"]["user"]>
+export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "phone" | "googleId" | "googleEmail" | "authProvider" | "status" | "roleId" | "lastLoginAt" | "createdAt" | "updatedAt" | "deletedAt" | "isOnboardingCompleted" | "name", ExtArgs["result"]["user"]>
 export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  role?: boolean | Prisma.RoleDefaultArgs<ExtArgs>
-  profile?: boolean | Prisma.User$profileArgs<ExtArgs>
-  preferences?: boolean | Prisma.User$preferencesArgs<ExtArgs>
-  refreshTokens?: boolean | Prisma.User$refreshTokensArgs<ExtArgs>
+  adminLogs?: boolean | Prisma.User$adminLogsArgs<ExtArgs>
+  activatedConfigs?: boolean | Prisma.User$activatedConfigsArgs<ExtArgs>
+  activatedPrompts?: boolean | Prisma.User$activatedPromptsArgs<ExtArgs>
+  aiUsageLogs?: boolean | Prisma.User$aiUsageLogsArgs<ExtArgs>
+  chatSessions?: boolean | Prisma.User$chatSessionsArgs<ExtArgs>
   fridgeItems?: boolean | Prisma.User$fridgeItemsArgs<ExtArgs>
   scanLogs?: boolean | Prisma.User$scanLogsArgs<ExtArgs>
-  allergies?: boolean | Prisma.User$allergiesArgs<ExtArgs>
-  weeklyPlans?: boolean | Prisma.User$weeklyPlansArgs<ExtArgs>
-  shoppingLists?: boolean | Prisma.User$shoppingListsArgs<ExtArgs>
-  chatSessions?: boolean | Prisma.User$chatSessionsArgs<ExtArgs>
-  savedRecipes?: boolean | Prisma.User$savedRecipesArgs<ExtArgs>
-  authoredRecipes?: boolean | Prisma.User$authoredRecipesArgs<ExtArgs>
-  adminLogs?: boolean | Prisma.User$adminLogsArgs<ExtArgs>
   notifications?: boolean | Prisma.User$notificationsArgs<ExtArgs>
+  authoredRecipes?: boolean | Prisma.User$authoredRecipesArgs<ExtArgs>
+  refreshTokens?: boolean | Prisma.User$refreshTokensArgs<ExtArgs>
+  shoppingLists?: boolean | Prisma.User$shoppingListsArgs<ExtArgs>
+  allergies?: boolean | Prisma.User$allergiesArgs<ExtArgs>
+  preferences?: boolean | Prisma.User$preferencesArgs<ExtArgs>
+  profile?: boolean | Prisma.User$profileArgs<ExtArgs>
+  savedRecipes?: boolean | Prisma.User$savedRecipesArgs<ExtArgs>
   subscription?: boolean | Prisma.User$subscriptionArgs<ExtArgs>
-  aiUsageLogs?: boolean | Prisma.User$aiUsageLogsArgs<ExtArgs>
-  activatedPrompts?: boolean | Prisma.User$activatedPromptsArgs<ExtArgs>
-  activatedConfigs?: boolean | Prisma.User$activatedConfigsArgs<ExtArgs>
+  role?: boolean | Prisma.RoleDefaultArgs<ExtArgs>
+  weeklyPlans?: boolean | Prisma.User$weeklyPlansArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }
 
 export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "User"
   objects: {
-    role: Prisma.$RolePayload<ExtArgs>
-    profile: Prisma.$UserProfilePayload<ExtArgs> | null
-    preferences: Prisma.$UserPreferencePayload<ExtArgs> | null
-    refreshTokens: Prisma.$RefreshTokenPayload<ExtArgs>[]
+    adminLogs: Prisma.$AdminActivityLogPayload<ExtArgs>[]
+    activatedConfigs: Prisma.$AiProviderConfigPayload<ExtArgs>[]
+    activatedPrompts: Prisma.$AiSystemPromptPayload<ExtArgs>[]
+    aiUsageLogs: Prisma.$AiUsageLogPayload<ExtArgs>[]
+    chatSessions: Prisma.$ChatSessionPayload<ExtArgs>[]
     fridgeItems: Prisma.$FridgeItemPayload<ExtArgs>[]
     scanLogs: Prisma.$IngredientScanLogPayload<ExtArgs>[]
-    allergies: Prisma.$UserAllergyPayload<ExtArgs>[]
-    weeklyPlans: Prisma.$WeeklyPlanPayload<ExtArgs>[]
-    shoppingLists: Prisma.$ShoppingListPayload<ExtArgs>[]
-    chatSessions: Prisma.$ChatSessionPayload<ExtArgs>[]
-    savedRecipes: Prisma.$UserSavedRecipePayload<ExtArgs>[]
-    authoredRecipes: Prisma.$RecipePayload<ExtArgs>[]
-    adminLogs: Prisma.$AdminActivityLogPayload<ExtArgs>[]
     notifications: Prisma.$NotificationPayload<ExtArgs>[]
+    authoredRecipes: Prisma.$RecipePayload<ExtArgs>[]
+    refreshTokens: Prisma.$RefreshTokenPayload<ExtArgs>[]
+    shoppingLists: Prisma.$ShoppingListPayload<ExtArgs>[]
+    allergies: Prisma.$UserAllergyPayload<ExtArgs>[]
+    preferences: Prisma.$UserPreferencePayload<ExtArgs> | null
+    profile: Prisma.$UserProfilePayload<ExtArgs> | null
+    savedRecipes: Prisma.$UserSavedRecipePayload<ExtArgs>[]
     subscription: Prisma.$UserSubscriptionPayload<ExtArgs> | null
-    aiUsageLogs: Prisma.$AiUsageLogPayload<ExtArgs>[]
-    activatedPrompts: Prisma.$AiSystemPromptPayload<ExtArgs>[]
-    activatedConfigs: Prisma.$AiProviderConfigPayload<ExtArgs>[]
+    role: Prisma.$RolePayload<ExtArgs>
+    weeklyPlans: Prisma.$WeeklyPlanPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
     phone: string | null
     googleId: string | null
     googleEmail: string | null
-    name: string | null
     authProvider: $Enums.AuthProvider
     status: $Enums.UserStatus
     roleId: number
-    isOnboardingCompleted: boolean
     lastLoginAt: Date | null
     createdAt: Date
     updatedAt: Date
     deletedAt: Date | null
+    isOnboardingCompleted: boolean
+    name: string | null
   }, ExtArgs["result"]["user"]>
   composites: {}
 }
@@ -4226,24 +4226,24 @@ readonly fields: UserFieldRefs;
  */
 export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
-  role<T extends Prisma.RoleDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.RoleDefaultArgs<ExtArgs>>): Prisma.Prisma__RoleClient<runtime.Types.Result.GetResult<Prisma.$RolePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
-  profile<T extends Prisma.User$profileArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$profileArgs<ExtArgs>>): Prisma.Prisma__UserProfileClient<runtime.Types.Result.GetResult<Prisma.$UserProfilePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
-  preferences<T extends Prisma.User$preferencesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$preferencesArgs<ExtArgs>>): Prisma.Prisma__UserPreferenceClient<runtime.Types.Result.GetResult<Prisma.$UserPreferencePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
-  refreshTokens<T extends Prisma.User$refreshTokensArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$refreshTokensArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$RefreshTokenPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  adminLogs<T extends Prisma.User$adminLogsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$adminLogsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AdminActivityLogPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  activatedConfigs<T extends Prisma.User$activatedConfigsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$activatedConfigsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AiProviderConfigPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  activatedPrompts<T extends Prisma.User$activatedPromptsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$activatedPromptsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AiSystemPromptPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  aiUsageLogs<T extends Prisma.User$aiUsageLogsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$aiUsageLogsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AiUsageLogPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  chatSessions<T extends Prisma.User$chatSessionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$chatSessionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ChatSessionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   fridgeItems<T extends Prisma.User$fridgeItemsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$fridgeItemsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$FridgeItemPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   scanLogs<T extends Prisma.User$scanLogsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$scanLogsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$IngredientScanLogPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  allergies<T extends Prisma.User$allergiesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$allergiesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$UserAllergyPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  weeklyPlans<T extends Prisma.User$weeklyPlansArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$weeklyPlansArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$WeeklyPlanPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  shoppingLists<T extends Prisma.User$shoppingListsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$shoppingListsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ShoppingListPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  chatSessions<T extends Prisma.User$chatSessionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$chatSessionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ChatSessionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  savedRecipes<T extends Prisma.User$savedRecipesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$savedRecipesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$UserSavedRecipePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  authoredRecipes<T extends Prisma.User$authoredRecipesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$authoredRecipesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$RecipePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  adminLogs<T extends Prisma.User$adminLogsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$adminLogsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AdminActivityLogPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   notifications<T extends Prisma.User$notificationsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$notificationsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$NotificationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  authoredRecipes<T extends Prisma.User$authoredRecipesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$authoredRecipesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$RecipePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  refreshTokens<T extends Prisma.User$refreshTokensArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$refreshTokensArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$RefreshTokenPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  shoppingLists<T extends Prisma.User$shoppingListsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$shoppingListsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ShoppingListPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  allergies<T extends Prisma.User$allergiesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$allergiesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$UserAllergyPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  preferences<T extends Prisma.User$preferencesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$preferencesArgs<ExtArgs>>): Prisma.Prisma__UserPreferenceClient<runtime.Types.Result.GetResult<Prisma.$UserPreferencePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  profile<T extends Prisma.User$profileArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$profileArgs<ExtArgs>>): Prisma.Prisma__UserProfileClient<runtime.Types.Result.GetResult<Prisma.$UserProfilePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  savedRecipes<T extends Prisma.User$savedRecipesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$savedRecipesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$UserSavedRecipePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   subscription<T extends Prisma.User$subscriptionArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$subscriptionArgs<ExtArgs>>): Prisma.Prisma__UserSubscriptionClient<runtime.Types.Result.GetResult<Prisma.$UserSubscriptionPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
-  aiUsageLogs<T extends Prisma.User$aiUsageLogsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$aiUsageLogsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AiUsageLogPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  activatedPrompts<T extends Prisma.User$activatedPromptsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$activatedPromptsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AiSystemPromptPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  activatedConfigs<T extends Prisma.User$activatedConfigsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$activatedConfigsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AiProviderConfigPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  role<T extends Prisma.RoleDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.RoleDefaultArgs<ExtArgs>>): Prisma.Prisma__RoleClient<runtime.Types.Result.GetResult<Prisma.$RolePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  weeklyPlans<T extends Prisma.User$weeklyPlansArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$weeklyPlansArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$WeeklyPlanPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -4277,15 +4277,15 @@ export interface UserFieldRefs {
   readonly phone: Prisma.FieldRef<"User", 'String'>
   readonly googleId: Prisma.FieldRef<"User", 'String'>
   readonly googleEmail: Prisma.FieldRef<"User", 'String'>
-  readonly name: Prisma.FieldRef<"User", 'String'>
   readonly authProvider: Prisma.FieldRef<"User", 'AuthProvider'>
   readonly status: Prisma.FieldRef<"User", 'UserStatus'>
   readonly roleId: Prisma.FieldRef<"User", 'Int'>
-  readonly isOnboardingCompleted: Prisma.FieldRef<"User", 'Boolean'>
   readonly lastLoginAt: Prisma.FieldRef<"User", 'DateTime'>
   readonly createdAt: Prisma.FieldRef<"User", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"User", 'DateTime'>
   readonly deletedAt: Prisma.FieldRef<"User", 'DateTime'>
+  readonly isOnboardingCompleted: Prisma.FieldRef<"User", 'Boolean'>
+  readonly name: Prisma.FieldRef<"User", 'String'>
 }
     
 
@@ -4634,65 +4634,123 @@ export type UserDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.Internal
 }
 
 /**
- * User.profile
+ * User.adminLogs
  */
-export type User$profileArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type User$adminLogsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the UserProfile
+   * Select specific fields to fetch from the AdminActivityLog
    */
-  select?: Prisma.UserProfileSelect<ExtArgs> | null
+  select?: Prisma.AdminActivityLogSelect<ExtArgs> | null
   /**
-   * Omit specific fields from the UserProfile
+   * Omit specific fields from the AdminActivityLog
    */
-  omit?: Prisma.UserProfileOmit<ExtArgs> | null
+  omit?: Prisma.AdminActivityLogOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.UserProfileInclude<ExtArgs> | null
-  where?: Prisma.UserProfileWhereInput
-}
-
-/**
- * User.preferences
- */
-export type User$preferencesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the UserPreference
-   */
-  select?: Prisma.UserPreferenceSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the UserPreference
-   */
-  omit?: Prisma.UserPreferenceOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.UserPreferenceInclude<ExtArgs> | null
-  where?: Prisma.UserPreferenceWhereInput
-}
-
-/**
- * User.refreshTokens
- */
-export type User$refreshTokensArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the RefreshToken
-   */
-  select?: Prisma.RefreshTokenSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the RefreshToken
-   */
-  omit?: Prisma.RefreshTokenOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.RefreshTokenInclude<ExtArgs> | null
-  where?: Prisma.RefreshTokenWhereInput
-  orderBy?: Prisma.RefreshTokenOrderByWithRelationInput | Prisma.RefreshTokenOrderByWithRelationInput[]
-  cursor?: Prisma.RefreshTokenWhereUniqueInput
+  include?: Prisma.AdminActivityLogInclude<ExtArgs> | null
+  where?: Prisma.AdminActivityLogWhereInput
+  orderBy?: Prisma.AdminActivityLogOrderByWithRelationInput | Prisma.AdminActivityLogOrderByWithRelationInput[]
+  cursor?: Prisma.AdminActivityLogWhereUniqueInput
   take?: number
   skip?: number
-  distinct?: Prisma.RefreshTokenScalarFieldEnum | Prisma.RefreshTokenScalarFieldEnum[]
+  distinct?: Prisma.AdminActivityLogScalarFieldEnum | Prisma.AdminActivityLogScalarFieldEnum[]
+}
+
+/**
+ * User.activatedConfigs
+ */
+export type User$activatedConfigsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the AiProviderConfig
+   */
+  select?: Prisma.AiProviderConfigSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the AiProviderConfig
+   */
+  omit?: Prisma.AiProviderConfigOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.AiProviderConfigInclude<ExtArgs> | null
+  where?: Prisma.AiProviderConfigWhereInput
+  orderBy?: Prisma.AiProviderConfigOrderByWithRelationInput | Prisma.AiProviderConfigOrderByWithRelationInput[]
+  cursor?: Prisma.AiProviderConfigWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.AiProviderConfigScalarFieldEnum | Prisma.AiProviderConfigScalarFieldEnum[]
+}
+
+/**
+ * User.activatedPrompts
+ */
+export type User$activatedPromptsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the AiSystemPrompt
+   */
+  select?: Prisma.AiSystemPromptSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the AiSystemPrompt
+   */
+  omit?: Prisma.AiSystemPromptOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.AiSystemPromptInclude<ExtArgs> | null
+  where?: Prisma.AiSystemPromptWhereInput
+  orderBy?: Prisma.AiSystemPromptOrderByWithRelationInput | Prisma.AiSystemPromptOrderByWithRelationInput[]
+  cursor?: Prisma.AiSystemPromptWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.AiSystemPromptScalarFieldEnum | Prisma.AiSystemPromptScalarFieldEnum[]
+}
+
+/**
+ * User.aiUsageLogs
+ */
+export type User$aiUsageLogsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the AiUsageLog
+   */
+  select?: Prisma.AiUsageLogSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the AiUsageLog
+   */
+  omit?: Prisma.AiUsageLogOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.AiUsageLogInclude<ExtArgs> | null
+  where?: Prisma.AiUsageLogWhereInput
+  orderBy?: Prisma.AiUsageLogOrderByWithRelationInput | Prisma.AiUsageLogOrderByWithRelationInput[]
+  cursor?: Prisma.AiUsageLogWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.AiUsageLogScalarFieldEnum | Prisma.AiUsageLogScalarFieldEnum[]
+}
+
+/**
+ * User.chatSessions
+ */
+export type User$chatSessionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ChatSession
+   */
+  select?: Prisma.ChatSessionSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the ChatSession
+   */
+  omit?: Prisma.ChatSessionOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ChatSessionInclude<ExtArgs> | null
+  where?: Prisma.ChatSessionWhereInput
+  orderBy?: Prisma.ChatSessionOrderByWithRelationInput | Prisma.ChatSessionOrderByWithRelationInput[]
+  cursor?: Prisma.ChatSessionWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.ChatSessionScalarFieldEnum | Prisma.ChatSessionScalarFieldEnum[]
 }
 
 /**
@@ -4744,123 +4802,27 @@ export type User$scanLogsArgs<ExtArgs extends runtime.Types.Extensions.InternalA
 }
 
 /**
- * User.allergies
+ * User.notifications
  */
-export type User$allergiesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type User$notificationsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the UserAllergy
+   * Select specific fields to fetch from the Notification
    */
-  select?: Prisma.UserAllergySelect<ExtArgs> | null
+  select?: Prisma.NotificationSelect<ExtArgs> | null
   /**
-   * Omit specific fields from the UserAllergy
+   * Omit specific fields from the Notification
    */
-  omit?: Prisma.UserAllergyOmit<ExtArgs> | null
+  omit?: Prisma.NotificationOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.UserAllergyInclude<ExtArgs> | null
-  where?: Prisma.UserAllergyWhereInput
-  orderBy?: Prisma.UserAllergyOrderByWithRelationInput | Prisma.UserAllergyOrderByWithRelationInput[]
-  cursor?: Prisma.UserAllergyWhereUniqueInput
+  include?: Prisma.NotificationInclude<ExtArgs> | null
+  where?: Prisma.NotificationWhereInput
+  orderBy?: Prisma.NotificationOrderByWithRelationInput | Prisma.NotificationOrderByWithRelationInput[]
+  cursor?: Prisma.NotificationWhereUniqueInput
   take?: number
   skip?: number
-  distinct?: Prisma.UserAllergyScalarFieldEnum | Prisma.UserAllergyScalarFieldEnum[]
-}
-
-/**
- * User.weeklyPlans
- */
-export type User$weeklyPlansArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the WeeklyPlan
-   */
-  select?: Prisma.WeeklyPlanSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the WeeklyPlan
-   */
-  omit?: Prisma.WeeklyPlanOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.WeeklyPlanInclude<ExtArgs> | null
-  where?: Prisma.WeeklyPlanWhereInput
-  orderBy?: Prisma.WeeklyPlanOrderByWithRelationInput | Prisma.WeeklyPlanOrderByWithRelationInput[]
-  cursor?: Prisma.WeeklyPlanWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.WeeklyPlanScalarFieldEnum | Prisma.WeeklyPlanScalarFieldEnum[]
-}
-
-/**
- * User.shoppingLists
- */
-export type User$shoppingListsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the ShoppingList
-   */
-  select?: Prisma.ShoppingListSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the ShoppingList
-   */
-  omit?: Prisma.ShoppingListOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.ShoppingListInclude<ExtArgs> | null
-  where?: Prisma.ShoppingListWhereInput
-  orderBy?: Prisma.ShoppingListOrderByWithRelationInput | Prisma.ShoppingListOrderByWithRelationInput[]
-  cursor?: Prisma.ShoppingListWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.ShoppingListScalarFieldEnum | Prisma.ShoppingListScalarFieldEnum[]
-}
-
-/**
- * User.chatSessions
- */
-export type User$chatSessionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the ChatSession
-   */
-  select?: Prisma.ChatSessionSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the ChatSession
-   */
-  omit?: Prisma.ChatSessionOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.ChatSessionInclude<ExtArgs> | null
-  where?: Prisma.ChatSessionWhereInput
-  orderBy?: Prisma.ChatSessionOrderByWithRelationInput | Prisma.ChatSessionOrderByWithRelationInput[]
-  cursor?: Prisma.ChatSessionWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.ChatSessionScalarFieldEnum | Prisma.ChatSessionScalarFieldEnum[]
-}
-
-/**
- * User.savedRecipes
- */
-export type User$savedRecipesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the UserSavedRecipe
-   */
-  select?: Prisma.UserSavedRecipeSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the UserSavedRecipe
-   */
-  omit?: Prisma.UserSavedRecipeOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.UserSavedRecipeInclude<ExtArgs> | null
-  where?: Prisma.UserSavedRecipeWhereInput
-  orderBy?: Prisma.UserSavedRecipeOrderByWithRelationInput | Prisma.UserSavedRecipeOrderByWithRelationInput[]
-  cursor?: Prisma.UserSavedRecipeWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.UserSavedRecipeScalarFieldEnum | Prisma.UserSavedRecipeScalarFieldEnum[]
+  distinct?: Prisma.NotificationScalarFieldEnum | Prisma.NotificationScalarFieldEnum[]
 }
 
 /**
@@ -4888,51 +4850,137 @@ export type User$authoredRecipesArgs<ExtArgs extends runtime.Types.Extensions.In
 }
 
 /**
- * User.adminLogs
+ * User.refreshTokens
  */
-export type User$adminLogsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type User$refreshTokensArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the AdminActivityLog
+   * Select specific fields to fetch from the RefreshToken
    */
-  select?: Prisma.AdminActivityLogSelect<ExtArgs> | null
+  select?: Prisma.RefreshTokenSelect<ExtArgs> | null
   /**
-   * Omit specific fields from the AdminActivityLog
+   * Omit specific fields from the RefreshToken
    */
-  omit?: Prisma.AdminActivityLogOmit<ExtArgs> | null
+  omit?: Prisma.RefreshTokenOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.AdminActivityLogInclude<ExtArgs> | null
-  where?: Prisma.AdminActivityLogWhereInput
-  orderBy?: Prisma.AdminActivityLogOrderByWithRelationInput | Prisma.AdminActivityLogOrderByWithRelationInput[]
-  cursor?: Prisma.AdminActivityLogWhereUniqueInput
+  include?: Prisma.RefreshTokenInclude<ExtArgs> | null
+  where?: Prisma.RefreshTokenWhereInput
+  orderBy?: Prisma.RefreshTokenOrderByWithRelationInput | Prisma.RefreshTokenOrderByWithRelationInput[]
+  cursor?: Prisma.RefreshTokenWhereUniqueInput
   take?: number
   skip?: number
-  distinct?: Prisma.AdminActivityLogScalarFieldEnum | Prisma.AdminActivityLogScalarFieldEnum[]
+  distinct?: Prisma.RefreshTokenScalarFieldEnum | Prisma.RefreshTokenScalarFieldEnum[]
 }
 
 /**
- * User.notifications
+ * User.shoppingLists
  */
-export type User$notificationsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type User$shoppingListsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the Notification
+   * Select specific fields to fetch from the ShoppingList
    */
-  select?: Prisma.NotificationSelect<ExtArgs> | null
+  select?: Prisma.ShoppingListSelect<ExtArgs> | null
   /**
-   * Omit specific fields from the Notification
+   * Omit specific fields from the ShoppingList
    */
-  omit?: Prisma.NotificationOmit<ExtArgs> | null
+  omit?: Prisma.ShoppingListOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.NotificationInclude<ExtArgs> | null
-  where?: Prisma.NotificationWhereInput
-  orderBy?: Prisma.NotificationOrderByWithRelationInput | Prisma.NotificationOrderByWithRelationInput[]
-  cursor?: Prisma.NotificationWhereUniqueInput
+  include?: Prisma.ShoppingListInclude<ExtArgs> | null
+  where?: Prisma.ShoppingListWhereInput
+  orderBy?: Prisma.ShoppingListOrderByWithRelationInput | Prisma.ShoppingListOrderByWithRelationInput[]
+  cursor?: Prisma.ShoppingListWhereUniqueInput
   take?: number
   skip?: number
-  distinct?: Prisma.NotificationScalarFieldEnum | Prisma.NotificationScalarFieldEnum[]
+  distinct?: Prisma.ShoppingListScalarFieldEnum | Prisma.ShoppingListScalarFieldEnum[]
+}
+
+/**
+ * User.allergies
+ */
+export type User$allergiesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the UserAllergy
+   */
+  select?: Prisma.UserAllergySelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the UserAllergy
+   */
+  omit?: Prisma.UserAllergyOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.UserAllergyInclude<ExtArgs> | null
+  where?: Prisma.UserAllergyWhereInput
+  orderBy?: Prisma.UserAllergyOrderByWithRelationInput | Prisma.UserAllergyOrderByWithRelationInput[]
+  cursor?: Prisma.UserAllergyWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.UserAllergyScalarFieldEnum | Prisma.UserAllergyScalarFieldEnum[]
+}
+
+/**
+ * User.preferences
+ */
+export type User$preferencesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the UserPreference
+   */
+  select?: Prisma.UserPreferenceSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the UserPreference
+   */
+  omit?: Prisma.UserPreferenceOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.UserPreferenceInclude<ExtArgs> | null
+  where?: Prisma.UserPreferenceWhereInput
+}
+
+/**
+ * User.profile
+ */
+export type User$profileArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the UserProfile
+   */
+  select?: Prisma.UserProfileSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the UserProfile
+   */
+  omit?: Prisma.UserProfileOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.UserProfileInclude<ExtArgs> | null
+  where?: Prisma.UserProfileWhereInput
+}
+
+/**
+ * User.savedRecipes
+ */
+export type User$savedRecipesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the UserSavedRecipe
+   */
+  select?: Prisma.UserSavedRecipeSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the UserSavedRecipe
+   */
+  omit?: Prisma.UserSavedRecipeOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.UserSavedRecipeInclude<ExtArgs> | null
+  where?: Prisma.UserSavedRecipeWhereInput
+  orderBy?: Prisma.UserSavedRecipeOrderByWithRelationInput | Prisma.UserSavedRecipeOrderByWithRelationInput[]
+  cursor?: Prisma.UserSavedRecipeWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.UserSavedRecipeScalarFieldEnum | Prisma.UserSavedRecipeScalarFieldEnum[]
 }
 
 /**
@@ -4955,75 +5003,27 @@ export type User$subscriptionArgs<ExtArgs extends runtime.Types.Extensions.Inter
 }
 
 /**
- * User.aiUsageLogs
+ * User.weeklyPlans
  */
-export type User$aiUsageLogsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type User$weeklyPlansArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the AiUsageLog
+   * Select specific fields to fetch from the WeeklyPlan
    */
-  select?: Prisma.AiUsageLogSelect<ExtArgs> | null
+  select?: Prisma.WeeklyPlanSelect<ExtArgs> | null
   /**
-   * Omit specific fields from the AiUsageLog
+   * Omit specific fields from the WeeklyPlan
    */
-  omit?: Prisma.AiUsageLogOmit<ExtArgs> | null
+  omit?: Prisma.WeeklyPlanOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.AiUsageLogInclude<ExtArgs> | null
-  where?: Prisma.AiUsageLogWhereInput
-  orderBy?: Prisma.AiUsageLogOrderByWithRelationInput | Prisma.AiUsageLogOrderByWithRelationInput[]
-  cursor?: Prisma.AiUsageLogWhereUniqueInput
+  include?: Prisma.WeeklyPlanInclude<ExtArgs> | null
+  where?: Prisma.WeeklyPlanWhereInput
+  orderBy?: Prisma.WeeklyPlanOrderByWithRelationInput | Prisma.WeeklyPlanOrderByWithRelationInput[]
+  cursor?: Prisma.WeeklyPlanWhereUniqueInput
   take?: number
   skip?: number
-  distinct?: Prisma.AiUsageLogScalarFieldEnum | Prisma.AiUsageLogScalarFieldEnum[]
-}
-
-/**
- * User.activatedPrompts
- */
-export type User$activatedPromptsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the AiSystemPrompt
-   */
-  select?: Prisma.AiSystemPromptSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the AiSystemPrompt
-   */
-  omit?: Prisma.AiSystemPromptOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.AiSystemPromptInclude<ExtArgs> | null
-  where?: Prisma.AiSystemPromptWhereInput
-  orderBy?: Prisma.AiSystemPromptOrderByWithRelationInput | Prisma.AiSystemPromptOrderByWithRelationInput[]
-  cursor?: Prisma.AiSystemPromptWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.AiSystemPromptScalarFieldEnum | Prisma.AiSystemPromptScalarFieldEnum[]
-}
-
-/**
- * User.activatedConfigs
- */
-export type User$activatedConfigsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the AiProviderConfig
-   */
-  select?: Prisma.AiProviderConfigSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the AiProviderConfig
-   */
-  omit?: Prisma.AiProviderConfigOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.AiProviderConfigInclude<ExtArgs> | null
-  where?: Prisma.AiProviderConfigWhereInput
-  orderBy?: Prisma.AiProviderConfigOrderByWithRelationInput | Prisma.AiProviderConfigOrderByWithRelationInput[]
-  cursor?: Prisma.AiProviderConfigWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.AiProviderConfigScalarFieldEnum | Prisma.AiProviderConfigScalarFieldEnum[]
+  distinct?: Prisma.WeeklyPlanScalarFieldEnum | Prisma.WeeklyPlanScalarFieldEnum[]
 }
 
 /**
