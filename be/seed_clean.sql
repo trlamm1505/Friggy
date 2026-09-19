@@ -8,14 +8,14 @@ SET FOREIGN_KEY_CHECKS = 0;
 -- ----------------------------------------------------------------
 -- roles
 -- ----------------------------------------------------------------
-INSERT INTO `roles` (`id`, `name`, `description`, `createdAt`, `deletedAt`) VALUES
+INSERT IGNORE INTO `roles` (`id`, `name`, `description`, `createdAt`, `deletedAt`) VALUES
   (1, 'admin', 'Ban quản trị hệ thống — toàn quyền truy cập Admin Dashboard', '2026-09-09 15:50:45', NULL),
   (2, 'user',  'Người dùng cuối — sử dụng ứng dụng quản lý tủ lạnh',          '2026-09-09 15:50:45', NULL);
 
 -- ----------------------------------------------------------------
 -- subscription_plans
 -- ----------------------------------------------------------------
-INSERT INTO `subscription_plans` (`id`, `name`, `displayName`, `priceVnd`, `billingCycle`, `features`, `aiUsagePerWeek`, `isActive`, `createdAt`, `deletedAt`) VALUES
+INSERT IGNORE INTO `subscription_plans` (`id`, `name`, `displayName`, `priceVnd`, `billingCycle`, `features`, `aiUsagePerWeek`, `isActive`, `createdAt`, `deletedAt`) VALUES
   (1, 'free',       'Gói Miễn Phí',   0,      'forever', '["Quản lý tủ lạnh", "Gợi ý công thức cơ bản"]',                      2,  1, '2026-09-14 17:40:16', NULL),
   (2, 'individual', 'Gói Cá Nhân',   79000,   'monthly', '["AI không giới hạn", "Lập thực đơn tuần", "Scan ảnh"]',            -1,  1, '2026-09-14 17:40:16', NULL),
   (3, 'family',     'Gói Gia Đình',  149000,  'monthly', '["Tất cả tính năng Individual", "Tối đa 5 thành viên"]',            -1,  1, '2026-09-14 17:40:16', NULL);
@@ -23,33 +23,33 @@ INSERT INTO `subscription_plans` (`id`, `name`, `displayName`, `priceVnd`, `bill
 -- ----------------------------------------------------------------
 -- users (2 accounts)
 -- ----------------------------------------------------------------
-INSERT INTO `users` (`id`, `phone`, `googleId`, `googleEmail`, `authProvider`, `status`, `roleId`, `lastLoginAt`, `createdAt`, `updatedAt`, `deletedAt`, `isOnboardingCompleted`, `name`) VALUES
+INSERT IGNORE INTO `users` (`id`, `phone`, `googleId`, `googleEmail`, `authProvider`, `status`, `roleId`, `lastLoginAt`, `createdAt`, `updatedAt`, `deletedAt`, `isOnboardingCompleted`, `name`) VALUES
   ('a27cd6d0-197b-48e1-a203-680449cf0c43', NULL, '107246848946008598823', 'mdtrong1305@gmail.com',        'google', 'active', 1, '2026-09-14 08:16:02', '2026-09-10 16:55:34', '2026-09-14 08:16:02', NULL, 0, 'Mai Đức Trọng'),
   ('dc0c12a5-7dd6-4041-bb3b-5942d4dbcf3f', NULL, '103968261881483353844', 'trongmdse182148@fpt.edu.vn',  'google', 'active', 2, '2026-09-14 17:48:42', '2026-09-14 15:32:44', '2026-09-14 17:48:42', NULL, 0, 'MAI DUC TRONG (K18 HCM)');
 
 -- ----------------------------------------------------------------
 -- user_profiles
 -- ----------------------------------------------------------------
-INSERT INTO `user_profiles` (`id`, `userId`, `displayName`, `avatarPath`, `gender`, `dateOfBirth`, `height`, `createdAt`, `deletedAt`) VALUES
-  ('0941813a-c82f-421f-856e-6f737849356b', 'a27cd6d0-197b-48e1-a203-680449cf0c43', 'Mai Đức Trọng',          NULL, NULL, NULL, NULL, '2026-09-10 17:17:56', NULL),
-  ('0302e7db-f01d-4922-b7f4-da8d67e19134', 'dc0c12a5-7dd6-4041-bb3b-5942d4dbcf3f', 'MAI DUC TRONG (K18 HCM)', NULL, NULL, NULL, NULL, '2026-09-14 15:32:44', NULL);
+INSERT IGNORE INTO `user_profiles` (`id`, `userId`, `displayName`, `avatarPath`, `gender`, `dateOfBirth`, `updatedAt`, `deletedAt`) VALUES
+  ('0941813a-c82f-421f-856e-6f737849356b', 'a27cd6d0-197b-48e1-a203-680449cf0c43', 'Mai Đức Trọng',          NULL, NULL, NULL, '2026-09-10 17:17:56', NULL),
+  ('0302e7db-f01d-4922-b7f4-da8d67e19134', 'dc0c12a5-7dd6-4041-bb3b-5942d4dbcf3f', 'MAI DUC TRONG (K18 HCM)', NULL, NULL, NULL, '2026-09-14 15:32:44', NULL);
 
 -- ----------------------------------------------------------------
 -- user_subscriptions
 -- ----------------------------------------------------------------
-INSERT INTO `user_subscriptions` (`id`, `userId`, `planId`, `startDate`, `endDate`, `status`, `paymentMethod`, `createdAt`, `updatedAt`, `deletedAt`) VALUES
+INSERT IGNORE INTO `user_subscriptions` (`id`, `userId`, `planId`, `startDate`, `endDate`, `status`, `paymentRef`, `createdAt`, `updatedAt`, `deletedAt`) VALUES
   ('58b417b3-b063-11f1-8f91-4a1fa1f06f0c', 'dc0c12a5-7dd6-4041-bb3b-5942d4dbcf3f', 2, '2026-09-14', '2027-09-14', 'active', NULL, '2026-09-14 17:40:16', '2026-09-14 17:40:16', NULL);
 
 -- ----------------------------------------------------------------
 -- user_preferences
 -- ----------------------------------------------------------------
-INSERT INTO `user_preferences` (`id`, `userId`, `weeklyBudget`, `dailyCalorieTarget`, `dietaryStyle`, `householdSize`, `maxCookingTime`, `skillLevel`, `mealsPerDay`, `aiPersonality`, `createdAt`, `deletedAt`, `activityLevel`, `mealFrequency`, `allergiesNote`, `primaryGoal`, `weightKg`, `breakfastEnabled`, `lunchEnabled`, `dinnerEnabled`) VALUES
-  ('382f9212-b052-11f1-8f91-4a1fa1f06f0c', 'dc0c12a5-7dd6-4041-bb3b-5942d4dbcf3f', 500000, 2000, '', 1, 45, 'intermediate', 2, 'friendly', '2026-09-14 15:37:40', NULL, 'moderate', 'daily', NULL, 'eat_healthy', NULL, 1, 1, 1);
+INSERT IGNORE INTO `user_preferences` (`id`, `userId`, `weeklyBudget`, `dailyCalorieTarget`, `dietaryStyle`, `maxCookTimeMinutes`, `skillLevel`, `householdSize`, `aiPersonalityMode`, `updatedAt`, `deletedAt`, `activityLevel`, `cookingFrequency`, `primaryGoal`, `weight`) VALUES
+  ('382f9212-b052-11f1-8f91-4a1fa1f06f0c', 'dc0c12a5-7dd6-4041-bb3b-5942d4dbcf3f', 500000, 2000, NULL, 45, 'intermediate', 1, 'friendly', '2026-09-14 15:37:40', NULL, 'moderate', 'daily', 'eat_healthy', NULL);
 
 -- ----------------------------------------------------------------
 -- ingredient_categories (18 categories)
 -- ----------------------------------------------------------------
-INSERT INTO `ingredient_categories` (`id`, `name`, `iconPath`, `parentId`, `createdAt`, `deletedAt`) VALUES
+INSERT IGNORE INTO `ingredient_categories` (`id`, `name`, `iconPath`, `parentId`, `createdAt`, `deletedAt`) VALUES
   (1,  'Rau củ quả',        '/public/icons/cat_vegetables.png', NULL, '2026-09-09 15:50:46', NULL),
   (2,  'Thịt',              '/public/icons/cat_meat.png',       NULL, '2026-09-09 15:50:46', NULL),
   (3,  'Hải sản',           '/public/icons/cat_seafood.png',    NULL, '2026-09-09 15:50:46', NULL),
@@ -72,7 +72,7 @@ INSERT INTO `ingredient_categories` (`id`, `name`, `iconPath`, `parentId`, `crea
 -- ----------------------------------------------------------------
 -- ingredients (61 ingredients)
 -- ----------------------------------------------------------------
-INSERT INTO `ingredients` (`id`, `name`, `categoryId`, `defaultUnit`, `caloriesPer100g`, `avgPriceVnd`, `imagePath`, `isCommon`, `createdAt`, `updatedAt`, `deletedAt`) VALUES
+INSERT IGNORE INTO `ingredients` (`id`, `name`, `categoryId`, `defaultUnit`, `caloriesPer100g`, `averagePricePerUnit`, `imagePath`, `isCommon`, `createdAt`, `updatedAt`, `deletedAt`) VALUES
   -- Rau lá xanh (cat 11)
   (1,  'Rau muống',     11, 'bó',   19,  5000,  '/public/ingredients/rau_muong.jpg',     1, '2026-09-09 15:50:46', '2026-09-09 15:50:46', NULL),
   (2,  'Cải thảo',      11, 'kg',   13,  15000, '/public/ingredients/cai_thao.jpg',      1, '2026-09-09 15:50:46', '2026-09-09 15:50:46', NULL),
@@ -151,7 +151,7 @@ INSERT INTO `ingredients` (`id`, `name`, `categoryId`, `defaultUnit`, `caloriesP
 -- ----------------------------------------------------------------
 -- recipes (15 recipes: 5 breakfast + 5 lunch + 5 dinner)
 -- ----------------------------------------------------------------
-INSERT INTO `recipes` (`id`, `title`, `description`, `thumbnailPath`, `mealType`, `cookingTime`, `servings`, `difficulty`, `estimatedCost`, `isAiGenerated`, `aiSessionId`, `status`, `createdAt`, `updatedAt`, `deletedAt`) VALUES
+INSERT IGNORE INTO `recipes` (`id`, `title`, `description`, `thumbnailPath`, `mealType`, `cookTimeMinutes`, `servings`, `difficultyLevel`, `estimatedCost`, `isAiGenerated`, `authorId`, `status`, `createdAt`, `updatedAt`, `deletedAt`) VALUES
   -- Breakfast
   ('ffb34583-b054-11f1-8f91-4a1fa1f06f0c', 'Phở bò',               'Phở bò truyền thống với nước dùng hầm xương ninh lâu',        NULL, 'breakfast', 60, 2, 'medium', 45000,  0, NULL, 'published', '2026-09-14 15:57:33', '2026-09-14 15:57:33', NULL),
   ('ffb4b01b-b054-11f1-8f91-4a1fa1f06f0c', 'Bánh mì trứng',         'Bánh mì kẹp trứng ốp la, rau thơm và tương ớt',               NULL, 'breakfast', 10, 1, 'easy',   15000,  0, NULL, 'published', '2026-09-14 15:57:33', '2026-09-14 15:57:33', NULL),
@@ -174,7 +174,7 @@ INSERT INTO `recipes` (`id`, `title`, `description`, `thumbnailPath`, `mealType`
 -- ----------------------------------------------------------------
 -- tags (22 tags)
 -- ----------------------------------------------------------------
-INSERT INTO `tags` (`id`, `name`, `type`, `createdAt`, `deletedAt`) VALUES
+INSERT IGNORE INTO `tags` (`id`, `name`, `type`, `createdAt`, `deletedAt`) VALUES
   (1,  'Món Bắc',             'cuisine',   '2026-09-09 15:50:46', NULL),
   (2,  'Món Nam',             'cuisine',   '2026-09-09 15:50:46', NULL),
   (3,  'Món Trung',           'cuisine',   '2026-09-09 15:50:46', NULL),
@@ -201,17 +201,20 @@ INSERT INTO `tags` (`id`, `name`, `type`, `createdAt`, `deletedAt`) VALUES
 -- ----------------------------------------------------------------
 -- ai_provider_configs (1 active Gemini)
 -- ----------------------------------------------------------------
-INSERT INTO `ai_provider_configs` (`id`, `provider`, `modelName`, `encryptedApiKey`, `isActive`, `temperature`, `maxTokens`, `usageNote`, `createdBy`, `updatedAt`, `createdAt`, `deletedAt`) VALUES
+INSERT IGNORE INTO `ai_provider_configs` (`id`, `provider`, `modelName`, `encryptedApiKey`, `isActive`, `temperature`, `maxTokens`, `usageNote`, `activatedBy`, `updatedAt`, `createdAt`, `deletedAt`) VALUES
   (3, 'gemini', 'gemini-2.5-flash-lite',
    '98a790c52e646c24e9bbb25062607b62:a3b73e0803a3d8d9763fa4b2484921a1635a94bc8fd0579a9c545b1efafcfda0ee76a9a41be814d04efc94dc2a9b45c510a2e89f3590f0cde145fbdbc920002612283753bfdb9cf4c3277dfcde8f185b',
    1, 0.7, 8192, 'baseURL=https://platform.beeknoee.com/v1',
    'a27cd6d0-197b-48e1-a203-680449cf0c43', '2026-09-14 08:29:01', '2026-09-14 08:25:31', NULL);
 
 -- ----------------------------------------------------------------
--- cron_job_configs (2 jobs)
+-- notifications (all unread: isRead = 0)
 -- ----------------------------------------------------------------
-INSERT INTO `cron_job_configs` (`id`, `name`, `cronExpression`, `isEnabled`, `description`, `lastRunAt`, `lastRunStatus`, `updatedAt`) VALUES
-  (1, 'expiry_warning',    '0 8 * * *', 1, 'Cảnh báo nguyên liệu sắp hết hạn — hàng ngày 8:00', NULL, NULL, '2026-09-15 16:30:08'),
-  (2, 'weekly_plan_remind','0 9 * * 0', 1, 'Nhắc lập thực đơn tuần mới — Chủ Nhật 9:00',       NULL, NULL, '2026-09-15 16:30:08');
+INSERT IGNORE INTO `notifications` (`id`, `userId`, `type`, `title`, `body`, `isRead`, `metadata`, `createdAt`, `readAt`, `deletedAt`) VALUES
+  ('n3333333-b054-11f1-8f91-4a1fa1f06f01', '7f85f26b-1780-427b-b40b-fe7db50e8c25', 'expiry_warning', 'Sữa tươi Vinamilk sắp hết hạn', 'Hộp Sữa tươi Vinamilk trong Tủ lạnh chính sẽ hết hạn trong 2 ngày tới. Hãy sử dụng sớm nhé!', 0, NULL, '2026-09-19 20:00:00', NULL, NULL),
+  ('n3333333-b054-11f1-8f91-4a1fa1f06f02', '7f85f26b-1780-427b-b40b-fe7db50e8c25', 'plan_ready', 'Nhắc đi chợ cho tuần tới', 'Friggy đã tự động gợi ý danh sách mua sắm thực phẩm cho tuần tới cùng các món ăn hấp dẫn.', 0, NULL, '2026-09-19 18:30:00', NULL, NULL),
+  ('n3333333-b054-11f1-8f91-4a1fa1f06f03', '7f85f26b-1780-427b-b40b-fe7db50e8c25', 'expiry_warning', 'Thịt bò bít tết hết hạn bảo quản', 'Thực phẩm Thịt bò Mỹ đông lạnh trong Ngăn đông cần được chế biến ngay hôm nay.', 0, NULL, '2026-09-18 10:15:00', NULL, NULL),
+  ('n3333333-b054-11f1-8f91-4a1fa1f06f04', '7f85f26b-1780-427b-b40b-fe7db50e8c25', 'system', 'Chào mừng bạn đến với Friggy Premium!', 'Tài khoản của bạn đã nâng cấp thành công gói Individual. Khám phá ngay đặc quyền quét camera AI không giới hạn!', 0, NULL, '2026-09-17 14:00:00', NULL, NULL),
+  ('n3333333-b054-11f1-8f91-4a1fa1f06f05', '7f85f26b-1780-427b-b40b-fe7db50e8c25', 'system', 'Báo cáo thống kê thực phẩm tuần qua', 'Bạn đã tiết kiệm được 15% lượng thực phẩm lãng phí tuần vừa rồi. Hãy tiếp tục giữ phong độ!', 0, NULL, '2026-09-15 09:00:00', NULL, NULL);
 
 SET FOREIGN_KEY_CHECKS = 1;

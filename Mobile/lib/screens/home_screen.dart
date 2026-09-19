@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import '../data/local/storage_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/home_header.dart';
 import '../widgets/custom_bottom_nav_bar.dart';
@@ -34,6 +36,7 @@ class _HomeScreenState extends State<HomeScreen>
     with SingleTickerProviderStateMixin {
   int _selectedIndex = 0;
   final TextEditingController _searchController = TextEditingController();
+  String _userName = 'Trần Quốc Lâm';
 
   late AnimationController _animController;
   late Animation<double> _headerFade;
@@ -46,6 +49,7 @@ class _HomeScreenState extends State<HomeScreen>
   @override
   void initState() {
     super.initState();
+    _loadUserData();
 
     _animController = AnimationController(
       vsync: this,
@@ -80,6 +84,36 @@ class _HomeScreenState extends State<HomeScreen>
     ).animate(_bottomNavFade);
 
     _animController.forward();
+  }
+
+  Future<void> _loadUserData() async {
+    try {
+      final storage = await StorageService.getInstance();
+      final userDataStr = storage.getUserData();
+      if (userDataStr != null && userDataStr.isNotEmpty) {
+        final Map<String, dynamic> userMap = jsonDecode(userDataStr);
+        final String? name = userMap['name'] ?? userMap['fullName'];
+        final String? googleEmail = userMap['googleEmail'] ?? userMap['email'];
+        final String? phone = userMap['phone'] ?? userMap['emailOrPhone'];
+
+        String parsedName = 'Người dùng Friggy';
+        if (name != null && name.trim().isNotEmpty) {
+          parsedName = name.trim();
+        } else if (googleEmail != null && googleEmail.trim().isNotEmpty) {
+          parsedName = googleEmail.split('@').first;
+        } else if (phone != null && phone.trim().isNotEmpty) {
+          parsedName = phone.trim();
+        }
+
+        if (mounted) {
+          setState(() {
+            _userName = parsedName;
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('[HomeScreen] Error loading user data: $e');
+    }
   }
 
   @override
@@ -149,13 +183,16 @@ class _HomeScreenState extends State<HomeScreen>
                     position: _headerSlide,
                     child: HomeHeader(
                       searchController: _searchController,
-                      onNotificationTap: () {
-                        Navigator.push(
+                      onNotificationTap: () async {
+                        await Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (context) => const NotificationsScreen(),
                           ),
                         );
+                        if (mounted) {
+                          setState(() {});
+                        }
                       },
                       onFilterTap: () {
                         ScaffoldMessenger.of(context).showSnackBar(
@@ -185,7 +222,7 @@ class _HomeScreenState extends State<HomeScreen>
                           child: Column(
                             children: [
                               const SizedBox(height: 8),
-                              const GreetingBanner(userName: 'Trần Quốc Lâm'),
+                              GreetingBanner(userName: _userName),
                               const SizedBox(height: 16),
 
                               // 2 Summary Cards (Expired & Available Ingredients)

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
+import '../data/models/user_models.dart';
+import '../data/services/api_service.dart';
 import '../l10n/app_localizations.dart';
 import '../l10n/language_provider.dart';
 import '../theme/theme_provider.dart';
@@ -14,9 +16,59 @@ class AppSettingsScreen extends StatefulWidget {
 }
 
 class _AppSettingsScreenState extends State<AppSettingsScreen> {
+  final ApiService _apiService = ApiService();
+  bool _isLoading = true;
   bool _pushNotifications = true;
-  bool _shoppingReminder = true;
+  bool _shoppingReminder = false;
   bool _expiryAlert = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchNotificationSettings();
+  }
+
+  Future<void> _fetchNotificationSettings() async {
+    try {
+      final res = await _apiService.getNotificationSettings();
+      final settings = NotificationSettingsModel.fromJson(res);
+      if (mounted) {
+        setState(() {
+          _pushNotifications = settings.pushNotifications;
+          _shoppingReminder = settings.shoppingReminder;
+          _expiryAlert = settings.expiryAlert;
+        });
+      }
+    } catch (e) {
+      debugPrint('[AppSettingsScreen] Error fetching notification settings: $e');
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  Future<void> _updateSettings({bool? push, bool? shopping, bool? expiry}) async {
+    final newPush = push ?? _pushNotifications;
+    final newShopping = shopping ?? _shoppingReminder;
+    final newExpiry = expiry ?? _expiryAlert;
+
+    setState(() {
+      _pushNotifications = newPush;
+      _shoppingReminder = newShopping;
+      _expiryAlert = newExpiry;
+    });
+
+    try {
+      await _apiService.updateNotificationSettings({
+        'pushNotifications': newPush,
+        'shoppingReminder': newShopping,
+        'expiryAlert': newExpiry,
+      });
+    } catch (e) {
+      debugPrint('[AppSettingsScreen] Error updating notification settings: $e');
+    }
+  }
 
   void _showLanguageSelectionModal(BuildContext context, bool isDark) {
     final languageProvider = Provider.of<LanguageProvider>(context, listen: false);
@@ -265,7 +317,9 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
               ),
 
               Expanded(
-                child: SingleChildScrollView(
+                child: _isLoading
+                    ? const Center(child: CircularProgressIndicator(color: Color(0xFF4CAF50)))
+                    : SingleChildScrollView(
                   physics: const BouncingScrollPhysics(),
                   padding: const EdgeInsets.symmetric(
                       horizontal: 20.0, vertical: 16.0),
@@ -284,11 +338,7 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                           title: loc?.appNotifications ?? 'Thông báo ứng dụng',
                           subtitle: loc?.appNotificationsSub ?? 'Bật nhận tất cả thông báo đẩy',
                           value: _pushNotifications,
-                          onChanged: (val) {
-                            setState(() {
-                              _pushNotifications = val;
-                            });
-                          },
+                          onChanged: (val) => _updateSettings(push: val),
                           iconBgColor: iconBgColor,
                           iconColor: iconColor,
                           itemTextColor: itemTextColor,
@@ -300,11 +350,7 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                           title: loc?.weeklyShoppingReminder ?? 'Nhắc đi chợ hàng tuần',
                           subtitle: loc?.weeklyShoppingReminderSub ?? 'Cảnh báo chuẩn bị thực phẩm tuần tới',
                           value: _shoppingReminder,
-                          onChanged: (val) {
-                            setState(() {
-                              _shoppingReminder = val;
-                            });
-                          },
+                          onChanged: (val) => _updateSettings(shopping: val),
                           iconBgColor: iconBgColor,
                           iconColor: iconColor,
                           itemTextColor: itemTextColor,
@@ -316,11 +362,7 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                           title: loc?.expiryAlert ?? 'Cảnh báo hết hạn thực phẩm',
                           subtitle: loc?.expiryAlertSub ?? 'Thông báo trước 2 ngày khi hết hạn',
                           value: _expiryAlert,
-                          onChanged: (val) {
-                            setState(() {
-                              _expiryAlert = val;
-                            });
-                          },
+                          onChanged: (val) => _updateSettings(expiry: val),
                           iconBgColor: iconBgColor,
                           iconColor: iconColor,
                           itemTextColor: itemTextColor,

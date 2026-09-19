@@ -4,6 +4,11 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:video_player/video_player.dart';
 import 'home_screen.dart';
+import 'onboarding_survey_screen.dart';
+import '../data/models/user_models.dart';
+import '../data/services/api_service.dart';
+import '../data/services/auth_service.dart';
+import '../utils/navigation_service.dart';
 
 class LoginSuccessVideoScreen extends StatefulWidget {
   const LoginSuccessVideoScreen({super.key});
@@ -158,7 +163,7 @@ class _LoginSuccessVideoScreenState extends State<LoginSuccessVideoScreen>
     _hideDownController.forward();
   }
 
-  void _navigateToHome() {
+  Future<void> _navigateToHome() async {
     if (_hasNavigated) return;
     _hasNavigated = true;
 
@@ -166,12 +171,31 @@ class _LoginSuccessVideoScreenState extends State<LoginSuccessVideoScreen>
 
     if (!mounted) return;
 
-    // Fast 180ms transition right into HomeScreen after hiding down
+    Widget targetScreen = const HomeScreen();
+    try {
+      final meJson = await ApiService().getMe();
+      final me = MeModel.fromJson(meJson);
+
+      if (!AuthService.isAllowedRole(me.role)) {
+        debugPrint('[LoginSuccessVideoScreen] User role "${me.role}" is not authorized for mobile app access.');
+        await NavigationService.navigateToLoginAndClearSession();
+        return;
+      }
+
+      if (!me.isOnboardingCompleted) {
+        targetScreen = const OnboardingSurveyScreen();
+      }
+    } catch (e) {
+      debugPrint('[LoginSuccessVideoScreen] Error checking onboarding status: $e');
+    }
+
+    if (!mounted) return;
+
+    // Fast 180ms transition right into target screen after hiding down
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
         transitionDuration: const Duration(milliseconds: 180),
-        pageBuilder: (context, animation, secondaryAnimation) =>
-            const HomeScreen(),
+        pageBuilder: (context, animation, secondaryAnimation) => targetScreen,
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           final curve = CurvedAnimation(
             parent: animation,

@@ -8,6 +8,7 @@ import 'l10n/language_provider.dart';
 import 'theme/app_theme.dart';
 import 'theme/theme_provider.dart';
 import 'screens/initial_loading_screen.dart';
+import 'utils/navigation_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -53,6 +54,7 @@ class GroceryApp extends StatelessWidget {
     return Consumer2<ThemeProvider, LanguageProvider>(
       builder: (context, themeProvider, languageProvider, child) {
         return MaterialApp(
+          navigatorKey: NavigationService.navigatorKey,
           title: 'Friggy',
           debugShowCheckedModeBanner: false,
           theme: AppTheme.lightTheme,
