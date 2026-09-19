@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../l10n/app_localizations.dart';
 
+import '../data/models/user_models.dart';
+import '../data/services/api_service.dart';
+
 class NotificationItem {
   final String id;
   final String title;
@@ -47,125 +50,191 @@ class NotificationsScreen extends StatefulWidget {
 }
 
 class _NotificationsScreenState extends State<NotificationsScreen> {
+  final ApiService _apiService = ApiService();
   String _selectedCategoryKey = 'All';
+  bool _isLoading = true;
+  bool _showAll = false;
 
-  final List<NotificationItem> _notifications = [
-    NotificationItem(
-      id: '1',
-      title: 'Sữa tươi Vinamilk sắp hết hạn',
-      titleEn: 'Vinamilk Fresh Milk expiring soon',
-      message:
-          'Hộp Sữa tươi Vinamilk trong Tủ lạnh chính sẽ hết hạn trong 2 ngày tới. Hãy sử dụng sớm nhé!',
-      messageEn:
-          'Vinamilk Fresh Milk box in Main Fridge will expire in 2 days. Use it soon!',
-      time: '20 phút trước',
-      timeEn: '20 mins ago',
-      icon: Icons.timer_rounded,
-      iconColor: const Color(0xFFE53935),
-      iconBgColor: const Color(0xFFFFEBEE),
-      category: 'Hết hạn',
-      categoryEn: 'Expired',
-      isRead: false,
-    ),
-    NotificationItem(
-      id: '2',
-      title: 'Nhắc đi chợ cho tuần tới',
-      titleEn: 'Shopping reminder for next week',
-      message:
-          'Friggy đã tự động gợi ý danh sách mua sắm thực phẩm cho tuần tới cùng các món ăn hấp dẫn.',
-      messageEn:
-          'Friggy auto-suggested next week\'s food shopping list with delicious dishes.',
-      time: '2 giờ trước',
-      timeEn: '2 hours ago',
-      icon: Icons.shopping_cart_rounded,
-      iconColor: const Color(0xFF4CAF50),
-      iconBgColor: const Color(0xFFE8F5E9),
-      category: 'Nhắc đi chợ',
-      categoryEn: 'Shopping',
-      isRead: false,
-    ),
-    NotificationItem(
-      id: '3',
-      title: 'Thịt bò bít tết hết hạn bảo quản',
-      titleEn: 'Beef Steak expired',
-      message:
-          'Thực phẩm Thịt bò Mỹ đông lạnh trong Ngăn đông cần được chế biến ngay hôm nay.',
-      messageEn:
-          'US Frozen Beef in Freezer needs to be cooked today.',
-      time: 'Hôm qua',
-      timeEn: 'Yesterday',
-      icon: Icons.warning_amber_rounded,
-      iconColor: const Color(0xFFFF9800),
-      iconBgColor: const Color(0xFFFFF3E0),
-      category: 'Hết hạn',
-      categoryEn: 'Expired',
-      isRead: true,
-    ),
-    NotificationItem(
-      id: '4',
-      title: 'Chào mừng bạn đến với Friggy Premium!',
-      titleEn: 'Welcome to Friggy Premium!',
-      message:
-          'Tài khoản của bạn đã nâng cấp thành công gói Individual. Khám phá ngay đặc quyền quét camera AI không giới hạn!',
-      messageEn:
-          'Your account upgraded to Individual plan. Explore unlimited AI camera scan benefits!',
-      time: '3 ngày trước',
-      timeEn: '3 days ago',
-      icon: Icons.workspace_premium_rounded,
-      iconColor: const Color(0xFF9C27B0),
-      iconBgColor: const Color(0xFFF3E5F5),
-      category: 'Hệ thống',
-      categoryEn: 'System',
-      isRead: true,
-    ),
-    NotificationItem(
-      id: '5',
-      title: 'Báo cáo thống kê thực phẩm tuần qua',
-      titleEn: 'Weekly food stats report',
-      message:
-          'Bạn đã tiết kiệm được 15% lượng thực phẩm lãng phí tuần vừa rồi. Hãy tiếp tục giữ phong độ!',
-      messageEn:
-          'You saved 15% food waste last week. Keep up the great work!',
-      time: '5 ngày trước',
-      timeEn: '5 days ago',
-      icon: Icons.insert_chart_rounded,
-      iconColor: const Color(0xFF1976D2),
-      iconBgColor: const Color(0xFFE3F2FD),
-      category: 'Hệ thống',
-      categoryEn: 'System',
-      isRead: true,
-    ),
-  ];
+  final List<NotificationItem> _notifications = [];
 
-  void _markAllAsRead(bool isEn) {
+  @override
+  void initState() {
+    super.initState();
+    _fetchNotifications();
+  }
+
+  Future<void> _fetchNotifications() async {
+    setState(() => _isLoading = true);
+    try {
+      final res = await _apiService.getNotifications(page: 1, limit: 50);
+      if (res.containsKey('data') && res['data'] is List) {
+        final rawList = res['data'] as List;
+        if (rawList.isNotEmpty) {
+          final models = rawList
+              .map((e) => NotificationModel.fromJson(e as Map<String, dynamic>))
+              .toList();
+          final items = models.map((m) => _mapModelToItem(m)).toList();
+          final unread = items.where((i) => !i.isRead).length;
+          ApiService.updateUnreadCount(unread);
+          if (mounted) {
+            setState(() {
+              _notifications.clear();
+              _notifications.addAll(items);
+              _isLoading = false;
+            });
+          }
+          return;
+        }
+      }
+    } catch (e) {
+      debugPrint('[NotificationsScreen] Error fetching notifications: $e');
+    }
+    if (mounted) {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  NotificationItem _mapModelToItem(NotificationModel m) {
+    IconData icon;
+    Color iconColor;
+    Color iconBgColor;
+    String category;
+    String categoryEn;
+
+    switch (m.type) {
+      case 'expiry_warning':
+        icon = Icons.timer_rounded;
+        iconColor = const Color(0xFF008435);
+        iconBgColor = const Color(0xFFE8F5E9);
+        category = 'Hết hạn';
+        categoryEn = 'Expired';
+        break;
+      case 'shopping':
+      case 'shopping_reminder':
+      case 'plan_ready':
+        icon = Icons.shopping_cart_rounded;
+        iconColor = const Color(0xFF4CAF50);
+        iconBgColor = const Color(0xFFE8F5E9);
+        category = 'Nhắc đi chợ';
+        categoryEn = 'Shopping';
+        break;
+      case 'promo':
+        icon = Icons.local_offer_rounded;
+        iconColor = const Color(0xFF9C27B0);
+        iconBgColor = const Color(0xFFF3E5F5);
+        category = 'Khuyến mãi';
+        categoryEn = 'Promo';
+        break;
+      case 'budget_alert':
+        icon = Icons.monetization_on_rounded;
+        iconColor = const Color(0xFFFF9800);
+        iconBgColor = const Color(0xFFFFF3E0);
+        category = 'Ngân sách';
+        categoryEn = 'Budget';
+        break;
+      default:
+        icon = Icons.workspace_premium_rounded;
+        iconColor = const Color(0xFF008435);
+        iconBgColor = const Color(0xFFE8F5E9);
+        category = 'Hệ thống';
+        categoryEn = 'System';
+    }
+
+    return NotificationItem(
+      id: m.id,
+      title: m.title,
+      titleEn: m.title,
+      message: m.body,
+      messageEn: m.body,
+      time: _formatTimeString(m.createdAt),
+      timeEn: _formatTimeString(m.createdAt),
+      icon: icon,
+      iconColor: iconColor,
+      iconBgColor: iconBgColor,
+      category: category,
+      categoryEn: categoryEn,
+      isRead: m.isRead,
+    );
+  }
+
+  String _formatTimeString(String dateStr) {
+    if (dateStr.isEmpty) return 'Vừa xong';
+    try {
+      final dt = DateTime.parse(dateStr).toLocal();
+      final diff = DateTime.now().difference(dt);
+      if (diff.inMinutes < 60) {
+        return '${diff.inMinutes <= 0 ? 1 : diff.inMinutes} phút trước';
+      } else if (diff.inHours < 24) {
+        return '${diff.inHours} giờ trước';
+      } else if (diff.inDays < 7) {
+        return '${diff.inDays} ngày trước';
+      } else {
+        return '${dt.day}/${dt.month}/${dt.year}';
+      }
+    } catch (_) {}
+    return dateStr;
+  }
+
+  Future<void> _markAllAsRead(bool isEn) async {
     setState(() {
       for (var item in _notifications) {
         item.isRead = true;
       }
     });
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          isEn ? 'Marked all notifications as read' : 'Đã đánh dấu tất cả thông báo là đã đọc',
+    ApiService.updateUnreadCount(0);
+
+    try {
+      await _apiService.markAllNotificationsRead();
+    } catch (e) {
+      debugPrint('[NotificationsScreen] Error marking all read: $e');
+    }
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            isEn ? 'Marked all notifications as read' : 'Đã đánh dấu tất cả thông báo là đã đọc',
+          ),
+          backgroundColor: const Color(0xFF008435),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          duration: const Duration(seconds: 2),
         ),
-        backgroundColor: const Color(0xFF008435),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-        duration: const Duration(seconds: 2),
-      ),
-    );
+      );
+    }
   }
 
-  void _toggleRead(NotificationItem item) {
+  Future<void> _toggleRead(NotificationItem item) async {
+    final previousState = item.isRead;
     setState(() {
       item.isRead = !item.isRead;
     });
+
+    final newUnreadCount = _notifications.where((i) => !i.isRead).length;
+    ApiService.updateUnreadCount(newUnreadCount);
+
+    if (!previousState) {
+      try {
+        await _apiService.markNotificationRead(item.id);
+      } catch (e) {
+        debugPrint('[NotificationsScreen] Error marking read: $e');
+      }
+    }
   }
 
-  void _deleteNotification(String id) {
+  Future<void> _deleteNotification(String id) async {
     setState(() {
       _notifications.removeWhere((item) => item.id == id);
     });
+
+    final newUnreadCount = _notifications.where((i) => !i.isRead).length;
+    ApiService.updateUnreadCount(newUnreadCount);
+
+    try {
+      await _apiService.deleteNotification(id);
+    } catch (e) {
+      debugPrint('[NotificationsScreen] Error deleting notification: $e');
+    }
   }
 
   @override
@@ -300,7 +369,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     return Padding(
                       padding: const EdgeInsets.only(right: 8.0),
                       child: GestureDetector(
-                        onTap: () => setState(() => _selectedCategoryKey = catKey),
+                        onTap: () => setState(() {
+                          _selectedCategoryKey = catKey;
+                          _showAll = false;
+                        }),
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 180),
                           padding: const EdgeInsets.symmetric(
@@ -340,7 +412,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
               // Notification List view
               Expanded(
-                child: filteredList.isEmpty
+                child: _isLoading
+                    ? const Center(
+                        child: CircularProgressIndicator(color: Color(0xFF008435)),
+                      )
+                    : filteredList.isEmpty
                     ? Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -384,22 +460,87 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                           ],
                         ),
                       )
-                    : ListView.builder(
-                        physics: const BouncingScrollPhysics(),
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        itemCount: filteredList.length,
-                        itemBuilder: (context, index) {
-                          final item = filteredList[index];
-                          return Dismissible(
-                            key: Key(item.id),
-                            direction: DismissDirection.endToStart,
-                            onDismissed: (_) => _deleteNotification(item.id),
-                            background: Container(
-                              alignment: Alignment.centerRight,
-                              padding: const EdgeInsets.only(right: 20),
-                              margin: const EdgeInsets.only(bottom: 12),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFE53935),
+                    : Builder(
+                        builder: (context) {
+                          final showExpandButton = filteredList.length > 4 && !_showAll;
+                          final displayList = showExpandButton ? filteredList.take(4).toList() : filteredList;
+
+                          return ListView.builder(
+                            physics: const BouncingScrollPhysics(),
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            itemCount: displayList.length + (showExpandButton ? 1 : 0),
+                            itemBuilder: (context, index) {
+                              if (showExpandButton && index == displayList.length) {
+                                return Padding(
+                                  padding: const EdgeInsets.only(top: 4.0, bottom: 28.0),
+                                  child: Material(
+                                    color: Colors.transparent,
+                                    child: InkWell(
+                                      onTap: () {
+                                        setState(() {
+                                          _showAll = true;
+                                        });
+                                      },
+                                      borderRadius: BorderRadius.circular(22),
+                                      child: Container(
+                                        width: double.infinity,
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 20,
+                                          vertical: 16,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: isDark ? const Color(0xFF19271E) : Colors.white,
+                                          borderRadius: BorderRadius.circular(22),
+                                          border: Border.all(
+                                            color: isDark ? const Color(0xFF2E4D36) : const Color(0xFF008435),
+                                            width: 1.5,
+                                          ),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
+                                              blurRadius: 10,
+                                              offset: const Offset(0, 3),
+                                            ),
+                                          ],
+                                        ),
+                                        child: Row(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            Text(
+                                              isEn
+                                                  ? 'View all notifications (${filteredList.length})'
+                                                  : 'Xem toàn bộ thông báo (${filteredList.length})',
+                                              style: GoogleFonts.plusJakartaSans(
+                                                fontSize: 15,
+                                                fontWeight: FontWeight.w800,
+                                                color: isDark ? const Color(0xFF81C784) : const Color(0xFF006428),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 8),
+                                            Icon(
+                                              Icons.keyboard_arrow_down_rounded,
+                                              size: 24,
+                                              color: isDark ? const Color(0xFF81C784) : const Color(0xFF006428),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              }
+
+                              final item = displayList[index];
+                              return Dismissible(
+                                key: Key(item.id),
+                                direction: DismissDirection.endToStart,
+                                onDismissed: (_) => _deleteNotification(item.id),
+                                background: Container(
+                                  alignment: Alignment.centerRight,
+                                  padding: const EdgeInsets.only(right: 20),
+                                  margin: const EdgeInsets.only(bottom: 12),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFE53935),
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: const Icon(
@@ -548,7 +689,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                             ),
                           );
                         },
-                      ),
+                      );
+                    },
+                  ),
               ),
             ],
           ),

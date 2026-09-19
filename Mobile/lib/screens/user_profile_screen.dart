@@ -1,10 +1,18 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
+import '../data/local/storage_service.dart';
+import '../data/models/user_models.dart';
+import '../data/services/api_service.dart';
+import '../data/services/auth_service.dart';
 import '../l10n/app_localizations.dart';
 import 'login_screen.dart';
 import 'personal_info_screen.dart';
 import 'change_password_screen.dart';
 import 'app_settings_screen.dart';
+import 'user_preferences_screen.dart';
+import 'user_allergies_screen.dart';
 import 'package:friggy/screens/package_management_screen.dart';
 
 class UserProfileScreen extends StatefulWidget {
@@ -15,18 +23,198 @@ class UserProfileScreen extends StatefulWidget {
 }
 
 class _UserProfileScreenState extends State<UserProfileScreen> {
-  void _performLogout() {
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(builder: (context) => const LoginScreen()),
-      (route) => false,
+  final ApiService _apiService = ApiService();
+  String _userName = 'Trần Quốc Lâm';
+  String _userContact = 'lam.tran@friggy.app';
+  String? _bio;
+  String? _avatarUrl;
+  AiUsageModel? _aiUsage;
+  bool _isUploadingAvatar = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+    _fetchAiUsage();
+  }
+
+  Future<void> _loadUserData() async {
+    try {
+      final meJson = await _apiService.getMe();
+      final me = MeModel.fromJson(meJson);
+
+      if (mounted) {
+        setState(() {
+          if (me.name != null && me.name!.isNotEmpty) {
+            _userName = me.name!;
+          }
+          if (me.googleEmail != null && me.googleEmail!.isNotEmpty) {
+            _userContact = me.googleEmail!;
+          } else if (me.phone != null && me.phone!.isNotEmpty) {
+            _userContact = me.phone!;
+          }
+          if (me.profile?.avatarUrl != null) {
+            _avatarUrl = me.profile!.avatarUrl!;
+          }
+          if (me.profile?.bio != null) {
+            _bio = me.profile!.bio!;
+          }
+        });
+      }
+    } catch (e) {
+      debugPrint('[UserProfileScreen] API getMe error, falling back to local storage: $e');
+      final storage = await StorageService.getInstance();
+      final userDataStr = storage.getUserData();
+      if (userDataStr != null && userDataStr.isNotEmpty) {
+        final Map<String, dynamic> userMap = jsonDecode(userDataStr);
+        final String? name = userMap['name'] ?? userMap['fullName'];
+        final String? email = userMap['googleEmail'] ?? userMap['email'];
+        final String? phone = userMap['phone'] ?? userMap['emailOrPhone'];
+
+        String parsedName = 'Trần Quốc Lâm';
+        if (name != null && name.trim().isNotEmpty) parsedName = name.trim();
+
+        String parsedContact = 'lam.tran@friggy.app';
+        if (email != null && email.trim().isNotEmpty) {
+          parsedContact = email.trim();
+        } else if (phone != null && phone.trim().isNotEmpty) {
+          parsedContact = phone.trim();
+        }
+
+        if (mounted) {
+          setState(() {
+            _userName = parsedName;
+            _userContact = parsedContact;
+          });
+        }
+      }
+    }
+  }
+
+  Future<void> _fetchAiUsage() async {
+    try {
+      final res = await _apiService.getAiUsage();
+      if (mounted) {
+        setState(() {
+          _aiUsage = AiUsageModel.fromJson(res);
+        });
+      }
+    } catch (e) {
+      debugPrint('[UserProfileScreen] Error fetching AI usage: $e');
+    }
+  }
+
+  void _showAvatarPickerModal() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF19271E) : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Cập nhật ảnh đại diện',
+                style: GoogleFonts.outfit(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.white : const Color(0xFF006428),
+                ),
+              ),
+              const SizedBox(height: 18),
+              ListTile(
+                leading: const Icon(Icons.photo_library_rounded, color: Color(0xFF4CAF50)),
+                title: const Text('Chọn từ thư viện ảnh'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickAndUploadAvatar(ImageSource.gallery);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.camera_alt_rounded, color: Color(0xFF4CAF50)),
+                title: const Text('Chụp ảnh mới'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickAndUploadAvatar(ImageSource.camera);
+                },
+              ),
+            ],
+          ),
+        );
+      },
     );
+  }
+
+  Future<void> _pickAndUploadAvatar(ImageSource source) async {
+    try {
+      final picker = ImagePicker();
+      final XFile? file = await picker.pickImage(
+        source: source,
+        maxWidth: 512,
+        maxHeight: 512,
+        imageQuality: 85,
+      );
+      if (file != null) {
+        setState(() => _isUploadingAvatar = true);
+        final res = await _apiService.uploadAvatar(file.path);
+        final String? newAvatar = res['avatarUrl'];
+        if (newAvatar != null && mounted) {
+          setState(() {
+            _avatarUrl = newAvatar;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Đã cập nhật ảnh đại diện thành công!'),
+              backgroundColor: Color(0xFF008435),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('[UserProfileScreen] Error uploading avatar: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Tải ảnh đại diện lên thất bại. Vui lòng thử lại!'),
+            backgroundColor: Color(0xFFD32F2F),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isUploadingAvatar = false);
+    }
+  }
+
+  void _performLogout() async {
+    await AuthService().logout();
+    if (mounted) {
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
+        (route) => false,
+      );
+    }
+  }
+
+  String? _getFullAvatarUrl(String? url) {
+    if (url == null || url.isEmpty) return null;
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    return 'http://10.0.2.2:6969$url';
   }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final loc = AppLocalizations.of(context);
+    final isEn = loc?.locale.languageCode == 'en';
 
     final nameColor = isDark ? Colors.white : const Color(0xFF006428);
     final emailColor = isDark ? const Color(0xFF81C784) : const Color(0xFF2E7D32);
@@ -36,6 +224,12 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     final defaultTitleColor = isDark ? Colors.white : const Color(0xFF19221C);
     final defaultIconBg = isDark ? const Color(0xFF233629) : const Color(0xFFE8F5E9);
     final defaultIconColor = isDark ? const Color(0xFF81C784) : const Color(0xFF006428);
+
+    final aiUsageText = _aiUsage != null
+        ? (isEn ? 'AI Used: ${_aiUsage!.used}/${_aiUsage!.limit} this week' : 'Đã dùng ${_aiUsage!.used}/${_aiUsage!.limit} lượt AI tuần này')
+        : (isEn ? 'Personal Plan' : 'Gói Cá Nhân');
+
+    final fullAvatar = _getFullAvatarUrl(_avatarUrl);
 
     return SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
@@ -49,32 +243,63 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           Center(
             child: Column(
               children: [
-                Container(
-                  padding: const EdgeInsets.all(5),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: const Color(0xFF4CAF50),
-                      width: 3.5,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.1),
-                        blurRadius: 14,
-                        offset: const Offset(0, 5),
+                Stack(
+                  alignment: Alignment.bottomRight,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(5),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: const Color(0xFF4CAF50),
+                          width: 3.5,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.1),
+                            blurRadius: 14,
+                            offset: const Offset(0, 5),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                  child: CircleAvatar(
-                    radius: 58,
-                    backgroundColor: defaultIconBg,
-                    backgroundImage:
-                        const AssetImage('assets/images/cute_mascot.png'),
-                  ),
+                      child: CircleAvatar(
+                        radius: 58,
+                        backgroundColor: defaultIconBg,
+                        backgroundImage: fullAvatar != null
+                            ? NetworkImage(fullAvatar) as ImageProvider
+                            : const AssetImage('assets/images/cute_mascot.png'),
+                        child: _isUploadingAvatar
+                            ? const CircularProgressIndicator(color: Colors.white)
+                            : null,
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: _showAvatarPickerModal,
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF4CAF50),
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 2),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.2),
+                              blurRadius: 6,
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.camera_alt_rounded,
+                          color: Colors.white,
+                          size: 18,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 14),
                 Text(
-                  'Trần Quốc Lâm',
+                  _userName,
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 26,
                     fontWeight: FontWeight.w900,
@@ -83,20 +308,35 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'lam.tran@friggy.app',
+                  _userContact,
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
                     color: emailColor,
                   ),
                 ),
+                if (_bio != null && _bio!.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8.0, left: 24, right: 24),
+                    child: Text(
+                      '“$_bio”',
+                      textAlign: TextAlign.center,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 13.5,
+                        fontStyle: FontStyle.italic,
+                        color: isDark ? const Color(0xFFB0BEC5) : const Color(0xFF616161),
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),
 
           const SizedBox(height: 24),
 
-          // 3. Subscription Package Card
+          // 3. Subscription Package & AI Usage Card
           GestureDetector(
             onTap: () {
               Navigator.push(
@@ -165,7 +405,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                             ),
                             const SizedBox(width: 6),
                             Text(
-                              loc?.locale.languageCode == 'en' ? 'PREMIUM PLAN' : 'GÓI CAO CẤP',
+                              isEn ? 'AI PLAN' : 'GÓI AI FRIGGY',
                               style: GoogleFonts.plusJakartaSans(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w900,
@@ -178,18 +418,18 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                         const SizedBox(height: 8),
 
                         Text(
-                          loc?.locale.languageCode == 'en' ? 'Personal Plan' : 'Gói Cá Nhân',
+                          aiUsageText,
                           style: GoogleFonts.plusJakartaSans(
-                            fontSize: 24,
+                            fontSize: 20,
                             fontWeight: FontWeight.w900,
                             color: Colors.white,
-                            height: 1.1,
+                            height: 1.15,
                           ),
                         ),
                         const SizedBox(height: 4),
 
                         Text(
-                          loc?.locale.languageCode == 'en' ? 'Expires in 12/2024' : 'Hết hạn vào 12/2024',
+                          _aiUsage != null ? 'Còn lại ${_aiUsage!.remaining} lượt AI tuần này' : (isEn ? 'Manage Plan' : 'Quản lý gói dịch vụ'),
                           style: GoogleFonts.plusJakartaSans(
                             fontSize: 13.5,
                             fontWeight: FontWeight.w600,
@@ -220,7 +460,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                       ),
                     ),
                     child: Text(
-                      loc?.locale.languageCode == 'en' ? 'Manage Plan' : 'Quản lý gói',
+                      isEn ? 'Manage Plan' : 'Quản lý gói',
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 13,
                         fontWeight: FontWeight.w800,
@@ -237,7 +477,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
           // 4. Account Settings Menu List Section
           Text(
-            loc?.locale.languageCode == 'en' ? 'Account & Settings' : 'Tài khoản & Ứng dụng',
+            isEn ? 'Account & Settings' : 'Tài khoản & Ứng dụng',
             style: GoogleFonts.plusJakartaSans(
               fontSize: 18,
               fontWeight: FontWeight.w900,
@@ -277,12 +517,48 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                       MaterialPageRoute(
                         builder: (context) => const PersonalInfoScreen(),
                       ),
+                    ).then((_) => _loadUserData());
+                  },
+                ),
+                _buildDivider(isDark),
+
+                // 2. Culinary & Dietary Preferences (NEW)
+                _buildMenuItem(
+                  icon: Icons.restaurant_menu_rounded,
+                  title: isEn ? 'Culinary & Dietary Preferences' : 'Tùy chọn ăn uống & Kỹ năng',
+                  titleColor: defaultTitleColor,
+                  iconColor: defaultIconColor,
+                  iconBgColor: defaultIconBg,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const UserPreferencesScreen(),
+                      ),
                     );
                   },
                 ),
                 _buildDivider(isDark),
 
-                // 2. Change Password
+                // 3. Food Allergies (NEW)
+                _buildMenuItem(
+                  icon: Icons.no_food_rounded,
+                  title: isEn ? 'Food Allergies' : 'Dị ứng thực phẩm',
+                  titleColor: defaultTitleColor,
+                  iconColor: defaultIconColor,
+                  iconBgColor: defaultIconBg,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const UserAllergiesScreen(),
+                      ),
+                    );
+                  },
+                ),
+                _buildDivider(isDark),
+
+                // 4. Change Password
                 _buildMenuItem(
                   icon: Icons.lock_outline_rounded,
                   title: loc?.changePassword ?? 'Đổi mật khẩu',
@@ -300,7 +576,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                 ),
                 _buildDivider(isDark),
 
-                // 3. Settings
+                // 5. Settings
                 _buildMenuItem(
                   icon: Icons.settings_outlined,
                   title: loc?.settings ?? 'Cài đặt',
@@ -318,7 +594,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                 ),
                 _buildDivider(isDark),
 
-                // 4. Logout
+                // 6. Logout
                 _buildMenuItem(
                   icon: Icons.logout_rounded,
                   title: loc?.logout ?? 'Đăng xuất',

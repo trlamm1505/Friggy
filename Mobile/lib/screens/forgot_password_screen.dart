@@ -15,12 +15,10 @@ class ForgotPasswordScreen extends StatefulWidget {
 }
 
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
-  int _currentStep = 1; // 1: Phone/Email, 2: OTP Verify, 3: Reset Password
-  bool _isPhoneMode = true;
+  int _currentStep = 1; // 1: Phone, 2: OTP Verify, 3: Reset Password
 
   // Step 1 Controllers & State
   final TextEditingController _phoneController = TextEditingController();
-  final TextEditingController _emailController = TextEditingController();
 
   // Step 2 Single Controller & FocusNode for 100% bulletproof soft keyboard popup
   final TextEditingController _otpSingleController = TextEditingController();
@@ -43,7 +41,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   @override
   void dispose() {
     _phoneController.dispose();
-    _emailController.dispose();
     _otpSingleController.dispose();
     _otpSingleFocusNode.dispose();
     _resendTimer?.cancel();
@@ -440,7 +437,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 32),
       child: Row(
         children: [
-          _buildStepCircle(step: 1, label: _isPhoneMode ? (isEn ? 'PHONE' : 'SỐ ĐT') : 'EMAIL'),
+          _buildStepCircle(step: 1, label: isEn ? 'PHONE' : 'SỐ ĐT'),
           _buildLine(isCompleted: _currentStep > 1),
           _buildStepCircle(step: 2, label: isEn ? 'VERIFY' : 'XÁC THỰC'),
           _buildLine(isCompleted: _currentStep > 2),
@@ -527,7 +524,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     }
   }
 
-  // STEP 1: Phone / Email
+  // STEP 1: Phone Number Only
   Widget _buildStep1PhoneEmail() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final loc = AppLocalizations.of(context);
@@ -539,9 +536,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            _isPhoneMode
-                ? (isEn ? 'Enter your phone number.' : 'Nhập số điện thoại của bạn.')
-                : (isEn ? 'Enter your Email address.' : 'Nhập địa chỉ Email của bạn.'),
+            isEn ? 'Enter your phone number.' : 'Nhập số điện thoại của bạn.',
             style: GoogleFonts.plusJakartaSans(
               fontSize: 28,
               fontWeight: FontWeight.w900,
@@ -551,13 +546,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            _isPhoneMode
-                ? (isEn
-                    ? "We will send a verification code via SMS to verify."
-                    : "Chúng tôi sẽ gửi mã xác nhận qua tin nhắn SMS để xác minh.")
-                : (isEn
-                    ? "We will send a verification code to your email address."
-                    : "Chúng tôi sẽ gửi mã xác nhận tới địa chỉ email của bạn."),
+            isEn
+                ? "We will send a verification code via SMS to verify."
+                : "Chúng tôi sẽ gửi mã xác nhận qua tin nhắn SMS để xác minh.",
             style: TextStyle(
               fontSize: 14,
               color: isDark ? const Color(0xFFD0D7D1) : const Color(0xFF7A867E),
@@ -567,9 +558,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           const SizedBox(height: 24),
 
           Text(
-            _isPhoneMode
-                ? (isEn ? 'Phone Number' : 'Số điện thoại')
-                : (isEn ? 'Email Address' : 'Địa chỉ Email'),
+            isEn ? 'Phone Number' : 'Số điện thoại',
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
@@ -578,126 +567,103 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           ),
           const SizedBox(height: 8),
 
-          if (_isPhoneMode)
-            FormField<String>(
-              key: const ValueKey('phone_form_field'),
-              validator: (_) {
-                final input = _phoneController.text.trim();
-                if (input.isEmpty) {
-                  return isEn ? 'Please enter phone number' : 'Vui lòng nhập số điện thoại';
-                }
-                final isNumeric = RegExp(r'^[0-9]+$').hasMatch(input);
-                if (!isNumeric || input.length != 10) {
-                  return isEn ? 'Phone number must be 10 digits' : 'Số điện thoại phải có đúng 10 chữ số';
-                }
-                return null;
-              },
-              builder: (FormFieldState<String> state) {
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF19271E) : const Color(0xFFF7FAF8),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: state.hasError
-                              ? AppColors.error
-                              : (isDark ? const Color(0xFF2E4D36) : const Color(0xFFE2E8E4)),
-                          width: 1.5,
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          const SizedBox(width: 14),
-                          Icon(
-                            Icons.phone_android_rounded,
-                            color: isDark ? const Color(0xFF81C784) : const Color(0xFF7A867E),
-                            size: 20,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            '+84',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                              color: isDark ? Colors.white : AppColors.textPrimary,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Container(
-                            width: 1,
-                            height: 24,
-                            color: isDark ? const Color(0xFF2E4D36) : const Color(0xFFE2E8E4),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: TextField(
-                              controller: _phoneController,
-                              keyboardType: TextInputType.phone,
-                              onChanged: (val) {
-                                state.didChange(val);
-                                setState(() {});
-                              },
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: isDark ? Colors.white : AppColors.textPrimary,
-                              ),
-                              decoration: InputDecoration(
-                                hintText: '812 345 678',
-                                hintStyle: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w500,
-                                  color: isDark ? const Color(0xFF9DA8A0) : AppColors.hintText,
-                                ),
-                                border: InputBorder.none,
-                              ),
-                            ),
-                          ),
-                        ],
+          FormField<String>(
+            key: const ValueKey('phone_form_field'),
+            validator: (_) {
+              final input = _phoneController.text.trim();
+              if (input.isEmpty) {
+                return isEn ? 'Please enter phone number' : 'Vui lòng nhập số điện thoại';
+              }
+              final isNumeric = RegExp(r'^[0-9]+$').hasMatch(input);
+              if (!isNumeric || input.length != 10) {
+                return isEn ? 'Phone number must be 10 digits' : 'Số điện thoại phải có đúng 10 chữ số';
+              }
+              return null;
+            },
+            builder: (FormFieldState<String> state) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF19271E) : const Color(0xFFF7FAF8),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: state.hasError
+                            ? AppColors.error
+                            : (isDark ? const Color(0xFF2E4D36) : const Color(0xFFE2E8E4)),
+                        width: 1.5,
                       ),
                     ),
-                    if (state.hasError) ...[
-                      const SizedBox(height: 6),
-                      Padding(
-                        padding: const EdgeInsets.only(left: 12),
-                        child: Text(
-                          state.errorText!,
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: AppColors.error,
-                            fontWeight: FontWeight.w500,
+                    child: Row(
+                      children: [
+                        const SizedBox(width: 14),
+                        Icon(
+                          Icons.phone_android_rounded,
+                          color: isDark ? const Color(0xFF81C784) : const Color(0xFF7A867E),
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          '+84',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: isDark ? Colors.white : AppColors.textPrimary,
                           ),
                         ),
+                        const SizedBox(width: 8),
+                        Container(
+                          width: 1,
+                          height: 24,
+                          color: isDark ? const Color(0xFF2E4D36) : const Color(0xFFE2E8E4),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: TextField(
+                            controller: _phoneController,
+                            keyboardType: TextInputType.phone,
+                            onChanged: (val) {
+                              state.didChange(val);
+                              setState(() {});
+                            },
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: isDark ? Colors.white : AppColors.textPrimary,
+                            ),
+                            decoration: InputDecoration(
+                              hintText: '812 345 678',
+                              hintStyle: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                                color: isDark ? const Color(0xFF9DA8A0) : AppColors.hintText,
+                              ),
+                              border: InputBorder.none,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (state.hasError) ...[
+                    const SizedBox(height: 6),
+                    Padding(
+                      padding: const EdgeInsets.only(left: 12),
+                      child: Text(
+                        state.errorText!,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: AppColors.error,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
-                    ],
+                    ),
                   ],
-                );
-              },
-            )
-          else
-            CustomTextField(
-              key: const ValueKey('email_form_field'),
-              controller: _emailController,
-              hintText: 'example@gmail.com',
-              prefixIcon: Icons.email_outlined,
-              keyboardType: TextInputType.emailAddress,
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return isEn ? 'Please enter email address' : 'Vui lòng nhập địa chỉ email';
-                }
-                final input = value.trim();
-                final isEmailValid = RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$').hasMatch(input);
-                if (!isEmailValid || !input.toLowerCase().contains('@')) {
-                  return isEn ? 'Please enter valid email' : 'Vui lòng nhập email hợp lệ (vd: example@gmail.com)';
-                }
-                if (!input.toLowerCase().endsWith('@gmail.com')) {
-                  return isEn ? 'Email must end with @gmail.com' : 'Email phải kết thúc bằng @gmail.com';
-                }
-                return null;
-              },
-            ),
+                ],
+              );
+            },
+          ),
 
           const SizedBox(height: 12),
 
@@ -723,34 +689,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               ),
             ],
           ),
-
-          const SizedBox(height: 16),
-
-          // Switch between Phone & Email
-          TextButton(
-            onPressed: () {
-              setState(() {
-                _isPhoneMode = !_isPhoneMode;
-                _step1FormKey.currentState?.reset();
-              });
-            },
-            style: TextButton.styleFrom(
-              padding: EdgeInsets.zero,
-              minimumSize: Size.zero,
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            ),
-            child: Text(
-              _isPhoneMode
-                  ? (isEn ? 'Use Email address instead' : 'Sử dụng địa chỉ Email thay thế')
-                  : (isEn ? 'Use Phone number instead' : 'Sử dụng Số điện thoại thay thế'),
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                color: isDark ? const Color(0xFF81C784) : Colors.black,
-                decoration: TextDecoration.underline,
-              ),
-            ),
-          ),
         ],
       ),
     );
@@ -762,9 +700,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     final loc = AppLocalizations.of(context);
     final isEn = loc?.locale.languageCode == 'en';
 
-    String destination = _isPhoneMode
-        ? '(+84) ${_phoneController.text.trim()}'
-        : _emailController.text.trim();
+    String destination = '(+84) ${_phoneController.text.trim()}';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -790,9 +726,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             ),
             children: [
               TextSpan(
-                text: _isPhoneMode
-                    ? (isEn ? "Verification code sent via SMS to\n" : "Mã xác thực đã được gửi qua SMS tới\n")
-                    : (isEn ? "Verification code sent to\n" : "Mã xác thực đã được gửi tới\n"),
+                text: isEn ? "Verification code sent via SMS to\n" : "Mã xác thực đã được gửi qua SMS tới\n",
               ),
               TextSpan(
                 text: destination,

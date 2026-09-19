@@ -1,0 +1,323 @@
+import 'package:flutter/foundation.dart';
+import '../../config/app_constants.dart';
+import 'dio_client.dart';
+
+class ApiService {
+  final DioClient _dioClient;
+
+  ApiService({DioClient? dioClient}) : _dioClient = dioClient ?? DioClient();
+
+  // ------------------------------------------------------------------
+  // Authentication APIs
+  // ------------------------------------------------------------------
+
+  /// Authenticate with Google idToken
+  Future<Map<String, dynamic>> loginWithGoogle(String idToken) async {
+    final response = await _dioClient.post(
+      AppConstants.epAuthGoogle,
+      data: {'idToken': idToken},
+      skipAuth: true,
+    );
+    return response as Map<String, dynamic>;
+  }
+
+  /// Send OTP to phone number
+  Future<dynamic> sendPhoneOtp(String phone) async {
+    return await _dioClient.post(
+      AppConstants.epAuthPhoneSendOtp,
+      data: {'phone': phone},
+      skipAuth: true,
+    );
+  }
+
+  /// Verify phone OTP
+  Future<Map<String, dynamic>> verifyPhoneOtp(String phone, String otp) async {
+    final response = await _dioClient.post(
+      AppConstants.epAuthPhoneVerify,
+      data: {'phone': phone, 'otpCode': otp},
+      skipAuth: true,
+    );
+    return response as Map<String, dynamic>;
+  }
+
+  /// Logout and revoke refresh token
+  Future<dynamic> logout(String refreshToken) async {
+    return await _dioClient.post(
+      AppConstants.epAuthLogout,
+      data: {'refreshToken': refreshToken},
+    );
+  }
+
+  // ------------------------------------------------------------------
+  // Users APIs (/users/me/*)
+  // ------------------------------------------------------------------
+
+  /// GET /users/me - Get current user profile & details
+  Future<Map<String, dynamic>> getMe() async {
+    final response = await _dioClient.get(AppConstants.epUsersMe);
+    return response as Map<String, dynamic>;
+  }
+
+  /// PATCH /users/me/profile - Update name, gender, dateOfBirth, bio
+  Future<Map<String, dynamic>> updateProfile(Map<String, dynamic> profileData) async {
+    final response = await _dioClient.patch(
+      AppConstants.epUsersProfile,
+      data: profileData,
+    );
+    return response as Map<String, dynamic>;
+  }
+
+  /// POST /users/me/avatar - Upload avatar image (fileKey: 'file')
+  Future<Map<String, dynamic>> uploadAvatar(String filePath) async {
+    final response = await _dioClient.uploadFile(
+      AppConstants.epUsersAvatar,
+      filePath: filePath,
+      fileKey: 'file',
+    );
+    return response as Map<String, dynamic>;
+  }
+
+  /// GET /users/me/preferences - Get user dietary, skill & budget preferences
+  Future<Map<String, dynamic>?> getPreferences() async {
+    final response = await _dioClient.get(AppConstants.epUsersPreferences);
+    return response as Map<String, dynamic>?;
+  }
+
+  /// PATCH /users/me/preferences - Update user preferences
+  Future<Map<String, dynamic>> updatePreferences(Map<String, dynamic> preferencesData) async {
+    final response = await _dioClient.patch(
+      AppConstants.epUsersPreferences,
+      data: preferencesData,
+    );
+    return response as Map<String, dynamic>;
+  }
+
+  /// GET /users/me/allergies - Get list of food allergies
+  Future<List<dynamic>> getAllergies() async {
+    final response = await _dioClient.get(AppConstants.epUsersAllergies);
+    return response as List<dynamic>;
+  }
+
+  /// POST /users/me/allergies - Add a food allergy
+  Future<Map<String, dynamic>> addAllergy(int ingredientId, String? note) async {
+    final response = await _dioClient.post(
+      AppConstants.epUsersAllergies,
+      data: {
+        'ingredientId': ingredientId,
+        if (note != null && note.isNotEmpty) 'note': note,
+      },
+    );
+    return response as Map<String, dynamic>;
+  }
+
+  /// DELETE /users/me/allergies/:id - Remove food allergy
+  Future<void> removeAllergy(String allergyId) async {
+    await _dioClient.delete('${AppConstants.epUsersAllergies}/$allergyId');
+  }
+
+  /// GET /users/me/ai-usage - Get current week AI usage stats
+  Future<Map<String, dynamic>> getAiUsage() async {
+    final response = await _dioClient.get(AppConstants.epUsersAiUsage);
+    return response as Map<String, dynamic>;
+  }
+
+  /// GET /users/me/notification-settings - Get notification settings
+  Future<Map<String, dynamic>> getNotificationSettings() async {
+    final response = await _dioClient.get(AppConstants.epUsersNotificationSettings);
+    return response as Map<String, dynamic>;
+  }
+
+  /// PATCH /users/me/notification-settings - Update notification settings
+  Future<Map<String, dynamic>> updateNotificationSettings(Map<String, dynamic> settingsData) async {
+    final response = await _dioClient.patch(
+      AppConstants.epUsersNotificationSettings,
+      data: settingsData,
+    );
+    return response as Map<String, dynamic>;
+  }
+
+  /// POST /users/me/onboarding - Complete onboarding survey
+  Future<Map<String, dynamic>> completeOnboarding(Map<String, dynamic> onboardingData) async {
+    final response = await _dioClient.post(
+      AppConstants.epUsersOnboarding,
+      data: onboardingData,
+    );
+    return response as Map<String, dynamic>;
+  }
+
+  // ------------------------------------------------------------------
+  // Ingredients & Categories
+  // ------------------------------------------------------------------
+
+  /// Get list of ingredients
+  Future<List<dynamic>> getIngredients({int? categoryId, String? search}) async {
+    final queryParams = <String, dynamic>{};
+    if (categoryId != null) queryParams['categoryId'] = categoryId;
+    if (search != null && search.isNotEmpty) queryParams['search'] = search;
+
+    final response = await _dioClient.get(
+      AppConstants.epIngredients,
+      queryParameters: queryParams,
+    );
+    if (response is Map<String, dynamic> && response.containsKey('data') && response['data'] is List) {
+      return response['data'] as List<dynamic>;
+    }
+    if (response is List<dynamic>) {
+      return response;
+    }
+    return [];
+  }
+
+  /// Get ingredient categories
+  Future<List<dynamic>> getIngredientCategories() async {
+    final response = await _dioClient.get(AppConstants.epIngredientCategories);
+    return response as List<dynamic>;
+  }
+
+  // ------------------------------------------------------------------
+  // Fridge Management
+  // ------------------------------------------------------------------
+
+  /// Get list of items currently in the fridge
+  Future<List<dynamic>> getFridgeItems() async {
+    final response = await _dioClient.get(AppConstants.epFridgeItems);
+    return response as List<dynamic>;
+  }
+
+  /// Add item to fridge
+  Future<Map<String, dynamic>> addFridgeItem(Map<String, dynamic> itemData) async {
+    final response = await _dioClient.post(
+      AppConstants.epFridgeItems,
+      data: itemData,
+    );
+    return response as Map<String, dynamic>;
+  }
+
+  /// Scan fridge items image using AI
+  Future<dynamic> scanFridgeImage(String imagePath) async {
+    return await _dioClient.uploadFile(
+      AppConstants.epFridgeScan,
+      filePath: imagePath,
+      fileKey: 'image',
+    );
+  }
+
+  // ------------------------------------------------------------------
+  // Recipes
+  // ------------------------------------------------------------------
+
+  /// Get list of recipes
+  Future<List<dynamic>> getRecipes({String? mealType, String? search}) async {
+    final queryParams = <String, dynamic>{};
+    if (mealType != null) queryParams['mealType'] = mealType;
+    if (search != null && search.isNotEmpty) queryParams['search'] = search;
+
+    final response = await _dioClient.get(
+      AppConstants.epRecipes,
+      queryParameters: queryParams,
+    );
+    return response as List<dynamic>;
+  }
+
+  // ------------------------------------------------------------------
+  // Subscriptions APIs (/subscriptions/*)
+  // ------------------------------------------------------------------
+
+  /// GET /subscriptions/plans - Get list of subscription plans (Free & Individual)
+  Future<List<dynamic>> getSubscriptionPlans() async {
+    final response = await _dioClient.get(AppConstants.epSubscriptionsPlans);
+    if (response is List<dynamic>) return response;
+    return [];
+  }
+
+  /// GET /subscriptions/me - Get current user active subscription
+  Future<Map<String, dynamic>> getMySubscription() async {
+    final response = await _dioClient.get(AppConstants.epSubscriptionsMe);
+    return response as Map<String, dynamic>;
+  }
+
+  /// POST /subscriptions/subscribe - Subscribe to plan (returns payment QR mock)
+  Future<Map<String, dynamic>> subscribePlan(int planId) async {
+    final response = await _dioClient.post(
+      AppConstants.epSubscriptionsSubscribe,
+      data: {'planId': planId},
+    );
+    return response as Map<String, dynamic>;
+  }
+
+  /// POST /subscriptions/webhook - Public payment callback simulation
+  Future<Map<String, dynamic>> simulatePaymentWebhook(String paymentRef, {bool isSuccess = true}) async {
+    final response = await _dioClient.post(
+      AppConstants.epSubscriptionsWebhook,
+      data: {
+        'paymentRef': paymentRef,
+        'status': isSuccess ? 'success' : 'failed',
+      },
+      skipAuth: true,
+    );
+    return response as Map<String, dynamic>;
+  }
+
+  /// DELETE /subscriptions/me - Cancel Individual subscription
+  Future<void> cancelSubscription() async {
+    await _dioClient.delete(AppConstants.epSubscriptionsMe);
+  }
+
+  // ------------------------------------------------------------------
+  // Notifications APIs (/notifications/*)
+  // ------------------------------------------------------------------
+
+  static final ValueNotifier<int> unreadCountNotifier = ValueNotifier<int>(0);
+
+  static void updateUnreadCount(int count) {
+    unreadCountNotifier.value = count < 0 ? 0 : count;
+  }
+
+  /// GET /notifications/unread-count - Get unread notifications count
+  Future<int> getUnreadNotificationCount() async {
+    try {
+      final response = await _dioClient.get(AppConstants.epNotificationsUnreadCount);
+      if (response is Map<String, dynamic> && response.containsKey('count')) {
+        final count = response['count'] as int? ?? 0;
+        unreadCountNotifier.value = count;
+        return count;
+      }
+    } catch (e) {
+      debugPrint('[ApiService] Error fetching unread count: $e');
+    }
+    return unreadCountNotifier.value;
+  }
+
+  /// GET /notifications - Get paginated notifications list
+  Future<Map<String, dynamic>> getNotifications({int page = 1, int limit = 20}) async {
+    final response = await _dioClient.get(
+      AppConstants.epNotifications,
+      queryParameters: {'page': page, 'limit': limit},
+    );
+    if (response is Map<String, dynamic> && response.containsKey('unreadCount')) {
+      final count = response['unreadCount'] as int? ?? 0;
+      unreadCountNotifier.value = count;
+    }
+    return response as Map<String, dynamic>;
+  }
+
+  /// PATCH /notifications/read-all - Mark all notifications read
+  Future<void> markAllNotificationsRead() async {
+    await _dioClient.patch(AppConstants.epNotificationsReadAll);
+    unreadCountNotifier.value = 0;
+  }
+
+  /// PATCH /notifications/:id/read - Mark one notification read
+  Future<Map<String, dynamic>> markNotificationRead(String id) async {
+    final response = await _dioClient.patch('${AppConstants.epNotifications}/$id/read');
+    if (unreadCountNotifier.value > 0) {
+      unreadCountNotifier.value = unreadCountNotifier.value - 1;
+    }
+    return response as Map<String, dynamic>;
+  }
+
+  /// DELETE /notifications/:id - Soft delete notification
+  Future<void> deleteNotification(String id) async {
+    await _dioClient.delete('${AppConstants.epNotifications}/$id');
+  }
+}

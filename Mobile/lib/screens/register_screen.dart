@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../data/mock_user_data.dart';
+import '../data/services/api_service.dart';
+import '../data/services/auth_service.dart';
 import '../l10n/app_localizations.dart';
 import '../theme/app_theme.dart';
 import '../widgets/custom_text_field.dart';
 import '../widgets/social_button.dart';
 import 'login_screen.dart';
+import 'login_success_video_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -17,20 +19,32 @@ class RegisterScreen extends StatefulWidget {
 class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _fullNameController = TextEditingController();
-  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController = TextEditingController();
 
   bool _isObscurePassword = true;
   bool _isObscureConfirmPassword = true;
+  bool _isLoading = false;
 
   @override
   void dispose() {
     _fullNameController.dispose();
-    _emailController.dispose();
+    _phoneController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
+  }
+
+  String _formatPhone(String input) {
+    final clean = input.trim().replaceAll(RegExp(r'\s+'), '');
+    if (clean.startsWith('0')) {
+      return '+84${clean.substring(1)}';
+    }
+    if (!clean.startsWith('+')) {
+      return '+84$clean';
+    }
+    return clean;
   }
 
   int _calculatePasswordStrength(String password) {
@@ -135,39 +149,186 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  void _handleRegister() {
+  void _handleRegister() async {
     if (_formKey.currentState?.validate() ?? false) {
-      UserRepository.registerUser(
-        fullName: _fullNameController.text.trim(),
-        emailOrPhone: _emailController.text.trim(),
-        password: _passwordController.text,
-      );
+      final formattedPhone = _formatPhone(_phoneController.text);
+      setState(() => _isLoading = true);
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Row(
-            children: [
-              Icon(Icons.check_circle, color: Colors.white),
-              SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  'Account created successfully! You can now log in.',
-                  style: TextStyle(fontWeight: FontWeight.w600),
+      try {
+        await ApiService().sendPhoneOtp(formattedPhone);
+
+        if (!mounted) return;
+        setState(() => _isLoading = false);
+
+        _showOtpVerificationModal(formattedPhone);
+      } catch (e) {
+        if (!mounted) return;
+        setState(() => _isLoading = false);
+        final errorMsg = e.toString().replaceAll('ApiException: ', '');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.error_outline, color: Colors.white),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    errorMsg,
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+      }
+    }
+  }
+
+  void _showOtpVerificationModal(String phone) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final loc = AppLocalizations.of(context);
+    final isEn = loc?.locale.languageCode == 'en';
+    final otpController = TextEditingController();
+    bool isVerifying = false;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+              ),
+              child: Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF19271E) : Colors.white,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF2E4D36) : const Color(0xFFE2E8E4),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    Text(
+                      isEn ? 'Enter OTP Code' : 'Nhập mã OTP',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w900,
+                        color: isDark ? Colors.white : AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      isEn
+                          ? '6-digit verification OTP code was sent to $phone'
+                          : 'Mã OTP 6 chữ số đã được gửi đến $phone',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: isDark ? const Color(0xFFD0D7D1) : const Color(0xFF6B786F),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    CustomTextField(
+                      controller: otpController,
+                      hintText: isEn ? 'Enter 6-digit OTP (e.g. 123456)' : 'Nhập mã OTP 6 chữ số (VD: 123456)',
+                      prefixIcon: Icons.security_rounded,
+                      keyboardType: TextInputType.number,
+                    ),
+                    const SizedBox(height: 20),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: ElevatedButton(
+                        onPressed: isVerifying
+                            ? null
+                            : () async {
+                                final otp = otpController.text.trim();
+                                if (otp.length != 6) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(isEn ? 'OTP must be 6 digits' : 'Mã OTP phải đúng 6 chữ số'),
+                                      backgroundColor: AppColors.error,
+                                      behavior: SnackBarBehavior.floating,
+                                    ),
+                                  );
+                                  return;
+                                }
+
+                                setModalState(() => isVerifying = true);
+
+                                final success = await AuthService().verifyPhoneOtpAndLogin(
+                                  context,
+                                  phone,
+                                  otp,
+                                );
+
+                                if (context.mounted) {
+                                  setModalState(() => isVerifying = false);
+                                  if (success) {
+                                    Navigator.pop(context); // close modal
+                                    Navigator.of(context).pushReplacement(
+                                      PageRouteBuilder(
+                                        transitionDuration: const Duration(milliseconds: 500),
+                                        pageBuilder: (context, animation, secondaryAnimation) =>
+                                            const LoginSuccessVideoScreen(),
+                                        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                                          return FadeTransition(
+                                            opacity: CurvedAnimation(
+                                              parent: animation,
+                                              curve: Curves.easeInOut,
+                                            ),
+                                            child: child,
+                                          );
+                                        },
+                                      ),
+                                    );
+                                  }
+                                }
+                              },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(24),
+                          ),
+                        ),
+                        child: isVerifying
+                            ? const SizedBox(
+                                width: 22,
+                                height: 22,
+                                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                              )
+                            : Text(
+                                isEn ? 'Verify & Register' : 'Xác nhận & Đăng ký',
+                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                              ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
                 ),
               ),
-            ],
-          ),
-          backgroundColor: AppColors.primary,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-      );
-
-      // Navigate back to Login Screen (slides left to right)
-      _navigateToLogin(context);
-    }
+            );
+          },
+        );
+      },
+    );
   }
 
   @override
@@ -336,31 +497,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       const SizedBox(height: 10),
 
-                      // 2. Email or Phone Input Field
+                      // 2. Phone Number Input Field
                       CustomTextField(
-                        controller: _emailController,
-                        hintText: isEn ? 'Email or Phone Number' : 'Email hoặc Số điện thoại',
-                        prefixIcon: Icons.email_outlined,
-                        keyboardType: TextInputType.emailAddress,
+                        controller: _phoneController,
+                        hintText: isEn ? 'Phone Number' : 'Số điện thoại',
+                        prefixIcon: Icons.phone_android_outlined,
+                        keyboardType: TextInputType.phone,
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
-                            return isEn ? 'Please enter email or phone number' : 'Vui lòng nhập email hoặc số điện thoại';
+                            return isEn ? 'Please enter phone number' : 'Vui lòng nhập số điện thoại';
                           }
                           final input = value.trim();
-
                           final isNumeric = RegExp(r'^[0-9]+$').hasMatch(input);
-                          if (isNumeric) {
-                            if (input.length != 10) {
-                              return isEn ? 'Phone number must be 10 digits' : 'Số điện thoại phải bao gồm đúng 10 chữ số';
-                            }
-                          } else {
-                            final isEmailValid = RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$').hasMatch(input);
-                            if (!isEmailValid || !input.toLowerCase().contains('@')) {
-                              return isEn ? 'Please enter a valid email' : 'Vui lòng nhập địa chỉ email hợp lệ (vd: example@gmail.com)';
-                            }
-                            if (!input.toLowerCase().endsWith('@gmail.com')) {
-                              return isEn ? 'Email must end with @gmail.com' : 'Email phải kết thúc bằng @gmail.com';
-                            }
+                          if (!isNumeric || input.length != 10) {
+                            return isEn ? 'Phone number must be 10 digits' : 'Số điện thoại phải bao gồm đúng 10 chữ số';
                           }
                           return null;
                         },
@@ -437,7 +587,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         width: double.infinity,
                         height: 54,
                         child: ElevatedButton(
-                          onPressed: _handleRegister,
+                          onPressed: _isLoading ? null : _handleRegister,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.primary,
                             foregroundColor: Colors.white,
@@ -447,14 +597,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               borderRadius: BorderRadius.circular(28),
                             ),
                           ),
-                          child: Text(
-                            isEn ? 'Register' : 'Đăng ký',
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 0.5,
-                            ),
-                          ),
+                          child: _isLoading
+                              ? const SizedBox(
+                                  width: 22,
+                                  height: 22,
+                                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                )
+                              : Text(
+                                  isEn ? 'Register' : 'Đăng ký',
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
                         ),
                       ),
                       const SizedBox(height: 14),
@@ -493,28 +649,32 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       const SizedBox(height: 14),
 
-                      // 8. Social Buttons
+                      // 8. Social Button (Google Full Width)
                       Row(
                         children: [
                           SocialButton(
                             type: SocialType.google,
-                            onPressed: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(isEn ? 'Selected Google Register' : 'Đã chọn đăng ký bằng Google'),
-                                ),
-                              );
-                            },
-                          ),
-                          const SizedBox(width: 16),
-                          SocialButton(
-                            type: SocialType.apple,
-                            onPressed: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(isEn ? 'Selected Apple Register' : 'Đã chọn đăng ký bằng Apple'),
-                                ),
-                              );
+                            onPressed: () async {
+                              final success = await AuthService().signInWithGoogle(context);
+                              if (success && context.mounted) {
+                                ScaffoldMessenger.of(context).clearSnackBars();
+                                Navigator.of(context).pushReplacement(
+                                  PageRouteBuilder(
+                                    transitionDuration: const Duration(milliseconds: 500),
+                                    pageBuilder: (context, animation, secondaryAnimation) =>
+                                        const LoginSuccessVideoScreen(),
+                                    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                                      return FadeTransition(
+                                        opacity: CurvedAnimation(
+                                          parent: animation,
+                                          curve: Curves.easeInOut,
+                                        ),
+                                        child: child,
+                                      );
+                                    },
+                                  ),
+                                );
+                              }
                             },
                           ),
                         ],

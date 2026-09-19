@@ -1,0 +1,66 @@
+import 'package:dio/dio.dart';
+
+class ApiException implements Exception {
+  final String message;
+  final int? statusCode;
+  final dynamic data;
+
+  ApiException({
+    required this.message,
+    this.statusCode,
+    this.data,
+  });
+
+  factory ApiException.fromDioException(DioException dioException) {
+    switch (dioException.type) {
+      case DioExceptionType.cancel:
+        return ApiException(message: 'Yêu cầu bị hủy kết nối');
+      case DioExceptionType.connectionTimeout:
+        return ApiException(message: 'Hết thời gian kết nối tới máy chủ');
+      case DioExceptionType.receiveTimeout:
+        return ApiException(message: 'Máy chủ phản hồi quá chậm (Timeout)');
+      case DioExceptionType.sendTimeout:
+        return ApiException(message: 'Gửi dữ liệu quá thời gian chờ');
+      case DioExceptionType.connectionError:
+        return ApiException(message: 'Không thể kết nối máy chủ. Vui lòng kiểm tra mạng');
+      case DioExceptionType.badResponse:
+        final response = dioException.response;
+        final statusCode = response?.statusCode;
+        String errorMessage = 'Đã xảy ra lỗi hệ thống';
+
+        if (response?.data != null && response?.data is Map) {
+          final body = response!.data as Map<String, dynamic>;
+          if (body['message'] != null) {
+            if (body['message'] is List) {
+              errorMessage = (body['message'] as List).join('\n');
+            } else {
+              errorMessage = body['message'].toString();
+            }
+          }
+        } else if (statusCode == 401) {
+          errorMessage = 'Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại';
+        } else if (statusCode == 403) {
+          errorMessage = 'Bạn không có quyền truy cập thực hiện thao tác này';
+        } else if (statusCode == 404) {
+          errorMessage = 'Không tìm thấy dữ liệu yêu cầu (404)';
+        } else if (statusCode == 500) {
+          errorMessage = 'Lỗi máy chủ nội bộ (500)';
+        }
+
+        return ApiException(
+          message: errorMessage,
+          statusCode: statusCode,
+          data: response?.data,
+        );
+      case DioExceptionType.unknown:
+      default:
+        if (dioException.error != null) {
+          return ApiException(message: dioException.error.toString());
+        }
+        return ApiException(message: 'Đã xảy ra lỗi không xác định');
+    }
+  }
+
+  @override
+  String toString() => message;
+}

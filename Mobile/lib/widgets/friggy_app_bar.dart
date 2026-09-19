@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../data/services/api_service.dart';
 import '../screens/notifications_screen.dart';
 
-class FriggyAppBar extends StatelessWidget implements PreferredSizeWidget {
+class FriggyAppBar extends StatefulWidget implements PreferredSizeWidget {
   final bool showBackButton;
   final VoidCallback? onBackTap;
   final VoidCallback? onNotificationTap;
   final bool hasUnreadNotifications;
-  final int unreadCount;
+  final int? unreadCount;
   final Color? backgroundColor;
 
   const FriggyAppBar({
@@ -16,21 +17,48 @@ class FriggyAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.onBackTap,
     this.onNotificationTap,
     this.hasUnreadNotifications = true,
-    this.unreadCount = 3,
+    this.unreadCount,
     this.backgroundColor,
   });
 
   @override
+  State<FriggyAppBar> createState() => _FriggyAppBarState();
+
+  @override
   Size get preferredSize => const Size.fromHeight(60.0);
+}
+
+class _FriggyAppBarState extends State<FriggyAppBar> {
+  final ApiService _apiService = ApiService();
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchUnreadCount();
+  }
+
+  @override
+  void didUpdateWidget(covariant FriggyAppBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.unreadCount != null) {
+      ApiService.updateUnreadCount(widget.unreadCount!);
+    } else {
+      _fetchUnreadCount();
+    }
+  }
+
+  Future<void> _fetchUnreadCount() async {
+    await _apiService.getUnreadNotificationCount();
+  }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
-      color: backgroundColor ?? Colors.transparent,
+      color: widget.backgroundColor ?? Colors.transparent,
       padding: EdgeInsets.symmetric(
-        horizontal: showBackButton ? 16.0 : 0.0,
+        horizontal: widget.showBackButton ? 16.0 : 0.0,
         vertical: 4.0,
       ),
       child: SafeArea(
@@ -43,7 +71,7 @@ class FriggyAppBar extends StatelessWidget implements PreferredSizeWidget {
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (showBackButton) ...[
+                if (widget.showBackButton) ...[
                   IconButton(
                     icon: Icon(
                       Icons.chevron_left_rounded,
@@ -56,8 +84,8 @@ class FriggyAppBar extends StatelessWidget implements PreferredSizeWidget {
                       minHeight: 36,
                     ),
                     onPressed: () {
-                      if (onBackTap != null) {
-                        onBackTap!();
+                      if (widget.onBackTap != null) {
+                        widget.onBackTap!();
                       } else {
                         Navigator.maybePop(context);
                       }
@@ -111,17 +139,21 @@ class FriggyAppBar extends StatelessWidget implements PreferredSizeWidget {
               ],
             ),
 
-            // Right Side: Notification Icon with Unread Count Badge
+            // Right Side: Notification Icon with Green Unread Count Badge
             GestureDetector(
-              onTap: onNotificationTap ??
-                  () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const NotificationsScreen(),
-                      ),
-                    );
-                  },
+              onTap: () async {
+                if (widget.onNotificationTap != null) {
+                  await Future.sync(() => widget.onNotificationTap!());
+                } else {
+                  await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const NotificationsScreen(),
+                    ),
+                  );
+                }
+                await _fetchUnreadCount();
+              },
               child: Container(
                 width: 44,
                 height: 44,
@@ -139,46 +171,53 @@ class FriggyAppBar extends StatelessWidget implements PreferredSizeWidget {
                     ),
                   ],
                 ),
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    Icon(
-                      Icons.notifications_none_rounded,
-                      color: isDark ? const Color(0xFF81C784) : const Color(0xFF2E7D32),
-                      size: 24,
-                    ),
-                    if (hasUnreadNotifications && unreadCount > 0)
-                      Positioned(
-                        top: 4,
-                        right: 4,
-                        child: Container(
-                          padding: const EdgeInsets.all(2.5),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFE53935),
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: isDark ? const Color(0xFF19271E) : Colors.white,
-                              width: 1.5,
-                            ),
-                          ),
-                          constraints: const BoxConstraints(
-                            minWidth: 17,
-                            minHeight: 17,
-                          ),
-                          child: Center(
-                            child: Text(
-                              '$unreadCount',
-                              style: GoogleFonts.plusJakartaSans(
-                                fontSize: 9.5,
-                                fontWeight: FontWeight.w900,
-                                color: Colors.white,
-                                height: 1.0,
+                child: ValueListenableBuilder<int>(
+                  valueListenable: ApiService.unreadCountNotifier,
+                  builder: (context, count, child) {
+                    final displayUnreadCount = widget.unreadCount ?? count;
+
+                    return Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Icon(
+                          Icons.notifications_none_rounded,
+                          color: isDark ? const Color(0xFF81C784) : const Color(0xFF2E7D32),
+                          size: 24,
+                        ),
+                        if (widget.hasUnreadNotifications && displayUnreadCount > 0)
+                          Positioned(
+                            top: 4,
+                            right: 4,
+                            child: Container(
+                              padding: const EdgeInsets.all(2.5),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF008435), // Green theme badge
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: isDark ? const Color(0xFF19271E) : Colors.white,
+                                  width: 1.5,
+                                ),
+                              ),
+                              constraints: const BoxConstraints(
+                                minWidth: 17,
+                                minHeight: 17,
+                              ),
+                              child: Center(
+                                child: Text(
+                                  '$displayUnreadCount',
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 9.5,
+                                    fontWeight: FontWeight.w900,
+                                    color: Colors.white,
+                                    height: 1.0,
+                                  ),
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                      ),
-                  ],
+                      ],
+                    );
+                  },
                 ),
               ),
             ),

@@ -2,11 +2,13 @@ class UserModel {
   final String fullName;
   final String emailOrPhone;
   final String password;
+  final String role;
 
   UserModel({
     required this.fullName,
     required this.emailOrPhone,
     required this.password,
+    this.role = 'user',
   });
 }
 
