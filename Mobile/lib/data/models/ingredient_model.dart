@@ -114,8 +114,11 @@ class IngredientModel {
       badgeTextColor = const Color(0xFFF57F17);
     }
 
-    String img = json['ingredientImagePath'] as String? ?? '';
-    if (!img.startsWith('http') && !img.startsWith('assets/')) {
+    String img = json['ingredientImagePath'] as String? ??
+        json['imagePath'] as String? ??
+        json['image'] as String? ??
+        '';
+    if (img == 'null') {
       img = '';
     }
 

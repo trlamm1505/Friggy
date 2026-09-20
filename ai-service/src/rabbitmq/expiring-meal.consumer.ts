@@ -32,7 +32,7 @@ export class ExpiringMealPlanConsumer {
   constructor(
     private readonly redis: RedisService,
     private readonly singleAgent: SingleAgentService,
-  ) {}
+  ) { }
 
   @RabbitSubscribe({
     exchange: FRIGGY_AI_EXCHANGE,
@@ -102,7 +102,7 @@ export class ExpiringMealPlanConsumer {
                   tool: event.data,
                   message: `AI đang chạy: ${event.data}`,
                 }))
-                .catch(() => {});
+                .catch(() => { });
             }
           },
           error: reject,

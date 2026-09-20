@@ -44,7 +44,7 @@ class _RecipeSuggestionsScreenState extends State<RecipeSuggestionsScreen>
     super.dispose();
   }
 
-  Future<void> _loadRecipes() async {
+  Future<void> _loadRecipes({bool forceRegenerate = false}) async {
     if (!mounted) return;
     setState(() {
       _isLoading = true;
@@ -54,6 +54,7 @@ class _RecipeSuggestionsScreenState extends State<RecipeSuggestionsScreen>
     try {
       // Fetch AI recipes using POST /meal-planning/plans/generate-from-expiring
       final list = await RecipeRepository.fetchCookingSuggestions(
+        forceRegenerate: forceRegenerate,
         onProgress: (msg) {
           if (mounted) {
             setState(() {
@@ -101,56 +102,83 @@ class _RecipeSuggestionsScreenState extends State<RecipeSuggestionsScreen>
                   ]
                 : const [
                     Color(0xFFE8F5E9),
-                    Color(0xFFA5D6A7),
-                    Color(0xFF81C784),
+                    Color(0xFFF1F8E9),
+                    Colors.white,
                   ],
-            stops: const [0.0, 0.5, 1.0],
           ),
         ),
         child: SafeArea(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 1. Top Header using reusable FriggyAppBar
-              const FriggyAppBar(),
+              // Friggy Top App Bar
+              const FriggyAppBar(
+                showBackButton: true,
+              ),
 
-              if (!_isLoading) ...[
-                const SizedBox(height: 4),
+              const SizedBox(height: 12),
 
-                // Title Section
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        isEn ? 'AI Recipe Suggestions' : 'Gợi Ý Món Ăn AI',
-                        style: GoogleFonts.outfit(
-                          fontSize: 28,
-                          fontWeight: FontWeight.w900,
-                          color: isDark ? Colors.white : const Color(0xFF006428),
-                          letterSpacing: -0.3,
+              // Title Section with Refresh Button
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            isEn ? 'AI Recipe Suggestions' : 'Gợi Ý Món Ăn AI',
+                            style: GoogleFonts.outfit(
+                              fontSize: 28,
+                              fontWeight: FontWeight.w900,
+                              color: isDark ? Colors.white : const Color(0xFF006428),
+                              letterSpacing: -0.3,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            isEn
+                                ? 'Prioritizing expiring ingredients'
+                                : 'Ưu tiên giải cứu nguyên liệu sắp hết hạn',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.w600,
+                              color: isDark
+                                  ? const Color(0xFF81C784)
+                                  : const Color(0xFF1B5E20),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: _isLoading ? null : () => _loadRecipes(forceRegenerate: true),
+                      tooltip: isEn ? 'Regenerate with AI' : 'Tạo mới với AI',
+                      icon: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: isDark ? const Color(0xFF233629) : Colors.white,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: isDark ? const Color(0xFF2E4D36) : const Color(0xFF008435),
+                            width: 1,
+                          ),
+                        ),
+                        child: const Icon(
+                          Icons.sync_rounded,
+                          color: Color(0xFF008435),
+                          size: 20,
                         ),
                       ),
-                      const SizedBox(height: 2),
-                      Text(
-                        isEn
-                            ? 'Prioritizing expiring ingredients'
-                            : 'Ưu tiên giải cứu nguyên liệu sắp hết hạn',
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 13.5,
-                          fontWeight: FontWeight.w600,
-                          color: isDark
-                              ? const Color(0xFF81C784)
-                              : const Color(0xFF1B5E20),
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
+              ),
 
-                const SizedBox(height: 16),
-              ],
+              const SizedBox(height: 16),
 
               // Body Content: AI Loading, Empty State or Recipes List
               Expanded(
@@ -451,6 +479,10 @@ class _RecipeSuggestionsScreenState extends State<RecipeSuggestionsScreen>
   }
 
   Widget _buildRecipeCard(RecipeModel recipe, bool isDark, bool isEn) {
+    final hasImage = recipe.imagePath.trim().isNotEmpty;
+    final hasMatchBadge = recipe.matchPercent != null ||
+        (recipe.matchText != null && recipe.matchText!.trim().isNotEmpty);
+
     return GestureDetector(
       onTap: () {
         Navigator.push(
@@ -466,7 +498,7 @@ class _RecipeSuggestionsScreenState extends State<RecipeSuggestionsScreen>
           borderRadius: BorderRadius.circular(22),
           border: isDark
               ? Border.all(color: const Color(0xFF2E4D36), width: 1.5)
-              : null,
+              : Border.all(color: const Color(0xFFE2E8F0), width: 1),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.08),
@@ -478,71 +510,74 @@ class _RecipeSuggestionsScreenState extends State<RecipeSuggestionsScreen>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Banner Image Container with Badges
-            Stack(
-              children: [
-                // Recipe Photo Banner
-                ClipRRect(
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(22),
-                  ),
-                  child: _buildCardImage(recipe, isDark),
-                ),
+            // Banner Image Container with Badges (Only if imagePath or matchBadge exists)
+            if (hasImage || hasMatchBadge)
+              Stack(
+                children: [
+                  // Recipe Photo Banner (if image is available)
+                  if (hasImage)
+                    ClipRRect(
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(22),
+                      ),
+                      child: _buildCardImage(recipe, isDark),
+                    ),
 
-                // Top Left Green Match Badge (e.g. ✔ 95% phù hợp / 95% match)
-                Positioned(
-                  top: 14,
-                  left: 14,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 7,
-                    ),
-                    decoration: BoxDecoration(
-                      color: isDark
-                          ? const Color(0xFF233629)
-                          : const Color(0xFFA5D6A7),
-                      borderRadius: BorderRadius.circular(20),
-                      border: isDark
-                          ? Border.all(
-                              color: const Color(0xFF2E4D36), width: 1)
-                          : null,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black
-                              .withValues(alpha: isDark ? 0.2 : 0.15),
-                          blurRadius: 6,
-                          offset: const Offset(0, 2),
+                  // Top Left Green Match Badge (Only if API returned matchScore)
+                  if (hasMatchBadge)
+                    Positioned(
+                      top: 14,
+                      left: 14,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 7,
                         ),
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.check_circle_rounded,
+                        decoration: BoxDecoration(
                           color: isDark
-                              ? const Color(0xFF81C784)
-                              : const Color(0xFF006428),
-                          size: 18,
+                              ? const Color(0xFF233629)
+                              : const Color(0xFFA5D6A7),
+                          borderRadius: BorderRadius.circular(20),
+                          border: isDark
+                              ? Border.all(
+                                  color: const Color(0xFF2E4D36), width: 1)
+                              : null,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black
+                                  .withValues(alpha: isDark ? 0.2 : 0.15),
+                              blurRadius: 6,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 6),
-                        Text(
-                          recipe.displayMatchText(isEn),
-                          style: GoogleFonts.outfit(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w900,
-                            color: isDark
-                                ? const Color(0xFF81C784)
-                                : const Color(0xFF006428),
-                          ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.check_circle_rounded,
+                              color: isDark
+                                  ? const Color(0xFF81C784)
+                                  : const Color(0xFF006428),
+                              size: 18,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              recipe.displayMatchText(isEn),
+                              style: GoogleFonts.outfit(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w900,
+                                color: isDark
+                                    ? const Color(0xFF81C784)
+                                    : const Color(0xFF006428),
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
-                  ),
-                ),
-              ],
-            ),
+                ],
+              ),
 
             // Bottom Content Area
             Padding(
