@@ -253,15 +253,102 @@ class RecipeModel {
 }
 
 class RecipeRepository {
-  /// Fetch list of cooking suggestions generated from POST /meal-planning/plans/generate-from-expiring
+  /// Fetch cooking suggestions for TODAY (3 meals: Breakfast, Lunch, Dinner)
   static Future<List<RecipeModel>> fetchCookingSuggestions({
     Function(String message)? onProgress,
+    bool forceRegenerate = false,
   }) async {
-    final Set<String> initialSlotIds = {};
+    final int todayWeekday = DateTime.now().weekday;
     String? targetPlanId;
 
+    // Helper to extract today's 3 recipes from meal plan detail JSON
+    List<RecipeModel> extractTodayRecipes(Map<String, dynamic> detail) {
+      final dailyPlans = detail['dailyPlans'] as List<dynamic>? ?? [];
+      Map<String, dynamic>? todayPlan;
+
+      for (final d in dailyPlans) {
+        final map = d as Map<String, dynamic>;
+        final rawDay = map['dayOfWeek'];
+        final dOfWeek = rawDay is int
+            ? rawDay
+            : (int.tryParse(rawDay?.toString() ?? '') ?? 1);
+        if (dOfWeek == todayWeekday) {
+          todayPlan = map;
+          break;
+        }
+      }
+      if (todayPlan == null && dailyPlans.isNotEmpty) {
+        todayPlan = dailyPlans.first as Map<String, dynamic>;
+      }
+
+      final List<RecipeModel> result = [];
+      if (todayPlan != null) {
+        final mealSlots = todayPlan['mealSlots'] as List<dynamic>? ?? [];
+        // Ensure breakfast, lunch, dinner order
+        final sortedSlots = List<Map<String, dynamic>>.from(
+          mealSlots.map((e) => Map<String, dynamic>.from(e as Map)),
+        );
+        sortedSlots.sort((a, b) {
+          final order = {'breakfast': 0, 'lunch': 1, 'dinner': 2, 'snack': 3};
+          final mA = a['mealType']?.toString().toLowerCase() ?? '';
+          final mB = b['mealType']?.toString().toLowerCase() ?? '';
+          return (order[mA] ?? 99).compareTo(order[mB] ?? 99);
+        });
+
+        for (final slotMap in sortedSlots) {
+          final recipeId = slotMap['recipeId']?.toString() ?? 'rec_default';
+          final recipeName = slotMap['recipeName']?.toString() ??
+              slotMap['recipe']?['title']?.toString() ??
+              'Món ngon AI';
+
+          result.add(RecipeModel(
+            id: recipeId,
+            title: recipeName,
+            englishTitle: recipeName,
+            imagePath: slotMap['recipe']?['thumbnailPath']?.toString() ?? '',
+            matchPercent: null,
+            matchText: null,
+            timeText: '20 phút',
+            difficultyText: 'Dễ',
+            servingsText: '${slotMap['servings'] ?? 1} người',
+            tags: ['# Thực đơn hôm nay', '# AI gợi ý'],
+            friggyTip: 'Gợi ý từ AI ưu tiên giải cứu thực phẩm trong tủ lạnh.',
+          ));
+        }
+      }
+      return result;
+    }
+
+    // 1. If not forceRegenerate, return today's existing 3 meals immediately if available
+    if (!forceRegenerate) {
+      try {
+        onProgress?.call('🔍 Đang kiểm tra thực đơn hôm nay...');
+        final existingPlans = await ApiService().getMealPlans();
+        if (existingPlans.isNotEmpty) {
+          existingPlans.sort((a, b) {
+            final dateA = DateTime.tryParse((a as Map)['createdAt']?.toString() ?? '') ?? DateTime(1970);
+            final dateB = DateTime.tryParse((b as Map)['createdAt']?.toString() ?? '') ?? DateTime(1970);
+            return dateB.compareTo(dateA);
+          });
+
+          final planId = existingPlans.first['id']?.toString();
+          if (planId != null) {
+            final detail = await ApiService().getMealPlanDetail(planId);
+            final todayList = extractTodayRecipes(detail);
+            if (todayList.isNotEmpty) {
+              onProgress?.call('✨ Đã tải 3 bữa ăn hôm nay!');
+              return todayList;
+            }
+          }
+        }
+      } catch (e) {
+        debugPrint('[RecipeRepository] Notice checking existing plan: $e');
+      }
+    }
+
+    // 2. Trigger AI generate-from-expiring (within 3 days, 1 day plan)
+    String initialSlotKey = '';
     try {
-      // 1. Get initial meal slot IDs state before starting AI
       onProgress?.call('🤖 AI Friggy đang kết nối hệ thống...');
       final initialPlans = await ApiService().getMealPlans();
       if (initialPlans.isNotEmpty) {
@@ -273,46 +360,36 @@ class RecipeRepository {
         targetPlanId = initialPlans.first['id']?.toString();
         if (targetPlanId != null) {
           final detail = await ApiService().getMealPlanDetail(targetPlanId);
-          final dailyPlans = detail['dailyPlans'] as List<dynamic>? ?? [];
-          for (final d in dailyPlans) {
-            final slots = (d as Map<String, dynamic>)['mealSlots'] as List<dynamic>? ?? [];
-            for (final s in slots) {
-              final sId = (s as Map<String, dynamic>)['id']?.toString();
-              if (sId != null) initialSlotIds.add(sId);
-            }
-          }
+          initialSlotKey = extractTodayRecipes(detail).map((r) => '${r.id}:${r.title}').join('|');
         }
       }
     } catch (e) {
-      debugPrint('[RecipeRepository] Notice checking initial slot IDs: $e');
+      debugPrint('[RecipeRepository] Notice initial plan fetch: $e');
     }
 
     try {
-      // 2. Trigger AI plan generation from expiring ingredients (within 3 days, 1 day plan)
       onProgress?.call('🥬 AI đang quét nguyên liệu sắp hết hạn trong 3 ngày...');
       final res = await ApiService().generateFromExpiring(withinDays: 3, days: 1);
       final jobId = res['jobId'] as String?;
       debugPrint('[RecipeRepository] Triggered generateFromExpiring jobId: $jobId');
 
-      // 3. Poll getMealPlanDetail() to wait for AI worker (ExpiringMealPlanConsumer)
       Map<String, dynamic>? updatedPlanDetail;
-      const int maxAttempts = 25; // max ~87.5 seconds with 3.5s interval
+      const int maxAttempts = 30; // max ~45 seconds with 1.5s interval
 
       for (int i = 0; i < maxAttempts; i++) {
-        await Future.delayed(const Duration(milliseconds: 3500));
+        await Future.delayed(const Duration(milliseconds: 1500));
 
-        if (i == 1) {
+        if (i == 2) {
           onProgress?.call('🍲 AI đang kết hợp công thức từ đồ sắp hết hạn...');
-        } else if (i == 3) {
+        } else if (i == 5) {
           onProgress?.call('🍳 AI đang chọn bữa ăn dinh dưỡng và tiết kiệm nhất...');
-        } else if (i == 7) {
+        } else if (i == 10) {
           onProgress?.call('🔍 AI đang tìm và lập thực đơn mới...');
-        } else if (i == 12) {
+        } else if (i == 16) {
           onProgress?.call('💾 AI đang lưu thực đơn gợi ý vào hệ thống...');
         }
 
         try {
-          // Fetch target plan ID if not already known
           if (targetPlanId == null) {
             final currentPlans = await ApiService().getMealPlans();
             if (currentPlans.isNotEmpty) {
@@ -327,32 +404,15 @@ class RecipeRepository {
 
           if (targetPlanId != null) {
             final detail = await ApiService().getMealPlanDetail(targetPlanId);
-            final dailyPlans = detail['dailyPlans'] as List<dynamic>? ?? [];
-            final Set<String> currentSlotIds = {};
+            final currentSlotKey = extractTodayRecipes(detail).map((r) => '${r.id}:${r.title}').join('|');
 
-            for (final d in dailyPlans) {
-              final slots = (d as Map<String, dynamic>)['mealSlots'] as List<dynamic>? ?? [];
-              for (final s in slots) {
-                final sId = (s as Map<String, dynamic>)['id']?.toString();
-                if (sId != null) currentSlotIds.add(sId);
-              }
-            }
+            // If initialSlotKey was empty and now we have slots, OR slot IDs / recipes changed, OR after 6s polling:
+            final bool hasChanged = currentSlotKey.isNotEmpty && (initialSlotKey.isEmpty || currentSlotKey != initialSlotKey);
+            final bool isMinTimePassed = i >= 4 && currentSlotKey.isNotEmpty;
 
-            bool hasNewSlots = false;
-            if (initialSlotIds.isEmpty && currentSlotIds.isNotEmpty) {
-              hasNewSlots = true;
-            } else if (initialSlotIds.isNotEmpty && currentSlotIds.isNotEmpty) {
-              for (final sId in currentSlotIds) {
-                if (!initialSlotIds.contains(sId)) {
-                  hasNewSlots = true;
-                  break;
-                }
-              }
-            }
-
-            if (hasNewSlots) {
-              onProgress?.call('✅ AI đã lập thực đơn mới thành công!');
-              debugPrint('[RecipeRepository] AI completed! Found new slots in plan $targetPlanId');
+            if (hasChanged || isMinTimePassed) {
+              onProgress?.call('✅ AI đã lập thực đơn hôm nay mới thành công!');
+              debugPrint('[RecipeRepository] AI completed! Updated today slots in plan $targetPlanId');
               updatedPlanDetail = detail;
               break;
             }
@@ -362,7 +422,6 @@ class RecipeRepository {
         }
       }
 
-      // 4. Fetch the AI generated meal plan details
       final detail = updatedPlanDetail ?? await (() async {
         final plans = await ApiService().getMealPlans();
         if (plans.isNotEmpty) {
@@ -378,44 +437,8 @@ class RecipeRepository {
         return <String, dynamic>{};
       })();
 
-      final dailyPlans = detail['dailyPlans'] as List<dynamic>? ?? [];
-      final List<RecipeModel> suggestedRecipes = [];
-      final Set<String> seenRecipeIds = {};
-      final Set<String> seenTitles = {};
-
-      for (final day in dailyPlans) {
-        final mealSlots = (day as Map<String, dynamic>)['mealSlots'] as List<dynamic>? ?? [];
-        for (final slot in mealSlots) {
-          final slotMap = slot as Map<String, dynamic>;
-          final recipeId = slotMap['recipeId'] as String?;
-          final recipeName = slotMap['recipeName'] as String? ?? 'Món ăn gợi ý từ AI';
-
-          if (recipeId != null && !seenRecipeIds.contains(recipeId)) {
-            seenRecipeIds.add(recipeId);
-            final normTitle = recipeName.trim().toLowerCase();
-            if (!seenTitles.contains(normTitle)) {
-              seenTitles.add(normTitle);
-
-              suggestedRecipes.add(RecipeModel(
-                id: recipeId,
-                title: recipeName,
-                englishTitle: recipeName,
-                imagePath: slotMap['recipe']?['thumbnailPath']?.toString() ?? '',
-                matchPercent: 95,
-                matchText: '95% phù hợp',
-                timeText: '20 phút',
-                difficultyText: 'Dễ',
-                servingsText: '${slotMap['servings'] ?? 2} người',
-                tags: ['# Đồ sắp hết hạn', '# AI gợi ý'],
-                isFavorite: false,
-                isPremium: false,
-                friggyTip: 'Gợi ý từ AI ưu tiên giải cứu thực phẩm trong tủ lạnh.',
-              ));
-            }
-          }
-        }
-      }
-      if (suggestedRecipes.isNotEmpty) return suggestedRecipes;
+      final resultList = extractTodayRecipes(detail);
+      if (resultList.isNotEmpty) return resultList;
     } catch (e) {
       debugPrint('[RecipeRepository] Error fetching meal plan details: $e');
     }

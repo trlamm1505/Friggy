@@ -20,6 +20,72 @@ class IngredientAvatarWidget extends StatelessWidget {
     final lower = item.name.toLowerCase();
     final catLower = item.category.toLowerCase();
 
+    final path = item.imagePath.trim();
+    final bool hasImage = path.isNotEmpty &&
+        path != 'assets/images/available_veggies.png' &&
+        path != 'null';
+
+    if (hasImage) {
+      Widget imageWidget;
+      if (path.startsWith('http://') || path.startsWith('https://')) {
+        imageWidget = Image.network(
+          path,
+          fit: BoxFit.cover,
+          width: size,
+          height: size,
+          errorBuilder: (context, error, stackTrace) => _buildFallbackEmojiAvatar(lower, catLower),
+        );
+      } else if (path.startsWith('/')) {
+        imageWidget = Image.network(
+          'http://10.0.2.2:6969$path',
+          fit: BoxFit.cover,
+          width: size,
+          height: size,
+          errorBuilder: (context, error, stackTrace) => _buildFallbackEmojiAvatar(lower, catLower),
+        );
+      } else if (path.startsWith('assets/')) {
+        imageWidget = Image.asset(
+          path,
+          fit: BoxFit.cover,
+          width: size,
+          height: size,
+          errorBuilder: (context, error, stackTrace) => _buildFallbackEmojiAvatar(lower, catLower),
+        );
+      } else {
+        imageWidget = Image.network(
+          'http://10.0.2.2:6969/$path',
+          fit: BoxFit.cover,
+          width: size,
+          height: size,
+          errorBuilder: (context, error, stackTrace) => _buildFallbackEmojiAvatar(lower, catLower),
+        );
+      }
+
+      return Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(size * 0.28),
+          color: const Color(0xFFF0F7F1),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(size * 0.28),
+          child: imageWidget,
+        ),
+      );
+    }
+
+    return _buildFallbackEmojiAvatar(lower, catLower);
+  }
+
+  Widget _buildFallbackEmojiAvatar(String lower, String catLower) {
     // Default icon & gradient pastel theme
     String emoji = '🥗';
     List<Color> gradientColors = [const Color(0xFFE8F5E9), const Color(0xFFC8E6C9)];
@@ -105,23 +171,6 @@ class IngredientAvatarWidget extends StatelessWidget {
     } else if (catLower.contains('dairy') || catLower.contains('sữa')) {
       emoji = '🥛';
       gradientColors = [const Color(0xFFE3F2FD), const Color(0xFFBBDEFB)];
-    }
-
-    // If specific asset image exists (not generic available_veggies), use asset image!
-    if (item.imagePath.isNotEmpty &&
-        item.imagePath != 'assets/images/available_veggies.png' &&
-        (item.imagePath.startsWith('assets/') || item.imagePath.startsWith('http'))) {
-      return Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(size * 0.28),
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(size * 0.28),
-          child: Image.asset(item.imagePath, fit: BoxFit.cover),
-        ),
-      );
     }
 
     // High quality distinct pastel icon avatar
