@@ -3,6 +3,8 @@ import 'package:google_fonts/google_fonts.dart';
 import '../l10n/app_localizations.dart';
 import 'fridge_inventory_screen.dart';
 import '../widgets/fridge_members_modal.dart';
+import '../data/services/api_service.dart';
+import '../data/models/fridge_models.dart';
 
 class FridgeModel {
   String id;
@@ -59,6 +61,29 @@ class MyFridgesScreen extends StatefulWidget {
 }
 
 class _MyFridgesScreenState extends State<MyFridgesScreen> {
+  final ApiService _apiService = ApiService();
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchStats();
+  }
+
+  Future<void> _fetchStats() async {
+    try {
+      final res = await _apiService.getFridgeStats();
+      final stats = FridgeStatsModel.fromJson(res);
+      if (mounted) {
+        setState(() {
+          _fridges[0].totalItems = stats.totalItems;
+          _fridges[0].expiringItems = stats.expiringSoonCount;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error fetching stats in MyFridgesScreen: $e');
+    }
+  }
+
   final List<FridgeModel> _fridges = [
     FridgeModel(
       id: 'family',

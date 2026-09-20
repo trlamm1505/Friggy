@@ -15,6 +15,7 @@ import 'scan_food_photo_screen.dart';
 import 'scan_receipt_screen.dart';
 import 'scan_barcode_screen.dart';
 import 'my_fridges_screen.dart';
+import 'fridge_inventory_screen.dart';
 import 'all_expired_items_screen.dart';
 import 'all_available_items_screen.dart';
 import 'messages_screen.dart';
@@ -24,6 +25,9 @@ import 'next_week_suggestions_screen.dart';
 import 'shopping_reminder_screen.dart';
 import 'user_profile_screen.dart';
 import 'notifications_screen.dart';
+import '../data/services/api_service.dart';
+import 'package_management_screen.dart';
+import '../widgets/family_plan_modal.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -37,6 +41,7 @@ class _HomeScreenState extends State<HomeScreen>
   int _selectedIndex = 0;
   final TextEditingController _searchController = TextEditingController();
   String _userName = 'Trần Quốc Lâm';
+  bool _isFamilyPlan = false;
 
   late AnimationController _animController;
   late Animation<double> _headerFade;
@@ -50,6 +55,7 @@ class _HomeScreenState extends State<HomeScreen>
   void initState() {
     super.initState();
     _loadUserData();
+    _loadSubscriptionData();
 
     _animController = AnimationController(
       vsync: this,
@@ -113,6 +119,22 @@ class _HomeScreenState extends State<HomeScreen>
       }
     } catch (e) {
       debugPrint('[HomeScreen] Error loading user data: $e');
+    }
+  }
+
+  Future<void> _loadSubscriptionData() async {
+    try {
+      final subJson = await ApiService().getMySubscription();
+      final planName = subJson['plan']?['name']?.toString().toLowerCase() ?? '';
+      final planDisplayName = subJson['plan']?['displayName']?.toString().toLowerCase() ?? '';
+      final isFamily = planName.contains('family') || planDisplayName.contains('gia đình');
+      if (mounted) {
+        setState(() {
+          _isFamilyPlan = isFamily;
+        });
+      }
+    } catch (e) {
+      debugPrint('[HomeScreen] Error loading subscription: $e');
     }
   }
 
@@ -250,13 +272,23 @@ class _HomeScreenState extends State<HomeScreen>
 
                               // Premium Friggy Upgrade Banner
                               PremiumBanner(
-                                onTryNowTap: () {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Try Now Premium tapped!'),
-                                      duration: Duration(seconds: 1),
-                                    ),
-                                  );
+                                isFamilyPlan: _isFamilyPlan,
+                                onTryNowTap: () async {
+                                  if (_isFamilyPlan) {
+                                    await Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            const PackageManagementScreen(),
+                                      ),
+                                    );
+                                    _loadSubscriptionData();
+                                  } else {
+                                     showFamilySubscriptionModal(
+                                       context,
+                                       onSuccess: _loadSubscriptionData,
+                                     );
+                                  }
                                 },
                               ),
                               const SizedBox(height: 18),
@@ -314,8 +346,19 @@ class _HomeScreenState extends State<HomeScreen>
                           ),
                         ),
 
-                        // Index 1: My Fridges List Screen
-                        const MyFridgesScreen(),
+                        // Index 1: Direct Fridge Inventory Screen
+                        FridgeInventoryScreen(
+                          fridge: FridgeModel(
+                            id: 'family',
+                            name: 'Tủ lạnh',
+                            description: 'Tủ lạnh chính',
+                            totalItems: 0,
+                            expiringItems: 0,
+                            themeColor: const Color(0xFF006428),
+                          ),
+                          onRename: () {},
+                          isEmbedded: true,
+                        ),
 
                         // Index 2: Placeholder for Add (modal triggered)
                         const SizedBox.shrink(),

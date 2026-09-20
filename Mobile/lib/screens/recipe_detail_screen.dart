@@ -1,16 +1,51 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../data/mock_recipe_data.dart';
+import '../data/models/recipe_model.dart';
 import '../l10n/app_localizations.dart';
 import '../widgets/friggy_app_bar.dart';
 
-class RecipeDetailScreen extends StatelessWidget {
+class RecipeDetailScreen extends StatefulWidget {
   final RecipeModel recipe;
 
   const RecipeDetailScreen({
     super.key,
     required this.recipe,
   });
+
+  @override
+  State<RecipeDetailScreen> createState() => _RecipeDetailScreenState();
+}
+
+class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
+  late RecipeModel _recipe;
+
+  bool _isLoadingDetail = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _recipe = widget.recipe;
+    _loadFullRecipeDetail();
+  }
+
+  Future<void> _loadFullRecipeDetail() async {
+    if (widget.recipe.id.isEmpty || widget.recipe.id.startsWith('rec_')) return;
+    setState(() => _isLoadingDetail = true);
+    try {
+      final fullDetail = await RecipeRepository.fetchRecipeDetail(widget.recipe.id);
+      if (fullDetail != null && mounted) {
+        setState(() {
+          _recipe = fullDetail;
+          _isLoadingDetail = false;
+        });
+      } else if (mounted) {
+        setState(() => _isLoadingDetail = false);
+      }
+    } catch (e) {
+      debugPrint('[RecipeDetailScreen] Error loading recipe detail: $e');
+      if (mounted) setState(() => _isLoadingDetail = false);
+    }
+  }
 
   String _translateIngredientName(String name, bool isEn) {
     if (!isEn) return name;
@@ -49,27 +84,60 @@ class RecipeDetailScreen extends StatelessWidget {
     return step;
   }
 
+  Widget _buildRecipeImage(String path, bool isDark) {
+    final cleanPath = path.trim();
+    if (cleanPath.isEmpty || cleanPath == 'null') {
+      return const SizedBox.shrink();
+    }
+    if (cleanPath.startsWith('http://') || cleanPath.startsWith('https://')) {
+      return Image.network(
+        cleanPath,
+        width: double.infinity,
+        height: 220,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
+      );
+    }
+    if (cleanPath.startsWith('assets/')) {
+      return Image.asset(
+        cleanPath,
+        width: double.infinity,
+        height: 220,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
+      );
+    }
+    return const SizedBox.shrink();
+  }
+
+
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final loc = AppLocalizations.of(context);
     final isEn = loc?.locale.languageCode == 'en';
 
-    final detailedIngredients = recipe.safeDetailedIngredients;
-    final steps = recipe.safeSteps;
-    final rawTip = recipe.safeFriggyTip;
+    final detailedIngredients = _recipe.safeDetailedIngredients;
+    final steps = _recipe.safeSteps;
+    final rawTip = _recipe.safeFriggyTip;
     final friggyTip = isEn
         ? 'Delicious and wholesome meal idea to help you use available fridge ingredients!'
         : rawTip;
 
-    final matchText = isEn ? '${recipe.matchPercent}% match' : recipe.safeMatchText;
-    final timeText = isEn ? recipe.safeTimeText.replaceAll('phút', 'mins') : recipe.safeTimeText;
+    final matchText = (_recipe.matchPercent != null)
+        ? (isEn ? '${_recipe.matchPercent}% match' : _recipe.safeMatchText)
+        : '';
+    final timeText = isEn ? _recipe.safeTimeText.replaceAll('phút', 'mins') : _recipe.safeTimeText;
     final diffText = isEn
-        ? (recipe.safeDifficultyText.contains('Rất') ? 'Very easy' : 'Easy')
-        : recipe.safeDifficultyText;
+        ? (_recipe.safeDifficultyText.contains('Rất') ? 'Very easy' : 'Easy')
+        : _recipe.safeDifficultyText;
     final servingsText = isEn
-        ? recipe.safeServingsText.replaceAll('người', 'servings')
-        : recipe.safeServingsText;
+        ? _recipe.safeServingsText.replaceAll('người', 'servings')
+        : _recipe.safeServingsText;
+
+    final allAvailable = detailedIngredients.every((i) => i.isAvailable);
+    final hasImage = _recipe.imagePath.trim().isNotEmpty && _recipe.imagePath.trim() != 'null';
 
     return Scaffold(
       body: Container(
@@ -97,6 +165,11 @@ class RecipeDetailScreen extends StatelessWidget {
           child: Column(
             children: [
               const FriggyAppBar(),
+              if (_isLoadingDetail)
+                const LinearProgressIndicator(
+                  color: Color(0xFF008435),
+                  minHeight: 3,
+                ),
               Expanded(
                 child: SingleChildScrollView(
                   physics: const BouncingScrollPhysics(),
@@ -105,38 +178,87 @@ class RecipeDetailScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const SizedBox(height: 4),
-                      Stack(
-                        children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(24),
-                            child: Image.asset(
-                              recipe.imagePath,
-                              width: double.infinity,
-                              height: 220,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                return Container(
-                                  height: 220,
-                                  color: isDark
-                                      ? const Color(0xFF19271E)
-                                      : const Color(0xFFC8E6C9),
-                                  child: Center(
-                                    child: Icon(
-                                      Icons.restaurant_rounded,
-                                      size: 64,
-                                      color: isDark
-                                          ? const Color(0xFF81C784)
-                                          : const Color(0xFF008435),
-                                    ),
+                      if (hasImage) ...[
+                        Stack(
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(24),
+                              child: _buildRecipeImage(_recipe.imagePath, isDark),
+                            ),
+                            if (matchText.isNotEmpty)
+                              Positioned(
+                                top: 14,
+                                right: 14,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 6,
                                   ),
-                                );
-                              },
+                                  decoration: BoxDecoration(
+                                    color: isDark
+                                        ? const Color(0xFF233629)
+                                        : const Color(0xFFDCEDC8),
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: isDark
+                                        ? Border.all(
+                                            color: const Color(0xFF2E4D36),
+                                            width: 1)
+                                        : null,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withValues(
+                                            alpha: isDark ? 0.2 : 0.1),
+                                        blurRadius: 6,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.stars_rounded,
+                                        color: isDark
+                                            ? const Color(0xFF81C784)
+                                            : const Color(0xFF006428),
+                                        size: 18,
+                                      ),
+                                      const SizedBox(width: 5),
+                                      Text(
+                                        matchText,
+                                        style: GoogleFonts.outfit(
+                                          fontSize: 13.5,
+                                          fontWeight: FontWeight.w900,
+                                          color: isDark
+                                              ? const Color(0xFF81C784)
+                                              : const Color(0xFF006428),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+                      // Title
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              _recipe.safeTitle,
+                              style: GoogleFonts.outfit(
+                                fontSize: 24,
+                                fontWeight: FontWeight.w900,
+                                color: isDark ? Colors.white : const Color(0xFF006428),
+                              ),
                             ),
                           ),
-                          Positioned(
-                            top: 14,
-                            right: 14,
-                            child: Container(
+                          if (!hasImage && matchText.isNotEmpty) ...[
+                            const SizedBox(width: 10),
+                            Container(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 12,
                                 vertical: 6,
@@ -151,14 +273,6 @@ class RecipeDetailScreen extends StatelessWidget {
                                         color: const Color(0xFF2E4D36),
                                         width: 1)
                                     : null,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withValues(
-                                        alpha: isDark ? 0.2 : 0.1),
-                                    blurRadius: 6,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
@@ -184,10 +298,10 @@ class RecipeDetailScreen extends StatelessWidget {
                                 ],
                               ),
                             ),
-                          ),
+                          ],
                         ],
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 12),
                       Container(
                         padding: const EdgeInsets.symmetric(
                           vertical: 16,
@@ -382,21 +496,33 @@ class RecipeDetailScreen extends StatelessWidget {
                           Row(
                             children: [
                               Icon(
-                                Icons.check_circle_rounded,
-                                color: isDark
-                                    ? const Color(0xFF81C784)
-                                    : const Color(0xFF006428),
+                                allAvailable
+                                    ? Icons.check_circle_rounded
+                                    : Icons.info_outline_rounded,
+                                color: allAvailable
+                                    ? (isDark
+                                        ? const Color(0xFF81C784)
+                                        : const Color(0xFF006428))
+                                    : (isDark
+                                        ? const Color(0xFFFFB74D)
+                                        : const Color(0xFFE65100)),
                                 size: 18,
                               ),
                               const SizedBox(width: 6),
                               Text(
-                                isEn ? 'You have enough' : 'Bạn đã có đủ',
+                                allAvailable
+                                    ? (isEn ? 'You have enough' : 'Bạn đã có đủ')
+                                    : (isEn ? 'Some missing' : 'Còn thiếu nguyên liệu'),
                                 style: GoogleFonts.plusJakartaSans(
                                   fontSize: 13.5,
                                   fontWeight: FontWeight.w700,
-                                  color: isDark
-                                      ? const Color(0xFF81C784)
-                                      : const Color(0xFF006428),
+                                  color: allAvailable
+                                      ? (isDark
+                                          ? const Color(0xFF81C784)
+                                          : const Color(0xFF006428))
+                                      : (isDark
+                                          ? const Color(0xFFFFB74D)
+                                          : const Color(0xFFE65100)),
                                 ),
                               ),
                             ],
@@ -407,6 +533,8 @@ class RecipeDetailScreen extends StatelessWidget {
                       ...detailedIngredients.map((ingredient) {
                         final ingName = _translateIngredientName(ingredient.name, isEn);
                         final ingQty = _translateQuantity(ingredient.quantity, isEn);
+                        final isAvail = ingredient.isAvailable;
+
                         return Container(
                           margin: const EdgeInsets.only(bottom: 12),
                           decoration: BoxDecoration(
@@ -461,9 +589,13 @@ class RecipeDetailScreen extends StatelessWidget {
                                           ? (isDark
                                               ? const Color(0xFFFF8A80)
                                               : const Color(0xFFD32F2F))
-                                          : (isDark
-                                              ? const Color(0xFF81C784)
-                                              : const Color(0xFF2E7D32)),
+                                          : (isAvail
+                                              ? (isDark
+                                                  ? const Color(0xFF81C784)
+                                                  : const Color(0xFF2E7D32))
+                                              : (isDark
+                                                  ? const Color(0xFF9DA8A0)
+                                                  : const Color(0xFF757575))),
                                       size: 22,
                                     ),
                                   ),
@@ -506,20 +638,30 @@ class RecipeDetailScreen extends StatelessWidget {
                                           vertical: 4,
                                         ),
                                         decoration: BoxDecoration(
-                                          color: isDark
-                                              ? const Color(0xFF233629)
-                                              : const Color(0xFFDCEDC8),
+                                          color: isAvail
+                                              ? (isDark
+                                                  ? const Color(0xFF233629)
+                                                  : const Color(0xFFDCEDC8))
+                                              : (isDark
+                                                  ? const Color(0xFF332B1E)
+                                                  : const Color(0xFFFFF3E0)),
                                           borderRadius:
                                               BorderRadius.circular(12),
                                         ),
                                         child: Text(
-                                          isEn ? 'In stock' : 'Đã có',
+                                          isAvail
+                                              ? (isEn ? 'In stock' : 'Đã có')
+                                              : (isEn ? 'Missing' : 'Còn thiếu'),
                                           style: GoogleFonts.plusJakartaSans(
                                             fontSize: 12,
                                             fontWeight: FontWeight.w800,
-                                            color: isDark
-                                                ? const Color(0xFF81C784)
-                                                : const Color(0xFF2E7D32),
+                                            color: isAvail
+                                                ? (isDark
+                                                    ? const Color(0xFF81C784)
+                                                    : const Color(0xFF2E7D32))
+                                                : (isDark
+                                                    ? const Color(0xFFFFB74D)
+                                                    : const Color(0xFFE65100)),
                                           ),
                                         ),
                                       ),

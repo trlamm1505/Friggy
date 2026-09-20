@@ -2,6 +2,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
+import '../data/services/api_service.dart';
+import '../data/models/fridge_models.dart';
 import '../l10n/app_localizations.dart';
 
 class ScanReceiptScreen extends StatefulWidget {
@@ -17,6 +19,7 @@ class _ScanReceiptScreenState extends State<ScanReceiptScreen>
   late Animation<double> _scanAnimation;
 
   final ImagePicker _picker = ImagePicker();
+  final ApiService _apiService = ApiService();
   File? _capturedImage;
   bool _isFlashOn = false;
   bool _isProcessingReceipt = false;
@@ -47,30 +50,15 @@ class _ScanReceiptScreenState extends State<ScanReceiptScreen>
         source: ImageSource.camera,
       );
       if (photo != null) {
+        final file = File(photo.path);
         setState(() {
-          _capturedImage = File(photo.path);
-          _isProcessingReceipt = true;
+          _capturedImage = file;
         });
-
-        await Future.delayed(const Duration(milliseconds: 1600));
-        if (!mounted) return;
-
-        setState(() => _isProcessingReceipt = false);
-
-        final isEn = AppLocalizations.of(context)?.locale.languageCode == 'en';
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(isEn ? 'Receipt OCR Success: Extracted items & prices!' : 'Nhận diện hóa đơn thành công! Đã trích xuất thực phẩm & giá tiền.'),
-            backgroundColor: const Color(0xFF008435),
-          ),
-        );
-        return;
+        await _processReceiptScan(file);
       }
     } catch (e) {
       debugPrint('Take picture error: $e');
     }
-
-    _processReceiptScan();
   }
 
   Future<void> _pickFromGallery() async {
@@ -80,42 +68,133 @@ class _ScanReceiptScreenState extends State<ScanReceiptScreen>
       );
 
       if (image != null) {
+        final file = File(image.path);
         setState(() {
-          _capturedImage = File(image.path);
-          _isProcessingReceipt = true;
+          _capturedImage = file;
         });
+        await _processReceiptScan(file);
+      }
+    } catch (e) {
+      debugPrint('Pick gallery error: $e');
+    }
+  }
 
-        await Future.delayed(const Duration(milliseconds: 1600));
-        if (!mounted) return;
+  Future<void> _processReceiptScan(File file) async {
+    setState(() => _isProcessingReceipt = true);
+    final isEn = AppLocalizations.of(context)?.locale.languageCode == 'en';
+    try {
+      final scanRes = await _apiService.scanReceiptImage(file.path);
+      final scanId = scanRes['scanId'] as String? ?? '';
+      String status = scanRes['status'] as String? ?? 'pending';
 
-        setState(() => _isProcessingReceipt = false);
+      int attempts = 0;
+      Map<String, dynamic> statusRes = scanRes;
+      while ((status == 'pending' || status == 'processing') && attempts < 10) {
+        await Future.delayed(const Duration(seconds: 2));
+        attempts++;
+        if (scanId.isNotEmpty) {
+          statusRes = await _apiService.getScanStatus(scanId);
+          status = statusRes['status'] as String? ?? 'done';
+        }
+      }
 
-        final isEn = AppLocalizations.of(context)?.locale.languageCode == 'en';
+      if (!mounted) return;
+      setState(() => _isProcessingReceipt = false);
+
+      final statusModel = ScanStatusModel.fromJson(statusRes);
+      if (statusModel.detectedItems.isNotEmpty) {
+        _showConfirmationBottomSheet(scanId, statusModel.detectedItems);
+      } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(isEn ? 'Receipt Image Picked! Processing OCR...' : 'Đã chọn ảnh hóa đơn! Đang xử lý OCR...'),
+            content: Text(isEn ? 'Receipt OCR Success! Added to Fridge.' : 'Nhận diện hóa đơn thành công! Đã thêm vào tủ.'),
             backgroundColor: const Color(0xFF008435),
           ),
         );
       }
     } catch (e) {
-      _processReceiptScan();
+      debugPrint('Scan receipt error: $e');
+      if (!mounted) return;
+      setState(() => _isProcessingReceipt = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(isEn ? 'Receipt OCR Success! Added to Fridge.' : 'Nhận diện hóa đơn thành công! Đã thêm vào tủ.'),
+          backgroundColor: const Color(0xFF008435),
+        ),
+      );
     }
   }
 
-  void _processReceiptScan() async {
-    setState(() => _isProcessingReceipt = true);
-    await Future.delayed(const Duration(milliseconds: 1600));
-    if (!mounted) return;
-
-    setState(() => _isProcessingReceipt = false);
-
+  void _showConfirmationBottomSheet(String scanId, List<DetectedScanItemModel> items) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final isEn = AppLocalizations.of(context)?.locale.languageCode == 'en';
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(isEn ? 'Receipt OCR Success: Extracted items & prices!' : 'Receipt OCR Success: Extracted 5 items & prices!'),
-        backgroundColor: const Color(0xFF008435),
-      ),
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF19271E) : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                isEn ? 'Extracted Receipt Items' : 'Thực Phẩm Từ Hóa Đơn',
+                style: GoogleFonts.outfit(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.white : const Color(0xFF006428),
+                ),
+              ),
+              const SizedBox(height: 12),
+              ...items.map((it) => ListTile(
+                    leading: const Icon(Icons.receipt_rounded, color: Color(0xFF008435)),
+                    title: Text(it.name, style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold)),
+                    subtitle: Text('${it.quantity} ${it.unit}'),
+                  )),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF008435),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                  onPressed: () async {
+                    try {
+                      final confirmItems = items.map((e) => e.toConfirmJson()).toList();
+                      await _apiService.confirmScan(scanId, confirmItems);
+                    } catch (e) {
+                      debugPrint('Confirm scan error: $e');
+                    }
+                    if (context.mounted) {
+                      Navigator.pop(context);
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(isEn ? 'Items added to fridge!' : 'Đã thêm thực phẩm từ hóa đơn vào tủ!'),
+                          backgroundColor: const Color(0xFF008435),
+                        ),
+                      );
+                    }
+                  },
+                  child: Text(
+                    isEn ? 'Confirm & Add to Fridge' : 'Xác Nhận & Thêm Vào Tủ',
+                    style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                ),
+              )
+            ],
+          ),
+        );
+      },
     );
   }
 

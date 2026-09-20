@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../data/mock_recipe_data.dart';
+import '../data/models/recipe_model.dart';
 import '../l10n/app_localizations.dart';
 import '../screens/recipe_suggestions_screen.dart';
 
@@ -26,7 +26,8 @@ class _CookingSuggestionsSectionState
   @override
   void initState() {
     super.initState();
-    _recipesFuture = RecipeRepository.fetchCookingSuggestions();
+    // Do not auto-call AI generation API on home screen load
+    _recipesFuture = Future.value([]);
   }
 
   String _translateIngredient(String raw, bool isEn) {

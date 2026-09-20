@@ -5,7 +5,8 @@ import '../data/services/api_service.dart';
 import '../l10n/app_localizations.dart';
 
 class PackageManagementScreen extends StatefulWidget {
-  const PackageManagementScreen({super.key});
+  final bool onlyFamily;
+  const PackageManagementScreen({super.key, this.onlyFamily = false});
 
   @override
   State<PackageManagementScreen> createState() =>
@@ -76,6 +77,14 @@ class _PackageManagementScreenState extends State<PackageManagementScreen> {
     final loc = AppLocalizations.of(context);
     final isEn = loc?.locale.languageCode == 'en';
 
+    final displayedPlans = widget.onlyFamily
+        ? _plans
+            .where((p) =>
+                p.name.toLowerCase().contains('family') ||
+                p.displayName.toLowerCase().contains('gia đình'))
+            .toList()
+        : _plans;
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -125,7 +134,7 @@ class _PackageManagementScreenState extends State<PackageManagementScreen> {
               ),
               const SizedBox(height: 18),
 
-              if (_plans.isEmpty)
+              if (displayedPlans.isEmpty)
                 Center(
                   child: Padding(
                     padding: const EdgeInsets.all(24.0),
@@ -136,7 +145,7 @@ class _PackageManagementScreenState extends State<PackageManagementScreen> {
                   ),
                 )
               else
-                ..._plans.map((plan) {
+                ...displayedPlans.map((plan) {
                   final isCurrentPlan = _userSub?.plan.id == plan.id ||
                       (_userSub?.plan.name.toLowerCase() == plan.name.toLowerCase());
                   final isIndividual = plan.name.toLowerCase() == 'individual';
@@ -179,9 +188,11 @@ class _PackageManagementScreenState extends State<PackageManagementScreen> {
                       title: plan.displayName,
                       price: _formatPrice(plan.priceVnd),
                       period: plan.billingCycle == 'monthly' ? (isEn ? '/ month' : '/ tháng') : (isEn ? 'Forever' : 'Mãi mãi'),
-                      description: isIndividual
-                          ? (isEn ? 'Unlimited AI features for 1 user' : 'Đầy đủ tính năng AI không giới hạn cho 1 người dùng')
-                          : (isEn ? 'For basic user experience' : 'Dành cho người dùng trải nghiệm cơ bản'),
+                      description: plan.name.toLowerCase() == 'family'
+                          ? (isEn ? 'Unlimited AI features for up to 5 family members' : 'Đầy đủ tính năng AI không giới hạn cho 5 người dùng')
+                          : (isIndividual
+                              ? (isEn ? 'Unlimited AI features for 1 user' : 'Đầy đủ tính năng AI không giới hạn cho 1 người dùng')
+                              : (isEn ? 'For basic user experience' : 'Dành cho người dùng trải nghiệm cơ bản')),
                       isCurrentPlan: isCurrentPlan,
                       badgeText: isCurrentPlan ? (isEn ? 'Currently Active' : 'Đang sử dụng') : null,
                       features: plan.features,

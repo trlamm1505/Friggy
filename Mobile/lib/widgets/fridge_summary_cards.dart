@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../data/mock_fridge_data.dart';
+import '../data/models/fridge_summary_model.dart';
 import '../l10n/app_localizations.dart';
 
 class FridgeSummaryCards extends StatelessWidget {
@@ -26,8 +26,8 @@ class FridgeSummaryCards extends StatelessWidget {
       builder: (context, snapshot) {
         final data = snapshot.data ??
             const FridgeSummaryModel(
-              expiredCount: 3,
-              availableCount: 28,
+              expiredCount: 0,
+              availableCount: 0,
             );
         return _buildCardsRow(context, data);
       },
@@ -69,7 +69,7 @@ class FridgeSummaryCards extends StatelessWidget {
                 gradientColors: expiredGradients,
                 borderColor: expiredBorder,
                 imagePath: 'assets/images/expired_tomato.png',
-                title: isEn ? 'Expiring\nSoon' : 'Sắp Hết Hạn\nCần Dùng',
+                title: isEn ? 'Expired\nIngredients' : 'Nguyên Liệu\nHết Hạn',
                 titleColor: expiredTitle,
                 count: summary.expiredCount,
                 countUnitColor: expiredTitle.withValues(alpha: 0.8),

@@ -1,19 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../data/mock_ingredient_data.dart';
+import '../data/models/ingredient_model.dart';
 import '../l10n/app_localizations.dart';
+import '../data/services/api_service.dart';
 import 'my_fridges_screen.dart';
 import 'recipe_suggestions_screen.dart';
 import '../widgets/fridge_members_modal.dart';
+import '../widgets/ingredient_avatar_widget.dart';
+import '../theme/app_theme.dart';
 
 class FridgeInventoryScreen extends StatefulWidget {
   final FridgeModel fridge;
   final VoidCallback onRename;
+  final bool isEmbedded;
 
   const FridgeInventoryScreen({
     super.key,
     required this.fridge,
     required this.onRename,
+    this.isEmbedded = false,
   });
 
   @override
@@ -30,6 +35,7 @@ class _FridgeInventoryScreenState extends State<FridgeInventoryScreen> {
   final TextEditingController _searchController = TextEditingController();
   List<IngredientModel> _ingredients = [];
   bool _isLoading = true;
+  final ApiService _apiService = ApiService();
 
   @override
   void initState() {
@@ -38,12 +44,29 @@ class _FridgeInventoryScreenState extends State<FridgeInventoryScreen> {
   }
 
   Future<void> _loadIngredients() async {
-    final list = IngredientRepository.getIngredientsByFridge(widget.fridge.id);
-    if (mounted) {
-      setState(() {
-        _ingredients = list;
-        _isLoading = false;
-      });
+    setState(() => _isLoading = true);
+    try {
+      String? locFilter;
+      if (_selectedStorage == 'Fridge') locFilter = 'fridge';
+      if (_selectedStorage == 'Freezer') locFilter = 'freezer';
+      if (_selectedStorage == 'Pantry') locFilter = 'pantry';
+
+      final res = await _apiService.getFridgeItems(storageLocation: locFilter);
+      final list = res.map((e) => IngredientModel.fromFridgeApi(e, widget.fridge.id, widget.fridge.name)).toList();
+      if (mounted) {
+        setState(() {
+          _ingredients = list;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading fridge items: $e');
+      if (mounted) {
+        setState(() {
+          _ingredients = [];
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -59,13 +82,40 @@ class _FridgeInventoryScreenState extends State<FridgeInventoryScreen> {
     final qtyNumberController = TextEditingController(
       text: item.quantity.replaceAll(RegExp(r'[^0-9.]'), ''),
     );
-    String selectedUnit = item.quantity.contains('g')
-        ? 'g'
-        : item.quantity.contains('kg')
-            ? 'kg'
-            : item.quantity.contains('lít') || item.quantity.contains('L')
-                ? 'lít'
-                : 'pcs';
+    String selectedUnit = item.unit.isNotEmpty
+        ? item.unit
+        : item.quantity.contains('gram')
+            ? 'gram'
+            : item.quantity.contains('g')
+                ? 'g'
+                : item.quantity.contains('kg')
+                    ? 'kg'
+                    : item.quantity.contains('ml')
+                        ? 'ml'
+                        : item.quantity.contains('lít') || item.quantity.contains('L')
+                            ? 'lít'
+                            : 'kg';
+
+    final List<String> availableUnits = [
+      'kg',
+      'gram',
+      'g',
+      'ml',
+      'lít',
+      'quả',
+      'củ',
+      'bó',
+      'miếng',
+      'gói',
+      'hộp',
+      'chai',
+      'con',
+      'bắp',
+      'pcs',
+    ];
+    if (!availableUnits.contains(selectedUnit)) {
+      availableUnits.insert(0, selectedUnit);
+    }
 
     showModalBottomSheet(
       context: context,
@@ -99,15 +149,7 @@ class _FridgeInventoryScreenState extends State<FridgeInventoryScreen> {
                     // Header
                     Row(
                       children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(14),
-                          child: Image.asset(
-                            item.imagePath,
-                            width: 48,
-                            height: 48,
-                            fit: BoxFit.cover,
-                          ),
-                        ),
+                        IngredientAvatarWidget(item: item, size: 48),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Column(
@@ -154,7 +196,7 @@ class _FridgeInventoryScreenState extends State<FridgeInventoryScreen> {
                           onTap: () {
                             if (currentVal > 1) {
                               setModalState(() {
-                                currentVal -= (selectedUnit == 'g' ? 50 : 1);
+                                currentVal -= (selectedUnit == 'g' || selectedUnit == 'gram' || selectedUnit == 'ml' ? 50 : 1);
                                 if (currentVal < 0) currentVal = 0;
                                 qtyNumberController.text =
                                     currentVal.toInt().toString();
@@ -226,7 +268,7 @@ class _FridgeInventoryScreenState extends State<FridgeInventoryScreen> {
                         GestureDetector(
                           onTap: () {
                             setModalState(() {
-                              currentVal += (selectedUnit == 'g' ? 50 : 1);
+                              currentVal += (selectedUnit == 'g' || selectedUnit == 'gram' || selectedUnit == 'ml' ? 50 : 1);
                               qtyNumberController.text =
                                   currentVal.toInt().toString();
                             });
@@ -254,21 +296,22 @@ class _FridgeInventoryScreenState extends State<FridgeInventoryScreen> {
 
                     const SizedBox(height: 20),
 
-                    // Unit Selection Pills
-                    Row(
-                      children: ['g', 'kg', 'lít', 'pcs'].map((unit) {
-                        final isSel = selectedUnit == unit;
-                        final displayUnit = (unit == 'lít' && isEn) ? 'L' : unit;
-                        return Expanded(
-                          child: GestureDetector(
+                    // Unit Selection Pills (Horizontal Scroll)
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: availableUnits.map((unit) {
+                          final isSel = selectedUnit == unit;
+                          final displayUnit = (unit == 'lít' && isEn) ? 'L' : unit;
+                          return GestureDetector(
                             onTap: () {
                               setModalState(() {
                                 selectedUnit = unit;
                               });
                             },
                             child: Container(
-                              margin: const EdgeInsets.symmetric(horizontal: 4),
-                              padding: const EdgeInsets.symmetric(vertical: 10),
+                              margin: const EdgeInsets.only(right: 8),
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                               decoration: BoxDecoration(
                                 color: isSel
                                     ? (isDark
@@ -278,6 +321,13 @@ class _FridgeInventoryScreenState extends State<FridgeInventoryScreen> {
                                         ? const Color(0xFF233629)
                                         : const Color(0xFFF1F8E9)),
                                 borderRadius: BorderRadius.circular(14),
+                                border: isSel
+                                    ? null
+                                    : Border.all(
+                                        color: isDark
+                                            ? const Color(0xFF2E4D36)
+                                            : const Color(0xFFC8E6C9),
+                                      ),
                               ),
                               child: Center(
                                 child: Text(
@@ -296,9 +346,9 @@ class _FridgeInventoryScreenState extends State<FridgeInventoryScreen> {
                                 ),
                               ),
                             ),
-                          ),
-                        );
-                      }).toList(),
+                          );
+                        }).toList(),
+                      ),
                     ),
 
                     const SizedBox(height: 24),
@@ -316,19 +366,21 @@ class _FridgeInventoryScreenState extends State<FridgeInventoryScreen> {
                             borderRadius: BorderRadius.circular(18),
                           ),
                         ),
-                        onPressed: () {
+                        onPressed: () async {
                           final valStr = qtyNumberController.text.trim();
                           if (valStr.isNotEmpty) {
-                            setState(() {
-                              final idx = _ingredients.indexWhere((ing) => ing.id == item.id);
-                              if (idx != -1) {
-                                _ingredients[idx] = _ingredients[idx].copyWith(
-                                  quantity: '$valStr $selectedUnit',
-                                );
-                              }
-                            });
+                            final numVal = double.tryParse(valStr) ?? 1.0;
+                            try {
+                              await _apiService.updateFridgeItem(item.id, {
+                                'quantity': numVal,
+                                'unit': selectedUnit,
+                              });
+                            } catch (e) {
+                              debugPrint('API Update quantity error: $e');
+                            }
+                            _loadIngredients();
                           }
-                          Navigator.pop(context);
+                          if (context.mounted) Navigator.pop(context);
                         },
                         child: Text(
                           isEn ? 'Save' : 'Lưu thay đổi',
@@ -342,6 +394,72 @@ class _FridgeInventoryScreenState extends State<FridgeInventoryScreen> {
                         ),
                       ),
                     ),
+
+                    const SizedBox(height: 12),
+
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              side: const BorderSide(color: Color(0xFF4CAF50)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                            ),
+                            icon: const Icon(Icons.check_circle_outline_rounded, color: Color(0xFF4CAF50), size: 18),
+                            label: Text(
+                              isEn ? 'Used All' : 'Đã dùng hết',
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w700,
+                                color: const Color(0xFF4CAF50),
+                              ),
+                            ),
+                            onPressed: () async {
+                              try {
+                                await _apiService.consumeFridgeItem(item.id);
+                              } catch (e) {
+                                debugPrint('API Consume item error: $e');
+                              }
+                              _loadIngredients();
+                              if (context.mounted) Navigator.pop(context);
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              side: const BorderSide(color: Color(0xFFE57373)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                            ),
+                            icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFE57373), size: 18),
+                            label: Text(
+                              isEn ? 'Delete' : 'Xóa khỏi tủ',
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w700,
+                                color: const Color(0xFFE57373),
+                              ),
+                            ),
+                            onPressed: () async {
+                              try {
+                                await _apiService.deleteFridgeItem(item.id);
+                              } catch (e) {
+                                debugPrint('API Delete item error: $e');
+                              }
+                              _loadIngredients();
+                              if (context.mounted) Navigator.pop(context);
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               ),
@@ -353,11 +471,7 @@ class _FridgeInventoryScreenState extends State<FridgeInventoryScreen> {
   }
 
   String _translateFridgeName(String name, bool isEn) {
-    if (!isEn) return name;
-    if (name.contains('Tủ Lạnh Gia Đình')) return 'Family Fridge';
-    if (name.contains('Tủ Lạnh Cá Nhân')) return 'Personal Fridge';
-    if (name.contains('Tủ Văn Phòng')) return 'Office Fridge';
-    return name;
+    return isEn ? 'Fridge' : 'Tủ lạnh';
   }
 
   @override
@@ -365,6 +479,7 @@ class _FridgeInventoryScreenState extends State<FridgeInventoryScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final loc = AppLocalizations.of(context);
     final isEn = loc?.locale.languageCode == 'en';
+    final canPop = Navigator.canPop(context);
 
     final fridgeDisplayName = _translateFridgeName(widget.fridge.name, isEn);
 
@@ -382,113 +497,105 @@ class _FridgeInventoryScreenState extends State<FridgeInventoryScreen> {
     }).toList();
 
     return Scaffold(
+      backgroundColor: Colors.transparent,
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: isDark
-                ? const [
-                    Color(0xFF0E1611),
-                    Color(0xFF142017),
-                    Color(0xFF1B2E21),
-                  ]
-                : const [
-                    Color(0xFFE8F5E9),
-                    Color(0xFFA5D6A7),
-                    Color(0xFF81C784),
-                  ],
-            stops: const [0.0, 0.5, 1.0],
-          ),
-        ),
+        decoration: widget.isEmbedded
+            ? null
+            : BoxDecoration(
+                gradient: AppGradients.getBackground(isDark),
+              ),
         child: SafeArea(
           child: Column(
             children: [
-              // 1. Top App Bar Header with Back Chevron, Fridge Title & Edit Pencil
-              // 1. Top App Bar Header with Back Chevron, Fridge Title & Edit Pencil
+              // 1. Top App Bar Header
               Padding(
                 padding: const EdgeInsets.only(
-                  left: 14.0,
-                  right: 16.0,
-                  top: 8.0,
+                  left: 20.0,
+                  right: 20.0,
+                  top: 10.0,
                   bottom: 12.0,
                 ),
                 child: Row(
                   children: [
-                    // Back Glass Button
-                    GestureDetector(
-                      onTap: () => Navigator.pop(context),
-                      child: Container(
-                        width: 38,
-                        height: 38,
-                        decoration: BoxDecoration(
-                          color: isDark
-                              ? const Color(0xFF19271E)
-                              : Colors.white.withValues(alpha: 0.9),
-                          shape: BoxShape.circle,
-                          border: Border.all(
+                    if (canPop) ...[
+                      // Back Glass Button
+                      GestureDetector(
+                        onTap: () => Navigator.pop(context),
+                        child: Container(
+                          width: 38,
+                          height: 38,
+                          decoration: BoxDecoration(
                             color: isDark
-                                ? const Color(0xFF2E4D36)
-                                : const Color(0xFFA5E69C).withValues(alpha: 0.6),
-                            width: 1,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.05),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
+                                ? const Color(0xFF19271E)
+                                : Colors.white.withValues(alpha: 0.9),
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: isDark
+                                  ? const Color(0xFF2E4D36)
+                                  : const Color(0xFFA5E69C).withValues(alpha: 0.6),
+                              width: 1,
                             ),
-                          ],
-                        ),
-                        child: Icon(
-                          Icons.chevron_left_rounded,
-                          size: 26,
-                          color: isDark ? Colors.white : const Color(0xFF006428),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.05),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Icon(
+                            Icons.chevron_left_rounded,
+                            size: 26,
+                            color: isDark ? Colors.white : const Color(0xFF006428),
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 12),
+                      const SizedBox(width: 12),
+                    ],
                     Expanded(
                       child: Row(
                         children: [
                           Flexible(
-                            child: Text(
-                              fridgeDisplayName,
-                              style: GoogleFonts.outfit(
-                                fontSize: 22,
-                                fontWeight: FontWeight.w900,
-                                color: isDark ? Colors.white : const Color(0xFF005A24),
-                                letterSpacing: -0.3,
+                            child: RichText(
+                              text: TextSpan(
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 32,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: -0.5,
+                                ),
+                                children: isEn
+                                    ? [
+                                        TextSpan(
+                                          text: 'Fri',
+                                          style: TextStyle(
+                                            color: isDark ? Colors.white : const Color(0xFF19221C),
+                                          ),
+                                        ),
+                                        TextSpan(
+                                          text: 'dge',
+                                          style: TextStyle(
+                                            color: isDark ? const Color(0xFF81C784) : const Color(0xFF4CAF50),
+                                          ),
+                                        ),
+                                      ]
+                                    : [
+                                        TextSpan(
+                                          text: 'Tủ ',
+                                          style: TextStyle(
+                                            color: isDark ? Colors.white : const Color(0xFF19221C),
+                                          ),
+                                        ),
+                                        TextSpan(
+                                          text: 'lạnh',
+                                          style: TextStyle(
+                                            color: isDark ? const Color(0xFF81C784) : const Color(0xFF4CAF50),
+                                          ),
+                                        ),
+                                      ],
                               ),
                               overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          GestureDetector(
-                            onTap: widget.onRename,
-                            child: Container(
-                              padding: const EdgeInsets.all(6),
-                              decoration: BoxDecoration(
-                                color: isDark
-                                    ? const Color(0xFF233629)
-                                    : const Color(0xFFE8F5E9),
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: isDark
-                                      ? const Color(0xFF2E4D36)
-                                      : const Color(0xFFA5D6A7),
-                                  width: 1,
-                                ),
-                              ),
-                              child: Icon(
-                                Icons.edit_rounded,
-                                size: 14,
-                                color: isDark
-                                    ? const Color(0xFF81C784)
-                                    : const Color(0xFF008435),
-                              ),
                             ),
                           ),
                         ],
@@ -805,6 +912,7 @@ class _FridgeInventoryScreenState extends State<FridgeInventoryScreen> {
                               ? _buildGridView(filteredItems, isEn, isDark)
                               : ListView.separated(
                                   physics: const BouncingScrollPhysics(),
+                                  padding: const EdgeInsets.only(bottom: 120),
                                   itemCount: filteredItems.length,
                                   separatorBuilder: (context, index) =>
                                       const SizedBox(height: 12),
@@ -825,29 +933,8 @@ class _FridgeInventoryScreenState extends State<FridgeInventoryScreen> {
                                         ),
                                         child: Row(
                                           children: [
-                                            // Food Image
-                                            ClipRRect(
-                                              borderRadius:
-                                                  BorderRadius.circular(16),
-                                              child: Image.asset(
-                                                item.imagePath,
-                                                width: 62,
-                                                height: 62,
-                                                fit: BoxFit.cover,
-                                                errorBuilder:
-                                                    (context, error, stackTrace) {
-                                                  return Container(
-                                                    width: 62,
-                                                    height: 62,
-                                                    color: isDark ? const Color(0xFF233629) : const Color(0xFFE8F5E9),
-                                                    child: Icon(
-                                                      Icons.fastfood_rounded,
-                                                      color: isDark ? const Color(0xFF81C784) : const Color(0xFF008435),
-                                                    ),
-                                                  );
-                                                },
-                                              ),
-                                            ),
+                                            // Food Image Avatar
+                                            IngredientAvatarWidget(item: item, size: 54),
 
                                             const SizedBox(width: 14),
 
@@ -979,32 +1066,7 @@ class _FridgeInventoryScreenState extends State<FridgeInventoryScreen> {
                   const SizedBox(height: 14),
                   Expanded(
                     child: Center(
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(14),
-                        child: Image.asset(
-                          item.imagePath,
-                          fit: BoxFit.contain,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Container(
-                              width: 52,
-                              height: 52,
-                              decoration: BoxDecoration(
-                                color: isDark
-                                    ? const Color(0xFF233629)
-                                    : const Color(0xFFE8F5E9),
-                                borderRadius: BorderRadius.circular(14),
-                              ),
-                              child: Icon(
-                                Icons.fastfood_rounded,
-                                color: isDark
-                                    ? const Color(0xFF81C784)
-                                    : const Color(0xFF008435),
-                                size: 26,
-                              ),
-                            );
-                          },
-                        ),
-                      ),
+                      child: IngredientAvatarWidget(item: item, size: 54),
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -1075,7 +1137,7 @@ class _FridgeInventoryScreenState extends State<FridgeInventoryScreen> {
 
     return ListView.builder(
       physics: const BouncingScrollPhysics(),
-      padding: const EdgeInsets.only(bottom: 24),
+      padding: const EdgeInsets.only(bottom: 120),
       itemCount: categories.length,
       itemBuilder: (context, catIdx) {
         final categoryKey = categories[catIdx];

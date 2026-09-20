@@ -178,13 +178,27 @@ class ApiService {
   // Fridge Management
   // ------------------------------------------------------------------
 
-  /// Get list of items currently in the fridge
-  Future<List<dynamic>> getFridgeItems() async {
-    final response = await _dioClient.get(AppConstants.epFridgeItems);
-    return response as List<dynamic>;
+  /// GET /fridge - Get list of items currently in the fridge
+  Future<List<dynamic>> getFridgeItems({String? storageLocation, bool? expiringSoon}) async {
+    final queryParams = <String, dynamic>{};
+    if (storageLocation != null && storageLocation.isNotEmpty) {
+      queryParams['storageLocation'] = storageLocation;
+    }
+    if (expiringSoon != null) {
+      queryParams['expiringSoon'] = expiringSoon;
+    }
+
+    final response = await _dioClient.get(
+      AppConstants.epFridge,
+      queryParameters: queryParams,
+    );
+    if (response is List<dynamic>) {
+      return response;
+    }
+    return [];
   }
 
-  /// Add item to fridge
+  /// POST /fridge/items - Add item to fridge
   Future<Map<String, dynamic>> addFridgeItem(Map<String, dynamic> itemData) async {
     final response = await _dioClient.post(
       AppConstants.epFridgeItems,
@@ -193,30 +207,254 @@ class ApiService {
     return response as Map<String, dynamic>;
   }
 
-  /// Scan fridge items image using AI
-  Future<dynamic> scanFridgeImage(String imagePath) async {
-    return await _dioClient.uploadFile(
-      AppConstants.epFridgeScan,
-      filePath: imagePath,
-      fileKey: 'image',
+  /// PATCH /fridge/items/:id - Update item (quantity, unit, expiresAt, storageLocation)
+  Future<Map<String, dynamic>> updateFridgeItem(String id, Map<String, dynamic> updateData) async {
+    final response = await _dioClient.patch(
+      '${AppConstants.epFridgeItems}/$id',
+      data: updateData,
     );
+    return response as Map<String, dynamic>;
+  }
+
+  /// DELETE /fridge/items/:id - Soft delete item from fridge
+  Future<void> deleteFridgeItem(String id) async {
+    await _dioClient.delete('${AppConstants.epFridgeItems}/$id');
+  }
+
+  /// PATCH /fridge/items/:id/consume - Mark item as consumed ("Đã dùng hết")
+  Future<Map<String, dynamic>> consumeFridgeItem(String id) async {
+    final response = await _dioClient.patch('${AppConstants.epFridgeItems}/$id/consume');
+    return response as Map<String, dynamic>;
+  }
+
+  /// GET /fridge/expiring - Get expiring items in N days
+  Future<List<dynamic>> getExpiringFridgeItems({int days = 3}) async {
+    final response = await _dioClient.get(
+      AppConstants.epFridgeExpiring,
+      queryParameters: {'days': days},
+    );
+    if (response is List<dynamic>) return response;
+    return [];
+  }
+
+  /// GET /fridge/stats - Get overall stats (spent, waste %, meals cooked, counts)
+  Future<Map<String, dynamic>> getFridgeStats() async {
+    final response = await _dioClient.get(AppConstants.epFridgeStats);
+    return response as Map<String, dynamic>;
+  }
+
+  /// GET /fridge/stats/chart - Get spending & waste chart data (week/month)
+  Future<Map<String, dynamic>> getFridgeStatsChart({String period = 'week'}) async {
+    final response = await _dioClient.get(
+      AppConstants.epFridgeStatsChart,
+      queryParameters: {'period': period},
+    );
+    return response as Map<String, dynamic>;
   }
 
   // ------------------------------------------------------------------
-  // Recipes
+  // AI Scan APIs (/fridge/scan/*)
   // ------------------------------------------------------------------
 
-  /// Get list of recipes
-  Future<List<dynamic>> getRecipes({String? mealType, String? search}) async {
-    final queryParams = <String, dynamic>{};
-    if (mealType != null) queryParams['mealType'] = mealType;
-    if (search != null && search.isNotEmpty) queryParams['search'] = search;
-
-    final response = await _dioClient.get(
-      AppConstants.epRecipes,
-      queryParameters: queryParams,
+  /// POST /fridge/scan/image - Scan food photo
+  Future<Map<String, dynamic>> scanFoodImage(String filePath) async {
+    final response = await _dioClient.uploadFile(
+      AppConstants.epFridgeScanImage,
+      filePath: filePath,
+      fileKey: 'file',
     );
-    return response as List<dynamic>;
+    return response as Map<String, dynamic>;
+  }
+
+  /// POST /fridge/scan/receipt - Scan receipt
+  Future<Map<String, dynamic>> scanReceiptImage(String filePath) async {
+    final response = await _dioClient.uploadFile(
+      AppConstants.epFridgeScanReceipt,
+      filePath: filePath,
+      fileKey: 'file',
+    );
+    return response as Map<String, dynamic>;
+  }
+
+  /// POST /fridge/scan/barcode - Scan barcode
+  Future<Map<String, dynamic>> scanBarcodeImage(String filePath) async {
+    final response = await _dioClient.uploadFile(
+      AppConstants.epFridgeScanBarcode,
+      filePath: filePath,
+      fileKey: 'file',
+    );
+    return response as Map<String, dynamic>;
+  }
+
+  /// GET /fridge/scan/:scanId - Poll scan status
+  Future<Map<String, dynamic>> getScanStatus(String scanId) async {
+    final response = await _dioClient.get('/fridge/scan/$scanId');
+    return response as Map<String, dynamic>;
+  }
+
+  /// POST /fridge/scan/:scanId/confirm - Confirm scan items into fridge
+  Future<List<dynamic>> confirmScan(String scanId, List<Map<String, dynamic>> items) async {
+    final response = await _dioClient.post(
+      '/fridge/scan/$scanId/confirm',
+      data: {'items': items},
+    );
+    if (response is List<dynamic>) return response;
+    return [];
+  }
+
+  /// GET /fridge/scan/history - Get scan history
+  Future<List<dynamic>> getScanHistory() async {
+    final response = await _dioClient.get(AppConstants.epFridgeScanHistory);
+    if (response is List<dynamic>) return response;
+    return [];
+  }
+
+  /// GET /recipes - Get list of recipes
+  Future<List<dynamic>> getRecipes() async {
+    try {
+      final response = await _dioClient.get(AppConstants.epRecipes);
+      if (response is Map<String, dynamic> && response.containsKey('data') && response['data'] is List) {
+        return response['data'] as List<dynamic>;
+      }
+      if (response is List<dynamic>) return response;
+    } catch (e) {
+      debugPrint('[ApiService] Error fetching recipes: $e');
+    }
+    return [];
+  }
+
+  /// GET /recipes/:id - Get recipe detail (ingredients, steps, description)
+  Future<Map<String, dynamic>> getRecipeDetail(String recipeId) async {
+    final response = await _dioClient.get('${AppConstants.epRecipes}/$recipeId');
+    return response as Map<String, dynamic>;
+  }
+
+  /// POST /meal-planning/plans/generate - Trigger AI weekly meal plan generation
+  Future<Map<String, dynamic>> generateWeeklyPlan({
+    String? weekStartDate,
+    double? budget,
+  }) async {
+    final data = <String, dynamic>{};
+    if (weekStartDate != null) data['weekStartDate'] = weekStartDate;
+    if (budget != null) data['budget'] = budget;
+
+    final response = await _dioClient.post(
+      AppConstants.epMealPlanningGenerate,
+      data: data,
+    );
+    return response as Map<String, dynamic>;
+  }
+
+  /// POST /meal-planning/plans/generate-from-expiring - Trigger AI plan from expiring ingredients
+  Future<Map<String, dynamic>> generateFromExpiring({
+    int withinDays = 3,
+    int days = 1,
+  }) async {
+    final response = await _dioClient.post(
+      AppConstants.epMealPlanningGenerateExpiring,
+      data: {
+        'withinDays': withinDays,
+        'days': days,
+      },
+    );
+    return response as Map<String, dynamic>;
+  }
+
+  /// GET /meal-planning/plans - Get user's meal plans
+  Future<List<dynamic>> getMealPlans() async {
+    final response = await _dioClient.get(AppConstants.epMealPlanningPlans);
+    if (response is List<dynamic>) return response;
+    return [];
+  }
+
+  /// GET /meal-planning/plans/:id - Get meal plan detail
+  Future<Map<String, dynamic>> getMealPlanDetail(String planId) async {
+    final response = await _dioClient.get('${AppConstants.epMealPlanningPlans}/$planId');
+    return response as Map<String, dynamic>;
+  }
+
+  /// PATCH /meal-planning/plans/:id - Update plan status (confirmed/active/completed/draft)
+  Future<Map<String, dynamic>> updateMealPlanStatus(String planId, String status) async {
+    final response = await _dioClient.patch(
+      '${AppConstants.epMealPlanningPlans}/$planId',
+      data: {'status': status},
+    );
+    return response as Map<String, dynamic>;
+  }
+
+  /// DELETE /meal-planning/plans/:id - Soft delete plan
+  Future<void> deleteMealPlan(String planId) async {
+    await _dioClient.delete('${AppConstants.epMealPlanningPlans}/$planId');
+  }
+
+  /// PATCH /meal-planning/slots/:id - Update meal slot (change recipe / toggle completed)
+  Future<Map<String, dynamic>> updateMealSlot({
+    required String slotId,
+    String? recipeId,
+    int? servings,
+    String? note,
+    bool? completed,
+  }) async {
+    final data = <String, dynamic>{};
+    if (recipeId != null) data['recipeId'] = recipeId;
+    if (servings != null) data['servings'] = servings;
+    if (note != null) data['note'] = note;
+    if (completed != null) data['completed'] = completed;
+
+    final response = await _dioClient.patch(
+      '/meal-planning/slots/$slotId',
+      data: data,
+    );
+    return response as Map<String, dynamic>;
+  }
+
+  /// POST /meal-planning/slots/:id/regenerate - AI regenerate slot alternative dish
+  Future<Map<String, dynamic>> regenerateSlot({
+    required String slotId,
+    String? reason,
+  }) async {
+    final response = await _dioClient.post(
+      '/meal-planning/slots/$slotId/regenerate',
+      data: {'reason': reason ?? 'want_different'},
+    );
+    return response as Map<String, dynamic>;
+  }
+
+  // ------------------------------------------------------------------
+  // Shopping Lists (/meal-planning/shopping-lists/*)
+  // ------------------------------------------------------------------
+
+  /// GET /meal-planning/shopping-lists - Get user's shopping lists
+  Future<List<dynamic>> getShoppingLists() async {
+    final response = await _dioClient.get(AppConstants.epMealPlanningShoppingLists);
+    if (response is List<dynamic>) return response;
+    return [];
+  }
+
+  /// POST /meal-planning/shopping-lists - Create shopping list from weekly plan
+  Future<Map<String, dynamic>> createShoppingList({
+    required String weeklyPlanId,
+    String? title,
+  }) async {
+    final data = <String, dynamic>{'weeklyPlanId': weeklyPlanId};
+    if (title != null && title.isNotEmpty) data['title'] = title;
+
+    final response = await _dioClient.post(
+      AppConstants.epMealPlanningShoppingLists,
+      data: data,
+    );
+    return response as Map<String, dynamic>;
+  }
+
+  /// PATCH /meal-planning/shopping-lists/:listId/items/:itemId - Toggle item isPurchased
+  Future<Map<String, dynamic>> toggleShoppingListItem({
+    required String listId,
+    required int itemId,
+  }) async {
+    final response = await _dioClient.patch(
+      '${AppConstants.epMealPlanningShoppingLists}/$listId/items/$itemId',
+    );
+    return response as Map<String, dynamic>;
   }
 
   // ------------------------------------------------------------------

@@ -1,29 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../data/services/api_service.dart';
 import '../l10n/app_localizations.dart';
 import '../widgets/friggy_app_bar.dart';
 
 class ShoppingItemModel {
+  int? backendItemId;
   String id;
   String name;
   String? quantity;
   bool isChecked;
 
   ShoppingItemModel({
+    this.backendItemId,
     required this.id,
     required this.name,
     this.quantity,
     this.isChecked = false,
-  });
-}
-
-class SuggestedPurchaseModel {
-  String name;
-  String imagePath;
-
-  SuggestedPurchaseModel({
-    required this.name,
-    required this.imagePath,
   });
 }
 
@@ -37,71 +30,102 @@ class ShoppingReminderScreen extends StatefulWidget {
 class _ShoppingReminderScreenState extends State<ShoppingReminderScreen> {
   final TextEditingController _addItemController = TextEditingController();
 
-  // Master Shopping List
-  final List<ShoppingItemModel> _shoppingList = [
-    ShoppingItemModel(
-      id: '1',
-      name: 'Sữa tươi',
-      quantity: '1 lít',
-      isChecked: false,
-    ),
-    ShoppingItemModel(
-      id: '2',
-      name: 'Cà chua',
-      isChecked: false,
-    ),
-    ShoppingItemModel(
-      id: '3',
-      name: 'Cá hồi',
-      quantity: '500g',
-      isChecked: false,
-    ),
-    ShoppingItemModel(
-      id: '4',
-      name: 'Trứng gà',
-      isChecked: true,
-    ),
-  ];
+  bool _isLoading = true;
+  String? _currentListId;
+  List<ShoppingItemModel> _shoppingList = [];
 
-  // Suggested Items to Buy
-  final List<SuggestedPurchaseModel> _suggestedPurchases = [
-    SuggestedPurchaseModel(
-      name: 'Rau xanh',
-      imagePath: 'assets/images/food_bokchoy.png',
-    ),
-    SuggestedPurchaseModel(
-      name: 'Bơ',
-      imagePath: 'assets/images/food_tomato.png',
-    ),
-    SuggestedPurchaseModel(
-      name: 'Nấm',
-      imagePath: 'assets/images/recipe_veggie_soup.png',
-    ),
-    SuggestedPurchaseModel(
-      name: 'Thịt heo',
-      imagePath: 'assets/images/food_pork.png',
-    ),
-  ];
-
-  String _translateItemName(String name, bool isEn) {
-    if (!isEn) return name;
-    final map = {
-      'Sữa tươi': 'Fresh Milk',
-      'Cà chua': 'Tomatoes',
-      'Cá hồi': 'Salmon',
-      'Trứng gà': 'Eggs',
-      'Rau xanh': 'Greens',
-      'Bơ': 'Avocado',
-      'Nấm': 'Mushrooms',
-      'Thịt heo': 'Pork',
-    };
-    return map[name] ?? name;
+  @override
+  void initState() {
+    super.initState();
+    _fetchShoppingLists();
   }
 
-  String _translateQuantity(String? qty, bool isEn) {
-    if (qty == null) return '';
-    if (!isEn) return qty;
-    return qty.replaceAll('lít', 'liter');
+  Future<void> _fetchShoppingLists() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final lists = await ApiService().getShoppingLists();
+      if (lists.isNotEmpty) {
+        final firstList = lists.first as Map<String, dynamic>;
+        final listId = firstList['id']?.toString();
+        final rawItems = firstList['items'] as List<dynamic>? ?? [];
+
+        final List<ShoppingItemModel> loadedItems = [];
+        for (final item in rawItems) {
+          final itemMap = item as Map<String, dynamic>;
+          final bId = itemMap['id'] as int?;
+          final name = itemMap['ingredientName']?.toString() ?? 'Nguyên liệu';
+          final qtyNum = itemMap['quantity'];
+          final unitStr = itemMap['unit']?.toString() ?? '';
+          final qtyStr = qtyNum != null ? '$qtyNum $unitStr'.trim() : null;
+          final isPurchased = itemMap['isPurchased'] as bool? ?? false;
+
+          loadedItems.add(
+            ShoppingItemModel(
+              backendItemId: bId,
+              id: bId?.toString() ?? DateTime.now().millisecondsSinceEpoch.toString(),
+              name: name,
+              quantity: qtyStr,
+              isChecked: isPurchased,
+            ),
+          );
+        }
+
+        if (mounted) {
+          setState(() {
+            _currentListId = listId;
+            _shoppingList = loadedItems;
+            _isLoading = false;
+          });
+        }
+        return;
+      }
+    } catch (e) {
+      debugPrint('[ShoppingReminderScreen] Error fetching shopping lists: $e');
+    }
+
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _generateShoppingListFromLatestPlan() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final plans = await ApiService().getMealPlans();
+      if (plans.isNotEmpty && plans.first['id'] != null) {
+        final planId = plans.first['id'].toString();
+        await ApiService().createShoppingList(
+          weeklyPlanId: planId,
+          title: 'Danh sách mua sắm tuần này',
+        );
+        await _fetchShoppingLists();
+        return;
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Chưa có thực đơn tuần. Vui lòng tạo thực đơn trước!'),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('[ShoppingReminderScreen] Error creating shopping list: $e');
+    }
+
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   @override
@@ -116,7 +140,6 @@ class _ShoppingReminderScreenState extends State<ShoppingReminderScreen> {
     final trimmed = name.trim();
     if (trimmed.isEmpty) return;
 
-    // Hide keyboard
     FocusScope.of(context).unfocus();
 
     setState(() {
@@ -145,10 +168,21 @@ class _ShoppingReminderScreenState extends State<ShoppingReminderScreen> {
     );
   }
 
-  void _toggleCheckItem(ShoppingItemModel item) {
+  Future<void> _toggleCheckItem(ShoppingItemModel item) async {
     setState(() {
       item.isChecked = !item.isChecked;
     });
+
+    if (_currentListId != null && item.backendItemId != null) {
+      try {
+        await ApiService().toggleShoppingListItem(
+          listId: _currentListId!,
+          itemId: item.backendItemId!,
+        );
+      } catch (e) {
+        debugPrint('[ShoppingReminderScreen] Error toggling item: $e');
+      }
+    }
   }
 
   void _deleteItem(ShoppingItemModel item) {
@@ -160,48 +194,8 @@ class _ShoppingReminderScreenState extends State<ShoppingReminderScreen> {
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(isEn ? 'Deleted "${_translateItemName(item.name, isEn)}" from list!' : 'Đã xóa "${item.name}" khỏi danh sách!'),
+        content: Text(isEn ? 'Deleted "${item.name}" from list!' : 'Đã xóa "${item.name}" khỏi danh sách!'),
         backgroundColor: const Color(0xFFD32F2F),
-        duration: const Duration(seconds: 2),
-      ),
-    );
-  }
-
-  void _addSuggestedToShoppingList(SuggestedPurchaseModel suggestion) {
-    final loc = AppLocalizations.of(context);
-    final isEn = loc?.locale.languageCode == 'en';
-    final sName = _translateItemName(suggestion.name, isEn);
-
-    final exists = _shoppingList.any(
-      (item) => item.name.toLowerCase() == suggestion.name.toLowerCase(),
-    );
-
-    if (exists) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(isEn ? '"$sName" is already in list!' : '"${suggestion.name}" đã có trong danh sách!'),
-          backgroundColor: const Color(0xFFFFA000),
-          duration: const Duration(seconds: 2),
-        ),
-      );
-      return;
-    }
-
-    setState(() {
-      _shoppingList.insert(
-        0,
-        ShoppingItemModel(
-          id: DateTime.now().millisecondsSinceEpoch.toString(),
-          name: suggestion.name,
-          isChecked: false,
-        ),
-      );
-    });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(isEn ? 'Added "$sName" to shopping list!' : 'Đã thêm "${suggestion.name}" vào danh sách mua sắm!'),
-        backgroundColor: const Color(0xFF008435),
         duration: const Duration(seconds: 2),
       ),
     );
@@ -240,10 +234,8 @@ class _ShoppingReminderScreenState extends State<ShoppingReminderScreen> {
         child: SafeArea(
           child: Column(
             children: [
-              // 1. Reusable Top Header FriggyAppBar
               const FriggyAppBar(),
 
-              // 2. Main Scrollable Content
               Expanded(
                 child: SingleChildScrollView(
                   physics: const BouncingScrollPhysics(),
@@ -253,7 +245,6 @@ class _ShoppingReminderScreenState extends State<ShoppingReminderScreen> {
                     children: [
                       const SizedBox(height: 6),
 
-                      // Title Header Block: "Nhắc đi chợ"
                       Text(
                         isEn ? 'Shopping Reminder' : 'Nhắc đi chợ',
                         style: GoogleFonts.outfit(
@@ -280,17 +271,14 @@ class _ShoppingReminderScreenState extends State<ShoppingReminderScreen> {
 
                       const SizedBox(height: 12),
 
-                      // 3. Combined Top Banner & Narrowed Input Field with Extra Large Popping Mascot
                       Stack(
                         clipBehavior: Clip.none,
                         children: [
-                          // Left Content Column (Green Card + Narrow Input Field)
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               const SizedBox(height: 12),
 
-                              // Base Green Container Card
                               Container(
                                 width: double.infinity,
                                 padding: const EdgeInsets.only(
@@ -321,7 +309,7 @@ class _ShoppingReminderScreenState extends State<ShoppingReminderScreen> {
                                 child: Text(
                                   isEn
                                       ? 'Friggy prepared a few\nshopping suggestions for you!'
-                                      : 'Friggy đã chuẩn bị vài gợi ý\nmua thêm cho bạn nè!',
+                                      : 'Friggy đã chuẩn bị danh sách\nmua sắm từ thực đơn AI nè!',
                                   style: GoogleFonts.plusJakartaSans(
                                     fontSize: 14.5,
                                     fontWeight: FontWeight.w800,
@@ -333,7 +321,6 @@ class _ShoppingReminderScreenState extends State<ShoppingReminderScreen> {
 
                               const SizedBox(height: 16),
 
-                              // Add Item Label ("Nhập thêm để cập nhật")
                               Text(
                                 isEn ? 'Add to update' : 'Nhập thêm để cập nhật',
                                 style: GoogleFonts.outfit(
@@ -344,13 +331,11 @@ class _ShoppingReminderScreenState extends State<ShoppingReminderScreen> {
                               ),
                               const SizedBox(height: 8),
 
-                              // Narrow Input Bar + Add Button (Right margin 96px leaves clear room for mascot!)
                               Padding(
                                 padding: const EdgeInsets.only(right: 96.0),
                                 child: Container(
                                   height: 48,
-                                  padding: const EdgeInsets.only(
-                                      left: 14, right: 4),
+                                  padding: const EdgeInsets.only(left: 14, right: 4),
                                   decoration: BoxDecoration(
                                     color: isDark
                                         ? const Color(0xFF19271E)
@@ -386,28 +371,22 @@ class _ShoppingReminderScreenState extends State<ShoppingReminderScreen> {
                                             hintText: isEn
                                                 ? 'Enter item you want to buy'
                                                 : 'Nhập thực phẩm bạn muốn mua',
-                                            hintStyle:
-                                                GoogleFonts.plusJakartaSans(
+                                            hintStyle: GoogleFonts.plusJakartaSans(
                                               fontSize: 12.5,
                                               color: isDark
                                                   ? const Color(0xFF9DA8A0)
                                                   : const Color(0xFFA5D6A7),
                                             ),
                                             border: InputBorder.none,
-                                            contentPadding:
-                                                const EdgeInsets.symmetric(
-                                                    vertical: 10),
+                                            contentPadding: const EdgeInsets.symmetric(vertical: 10),
                                           ),
                                         ),
                                       ),
-                                      // Green Add Button (+) with smooth touch inkwell
                                       Material(
                                         color: Colors.transparent,
                                         child: InkWell(
-                                          onTap: () => _addNewItem(
-                                              _addItemController.text),
-                                          borderRadius:
-                                              BorderRadius.circular(20),
+                                          onTap: () => _addNewItem(_addItemController.text),
+                                          borderRadius: BorderRadius.circular(20),
                                           child: Container(
                                             width: 40,
                                             height: 40,
@@ -430,7 +409,6 @@ class _ShoppingReminderScreenState extends State<ShoppingReminderScreen> {
                             ],
                           ),
 
-                          // Mascot Image (suggest.png) positioned lower and slightly smaller
                           Positioned(
                             right: -2,
                             top: -2,
@@ -440,8 +418,7 @@ class _ShoppingReminderScreenState extends State<ShoppingReminderScreen> {
                               'assets/images/suggest.png',
                               fit: BoxFit.contain,
                               alignment: Alignment.centerRight,
-                              errorBuilder: (context, error, stackTrace) =>
-                                  const Icon(
+                              errorBuilder: (context, error, stackTrace) => const Icon(
                                 Icons.shopping_bag_rounded,
                                 size: 64,
                                 color: Colors.white30,
@@ -453,80 +430,29 @@ class _ShoppingReminderScreenState extends State<ShoppingReminderScreen> {
 
                       const SizedBox(height: 22),
 
-                      // 5. Shopping List Header ("Danh sách cần mua")
-                      Text(
-                        isEn ? 'Shopping List' : 'Danh sách cần mua',
-                        style: GoogleFonts.outfit(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w900,
-                          color: isDark ? Colors.white : const Color(0xFF006428),
-                        ),
-                      ),
-
-                      const SizedBox(height: 12),
-
-                      // Items List Cards
-                      ListView.separated(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: _shoppingList.length,
-                        separatorBuilder: (context, index) =>
-                            const SizedBox(height: 10),
-                        itemBuilder: (context, index) {
-                          final item = _shoppingList[index];
-                          return _buildShoppingItemCard(item, isDark, isEn);
-                        },
-                      ),
-
-                      const SizedBox(height: 24),
-
-                      // 6. Suggested Items Section ("Gợi ý nên mua 🍃")
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Row(
-                            children: [
-                              Text(
-                                isEn ? 'Suggested to buy' : 'Gợi ý nên mua',
-                                style: GoogleFonts.outfit(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.w900,
-                                  color: isDark ? Colors.white : const Color(0xFF006428),
-                                ),
-                              ),
-                              const SizedBox(width: 4),
-                              Icon(
-                                Icons.eco_rounded,
-                                color: isDark ? const Color(0xFF81C784) : const Color(0xFF2E7D32),
-                                size: 18,
-                              ),
-                            ],
+                          Text(
+                            isEn ? 'Shopping List' : 'Danh sách cần mua',
+                            style: GoogleFonts.outfit(
+                              fontSize: 22,
+                              fontWeight: FontWeight.w900,
+                              color: isDark ? Colors.white : const Color(0xFF006428),
+                            ),
                           ),
-                          GestureDetector(
-                            onTap: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(isEn ? 'View all shopping suggestions' : 'Xem tất cả gợi ý mua sắm'),
-                                  duration: const Duration(seconds: 1),
-                                ),
-                              );
-                            },
-                            child: Row(
-                              children: [
-                                Text(
-                                  isEn ? 'View all' : 'Xem tất cả',
-                                  style: GoogleFonts.plusJakartaSans(
-                                    fontSize: 13.5,
-                                    fontWeight: FontWeight.w700,
-                                    color: isDark ? const Color(0xFF81C784) : const Color(0xFF1B5E20),
-                                  ),
-                                ),
-                                Icon(
-                                  Icons.chevron_right_rounded,
-                                  color: isDark ? const Color(0xFF81C784) : const Color(0xFF1B5E20),
-                                  size: 18,
-                                ),
-                              ],
+                          ElevatedButton.icon(
+                            onPressed: _generateShoppingListFromLatestPlan,
+                            icon: const Icon(Icons.auto_awesome, size: 16),
+                            label: Text(
+                              isEn ? 'Sync Plan' : 'Tạo từ AI',
+                              style: GoogleFonts.outfit(fontSize: 12, fontWeight: FontWeight.bold),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF008435),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                             ),
                           ),
                         ],
@@ -534,33 +460,64 @@ class _ShoppingReminderScreenState extends State<ShoppingReminderScreen> {
 
                       const SizedBox(height: 12),
 
-                      // Horizontal Scrollable Suggestions Cards Row
-                      SizedBox(
-                        height: 125,
-                        child: ListView.separated(
-                          scrollDirection: Axis.horizontal,
-                          physics: const BouncingScrollPhysics(),
-                          itemCount: _suggestedPurchases.length,
-                          separatorBuilder: (context, index) =>
-                              const SizedBox(width: 14),
+                      if (_isLoading)
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 20),
+                          child: Center(
+                            child: CircularProgressIndicator(color: Color(0xFF008435)),
+                          ),
+                        )
+                      else if (_shoppingList.isEmpty)
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(24),
+                          decoration: BoxDecoration(
+                            color: isDark ? const Color(0xFF19271E) : Colors.white,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Column(
+                            children: [
+                              Icon(
+                                Icons.shopping_cart_outlined,
+                                size: 48,
+                                color: isDark ? const Color(0xFF81C784) : const Color(0xFF2E7D32),
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                isEn
+                                    ? 'No shopping list yet. Tap "Sync Plan" to generate!'
+                                    : 'Chưa có danh sách cần mua. Bấm "Tạo từ AI" để tổng hợp!',
+                                textAlign: TextAlign.center,
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: isDark ? Colors.white70 : const Color(0xFF2E7D32),
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      else
+                        ListView.separated(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: _shoppingList.length,
+                          separatorBuilder: (context, index) => const SizedBox(height: 10),
                           itemBuilder: (context, index) {
-                            final suggestion = _suggestedPurchases[index];
-                            return _buildSuggestionCard(suggestion, isDark, isEn);
+                            final item = _shoppingList[index];
+                            return _buildShoppingItemCard(item, isDark);
                           },
                         ),
-                      ),
 
-                      const SizedBox(height: 18),
+                      const SizedBox(height: 24),
 
-                      // 7. Bottom Mascot Image (assets/images/market.png) - Equal top and bottom spacing
                       Center(
                         child: Image.asset(
                           'assets/images/market.png',
                           width: double.infinity,
                           height: 210,
                           fit: BoxFit.contain,
-                          errorBuilder: (context, error, stackTrace) =>
-                              const Icon(
+                          errorBuilder: (context, error, stackTrace) => const Icon(
                             Icons.storefront_rounded,
                             size: 100,
                             color: Colors.white30,
@@ -580,11 +537,7 @@ class _ShoppingReminderScreenState extends State<ShoppingReminderScreen> {
     );
   }
 
-  // Shopping Item White Card Widget matching design
-  Widget _buildShoppingItemCard(ShoppingItemModel item, bool isDark, bool isEn) {
-    final displayName = _translateItemName(item.name, isEn);
-    final displayQty = _translateQuantity(item.quantity, isEn);
-
+  Widget _buildShoppingItemCard(ShoppingItemModel item, bool isDark) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
@@ -593,9 +546,7 @@ class _ShoppingReminderScreenState extends State<ShoppingReminderScreen> {
         border: Border.all(
           color: isDark
               ? const Color(0xFF2E4D36)
-              : (item.isChecked
-                  ? const Color(0xFFA5D6A7)
-                  : const Color(0xFF81C784)),
+              : (item.isChecked ? const Color(0xFFA5D6A7) : const Color(0xFF81C784)),
           width: 1.2,
         ),
         boxShadow: [
@@ -608,7 +559,6 @@ class _ShoppingReminderScreenState extends State<ShoppingReminderScreen> {
       ),
       child: Row(
         children: [
-          // Radio / Checkbox Indicator Circle
           GestureDetector(
             onTap: () => _toggleCheckItem(item),
             child: Container(
@@ -616,9 +566,7 @@ class _ShoppingReminderScreenState extends State<ShoppingReminderScreen> {
               height: 26,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: item.isChecked
-                    ? const Color(0xFF4CAF50)
-                    : Colors.transparent,
+                color: item.isChecked ? const Color(0xFF4CAF50) : Colors.transparent,
                 border: Border.all(
                   color: item.isChecked
                       ? const Color(0xFF4CAF50)
@@ -637,24 +585,21 @@ class _ShoppingReminderScreenState extends State<ShoppingReminderScreen> {
           ),
           const SizedBox(width: 14),
 
-          // Item Name (with strikethrough if checked)
           Expanded(
             child: Text(
-              displayName,
+              item.name,
               style: GoogleFonts.outfit(
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
                 color: item.isChecked
                     ? (isDark ? const Color(0xFF6B786F) : const Color(0xFF757575))
                     : (isDark ? Colors.white : const Color(0xFF19221C)),
-                decoration:
-                    item.isChecked ? TextDecoration.lineThrough : null,
+                decoration: item.isChecked ? TextDecoration.lineThrough : null,
               ),
             ),
           ),
 
-          // Optional Quantity Badge Pill
-          if (displayQty.isNotEmpty) ...[
+          if (item.quantity != null && item.quantity!.isNotEmpty) ...[
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
@@ -662,7 +607,7 @@ class _ShoppingReminderScreenState extends State<ShoppingReminderScreen> {
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
-                displayQty,
+                item.quantity!,
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 12.5,
                   fontWeight: FontWeight.w700,
@@ -673,127 +618,15 @@ class _ShoppingReminderScreenState extends State<ShoppingReminderScreen> {
             const SizedBox(width: 8),
           ],
 
-          // 3-Dots Action Menu
-          PopupMenuButton<String>(
+          IconButton(
             icon: Icon(
-              Icons.more_vert_rounded,
-              color: isDark ? const Color(0xFF9DA8A0) : const Color(0xFF757575),
+              Icons.delete_outline_rounded,
+              color: isDark ? const Color(0xFFE57373) : const Color(0xFFD32F2F),
               size: 20,
             ),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14),
-            ),
-            onSelected: (val) {
-              if (val == 'delete') {
-                _deleteItem(item);
-              } else if (val == 'toggle') {
-                _toggleCheckItem(item);
-              }
-            },
-            itemBuilder: (context) => [
-              PopupMenuItem(
-                value: 'toggle',
-                child: Text(
-                  item.isChecked
-                      ? (isEn ? 'Mark as unbought' : 'Đánh dấu chưa mua')
-                      : (isEn ? 'Mark as bought' : 'Đánh dấu đã mua'),
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 13.5,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-              PopupMenuItem(
-                value: 'delete',
-                child: Text(
-                  isEn ? 'Remove from list' : 'Xóa khỏi danh sách',
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 13.5,
-                    fontWeight: FontWeight.w600,
-                    color: const Color(0xFFD32F2F),
-                  ),
-                ),
-              ),
-            ],
+            onPressed: () => _deleteItem(item),
           ),
         ],
-      ),
-    );
-  }
-
-  // Suggestion Card Widget matching Next Week Suggestions screen design
-  Widget _buildSuggestionCard(SuggestedPurchaseModel suggestion, bool isDark, bool isEn) {
-    final sName = _translateItemName(suggestion.name, isEn);
-
-    return GestureDetector(
-      onTap: () => _addSuggestedToShoppingList(suggestion),
-      child: Container(
-        width: 112,
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF19271E) : Colors.white,
-          borderRadius: BorderRadius.circular(22),
-          border: isDark
-              ? Border.all(color: const Color(0xFF2E4D36), width: 1)
-              : null,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        child: Column(
-          children: [
-            // Top Image with rounded corners taking top space
-            Expanded(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: Image.asset(
-                  suggestion.imagePath,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => Container(
-                    color: isDark ? const Color(0xFF233629) : const Color(0xFFE8F5E9),
-                    child: Icon(
-                      Icons.eco_rounded,
-                      size: 36,
-                      color: isDark ? const Color(0xFF81C784) : const Color(0xFF4CAF50),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
-
-            // Bottom Row: Shopping Cart Icon + Name in SAME Row centered
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.shopping_cart_rounded,
-                  color: isDark ? const Color(0xFF81C784) : const Color(0xFF008435),
-                  size: 15,
-                ),
-                const SizedBox(width: 4),
-                Flexible(
-                  child: Text(
-                    sName,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.outfit(
-                      fontSize: 13.5,
-                      fontWeight: FontWeight.w800,
-                      color: isDark ? Colors.white : const Color(0xFF006428),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 2),
-          ],
-        ),
       ),
     );
   }

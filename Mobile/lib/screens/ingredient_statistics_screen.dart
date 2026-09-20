@@ -4,6 +4,9 @@ import '../l10n/app_localizations.dart';
 import '../widgets/friggy_app_bar.dart';
 import 'recipe_suggestions_screen.dart';
 
+import '../data/services/api_service.dart';
+import '../data/models/fridge_models.dart';
+
 class IngredientStatisticsScreen extends StatefulWidget {
   final int initialTabIndex; // 0 for Tuần, 1 for Tháng
 
@@ -20,11 +23,35 @@ class IngredientStatisticsScreen extends StatefulWidget {
 class _IngredientStatisticsScreenState
     extends State<IngredientStatisticsScreen> {
   late int _selectedTab;
+  final ApiService _apiService = ApiService();
+  FridgeStatsModel? _stats;
+  FridgeStatsChartModel? _chartData;
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
     _selectedTab = widget.initialTabIndex;
+    _loadStatsData();
+  }
+
+  Future<void> _loadStatsData() async {
+    setState(() => _isLoading = true);
+    try {
+      final period = _selectedTab == 0 ? 'week' : 'month';
+      final statsRes = await _apiService.getFridgeStats();
+      final chartRes = await _apiService.getFridgeStatsChart(period: period);
+      if (mounted) {
+        setState(() {
+          _stats = FridgeStatsModel.fromJson(statsRes);
+          _chartData = FridgeStatsChartModel.fromJson(chartRes);
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading stats data: $e');
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -32,10 +59,11 @@ class _IngredientStatisticsScreenState
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final loc = AppLocalizations.of(context);
     final isEn = loc?.locale.languageCode == 'en';
+    final hasStatsData = _stats != null || _chartData != null || _isLoading;
 
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF0E1611) : const Color(0xFFF4FAF2),
-      body: Container(
+      body: !hasStatsData ? const SizedBox.shrink() : Container(
         width: double.infinity,
         height: double.infinity,
         decoration: BoxDecoration(
@@ -112,6 +140,7 @@ class _IngredientStatisticsScreenState
                                   setState(() {
                                     _selectedTab = 0;
                                   });
+                                  _loadStatsData();
                                 },
                                 child: Container(
                                   padding:
@@ -143,6 +172,7 @@ class _IngredientStatisticsScreenState
                                   setState(() {
                                     _selectedTab = 1;
                                   });
+                                  _loadStatsData();
                                 },
                                 child: Container(
                                   padding:
@@ -238,7 +268,7 @@ class _IngredientStatisticsScreenState
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    isEn ? '18 items' : '18 món',
+                    isEn ? '${_stats?.totalItems ?? 0} items' : '${_stats?.totalItems ?? 0} món',
                     style: GoogleFonts.outfit(
                       fontSize: 22,
                       fontWeight: FontWeight.w900,
@@ -253,7 +283,7 @@ class _IngredientStatisticsScreenState
 
         const SizedBox(height: 14),
 
-        // Row of 2 Cards: Bị bỏ phí (2 món) & Lãng phí (~85.000đ)
+        // Row of 2 Cards: Bị bỏ phí (2 món) & Lãng phí (% / đ)
         Row(
           children: [
             // Left Card: Bị bỏ phí
@@ -285,7 +315,7 @@ class _IngredientStatisticsScreenState
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      isEn ? 'Discarded' : 'Bị bỏ phí',
+                      isEn ? 'Expiring soon' : 'Sắp hết hạn',
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 13.5,
                         fontWeight: FontWeight.w700,
@@ -294,7 +324,7 @@ class _IngredientStatisticsScreenState
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      isEn ? '2 items' : '2 món',
+                      isEn ? '${_stats?.expiringSoonCount ?? 0} items' : '${_stats?.expiringSoonCount ?? 0} món',
                       style: GoogleFonts.outfit(
                         fontSize: 20,
                         fontWeight: FontWeight.w900,
@@ -306,7 +336,7 @@ class _IngredientStatisticsScreenState
               ),
             ),
             const SizedBox(width: 14),
-            // Right Card: Lãng phí (~85.000đ)
+            // Right Card: Lãng phí (% / VND)
             Expanded(
               child: Container(
                 padding: const EdgeInsets.all(16),
@@ -344,7 +374,7 @@ class _IngredientStatisticsScreenState
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      isEn ? '~\$3.5' : '~85.000đ',
+                      '${_stats?.wastePercent ?? 0}%',
                       style: GoogleFonts.outfit(
                         fontSize: 20,
                         fontWeight: FontWeight.w900,
@@ -377,9 +407,27 @@ class _IngredientStatisticsScreenState
   }
 
   // ==========================================
+  String _formatVnd(int amount) {
+    final str = amount.toString();
+    final buffer = StringBuffer();
+    for (int i = 0; i < str.length; i++) {
+      if (i > 0 && (str.length - i) % 3 == 0) {
+        buffer.write('.');
+      }
+      buffer.write(str[i]);
+    }
+    return '${buffer.toString()}đ';
+  }
+
   // MONTHLY TAB CONTENT (THÁNG)
   // ==========================================
   Widget _buildMonthlyTabContent(bool isDark, bool isEn) {
+    final now = DateTime.now();
+    final monthTitle = isEn
+        ? 'Month ${now.month}, ${now.year}'
+        : 'Tháng ${now.month}, ${now.year}';
+    final totalSpentFormatted = _formatVnd(_stats?.totalSpentThisMonth ?? 0);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -413,7 +461,7 @@ class _IngredientStatisticsScreenState
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        isEn ? 'October, 2023' : 'Tháng 10, 2023',
+                        monthTitle,
                         style: GoogleFonts.plusJakartaSans(
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
@@ -440,7 +488,7 @@ class _IngredientStatisticsScreenState
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        '+12%',
+                        '${_stats?.wastePercent ?? 0}%',
                         style: GoogleFonts.plusJakartaSans(
                           fontSize: 14,
                           fontWeight: FontWeight.w800,
@@ -454,27 +502,15 @@ class _IngredientStatisticsScreenState
 
               const SizedBox(height: 20),
 
-              // Bar Chart Representation
-              SizedBox(
-                height: 165,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    _buildBarItem(isEn ? 'Jul' : 'T.7', 0.52, isSelected: false, isDark: isDark),
-                    _buildBarItem(isEn ? 'Aug' : 'T.8', 0.70, isSelected: false, isDark: isDark),
-                    _buildBarItem(isEn ? 'Sep' : 'T.9', 0.62, isSelected: false, isDark: isDark),
-                    _buildBarItem(isEn ? 'Oct' : 'T.10', 0.95, isSelected: true, tooltip: '24kg', isDark: isDark),
-                  ],
-                ),
-              ),
+              // Dynamic Bar Chart Representation from _chartData
+              _buildMonthlyChart(isDark, isEn),
             ],
           ),
         ),
 
         const SizedBox(height: 16),
 
-        // 2. Grid of 2 Cards: Đã sử dụng (84 món) & Lãng phí (5 món)
+        // 2. Grid of 2 Cards: Đã sử dụng & Lãng phí
         Row(
           children: [
             // Left Card: Đã sử dụng
@@ -515,7 +551,7 @@ class _IngredientStatisticsScreenState
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      isEn ? '84 items' : '84 món',
+                      isEn ? '${_stats?.totalItems ?? 0} items' : '${_stats?.totalItems ?? 0} món',
                       style: GoogleFonts.outfit(
                         fontSize: 22,
                         fontWeight: FontWeight.w900,
@@ -556,7 +592,7 @@ class _IngredientStatisticsScreenState
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      isEn ? 'Wasted' : 'Lãng phí',
+                      isEn ? 'Expiring soon' : 'Sắp hết hạn',
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 13.5,
                         fontWeight: FontWeight.w700,
@@ -565,7 +601,7 @@ class _IngredientStatisticsScreenState
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      isEn ? '5 items' : '5 món',
+                      isEn ? '${_stats?.expiringSoonCount ?? 0} items' : '${_stats?.expiringSoonCount ?? 0} món',
                       style: GoogleFonts.outfit(
                         fontSize: 22,
                         fontWeight: FontWeight.w900,
@@ -581,7 +617,7 @@ class _IngredientStatisticsScreenState
 
         const SizedBox(height: 16),
 
-        // 3. Savings Banner: Tiết kiệm ước tính (1.250.000đ)
+        // 3. Savings / Monthly Expense Banner
         Container(
           width: double.infinity,
           padding: const EdgeInsets.all(18),
@@ -606,7 +642,7 @@ class _IngredientStatisticsScreenState
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      isEn ? 'Estimated savings vs last month' : 'Tiết kiệm ước tính so với tháng trước',
+                      isEn ? 'Total monthly food spending' : 'Tổng chi tiêu mua sắm tháng này',
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 13.5,
                         fontWeight: FontWeight.w700,
@@ -615,7 +651,7 @@ class _IngredientStatisticsScreenState
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      isEn ? '~\$50' : '1.250.000đ',
+                      totalSpentFormatted,
                       style: GoogleFonts.outfit(
                         fontSize: 26,
                         fontWeight: FontWeight.w900,
@@ -624,7 +660,7 @@ class _IngredientStatisticsScreenState
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      isEn ? 'ⓘ Based on average food value' : 'ⓘ Dựa trên giá trị trung bình thực phẩm',
+                      isEn ? 'ⓘ Based on purchased shopping items' : 'ⓘ Dựa trên sản phẩm đã mua từ danh sách',
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 11.5,
                         fontWeight: FontWeight.w600,
@@ -827,6 +863,59 @@ class _IngredientStatisticsScreenState
         // 7. Section: Bị bỏ quên nhiều (Cần chú ý)
         _buildNeglectedSection(isDark, isEn),
       ],
+    );
+  }
+
+  Widget _buildMonthlyChart(bool isDark, bool isEn) {
+    final labelsList = _chartData?.labels ?? [];
+    final spendingList = _chartData?.spending ?? [];
+
+    if (labelsList.isEmpty) {
+      // Fallback bars if API returns empty chart data
+      return SizedBox(
+        height: 165,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            _buildBarItem(isEn ? 'Jul' : 'T.7', 0.52, isSelected: false, isDark: isDark),
+            _buildBarItem(isEn ? 'Aug' : 'T.8', 0.70, isSelected: false, isDark: isDark),
+            _buildBarItem(isEn ? 'Sep' : 'T.9', 0.62, isSelected: false, isDark: isDark),
+            _buildBarItem(isEn ? 'Oct' : 'T.10', 0.95, isSelected: true, tooltip: '0đ', isDark: isDark),
+          ],
+        ),
+      );
+    }
+
+    final maxVal = spendingList.fold<double>(0.0, (m, e) => e > m ? e : m);
+
+    // Pick last 5-7 labels/items for optimal display
+    final totalCount = labelsList.length;
+    final displayIndices = totalCount > 6
+        ? List.generate(6, (i) => totalCount - 6 + i)
+        : List.generate(totalCount, (i) => i);
+
+    return SizedBox(
+      height: 165,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: displayIndices.map((idx) {
+          final label = labelsList[idx];
+          final val = idx < spendingList.length ? spendingList[idx] : 0.0;
+          final factor = maxVal > 0 ? (val / maxVal).clamp(0.2, 0.95) : 0.2;
+          final isSelected = idx == displayIndices.last;
+          final tooltip = val > 0 ? '${(val / 1000).toStringAsFixed(0)}k' : null;
+
+          return _buildBarItem(
+            label,
+            factor,
+            isSelected: isSelected,
+            tooltip: tooltip,
+            isDark: isDark,
+          );
+        }).toList(),
+      ),
     );
   }
 

@@ -36,7 +36,7 @@ export class MealPlanningService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly rabbitMq: RabbitMqPublisherService,
-  ) {}
+  ) { }
 
   // ─────────────────────────────────────────────────────────
   // POST /plans/generate — Đẩy job AI vào queue, trả jobId ngay

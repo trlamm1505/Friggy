@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../l10n/app_localizations.dart';
+import '../data/services/api_service.dart';
 
 class ManualAddIngredientScreen extends StatefulWidget {
   const ManualAddIngredientScreen({super.key});
@@ -15,213 +16,79 @@ class _ManualAddIngredientScreenState
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _quantityController =
       TextEditingController(text: '0');
-  final TextEditingController _notesController = TextEditingController();
-
-  String _selectedCategory = 'Trái cây';
   String _selectedUnit = 'kg';
   String _selectedStorageArea = 'Fridge'; // 'Fridge', 'Freezer', 'Pantry'
   DateTime? _selectedExpirationDate;
 
-  final Map<String, IconData> _categoryIcons = {
-    'Trái cây': Icons.apple_rounded,
-    'Rau củ': Icons.eco_rounded,
-    'Thịt': Icons.set_meal_rounded,
-    'Hải sản': Icons.phishing_rounded,
-    'Sữa & Trứng': Icons.local_drink_rounded,
-    'Đồ uống': Icons.local_cafe_rounded,
-    'Khác': Icons.category_rounded,
-  };
-
-  final List<String> _categories = [
-    'Trái cây',
-    'Rau củ',
-    'Thịt',
-    'Hải sản',
-    'Sữa & Trứng',
-    'Đồ uống',
-    'Khác',
-  ];
-
   final List<String> _units = [
     'kg',
+    'gram',
     'g',
-    'lbs',
+    'ml',
+    'lít',
+    'quả',
+    'củ',
+    'bó',
+    'miếng',
+    'gói',
+    'hộp',
+    'chai',
+    'con',
+    'bắp',
     'pcs',
-    'box',
-    'bottle',
-    'pack',
   ];
 
-  String _translateCategoryName(String cat, bool isEn) {
-    if (!isEn) return cat;
-    final map = {
-      'Trái cây': 'Fruit',
-      'Rau củ': 'Vegetables',
-      'Thịt': 'Meat',
-      'Hải sản': 'Seafood',
-      'Sữa & Trứng': 'Dairy & Eggs',
-      'Đồ uống': 'Beverages',
-      'Khác': 'Other',
-    };
-    return map[cat] ?? cat;
+  List<Map<String, dynamic>> _suggestions = [];
+  bool _showSuggestions = false;
+  int? _selectedIngredientId;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController.addListener(_onNameChanged);
+  }
+
+  void _onNameChanged() async {
+    final val = _nameController.text.trim();
+    if (val.isEmpty) {
+      if (mounted) setState(() => _showSuggestions = false);
+      return;
+    }
+    try {
+      final res = await ApiService().getIngredients(search: val);
+      if (mounted) {
+        setState(() {
+          _suggestions = res.cast<Map<String, dynamic>>();
+          _showSuggestions = _suggestions.isNotEmpty;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error searching ingredients: $e');
+    }
+  }
+
+  void _selectSuggestion(Map<String, dynamic> item) {
+    setState(() {
+      _nameController.text = item['name'] as String? ?? '';
+      _selectedIngredientId = item['id'] as int?;
+      if (item['defaultUnit'] != null) {
+        _selectedUnit = item['defaultUnit'] as String;
+      }
+      final shelfDays = item['defaultShelfLifeDays'] as int? ?? 7;
+      _selectedExpirationDate = DateTime.now().add(Duration(days: shelfDays));
+      _showSuggestions = false;
+    });
   }
 
   @override
   void dispose() {
+    _nameController.removeListener(_onNameChanged);
     _nameController.dispose();
     _quantityController.dispose();
-    _notesController.dispose();
     super.dispose();
   }
 
-  // Beautiful Custom Modal for Category Selection
-  void _showCategoryPicker(bool isEn) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (context) {
-        return Container(
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF19271E) : Colors.white,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-            border: isDark ? Border.all(color: const Color(0xFF2E4D36), width: 1.2) : null,
-          ),
-          padding: const EdgeInsets.only(
-            left: 20,
-            right: 20,
-            top: 14,
-            bottom: 24,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Top Drag Handle Bar
-              Center(
-                child: Container(
-                  width: 38,
-                  height: 4.5,
-                  decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF2E4D36) : const Color(0xFFC8E6C9),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 16),
-
-              // Title Header
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    isEn ? 'Select Category' : 'Chọn Danh Mục',
-                    style: GoogleFonts.outfit(
-                      fontSize: 21,
-                      fontWeight: FontWeight.w800,
-                      color: isDark ? Colors.white : const Color(0xFF006428),
-                    ),
-                  ),
-                  IconButton(
-                    icon: Icon(
-                      Icons.close_rounded,
-                      color: isDark ? Colors.white : const Color(0xFF6B786F),
-                    ),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 12),
-
-              // Category Items List
-              Flexible(
-                child: ListView.separated(
-                  shrinkWrap: true,
-                  physics: const BouncingScrollPhysics(),
-                  itemCount: _categories.length,
-                  separatorBuilder: (context, index) => Divider(
-                    height: 1,
-                    color: isDark ? const Color(0xFF2E4D36) : const Color(0xFFF0F4F1),
-                  ),
-                  itemBuilder: (context, index) {
-                    final category = _categories[index];
-                    final isSelected = category == _selectedCategory;
-                    final icon = _categoryIcons[category] ?? Icons.category_rounded;
-
-                    return GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          _selectedCategory = category;
-                        });
-                        Navigator.pop(context);
-                      },
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 150),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 14,
-                        ),
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? (isDark ? const Color(0xFF233629) : const Color(0xFFE8F5E9))
-                              : Colors.transparent,
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: isSelected
-                                    ? (isDark ? const Color(0xFF81C784) : const Color(0xFF008435))
-                                    : (isDark ? const Color(0xFF0E1611) : const Color(0xFFF1F8E9)),
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                icon,
-                                size: 20,
-                                color: isSelected
-                                    ? (isDark ? const Color(0xFF0E1611) : Colors.white)
-                                    : (isDark ? const Color(0xFF81C784) : const Color(0xFF2E7D32)),
-                              ),
-                            ),
-                            const SizedBox(width: 14),
-                            Expanded(
-                              child: Text(
-                                _translateCategoryName(category, isEn),
-                                style: GoogleFonts.plusJakartaSans(
-                                  fontSize: 16,
-                                  fontWeight: isSelected
-                                      ? FontWeight.w800
-                                      : FontWeight.w600,
-                                  color: isSelected
-                                      ? (isDark ? const Color(0xFF81C784) : const Color(0xFF008435))
-                                      : (isDark ? Colors.white : const Color(0xFF19221C)),
-                                ),
-                              ),
-                            ),
-                            if (isSelected)
-                              Icon(
-                                Icons.check_circle_rounded,
-                                color: isDark ? const Color(0xFF81C784) : const Color(0xFF008435),
-                                size: 22,
-                              ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
 
   // Beautiful Custom Modal for Unit Selection
   void _showUnitPicker(bool isEn) {
@@ -644,7 +511,7 @@ class _ManualAddIngredientScreenState
     }
   }
 
-  void _saveIngredient() {
+  void _saveIngredient() async {
     final isEn = AppLocalizations.of(context)?.locale.languageCode == 'en';
     final name = _nameController.text.trim();
     if (name.isEmpty) {
@@ -657,19 +524,69 @@ class _ManualAddIngredientScreenState
       return;
     }
 
-    final qtyNum = _quantityController.text.trim();
-    final fullQtyStr = '$qtyNum $_selectedUnit';
+    final qtyNum = double.tryParse(_quantityController.text.trim()) ?? 1.0;
+    
+    String storageLoc = 'fridge';
+    if (_selectedStorageArea == 'Freezer') storageLoc = 'freezer';
+    if (_selectedStorageArea == 'Pantry') storageLoc = 'pantry';
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          isEn ? 'Added $name ($fullQtyStr) to fridge!' : 'Đã thêm $name ($fullQtyStr) vào tủ lạnh thành công!',
+    try {
+      int? ingredientId = _selectedIngredientId;
+      if (ingredientId == null) {
+        final ingredients = await ApiService().getIngredients(search: name);
+        if (ingredients.isNotEmpty && ingredients[0] is Map<String, dynamic>) {
+          ingredientId = ingredients[0]['id'] as int?;
+        }
+      }
+
+      if (ingredientId == null) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              isEn
+                  ? 'Ingredient "$name" not found in list. Please select an existing ingredient.'
+                  : 'Nguyên liệu "$name" chưa có sẵn trong danh sách. Vui lòng chọn từ gợi ý hệ thống.',
+            ),
+            backgroundColor: Colors.red.shade700,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        return;
+      }
+
+      await ApiService().addFridgeItem({
+        'ingredientId': ingredientId,
+        'quantity': qtyNum,
+        'unit': _selectedUnit,
+        if (_selectedExpirationDate != null)
+          'expiresAt': _selectedExpirationDate!.toIso8601String().split('T')[0],
+        'storageLocation': storageLoc,
+      });
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            isEn ? 'Added $name to fridge!' : 'Đã thêm $name vào tủ lạnh thành công!',
+          ),
+          backgroundColor: const Color(0xFF008435),
         ),
-        backgroundColor: const Color(0xFF008435),
-      ),
-    );
+      );
 
-    Navigator.pop(context);
+      Navigator.pop(context);
+    } catch (e) {
+      debugPrint('Add fridge item error: $e');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            isEn ? 'Failed to add item to fridge' : 'Không thể thêm nguyên liệu vào tủ',
+          ),
+          backgroundColor: Colors.red.shade700,
+        ),
+      );
+    }
   }
 
   @override
@@ -785,59 +702,59 @@ class _ManualAddIngredientScreenState
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 16),
 
                       // Mascot Greeting Card Banner
                       Container(
                         width: double.infinity,
-                        padding: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
                         decoration: BoxDecoration(
-                          color: isDark ? const Color(0xFF1E3A25) : const Color(0xFF52B756),
-                          borderRadius: BorderRadius.circular(22),
+                          color: isDark ? const Color(0xFF1E3A25) : const Color(0xFF4CB93E),
+                          borderRadius: BorderRadius.circular(26),
                           border: isDark
                               ? Border.all(color: const Color(0xFF2E4D36), width: 1.2)
                               : null,
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.08),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
+                              color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.1),
+                              blurRadius: 14,
+                              offset: const Offset(0, 5),
                             ),
                           ],
                         ),
                         child: Row(
                           children: [
-                            // Mascot Image (assets/images/QR.png)
+                            // Larger Mascot Image
                             ClipRRect(
-                              borderRadius: BorderRadius.circular(16),
+                              borderRadius: BorderRadius.circular(20),
                               child: Image.asset(
                                 'assets/images/QR.png',
-                                width: 80,
-                                height: 80,
+                                width: 110,
+                                height: 110,
                                 fit: BoxFit.contain,
                                 errorBuilder: (context, error, stackTrace) {
                                   return Container(
-                                    width: 80,
-                                    height: 80,
+                                    width: 110,
+                                    height: 110,
                                     color: Colors.white24,
                                     child: const Icon(
                                       Icons.face_rounded,
-                                      size: 40,
+                                      size: 55,
                                       color: Colors.white,
                                     ),
                                   );
                                 },
                               ),
                             ),
-                            const SizedBox(width: 14),
+                            const SizedBox(width: 18),
                             Expanded(
                               child: Text(
                                 isEn ? 'Add quickly, let Friggy handle the rest!' : 'Nhập nhanh chóng, để Friggy lo phần còn lại!',
-                                style: GoogleFonts.plusJakartaSans(
-                                  fontSize: 14.5,
-                                  fontWeight: FontWeight.w700,
+                                style: GoogleFonts.outfit(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w800,
                                   color: Colors.white,
-                                  height: 1.35,
+                                  height: 1.3,
                                 ),
                               ),
                             ),
@@ -845,60 +762,86 @@ class _ManualAddIngredientScreenState
                         ),
                       ),
 
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 28),
 
                       // 1. Ingredient Name Field
                       _buildFieldTitle(isEn ? 'Ingredient Name' : 'Tên Nguyên Liệu'),
-                      const SizedBox(height: 6),
+                      const SizedBox(height: 8),
                       _buildTextField(
                         controller: _nameController,
                         hintText: isEn ? 'e.g. Red Apple, Fresh Milk...' : 'vd: Táo đỏ, Sữa tươi...',
                       ),
 
-                      const SizedBox(height: 16),
-
-                      // 2. Row: Category & Quantity
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                _buildFieldTitle(isEn ? 'Category' : 'Danh Mục'),
-                                const SizedBox(height: 6),
-                                _buildSelectField(
-                                  value: _translateCategoryName(_selectedCategory, isEn),
-                                  icon: _categoryIcons[_selectedCategory],
-                                  onTap: () => _showCategoryPicker(isEn),
-                                ),
-                              ],
+                      if (_showSuggestions) ...[
+                        const SizedBox(height: 8),
+                        Container(
+                          constraints: const BoxConstraints(maxHeight: 180),
+                          decoration: BoxDecoration(
+                            color: isDark ? const Color(0xFF19271E) : Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: isDark ? const Color(0xFF2E4D36) : const Color(0xFF81C784),
                             ),
                           ),
-                          const SizedBox(width: 14),
+                          child: ListView.separated(
+                            shrinkWrap: true,
+                            padding: const EdgeInsets.symmetric(vertical: 4),
+                            itemCount: _suggestions.length,
+                            separatorBuilder: (context, index) => Divider(
+                              height: 1,
+                              color: isDark ? const Color(0xFF2E4D36) : const Color(0xFFE8F5E9),
+                            ),
+                            itemBuilder: (context, index) {
+                              final sug = _suggestions[index];
+                              final sugName = sug['name'] as String? ?? '';
+                              final sugUnit = sug['defaultUnit'] as String? ?? '';
+                              return ListTile(
+                                dense: true,
+                                title: Text(
+                                  sugName,
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 14.5,
+                                    fontWeight: FontWeight.w700,
+                                    color: isDark ? Colors.white : const Color(0xFF19221C),
+                                  ),
+                                ),
+                                subtitle: Text(
+                                  isEn ? 'Default unit: $sugUnit' : 'Đơn vị mặc định: $sugUnit',
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 12.5,
+                                    color: isDark ? const Color(0xFF81C784) : const Color(0xFF2E7D32),
+                                  ),
+                                ),
+                                trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14),
+                                onTap: () => _selectSuggestion(sug),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
+
+                      const SizedBox(height: 24),
+
+                      // 2. Row: Quantity & Unit
+                      Row(
+                        children: [
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 _buildFieldTitle(isEn ? 'Quantity' : 'Số Lượng'),
-                                const SizedBox(height: 6),
+                                const SizedBox(height: 8),
                                 _buildQuantityStepperField(isEn),
                               ],
                             ),
                           ),
-                        ],
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      // 3. Row: Unit & Expiration Date
-                      Row(
-                        children: [
+                          const SizedBox(width: 16),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 _buildFieldTitle(isEn ? 'Unit' : 'Đơn Vị'),
-                                const SizedBox(height: 6),
+                                const SizedBox(height: 8),
                                 _buildSelectField(
                                   value: _selectedUnit,
                                   onTap: () => _showUnitPicker(isEn),
@@ -906,60 +849,54 @@ class _ManualAddIngredientScreenState
                               ],
                             ),
                           ),
-                          const SizedBox(width: 14),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                _buildFieldTitle(isEn ? 'Expiry Date' : 'Ngày Hết Hạn'),
-                                const SizedBox(height: 6),
-                                GestureDetector(
-                                  onTap: _pickExpirationDate,
-                                  child: Container(
-                                    height: 52,
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 14,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: isDark ? const Color(0xFF19271E) : Colors.white,
-                                      borderRadius: BorderRadius.circular(16),
-                                      border: Border.all(
-                                        color: isDark ? const Color(0xFF2E4D36) : const Color(0xFF81C784),
-                                        width: 1.2,
-                                      ),
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        Expanded(
-                                          child: Text(
-                                            _selectedExpirationDate == null
-                                                ? 'mm/dd/yyyy'
-                                                : '${_selectedExpirationDate!.month.toString().padLeft(2, '0')}/${_selectedExpirationDate!.day.toString().padLeft(2, '0')}/${_selectedExpirationDate!.year}',
-                                            style: GoogleFonts.plusJakartaSans(
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.w600,
-                                              color: _selectedExpirationDate == null
-                                                  ? (isDark ? const Color(0xFF9DA8A0) : const Color(0xFFA5D6A7))
-                                                  : (isDark ? Colors.white : const Color(0xFF19221C)),
-                                            ),
-                                          ),
-                                        ),
-                                        Icon(
-                                          Icons.calendar_today_rounded,
-                                          size: 18,
-                                          color: isDark ? const Color(0xFF81C784) : const Color(0xFF4CAF50),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
                         ],
                       ),
 
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 24),
+
+                      // 3. Expiration Date (Auto-calculated or custom picker)
+                      _buildFieldTitle(isEn ? 'Expiration Date' : 'Ngày Hết Hạn (Tùy chọn)'),
+                      const SizedBox(height: 8),
+                      GestureDetector(
+                        onTap: _pickExpirationDate,
+                        child: Container(
+                          height: 56,
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          decoration: BoxDecoration(
+                            color: isDark ? const Color(0xFF19271E) : Colors.white,
+                            borderRadius: BorderRadius.circular(18),
+                            border: Border.all(
+                              color: isDark ? const Color(0xFF2E4D36) : const Color(0xFF81C784),
+                              width: 1.2,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  _selectedExpirationDate == null
+                                      ? (isEn ? 'Auto-calculated or tap to set' : 'Tự động tính hoặc bấm để chọn')
+                                      : '${_selectedExpirationDate!.day.toString().padLeft(2, '0')}/${_selectedExpirationDate!.month.toString().padLeft(2, '0')}/${_selectedExpirationDate!.year}',
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 14.5,
+                                    fontWeight: FontWeight.w600,
+                                    color: _selectedExpirationDate == null
+                                        ? (isDark ? const Color(0xFF9DA8A0) : const Color(0xFFA5D6A7))
+                                        : (isDark ? Colors.white : const Color(0xFF19221C)),
+                                  ),
+                                ),
+                              ),
+                              Icon(
+                                Icons.calendar_today_rounded,
+                                size: 20,
+                                color: isDark ? const Color(0xFF81C784) : const Color(0xFF4CAF50),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 24),
 
                       // 4. Storage Area (Pills: Fridge, Freezer, Pantry)
                       Row(
@@ -968,35 +905,24 @@ class _ManualAddIngredientScreenState
                           _buildFieldTitle(isEn ? 'Storage Area' : 'Vị Trí Lưu Trữ'),
                         ],
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 10),
                       Row(
                         children: [
                           Expanded(
                             child: _buildStoragePill('Fridge', isEn ? 'Cooler' : 'Ngăn mát'),
                           ),
-                          const SizedBox(width: 8),
+                          const SizedBox(width: 10),
                           Expanded(
                             child: _buildStoragePill('Freezer', isEn ? 'Freezer' : 'Ngăn đông'),
                           ),
-                          const SizedBox(width: 8),
+                          const SizedBox(width: 10),
                           Expanded(
                             child: _buildStoragePill('Pantry', isEn ? 'Pantry' : 'Tủ khô'),
                           ),
                         ],
                       ),
 
-                      const SizedBox(height: 20),
-
-                      // 5. Notes Field
-                      _buildFieldTitle(isEn ? 'Notes' : 'Ghi Chú'),
-                      const SizedBox(height: 6),
-                      _buildTextField(
-                        controller: _notesController,
-                        hintText: isEn ? 'Add notes about freshness, origin...' : 'Thêm ghi chú về độ tươi, nguồn gốc...',
-                        maxLines: 3,
-                      ),
-
-                      const SizedBox(height: 28),
+                      const SizedBox(height: 36),
 
                       // 6. Save / Add Button
                       GestureDetector(
@@ -1212,11 +1138,11 @@ class _ManualAddIngredientScreenState
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        height: 52,
-        padding: const EdgeInsets.symmetric(horizontal: 14),
+        height: 56,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
         decoration: BoxDecoration(
           color: isDark ? const Color(0xFF19271E) : Colors.white,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(18),
           border: Border.all(
             color: isDark ? const Color(0xFF2E4D36) : const Color(0xFF81C784),
             width: 1.2,
@@ -1265,13 +1191,13 @@ class _ManualAddIngredientScreenState
       },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
-        height: 44,
+        height: 48,
         alignment: Alignment.center,
         decoration: BoxDecoration(
           color: isSelected
               ? (isDark ? const Color(0xFF81C784) : const Color(0xFF008435))
               : (isDark ? const Color(0xFF19271E) : Colors.white),
-          borderRadius: BorderRadius.circular(22),
+          borderRadius: BorderRadius.circular(24),
           border: Border.all(
             color: isSelected
                 ? (isDark ? const Color(0xFF81C784) : const Color(0xFF008435))
