@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
-import '../data/mock_ingredient_data.dart';
+import '../data/models/ingredient_model.dart';
 import '../l10n/app_localizations.dart';
+import '../data/services/api_service.dart';
 
 class ScanBarcodeScreen extends StatefulWidget {
   const ScanBarcodeScreen({super.key});
@@ -49,14 +50,41 @@ class _ScanBarcodeScreenState extends State<ScanBarcodeScreen>
     _showResultDialog(rawBarcode);
   }
 
-  void _showResultDialog(String barcode) {
+  Future<void> _showResultDialog(String barcode) async {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isEn = AppLocalizations.of(context)?.locale.languageCode == 'en';
-    final allItems = IngredientRepository.getAllAvailableIngredients();
-    final matchedItem = allItems.firstWhere(
-      (item) => item.id == barcode || item.name.contains(barcode),
-      orElse: () => allItems.first,
-    );
+    
+    List<IngredientModel> allItems = [];
+    try {
+      final res = await ApiService().getFridgeItems();
+      allItems = res.map((e) => IngredientModel.fromFridgeApi(e)).toList();
+    } catch (e) {
+      debugPrint('Error loading fridge items for scan: $e');
+    }
+
+    final matchedItem = allItems.isNotEmpty
+        ? allItems.firstWhere(
+            (item) => item.id == barcode || item.name.contains(barcode),
+            orElse: () => allItems.first,
+          )
+        : IngredientModel(
+            id: 'scanned_item',
+            fridgeId: 'family',
+            fridgeName: 'Tủ Lạnh Gia Đình',
+            name: 'Món ăn mới ($barcode)',
+            englishName: 'New Item ($barcode)',
+            quantity: '1 kg',
+            unit: 'kg',
+            category: 'Thực phẩm',
+            storageArea: 'Fridge',
+            daysUntilExpiry: 7,
+            expiryText: 'Còn 7 ngày',
+            imagePath: 'assets/images/available_veggies.png',
+            badgeBgColor: const Color(0xFFE8F5E9),
+            badgeTextColor: const Color(0xFF2E7D32),
+          );
+
+    if (!mounted) return;
 
     showDialog(
       context: context,
@@ -203,6 +231,11 @@ class _ScanBarcodeScreenState extends State<ScanBarcodeScreen>
       );
 
       if (image != null) {
+        final res = await ApiService().scanBarcodeImage(image.path);
+        final scanId = res['scanId'] as String? ?? '';
+        if (scanId.isNotEmpty) {
+          await ApiService().getScanStatus(scanId);
+        }
         _onBarcodeScanned('8934567890123');
       }
     } catch (e) {

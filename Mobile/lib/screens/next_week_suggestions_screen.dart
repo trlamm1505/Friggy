@@ -1,44 +1,423 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../data/mock_recipe_data.dart';
+import '../data/models/recipe_model.dart';
+import '../data/services/api_service.dart';
 import '../l10n/app_localizations.dart';
 import '../widgets/friggy_app_bar.dart';
 import 'recipe_detail_screen.dart';
+import 'shopping_reminder_screen.dart';
 
-class NextWeekSuggestionsScreen extends StatelessWidget {
+class NextWeekSuggestionsScreen extends StatefulWidget {
   const NextWeekSuggestionsScreen({super.key});
 
-  String _translateIngredientTitle(String title, bool isEn) {
-    if (!isEn) return title;
-    final map = {
-      'Rau xanh': 'Greens',
-      'Bơ': 'Avocado',
-      'Nấm': 'Mushrooms',
-      'Cá hồi': 'Salmon',
-    };
-    return map[title] ?? title;
+  @override
+  State<NextWeekSuggestionsScreen> createState() => _NextWeekSuggestionsScreenState();
+}
+
+class _NextWeekSuggestionsScreenState extends State<NextWeekSuggestionsScreen> {
+  bool _isLoading = true;
+  bool _isGenerating = false;
+  String _loadingMessage = '🤖 Đang kết nối lấy thực đơn tuần...';
+
+  Map<int, Map<String, dynamic>> _dailyPlansMap = {};
+  String? _weeklyPlanId;
+  int _selectedDayOfWeek = 1;
+  String? _regeneratingSlotId;
+  bool _hasShoppingList = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchWeeklyPlan();
   }
 
-  String _translateDayText(String day, bool isEn) {
-    if (!isEn) return day;
-    final map = {
-      'Thứ 2': 'Mon',
-      'Thứ 3': 'Tue',
-      'Thứ 4': 'Wed',
-      'Thứ 5': 'Thu',
-    };
-    return map[day] ?? day;
+  Future<void> _checkExistingShoppingList() async {
+    try {
+      final lists = await ApiService().getShoppingLists();
+      bool exists = false;
+      if (lists.isNotEmpty) {
+        if (_weeklyPlanId != null) {
+          exists = lists.any((item) => (item as Map)['weeklyPlanId']?.toString() == _weeklyPlanId);
+        }
+        if (!exists) {
+          exists = lists.isNotEmpty;
+        }
+      }
+      if (mounted) {
+        setState(() {
+          _hasShoppingList = exists;
+        });
+      }
+    } catch (e) {
+      debugPrint('[NextWeekSuggestionsScreen] Error checking shopping lists: $e');
+    }
   }
 
-  String _translateDishTitle(String dish, bool isEn) {
-    if (!isEn) return dish;
-    final map = {
-      'Canh rau củ': 'Vegetable Soup',
-      'Cá hồi áp chảo rau xanh': 'Seared Salmon & Greens',
-      'Bò xào bông cải': 'Beef & Broccoli Stir-Fry',
-      'Trứng chiên cà chua': 'Tomato Scrambled Eggs',
-    };
-    return map[dish] ?? dish;
+  Future<void> _toggleMealSlotCompleted(String slotId, bool currentlyCompleted) async {
+    if (slotId.isEmpty || slotId.startsWith('rec_')) return;
+    try {
+      await ApiService().updateMealSlot(
+        slotId: slotId,
+        completed: !currentlyCompleted,
+      );
+      if (_weeklyPlanId != null) {
+        final detail = await ApiService().getMealPlanDetail(_weeklyPlanId!);
+        final list = (detail['dailyPlans'] as List<dynamic>?)
+                ?.map((e) => Map<String, dynamic>.from(e as Map))
+                .toList() ??
+            [];
+
+        final Map<int, Map<String, dynamic>> mapByDay = {};
+        for (final item in list) {
+          final rawDay = item['dayOfWeek'];
+          final dOfWeek = rawDay is int
+              ? rawDay
+              : (int.tryParse(rawDay?.toString() ?? '') ?? 1);
+          mapByDay[dOfWeek] = item;
+        }
+
+        if (mounted) {
+          setState(() {
+            _dailyPlansMap = mapByDay;
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('[NextWeekSuggestionsScreen] Error toggling completed: $e');
+    }
+  }
+
+  Future<void> _regenerateMealSlot(String slotId, String currentRecipeId) async {
+    if (slotId.isEmpty || slotId.startsWith('rec_')) return;
+    if (_regeneratingSlotId != null) return;
+
+    setState(() {
+      _regeneratingSlotId = slotId;
+    });
+
+    try {
+      // 1. Call POST /slots/:id/regenerate (Trigger AI job)
+      await ApiService().regenerateSlot(slotId: slotId);
+
+      // 2. Fetch recipes from backend to update MealSlot via PATCH /slots/:id
+      final recipes = await ApiService().getRecipes();
+      if (recipes.isNotEmpty) {
+        final alternative = recipes.firstWhere(
+          (r) => (r as Map)['id']?.toString() != currentRecipeId,
+          orElse: () => recipes.first,
+        );
+        final newRecipeId = (alternative as Map)['id']?.toString();
+        if (newRecipeId != null) {
+          await ApiService().updateMealSlot(
+            slotId: slotId,
+            recipeId: newRecipeId,
+          );
+        }
+      }
+
+      // 3. Reload plan detail to refresh UI with updated DB record
+      if (_weeklyPlanId != null) {
+        final detail = await ApiService().getMealPlanDetail(_weeklyPlanId!);
+        final list = (detail['dailyPlans'] as List<dynamic>?)
+                ?.map((e) => Map<String, dynamic>.from(e as Map))
+                .toList() ??
+            [];
+
+        final Map<int, Map<String, dynamic>> mapByDay = {};
+        for (final item in list) {
+          final rawDay = item['dayOfWeek'];
+          final dOfWeek = rawDay is int
+              ? rawDay
+              : (int.tryParse(rawDay?.toString() ?? '') ?? 1);
+          mapByDay[dOfWeek] = item;
+        }
+
+        if (mounted) {
+          setState(() {
+            _dailyPlansMap = mapByDay;
+            _regeneratingSlotId = null;
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('[NextWeekSuggestionsScreen] Error regenerating slot: $e');
+      if (mounted) {
+        setState(() {
+          _regeneratingSlotId = null;
+        });
+      }
+    }
+  }
+
+  Future<void> _fetchWeeklyPlan() async {
+    if (!mounted) return;
+    setState(() {
+      _isLoading = true;
+      _loadingMessage = '🤖 Đang tải thực đơn tuần từ hệ thống...';
+    });
+
+    try {
+      final plans = await ApiService().getMealPlans();
+      if (plans.isNotEmpty) {
+        plans.sort((a, b) {
+          final dateA = DateTime.tryParse((a as Map)['createdAt']?.toString() ?? '') ?? DateTime(1970);
+          final dateB = DateTime.tryParse((b as Map)['createdAt']?.toString() ?? '') ?? DateTime(1970);
+          return dateB.compareTo(dateA);
+        });
+
+        final firstPlan = plans.first as Map<String, dynamic>;
+        if (firstPlan['id'] != null) {
+          final planId = firstPlan['id'].toString();
+          _weeklyPlanId = planId;
+          final detail = await ApiService().getMealPlanDetail(planId);
+          final list = (detail['dailyPlans'] as List<dynamic>?)
+                  ?.map((e) => Map<String, dynamic>.from(e as Map))
+                  .toList() ??
+              [];
+
+          final Map<int, Map<String, dynamic>> mapByDay = {};
+          for (final item in list) {
+            final rawDay = item['dayOfWeek'];
+            final dOfWeek = rawDay is int
+                ? rawDay
+                : (int.tryParse(rawDay?.toString() ?? '') ?? 1);
+            mapByDay[dOfWeek] = item;
+          }
+
+          if (mounted) {
+            setState(() {
+              _dailyPlansMap = mapByDay;
+              _isLoading = false;
+            });
+            _checkExistingShoppingList();
+          }
+          return;
+        }
+      }
+    } catch (e) {
+      debugPrint('[NextWeekSuggestionsScreen] Error fetching weekly plan: $e');
+    }
+
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
+      _generateWeeklyPlanWithAi();
+    }
+  }
+
+  Future<void> _generateWeeklyPlanWithAi() async {
+    if (_isGenerating) return;
+
+    setState(() {
+      _isGenerating = true;
+      _loadingMessage = '🤖 AI Friggy đang quét tủ lạnh & khởi tạo thực đơn tuần...';
+    });
+
+    try {
+      final Set<String> initialSlotIds = {};
+      for (final d in _dailyPlansMap.values) {
+        final slots = (d['mealSlots'] as List<dynamic>?) ?? [];
+        for (final s in slots) {
+          final sId = (s as Map)['id']?.toString();
+          if (sId != null) initialSlotIds.add(sId);
+        }
+      }
+
+      setState(() {
+        _loadingMessage = '🧠 AI đang tính toán thực đơn 7 ngày đủ chất & tiết kiệm...';
+      });
+
+      // Calculate Monday YYYY-MM-DD
+      final now = DateTime.now();
+      final monday = now.subtract(Duration(days: now.weekday - 1));
+      final mondayStr = monday.toIso8601String().split('T')[0];
+
+      final res = await ApiService().generateWeeklyPlan(
+        weekStartDate: mondayStr,
+        budget: 500000,
+      );
+      final jobId = res['jobId'] as String?;
+      debugPrint('[NextWeekSuggestionsScreen] Triggered generateWeeklyPlan jobId: $jobId');
+
+      const int maxAttempts = 25; // max ~87.5s
+
+      for (int i = 0; i < maxAttempts; i++) {
+        await Future.delayed(const Duration(milliseconds: 3500));
+
+        if (i == 2) {
+          setState(() => _loadingMessage = '🍲 AI đang chọn món ăn cho cả tuần (Thứ 2 - Chủ Nhật)...');
+        } else if (i == 6) {
+          setState(() => _loadingMessage = '🍳 AI đang phân bổ bữa sáng, trưa, tối hợp lý...');
+        } else if (i == 12) {
+          setState(() => _loadingMessage = '💾 AI đang lưu thực đơn tuần vào cơ sở dữ liệu...');
+        }
+
+        try {
+          final currentPlans = await ApiService().getMealPlans();
+          if (currentPlans.isNotEmpty) {
+            currentPlans.sort((a, b) {
+              final dateA = DateTime.tryParse((a as Map)['createdAt']?.toString() ?? '') ?? DateTime(1970);
+              final dateB = DateTime.tryParse((b as Map)['createdAt']?.toString() ?? '') ?? DateTime(1970);
+              return dateB.compareTo(dateA);
+            });
+            final latestPlanId = currentPlans.first['id']?.toString();
+            if (latestPlanId != null) {
+              _weeklyPlanId = latestPlanId;
+              final detail = await ApiService().getMealPlanDetail(latestPlanId);
+              final dailyList = (detail['dailyPlans'] as List<dynamic>?)
+                      ?.map((e) => Map<String, dynamic>.from(e as Map))
+                      .toList() ??
+                  [];
+
+              final Set<String> currentSlotIds = {};
+              final Map<int, Map<String, dynamic>> mapByDay = {};
+
+              for (final d in dailyList) {
+                final rawDay = d['dayOfWeek'];
+                final dOfWeek = rawDay is int
+                    ? rawDay
+                    : (int.tryParse(rawDay?.toString() ?? '') ?? 1);
+                mapByDay[dOfWeek] = d;
+
+                final slots = (d['mealSlots'] as List<dynamic>?) ?? [];
+                for (final s in slots) {
+                  final sId = (s as Map)['id']?.toString();
+                  if (sId != null) currentSlotIds.add(sId);
+                }
+              }
+
+              bool hasNewSlots = false;
+              if (initialSlotIds.isEmpty && currentSlotIds.isNotEmpty) {
+                hasNewSlots = true;
+              } else if (initialSlotIds.isNotEmpty && currentSlotIds.isNotEmpty) {
+                for (final sId in currentSlotIds) {
+                  if (!initialSlotIds.contains(sId)) {
+                    hasNewSlots = true;
+                    break;
+                  }
+                }
+              }
+
+              if (hasNewSlots || mapByDay.length > _dailyPlansMap.length) {
+                _dailyPlansMap = mapByDay;
+                break;
+              }
+            }
+          }
+        } catch (e) {
+          debugPrint('[NextWeekSuggestionsScreen] Polling attempt $i error: $e');
+        }
+      }
+
+      if (mounted) {
+        setState(() {
+          _isGenerating = false;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('🎉 AI đã lập thực đơn 7 ngày thành công!'),
+            backgroundColor: const Color(0xFF008435),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          ),
+        );
+        _checkExistingShoppingList();
+      }
+    } catch (e) {
+      debugPrint('[NextWeekSuggestionsScreen] Error generating plan: $e');
+      if (mounted) {
+        setState(() => _isGenerating = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Lỗi kết nối AI: $e'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _handleShoppingListAction() async {
+    if (_hasShoppingList) {
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const ShoppingReminderScreen(),
+        ),
+      );
+      _checkExistingShoppingList();
+      return;
+    }
+
+    if (_weeklyPlanId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Vui lòng chờ AI tạo thực đơn xong trước khi lập danh sách mua sắm!'),
+        ),
+      );
+      return;
+    }
+
+    try {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('🛒 Đang tổng hợp nguyên liệu cần mua từ thực đơn...'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+
+      await ApiService().createShoppingList(
+        weeklyPlanId: _weeklyPlanId!,
+        title: 'Danh sách mua sắm tuần này',
+      );
+
+      if (mounted) {
+        setState(() {
+          _hasShoppingList = true;
+        });
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const ShoppingReminderScreen(),
+          ),
+        );
+        _checkExistingShoppingList();
+      }
+    } catch (e) {
+      debugPrint('[NextWeekSuggestionsScreen] Error creating shopping list: $e');
+      if (mounted) {
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const ShoppingReminderScreen(),
+          ),
+        );
+        _checkExistingShoppingList();
+      }
+    }
+  }
+
+  String _getDayName(int dayOfWeek, bool isEn) {
+    switch (dayOfWeek) {
+      case 1:
+        return isEn ? 'Mon' : 'Thứ 2';
+      case 2:
+        return isEn ? 'Tue' : 'Thứ 3';
+      case 3:
+        return isEn ? 'Wed' : 'Thứ 4';
+      case 4:
+        return isEn ? 'Thu' : 'Thứ 5';
+      case 5:
+        return isEn ? 'Fri' : 'Thứ 6';
+      case 6:
+        return isEn ? 'Sat' : 'Thứ 7';
+      case 7:
+        return isEn ? 'Sun' : 'Chủ Nhật';
+      default:
+        return isEn ? 'Day $dayOfWeek' : 'Thứ $dayOfWeek';
+    }
   }
 
   @override
@@ -61,11 +440,11 @@ class NextWeekSuggestionsScreen extends StatelessWidget {
                     Color(0xFF1B2E21),
                   ]
                 : const [
-                    Color(0xFFFFFFFF), // Pure white at top header
-                    Color(0xFFF5FCF4), // Soft white tint
-                    Color(0xFFC7EFC2), // Fresh light green
-                    Color(0xFF86D978), // Vibrant green lower section
-                    Color(0xFF4CB93E), // Rich green at bottom
+                    Color(0xFFFFFFFF),
+                    Color(0xFFF5FCF4),
+                    Color(0xFFC7EFC2),
+                    Color(0xFF86D978),
+                    Color(0xFF4CB93E),
                   ],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
@@ -75,10 +454,8 @@ class NextWeekSuggestionsScreen extends StatelessWidget {
         child: SafeArea(
           child: Column(
             children: [
-              // 1. Header Bar using reusable FriggyAppBar
               const FriggyAppBar(),
 
-              // 2. Scrollable Body Content
               Expanded(
                 child: SingleChildScrollView(
                   physics: const BouncingScrollPhysics(),
@@ -88,20 +465,80 @@ class NextWeekSuggestionsScreen extends StatelessWidget {
                     children: [
                       const SizedBox(height: 4),
 
-                      // Screen Title
-                      Text(
-                        isEn ? 'Suggestions for Next Week' : 'Gợi ý cho tuần tới',
-                        style: GoogleFonts.outfit(
-                          fontSize: 28,
-                          fontWeight: FontWeight.w900,
-                          color: isDark ? Colors.white : const Color(0xFF006428),
-                          letterSpacing: -0.3,
-                        ),
+                      // Title & Generate Button
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              isEn ? 'Suggestions for Next Week' : 'Gợi ý cho tuần tới',
+                              style: GoogleFonts.outfit(
+                                fontSize: 26,
+                                fontWeight: FontWeight.w900,
+                                color: isDark ? Colors.white : const Color(0xFF006428),
+                                letterSpacing: -0.3,
+                              ),
+                            ),
+                          ),
+                          ElevatedButton.icon(
+                            onPressed: _isGenerating ? null : _generateWeeklyPlanWithAi,
+                            icon: const Icon(Icons.auto_awesome, size: 16),
+                            label: Text(
+                              _isGenerating
+                                  ? (isEn ? 'Creating...' : 'Đang tạo...')
+                                  : (isEn ? 'AI Plan' : 'AI Lập tuần'),
+                              style: GoogleFonts.outfit(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF008435),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
 
                       const SizedBox(height: 16),
 
-                      // 1. Nhận xét tổng quan Card with suggest.png mascot
+                      if (_isGenerating || _isLoading)
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(24),
+                          margin: const EdgeInsets.only(bottom: 20),
+                          decoration: BoxDecoration(
+                            color: isDark ? const Color(0xFF19271E) : Colors.white,
+                            borderRadius: BorderRadius.circular(24),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.05),
+                                blurRadius: 10,
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            children: [
+                              const CircularProgressIndicator(color: Color(0xFF008435)),
+                              const SizedBox(height: 16),
+                              Text(
+                                _loadingMessage,
+                                textAlign: TextAlign.center,
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                  color: isDark ? Colors.white : const Color(0xFF006428),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                      // 1. General Overview Card
                       Container(
                         width: double.infinity,
                         padding: const EdgeInsets.all(18),
@@ -122,7 +559,6 @@ class NextWeekSuggestionsScreen extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Header Row: Icon + "Nhận xét tổng quan"
                             Row(
                               children: [
                                 Container(
@@ -133,14 +569,14 @@ class NextWeekSuggestionsScreen extends StatelessWidget {
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: Icon(
-                                    Icons.bar_chart_rounded,
+                                    Icons.auto_awesome_rounded,
                                     color: isDark ? const Color(0xFF81C784) : Colors.white,
                                     size: 22,
                                   ),
                                 ),
                                 const SizedBox(width: 10),
                                 Text(
-                                  isEn ? 'General Overview' : 'Nhận xét tổng quan',
+                                  isEn ? 'AI Meal Assistant' : 'Trợ lý thực đơn AI',
                                   style: GoogleFonts.outfit(
                                     fontSize: 21,
                                     fontWeight: FontWeight.w900,
@@ -152,101 +588,63 @@ class NextWeekSuggestionsScreen extends StatelessWidget {
 
                             const SizedBox(height: 16),
 
-                            // Body Content Row: Text on left + Mascot Image (suggest.png) on right
                             Row(
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
+                                    crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       RichText(
                                         text: TextSpan(
                                           style: GoogleFonts.plusJakartaSans(
-                                            fontSize: 15.5,
-                                            color: isDark ? const Color(0xFF9DA8A0) : const Color(0xFF558B2F),
+                                            fontSize: 14.5,
+                                            color: isDark ? const Color(0xFF9DA8A0) : const Color(0xFF4A6B53),
                                             fontWeight: FontWeight.w600,
                                             height: 1.45,
                                           ),
                                           children: isEn
                                               ? [
-                                                  const TextSpan(text: 'This week you used a lot of '),
+                                                  const TextSpan(text: 'AI Friggy automatically crafts smart meal plans based on your '),
                                                   TextSpan(
-                                                    text: 'eggs',
+                                                    text: 'fridge ingredients',
                                                     style: TextStyle(
-                                                      fontSize: 16,
+                                                      fontSize: 15,
                                                       fontWeight: FontWeight.w900,
                                                       color: isDark ? const Color(0xFF81C784) : const Color(0xFF006428),
                                                     ),
                                                   ),
                                                   const TextSpan(text: ' and '),
                                                   TextSpan(
-                                                    text: 'tomatoes',
+                                                    text: 'nutritional balance',
                                                     style: TextStyle(
-                                                      fontSize: 16,
+                                                      fontSize: 15,
                                                       fontWeight: FontWeight.w900,
                                                       color: isDark ? const Color(0xFF81C784) : const Color(0xFF006428),
                                                     ),
                                                   ),
-                                                  const TextSpan(text: ', lacking '),
-                                                  TextSpan(
-                                                    text: 'greens',
-                                                    style: TextStyle(
-                                                      fontSize: 16,
-                                                      fontWeight: FontWeight.w900,
-                                                      color: isDark ? const Color(0xFF81C784) : const Color(0xFF006428),
-                                                    ),
-                                                  ),
-                                                  const TextSpan(text: ' and foods rich in '),
-                                                  TextSpan(
-                                                    text: 'omega-3',
-                                                    style: TextStyle(
-                                                      fontSize: 16,
-                                                      fontWeight: FontWeight.w900,
-                                                      color: isDark ? const Color(0xFF81C784) : const Color(0xFF006428),
-                                                    ),
-                                                  ),
-                                                  const TextSpan(text: '.'),
+                                                  const TextSpan(text: ' for the entire week.'),
                                                 ]
                                               : [
-                                                  const TextSpan(text: 'Tuần này bạn dùng nhiều '),
+                                                  const TextSpan(text: 'AI Friggy tự động tổng hợp thực đơn thông minh dựa trên '),
                                                   TextSpan(
-                                                    text: 'trứng',
+                                                    text: 'nguyên liệu trong tủ lạnh',
                                                     style: TextStyle(
-                                                      fontSize: 16,
+                                                      fontSize: 15,
                                                       fontWeight: FontWeight.w900,
                                                       color: isDark ? const Color(0xFF81C784) : const Color(0xFF006428),
                                                     ),
                                                   ),
-                                                  const TextSpan(text: ' và '),
+                                                  const TextSpan(text: ' và nhu cầu '),
                                                   TextSpan(
-                                                    text: 'cà chua',
+                                                    text: 'dinh dưỡng tối ưu',
                                                     style: TextStyle(
-                                                      fontSize: 16,
+                                                      fontSize: 15,
                                                       fontWeight: FontWeight.w900,
                                                       color: isDark ? const Color(0xFF81C784) : const Color(0xFF006428),
                                                     ),
                                                   ),
-                                                  const TextSpan(text: ', thiếu '),
-                                                  TextSpan(
-                                                    text: 'rau xanh',
-                                                    style: TextStyle(
-                                                      fontSize: 16,
-                                                      fontWeight: FontWeight.w900,
-                                                      color: isDark ? const Color(0xFF81C784) : const Color(0xFF006428),
-                                                    ),
-                                                  ),
-                                                  const TextSpan(text: ' và thực phẩm giàu '),
-                                                  TextSpan(
-                                                    text: 'omega-3',
-                                                    style: TextStyle(
-                                                      fontSize: 16,
-                                                      fontWeight: FontWeight.w900,
-                                                      color: isDark ? const Color(0xFF81C784) : const Color(0xFF006428),
-                                                    ),
-                                                  ),
-                                                  const TextSpan(text: '.'),
+                                                  const TextSpan(text: ' cho cả tuần.'),
                                                 ],
                                         ),
                                       ),
@@ -257,11 +655,10 @@ class NextWeekSuggestionsScreen extends StatelessWidget {
                                       ),
                                       const SizedBox(height: 12),
                                       Row(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.center,
+                                        crossAxisAlignment: CrossAxisAlignment.center,
                                         children: [
                                           Icon(
-                                            Icons.favorite_rounded,
+                                            Icons.tips_and_updates_rounded,
                                             color: isDark ? const Color(0xFF81C784) : const Color(0xFF2E7D32),
                                             size: 18,
                                           ),
@@ -269,11 +666,10 @@ class NextWeekSuggestionsScreen extends StatelessWidget {
                                           Expanded(
                                             child: Text(
                                               isEn
-                                                  ? 'Let\'s balance nutrition for next week!'
-                                                  : 'Cùng cân bằng dinh dưỡng cho tuần tới nhé!',
-                                              style:
-                                                  GoogleFonts.plusJakartaSans(
-                                                fontSize: 14,
+                                                  ? 'Explore recipes, replace dishes with AI, or mark cooked meals below!'
+                                                  : 'Xem công thức, đổi món AI hoặc đánh dấu đã nấu từng bữa ăn bên dưới nhé!',
+                                              style: GoogleFonts.plusJakartaSans(
+                                                fontSize: 13.5,
                                                 fontWeight: FontWeight.w800,
                                                 color: isDark ? const Color(0xFF81C784) : const Color(0xFF2E7D32),
                                                 height: 1.3,
@@ -286,7 +682,6 @@ class NextWeekSuggestionsScreen extends StatelessWidget {
                                   ),
                                 ),
                                 const SizedBox(width: 8),
-                                // Mascot Image using suggest.png (Larger, Scaled & Shifted Up)
                                 Transform.translate(
                                   offset: const Offset(8, -12),
                                   child: Transform.scale(
@@ -320,130 +715,89 @@ class NextWeekSuggestionsScreen extends StatelessWidget {
 
                       const SizedBox(height: 22),
 
-                      // 2. Section: Gợi ý thực phẩm cho tuần tới
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
-                        ),
-                        decoration: BoxDecoration(
-                          color: isDark ? const Color(0xFF19271E) : Colors.white,
-                          borderRadius: BorderRadius.circular(30),
-                          border: Border.all(
-                            color: isDark ? const Color(0xFF81C784) : const Color(0xFF2E7D32),
-                            width: 1.5,
+                      // 2. Shopping Button Banner
+                      InkWell(
+                        onTap: _handleShoppingListAction,
+                        borderRadius: BorderRadius.circular(30),
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+                          decoration: BoxDecoration(
+                            color: isDark ? const Color(0xFF19271E) : Colors.white,
+                            borderRadius: BorderRadius.circular(30),
+                            border: Border.all(
+                              color: isDark ? const Color(0xFF81C784) : const Color(0xFF2E7D32),
+                              width: 1.5,
+                            ),
                           ),
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 38,
-                              height: 38,
-                              decoration: BoxDecoration(
-                                color: isDark ? const Color(0xFF233629) : const Color(0xFF2E7D32),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Icon(
-                                Icons.restaurant_rounded,
-                                color: isDark ? const Color(0xFF81C784) : Colors.white,
-                                size: 20,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  isEn ? 'Food Suggestions for Next Week' : 'Gợi ý thực phẩm cho tuần tới',
-                                  style: GoogleFonts.outfit(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w900,
-                                    color: isDark ? const Color(0xFF81C784) : const Color(0xFF2E7D32),
-                                  ),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 38,
+                                height: 38,
+                                decoration: BoxDecoration(
+                                  color: isDark ? const Color(0xFF233629) : const Color(0xFF2E7D32),
+                                  borderRadius: BorderRadius.circular(12),
                                 ),
-                                Text(
-                                  isEn ? 'Convenient & Nutritious' : 'Tiện lợi và dinh dưỡng',
-                                  style: GoogleFonts.plusJakartaSans(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w600,
-                                    color: isDark ? const Color(0xFF9DA8A0) : const Color(0xFF55A44B),
-                                  ),
+                                child: const Icon(
+                                  Icons.shopping_cart_checkout_rounded,
+                                  color: Colors.white,
+                                  size: 20,
                                 ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      const SizedBox(height: 14),
-
-                      // Horizontal List of Suggested Ingredients
-                      SizedBox(
-                        height: 145,
-                        child: ListView(
-                          scrollDirection: Axis.horizontal,
-                          physics: const BouncingScrollPhysics(),
-                          children: [
-                            _buildIngredientCard(
-                              title: _translateIngredientTitle('Rau xanh', isEn),
-                              imagePath: 'assets/images/food_bokchoy.png',
-                              fallbackIcon: Icons.eco_outlined,
-                              isDark: isDark,
-                            ),
-                            const SizedBox(width: 12),
-                            _buildIngredientCard(
-                              title: _translateIngredientTitle('Bơ', isEn),
-                              imagePath: 'assets/images/recipe_salad.png',
-                              fallbackIcon: Icons.eco_rounded,
-                              isDark: isDark,
-                            ),
-                            const SizedBox(width: 12),
-                            _buildIngredientCard(
-                              title: _translateIngredientTitle('Nấm', isEn),
-                              imagePath: 'assets/images/recipe_veggie_soup.png',
-                              fallbackIcon: Icons.soup_kitchen_rounded,
-                              isDark: isDark,
-                            ),
-                            const SizedBox(width: 12),
-                            _buildIngredientCard(
-                              title: _translateIngredientTitle('Cá hồi', isEn),
-                              imagePath: 'assets/images/recipe_salad.png',
-                              fallbackIcon: Icons.set_meal_outlined,
-                              isDark: isDark,
-                            ),
-                          ],
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      _hasShoppingList
+                                          ? (isEn ? 'View Meal Shopping List' : 'Xem danh sách thực đơn cần mua')
+                                          : (isEn ? 'Create Shopping List from Plan' : 'Tạo danh sách mua sắm từ thực đơn'),
+                                      style: GoogleFonts.outfit(
+                                        fontSize: 15.5,
+                                        fontWeight: FontWeight.w900,
+                                        color: isDark ? const Color(0xFF81C784) : const Color(0xFF2E7D32),
+                                      ),
+                                    ),
+                                    Text(
+                                      _hasShoppingList
+                                          ? (isEn ? 'View and update ingredients to buy' : 'Xem và quản lý các sản phẩm cần mua')
+                                          : (isEn ? 'Automatically aggregate missing items' : 'Tự động tổng hợp sản phẩm thiếu'),
+                                      style: GoogleFonts.plusJakartaSans(
+                                        fontSize: 12.5,
+                                        fontWeight: FontWeight.w600,
+                                        color: isDark ? const Color(0xFF9DA8A0) : const Color(0xFF55A44B),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Icon(
+                                Icons.chevron_right_rounded,
+                                color: isDark ? const Color(0xFF81C784) : const Color(0xFF2E7D32),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
 
                       const SizedBox(height: 24),
 
-                      // 3. Section: Gợi ý thực đơn cho tuần tới
+                      // 3. Daily Meal Plans List Title
                       Container(
                         width: double.infinity,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 18,
-                          vertical: 14,
-                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
                         decoration: BoxDecoration(
                           color: isDark ? const Color(0xFF19271E) : Colors.white,
                           borderRadius: BorderRadius.circular(30),
-                          border: isDark
-                              ? Border.all(color: const Color(0xFF2E4D36), width: 1)
-                              : null,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
+                          border: isDark ? Border.all(color: const Color(0xFF2E4D36), width: 1) : null,
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              isEn ? 'Menu Suggestions for Next Week' : 'Gợi ý thực đơn cho tuần tới',
+                              isEn ? '7-Day Weekly Menu Plan' : 'Thực đơn 7 ngày trong tuần',
                               style: GoogleFonts.outfit(
                                 fontSize: 18,
                                 fontWeight: FontWeight.w900,
@@ -452,9 +806,7 @@ class NextWeekSuggestionsScreen extends StatelessWidget {
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              isEn
-                                  ? 'Simple, easy to cook, and balanced menu!'
-                                  : 'Thực đơn đơn giản, dễ nấu và đủ chất!',
+                              isEn ? 'AI generated balanced menu for 7 days!' : 'Thực đơn 7 ngày từ Thứ 2 đến Chủ nhật do AI lập!',
                               style: GoogleFonts.plusJakartaSans(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
@@ -467,51 +819,90 @@ class NextWeekSuggestionsScreen extends StatelessWidget {
 
                       const SizedBox(height: 14),
 
-                      // Horizontal List of Daily Meal Plan Cards
+                      // Horizontal Compact Selector Bar of 7 Days (Thứ 2 -> Chủ Nhật)
                       SizedBox(
-                        height: 235,
-                        child: ListView(
+                        height: 46,
+                        child: ListView.builder(
                           scrollDirection: Axis.horizontal,
                           physics: const BouncingScrollPhysics(),
-                          children: [
-                            _buildMealPlanCard(
-                              context: context,
-                              dayText: _translateDayText('Thứ 2', isEn),
-                              dishTitle: _translateDishTitle('Canh rau củ', isEn),
-                              imagePath: 'assets/images/recipe_veggie_soup.png',
-                              recipeId: 'rec_veggie_soup',
-                              isDark: isDark,
-                            ),
-                            const SizedBox(width: 14),
-                            _buildMealPlanCard(
-                              context: context,
-                              dayText: _translateDayText('Thứ 3', isEn),
-                              dishTitle: _translateDishTitle('Cá hồi áp chảo rau xanh', isEn),
-                              imagePath: 'assets/images/recipe_salad.png',
-                              recipeId: 'rec_salad_mix',
-                              isDark: isDark,
-                            ),
-                            const SizedBox(width: 14),
-                            _buildMealPlanCard(
-                              context: context,
-                              dayText: _translateDayText('Thứ 4', isEn),
-                              dishTitle: _translateDishTitle('Bò xào bông cải', isEn),
-                              imagePath: 'assets/images/food_bokchoy.png',
-                              recipeId: 'rec_bokchoy_pork',
-                              isDark: isDark,
-                            ),
-                            const SizedBox(width: 14),
-                            _buildMealPlanCard(
-                              context: context,
-                              dayText: _translateDayText('Thứ 5', isEn),
-                              dishTitle: _translateDishTitle('Trứng chiên cà chua', isEn),
-                              imagePath: 'assets/images/recipe_tomato_egg.png',
-                              recipeId: 'rec_tomato_egg',
-                              isDark: isDark,
-                            ),
-                          ],
+                          itemCount: 7, // 7 days of the week (1=Mon to 7=Sun)
+                          itemBuilder: (context, index) {
+                            final dayOfWeek = index + 1; // 1 = Mon, ..., 7 = Sun
+                            final dayText = _getDayName(dayOfWeek, isEn);
+                            final isSelected = dayOfWeek == _selectedDayOfWeek;
+
+                            final dayData = _dailyPlansMap[dayOfWeek];
+                            final slots = (dayData?['mealSlots'] as List<dynamic>?) ?? [];
+                            final hasMeals = slots.isNotEmpty;
+
+                            return GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _selectedDayOfWeek = dayOfWeek;
+                                });
+                              },
+                              child: Container(
+                                margin: const EdgeInsets.only(right: 10),
+                                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
+                                decoration: BoxDecoration(
+                                  color: isSelected
+                                      ? const Color(0xFF008435)
+                                      : (isDark ? const Color(0xFF19271E) : Colors.white),
+                                  borderRadius: BorderRadius.circular(24),
+                                  border: Border.all(
+                                    color: isSelected
+                                        ? const Color(0xFF008435)
+                                        : (isDark ? const Color(0xFF2E4D36) : const Color(0xFFC8E6C9)),
+                                    width: 1.5,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: isSelected
+                                          ? const Color(0xFF008435).withValues(alpha: 0.35)
+                                          : Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
+                                      blurRadius: isSelected ? 8 : 4,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      dayText,
+                                      style: GoogleFonts.outfit(
+                                        fontSize: 14.5,
+                                        fontWeight: FontWeight.w800,
+                                        color: isSelected
+                                            ? Colors.white
+                                            : (isDark ? Colors.white : const Color(0xFF006428)),
+                                      ),
+                                    ),
+                                    if (hasMeals) ...[
+                                      const SizedBox(width: 6),
+                                      Container(
+                                        width: 6,
+                                        height: 6,
+                                        decoration: BoxDecoration(
+                                          color: isSelected
+                                              ? const Color(0xFFFFB74D)
+                                              : (isDark ? const Color(0xFF81C784) : const Color(0xFF2E7D32)),
+                                          shape: BoxShape.circle,
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
                         ),
                       ),
+
+                      const SizedBox(height: 24),
+
+                      // 4. Detailed Meal Slots for Selected Day
+                      _buildSelectedDayMealSlots(isDark, isEn),
 
                       const SizedBox(height: 40),
                     ],
@@ -525,206 +916,318 @@ class NextWeekSuggestionsScreen extends StatelessWidget {
     );
   }
 
-  // Ingredient Card Helper
-  Widget _buildIngredientCard({
-    required String title,
-    required String imagePath,
-    required IconData fallbackIcon,
-    bool isDark = false,
-  }) {
+  Widget _buildSelectedDayMealSlots(bool isDark, bool isEn) {
+    final dayText = _getDayName(_selectedDayOfWeek, isEn);
+    final dayData = _dailyPlansMap[_selectedDayOfWeek];
+    final slots = (dayData?['mealSlots'] as List<dynamic>?)
+            ?.map((e) => Map<String, dynamic>.from(e as Map))
+            .toList() ??
+        [];
+
     return Container(
-      width: 115,
-      padding: const EdgeInsets.all(10),
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF19271E) : Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: isDark
-            ? Border.all(color: const Color(0xFF2E4D36), width: 1)
-            : null,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: isDark ? const Color(0xFF2E4D36) : const Color(0xFFC8E6C9),
+          width: 1.5,
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(14),
-            child: Image.asset(
-              imagePath,
-              width: 95,
-              height: 75,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return Container(
-                  width: 95,
-                  height: 75,
-                  color: isDark ? const Color(0xFF233629) : const Color(0xFFF1F8E9),
-                  child: Icon(fallbackIcon, color: isDark ? const Color(0xFF81C784) : const Color(0xFF2E7D32)),
-                );
-              },
-            ),
-          ),
-          const Spacer(),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.shopping_cart_rounded,
-                color: isDark ? const Color(0xFF81C784) : const Color(0xFF2E7D32),
-                size: 16,
-              ),
-              const SizedBox(width: 4),
-              Text(
-                title,
-                style: GoogleFonts.outfit(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w800,
-                  color: isDark ? Colors.white : const Color(0xFF006428),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-        ],
-      ),
-    );
-  }
-
-  // Daily Meal Plan Card Helper
-  Widget _buildMealPlanCard({
-    required BuildContext context,
-    required String dayText,
-    required String dishTitle,
-    required String imagePath,
-    required String recipeId,
-    bool isDark = false,
-  }) {
-    return Container(
-      width: 135,
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF19271E) : const Color(0xFFEAF5E1),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-            color: isDark ? const Color(0xFF2E4D36) : const Color(0xFFC8E6C9),
-            width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
-            blurRadius: 8,
+            blurRadius: 10,
             offset: const Offset(0, 3),
           ),
         ],
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Day Title & Sun Icon
           Row(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(
-                dayText,
-                style: GoogleFonts.outfit(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w900,
-                  color: isDark ? const Color(0xFF81C784) : const Color(0xFF2E7D32),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF233629) : const Color(0xFFDCEDC8),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.restaurant_menu_rounded,
+                  color: isDark ? const Color(0xFF81C784) : const Color(0xFF006428),
+                  size: 20,
                 ),
               ),
-              const SizedBox(width: 4),
-              const Icon(
-                Icons.wb_sunny_rounded,
-                color: Color(0xFFFFB74D),
-                size: 18,
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  isEn ? 'Meal Slots for $dayText' : 'Các bữa ăn trong $dayText',
+                  style: GoogleFonts.outfit(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                    color: isDark ? Colors.white : const Color(0xFF006428),
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF233629) : const Color(0xFFE8F5E9),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '${slots.length} ${isEn ? "meals" : "bữa ăn"}',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w800,
+                    color: isDark ? const Color(0xFF81C784) : const Color(0xFF2E7D32),
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 16),
+
+          if (slots.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 20.0),
+              child: Center(
+                child: Text(
+                  isEn ? 'No meals scheduled for this day.' : 'Chưa có bữa ăn được lập cho ngày này.',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? const Color(0xFF9DA8A0) : const Color(0xFF757575),
+                  ),
+                ),
+              ),
+            )
+          else
+            Column(
+              children: slots.map((slot) {
+                return _buildMealSlotItem(slot, isDark, isEn);
+              }).toList(),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMealSlotItem(Map<String, dynamic> slot, bool isDark, bool isEn) {
+    final slotId = slot['id']?.toString() ?? '';
+    final mealType = slot['mealType']?.toString().toLowerCase() ?? 'lunch';
+    final recipeName = slot['recipeName']?.toString() ?? 'Món ngon AI';
+    final recipeId = slot['recipeId']?.toString() ?? 'rec_default';
+    final servings = slot['servings'] ?? 1;
+    final isCompleted = slot['completedAt'] != null || slot['completed'] == true;
+    final isRegenerating = _regeneratingSlotId == slotId;
+
+    String mealLabel = 'Bữa Trưa';
+    IconData mealIcon = Icons.wb_sunny_rounded;
+    Color mealColor = const Color(0xFFFFA726);
+
+    if (mealType == 'breakfast') {
+      mealLabel = isEn ? 'Breakfast' : 'Bữa Sáng';
+      mealIcon = Icons.wb_twilight_rounded;
+      mealColor = const Color(0xFFFFB74D);
+    } else if (mealType == 'lunch') {
+      mealLabel = isEn ? 'Lunch' : 'Bữa Trưa';
+      mealIcon = Icons.wb_sunny_rounded;
+      mealColor = const Color(0xFFFFA726);
+    } else if (mealType == 'dinner') {
+      mealLabel = isEn ? 'Dinner' : 'Bữa Tối';
+      mealIcon = Icons.nights_stay_rounded;
+      mealColor = const Color(0xFF7E57C2);
+    } else if (mealType == 'snack') {
+      mealLabel = isEn ? 'Snack' : 'Bữa Phụ';
+      mealIcon = Icons.local_cafe_rounded;
+      mealColor = const Color(0xFF26A69A);
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: isCompleted
+            ? (isDark ? const Color(0xFF1B2E21) : const Color(0xFFEAF5E1))
+            : (isDark ? const Color(0xFF233629) : const Color(0xFFF5F9F2)),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: isCompleted
+              ? const Color(0xFF008435)
+              : (isDark ? const Color(0xFF2E4D36) : const Color(0xFFC8E6C9)),
+          width: isCompleted ? 1.5 : 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: mealColor.withValues(alpha: isDark ? 0.3 : 0.15),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(mealIcon, size: 15, color: mealColor),
+                    const SizedBox(width: 5),
+                    Text(
+                      mealLabel,
+                      style: GoogleFonts.outfit(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                        color: isDark ? Colors.white : mealColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Spacer(),
+              // Nút Đánh dấu đã nấu xong / Toggle completed
+              InkWell(
+                onTap: () => _toggleMealSlotCompleted(slotId, isCompleted),
+                borderRadius: BorderRadius.circular(10),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: isCompleted
+                        ? const Color(0xFF008435).withValues(alpha: isDark ? 0.3 : 0.15)
+                        : (isDark ? const Color(0xFF19271E) : Colors.white),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: isCompleted
+                          ? const Color(0xFF008435)
+                          : (isDark ? const Color(0xFF2E4D36) : const Color(0xFFC8E6C9)),
+                      width: 1,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        isCompleted ? Icons.check_circle_rounded : Icons.circle_outlined,
+                        size: 15,
+                        color: isCompleted
+                            ? const Color(0xFF008435)
+                            : (isDark ? const Color(0xFF81C784) : const Color(0xFF2E7D32)),
+                      ),
+                      const SizedBox(width: 5),
+                      Text(
+                        isCompleted ? (isEn ? 'Cooked' : 'Đã nấu xong') : (isEn ? 'Mark Cooked' : 'Nấu xong'),
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                          color: isCompleted
+                              ? const Color(0xFF008435)
+                              : (isDark ? const Color(0xFF81C784) : const Color(0xFF006428)),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ],
           ),
           const SizedBox(height: 10),
-
-          // Dish Circular Photo
-          ClipOval(
-            child: Image.asset(
-              imagePath,
-              width: 88,
-              height: 88,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return Container(
-                  width: 88,
-                  height: 88,
-                  color: isDark ? const Color(0xFF233629) : const Color(0xFFC8E6C9),
-                  child: Icon(
-                    Icons.restaurant_rounded,
-                    size: 40,
-                    color: isDark ? const Color(0xFF81C784) : const Color(0xFF2E7D32),
-                  ),
-                );
-              },
-            ),
-          ),
-
-          const SizedBox(height: 10),
-
-          // Dish Title
-          SizedBox(
-            height: 38,
-            child: Center(
-              child: Text(
-                dishTitle,
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                recipeName,
                 style: GoogleFonts.outfit(
-                  fontSize: 13.5,
+                  fontSize: 16,
                   fontWeight: FontWeight.w800,
                   color: isDark ? Colors.white : const Color(0xFF006428),
-                  height: 1.2,
+                  decoration: isCompleted ? TextDecoration.lineThrough : null,
                 ),
               ),
-            ),
+              const SizedBox(height: 2),
+              Text(
+                isEn ? '$servings serving' : '$servings người ăn',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? const Color(0xFF9DA8A0) : const Color(0xFF666666),
+                ),
+              ),
+            ],
           ),
-
-          const Spacer(),
-
-          // Circular Chevron Action Button -> opens RecipeDetailScreen
-          GestureDetector(
-            onTap: () async {
-              final recipes =
-                  await RecipeRepository.fetchCookingSuggestions();
-              final match = recipes.firstWhere(
-                (r) => r.id == recipeId,
-                orElse: () => recipes.first,
-              );
-              if (context.mounted) {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => RecipeDetailScreen(recipe: match),
+          const SizedBox(height: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              OutlinedButton.icon(
+                onPressed: () {
+                  final match = RecipeModel(
+                    id: recipeId,
+                    title: recipeName,
+                    englishTitle: recipeName,
+                    imagePath: '',
+                    timeText: '20 phút',
+                    difficultyText: 'Dễ',
+                    servingsText: '$servings người',
+                    tags: ['# Thực đơn AI tuần'],
+                  );
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => RecipeDetailScreen(recipe: match),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.menu_book_rounded, size: 15),
+                label: Text(
+                  isEn ? 'Recipe' : 'Xem công thức',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
                   ),
-                );
-              }
-            },
-            child: Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF233629) : const Color(0xFFA5D6A7),
-                shape: BoxShape.circle,
-                border: isDark
-                    ? Border.all(color: const Color(0xFF2E4D36), width: 1)
-                    : null,
+                ),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: isDark ? const Color(0xFF81C784) : const Color(0xFF006428),
+                  side: BorderSide(
+                    color: isDark ? const Color(0xFF2E4D36) : const Color(0xFFC8E6C9),
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
               ),
-              child: Icon(
-                Icons.chevron_right_rounded,
-                color: isDark ? const Color(0xFF81C784) : const Color(0xFF1B5E20),
-                size: 22,
+              const SizedBox(width: 8),
+              ElevatedButton.icon(
+                onPressed: isRegenerating ? null : () => _regenerateMealSlot(slotId, recipeId),
+                icon: isRegenerating
+                    ? const SizedBox(
+                        width: 12,
+                        height: 12,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      )
+                    : const Icon(Icons.refresh_rounded, size: 15),
+                label: Text(
+                  isRegenerating
+                      ? (isEn ? 'Changing...' : 'Đang đổi...')
+                      : (isEn ? 'Change Dish' : 'Đổi món AI'),
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF008435),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
               ),
-            ),
+            ],
           ),
-          const SizedBox(height: 2),
         ],
       ),
     );

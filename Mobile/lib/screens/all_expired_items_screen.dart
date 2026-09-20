@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../data/mock_ingredient_data.dart';
+import '../data/models/ingredient_model.dart';
 import '../l10n/app_localizations.dart';
+import '../data/services/api_service.dart';
+import '../widgets/ingredient_avatar_widget.dart';
 
 class AllExpiredItemsScreen extends StatefulWidget {
   const AllExpiredItemsScreen({super.key});
@@ -11,12 +13,39 @@ class AllExpiredItemsScreen extends StatefulWidget {
 }
 
 class _AllExpiredItemsScreenState extends State<AllExpiredItemsScreen> {
+  final ApiService _apiService = ApiService();
   List<IngredientModel> _expiredItems = [];
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _expiredItems = IngredientRepository.getAllExpiredIngredients();
+    _loadExpiredItems();
+  }
+
+  Future<void> _loadExpiredItems() async {
+    setState(() => _isLoading = true);
+    try {
+      final res = await _apiService.getFridgeItems();
+      final list = res
+          .map((e) => IngredientModel.fromFridgeApi(e))
+          .where((i) => i.isExpired)
+          .toList();
+      if (mounted) {
+        setState(() {
+          _expiredItems = list;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading expired items: $e');
+      if (mounted) {
+        setState(() {
+          _expiredItems = [];
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   String _getLocalizedFridgeName(String name, bool isEn) {
@@ -149,119 +178,115 @@ class _AllExpiredItemsScreenState extends State<AllExpiredItemsScreen> {
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                  child: _expiredItems.isEmpty
-                      ? Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(
-                                Icons.check_circle_rounded,
-                                size: 64,
-                                color: Color(0xFF008435),
-                              ),
-                              const SizedBox(height: 12),
-                              Text(
-                                isEn
-                                    ? 'Awesome! No expired food found.'
-                                    : 'Tuyệt vời! Không có thực phẩm nào bị hết hạn.',
-                                style: GoogleFonts.plusJakartaSans(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w700,
-                                  color: const Color(0xFF008435),
-                                ),
-                              ),
-                            ],
-                          ),
+                  child: _isLoading
+                      ? const Center(
+                          child: CircularProgressIndicator(color: Color(0xFFB71C1C)),
                         )
-                      : ListView.separated(
-                          physics: const BouncingScrollPhysics(),
-                          itemCount: _expiredItems.length,
-                          separatorBuilder: (context, index) =>
-                              const SizedBox(height: 12),
-                          itemBuilder: (context, index) {
-                            final item = _expiredItems[index];
-                            final name = isEn && item.englishName.isNotEmpty ? item.englishName : item.name;
-                            final fName = _getLocalizedFridgeName(item.fridgeName, isEn);
-                            final qty = _getLocalizedQuantity(item.quantity, isEn);
-                            final expiry = isEn ? 'Expired' : item.expiryText;
-
-                            return Container(
-                              padding: const EdgeInsets.all(14),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(
-                                  color: const Color(0xFFEF9A9A),
-                                  width: 1.2,
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.05),
-                                    blurRadius: 10,
-                                    offset: const Offset(0, 4),
-                                  ),
-                                ],
-                              ),
-                              child: Row(
+                      : _expiredItems.isEmpty
+                          ? Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  ClipRRect(
-                                    borderRadius: BorderRadius.circular(16),
-                                    child: Image.asset(
-                                      item.imagePath,
-                                      width: 60,
-                                      height: 60,
-                                      fit: BoxFit.cover,
-                                    ),
+                                  const Icon(
+                                    Icons.check_circle_rounded,
+                                    size: 64,
+                                    color: Color(0xFF008435),
                                   ),
-                                  const SizedBox(width: 14),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          name,
-                                          style: GoogleFonts.outfit(
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.w800,
-                                            color: const Color(0xFFB71C1C),
-                                          ),
-                                        ),
-                                        const SizedBox(height: 3),
-                                        Text(
-                                          '$fName • $qty',
-                                          style: GoogleFonts.plusJakartaSans(
-                                            fontSize: 12.5,
-                                            fontWeight: FontWeight.w600,
-                                            color: const Color(0xFF6B786F),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 10,
-                                      vertical: 5,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFFFEBEE),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: Text(
-                                      expiry,
-                                      style: GoogleFonts.plusJakartaSans(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w800,
-                                        color: const Color(0xFFD32F2F),
-                                      ),
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    isEn
+                                        ? 'Awesome! No expired food found.'
+                                        : 'Tuyệt vời! Không có thực phẩm nào bị hết hạn.',
+                                    style: GoogleFonts.plusJakartaSans(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w700,
+                                      color: const Color(0xFF008435),
                                     ),
                                   ),
                                 ],
                               ),
-                            );
-                          },
-                        ),
+                            )
+                          : ListView.separated(
+                              physics: const BouncingScrollPhysics(),
+                              itemCount: _expiredItems.length,
+                              separatorBuilder: (context, index) =>
+                                  const SizedBox(height: 12),
+                              itemBuilder: (context, index) {
+                                final item = _expiredItems[index];
+                                final name = isEn && item.englishName.isNotEmpty ? item.englishName : item.name;
+                                final fName = _getLocalizedFridgeName(item.fridgeName, isEn);
+                                final qty = _getLocalizedQuantity(item.quantity, isEn);
+                                final expiry = isEn ? 'Expired' : item.expiryText;
+
+                                return Container(
+                                  padding: const EdgeInsets.all(14),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(
+                                      color: const Color(0xFFEF9A9A),
+                                      width: 1.2,
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withValues(alpha: 0.05),
+                                        blurRadius: 10,
+                                        offset: const Offset(0, 4),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      IngredientAvatarWidget(item: item, size: 54),
+                                      const SizedBox(width: 14),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              name,
+                                              style: GoogleFonts.outfit(
+                                                fontSize: 18,
+                                                fontWeight: FontWeight.w800,
+                                                color: const Color(0xFFB71C1C),
+                                              ),
+                                            ),
+                                            const SizedBox(height: 3),
+                                            Text(
+                                              '$fName • $qty',
+                                              style: GoogleFonts.plusJakartaSans(
+                                                fontSize: 12.5,
+                                                fontWeight: FontWeight.w600,
+                                                color: const Color(0xFF6B786F),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 10,
+                                          vertical: 5,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFFFEBEE),
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: Text(
+                                          expiry,
+                                          style: GoogleFonts.plusJakartaSans(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w800,
+                                            color: const Color(0xFFD32F2F),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
                 ),
               ),
             ],

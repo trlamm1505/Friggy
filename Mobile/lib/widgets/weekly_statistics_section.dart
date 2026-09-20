@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../l10n/app_localizations.dart';
+import '../data/services/api_service.dart';
+import '../data/models/fridge_models.dart';
 
-class WeeklyStatisticsSection extends StatelessWidget {
+class WeeklyStatisticsSection extends StatefulWidget {
   final VoidCallback? onDetailTap;
   final VoidCallback? onMealSuggestionsTap;
   final VoidCallback? onShoppingReminderTap;
@@ -15,10 +17,41 @@ class WeeklyStatisticsSection extends StatelessWidget {
   });
 
   @override
+  State<WeeklyStatisticsSection> createState() =>
+      _WeeklyStatisticsSectionState();
+}
+
+class _WeeklyStatisticsSectionState extends State<WeeklyStatisticsSection> {
+  final ApiService _apiService = ApiService();
+  FridgeStatsModel? _stats;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadStats();
+  }
+
+  Future<void> _loadStats() async {
+    try {
+      final statsRes = await _apiService.getFridgeStats();
+      if (mounted) {
+        setState(() {
+          _stats = FridgeStatsModel.fromJson(statsRes);
+        });
+      }
+    } catch (e) {
+      debugPrint('[WeeklyStatisticsSection] Error loading stats: $e');
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final loc = AppLocalizations.of(context);
     final isEn = loc?.locale.languageCode == 'en';
+
+    final mealsCooked = _stats?.mealsCooked ?? 0;
+    final expiringSoon = _stats?.expiringSoonCount ?? 0;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -38,7 +71,7 @@ class WeeklyStatisticsSection extends StatelessWidget {
               ),
             ),
             GestureDetector(
-              onTap: onDetailTap,
+              onTap: widget.onDetailTap,
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 4.0),
                 child: Row(
@@ -68,211 +101,231 @@ class WeeklyStatisticsSection extends StatelessWidget {
 
         // 2. Side-by-Side Statistics Cards with smaller frame height (106px) and bigger image pop-outs
         GestureDetector(
-          onTap: onDetailTap,
+          onTap: widget.onDetailTap,
           child: Padding(
-            padding: const EdgeInsets.only(top: 22, bottom: 22, left: 12, right: 12),
+            padding:
+                const EdgeInsets.only(top: 22, bottom: 22, left: 12, right: 12),
             child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Left Card: MOST USED - Cabbage (12 times)
-              Expanded(
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    // Reduced Height Base Card Container (height: 106)
-                    Container(
-                      width: double.infinity,
-                      height: 106,
-                      padding: const EdgeInsets.only(left: 72, top: 8, right: 6, bottom: 8),
-                      decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF19271E) : Colors.white,
-                        borderRadius: BorderRadius.circular(22),
-                        border: isDark
-                            ? Border.all(color: const Color(0xFF2E4D36), width: 1)
-                            : null,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.06),
-                            blurRadius: 14,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            isEn ? 'MOST USED' : 'DÙNG NHIỀU NHẤT',
-                            style: GoogleFonts.outfit(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w800,
-                              color: isDark ? const Color(0xFF81C784) : const Color(0xFF4CAF50),
-                              letterSpacing: 0.4,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Left Card: MOST USED / BỮA ĐÃ NẤU
+                Expanded(
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Container(
+                        width: double.infinity,
+                        height: 106,
+                        padding: const EdgeInsets.only(
+                            left: 72, top: 8, right: 6, bottom: 8),
+                        decoration: BoxDecoration(
+                          color:
+                              isDark ? const Color(0xFF19271E) : Colors.white,
+                          borderRadius: BorderRadius.circular(22),
+                          border: isDark
+                              ? Border.all(
+                                  color: const Color(0xFF2E4D36), width: 1)
+                              : null,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black
+                                  .withValues(alpha: isDark ? 0.2 : 0.06),
+                              blurRadius: 14,
+                              offset: const Offset(0, 4),
                             ),
-                          ),
-                          const SizedBox(height: 1),
-                          FittedBox(
-                            fit: BoxFit.scaleDown,
-                            alignment: Alignment.centerLeft,
-                            child: Text(
-                              isEn ? 'Cabbage' : 'Bắp cải',
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              isEn ? 'COOKED' : 'BỮA ĐÃ NẤU',
                               style: GoogleFonts.outfit(
-                                fontSize: 17.5,
-                                fontWeight: FontWeight.w900,
-                                color: isDark ? Colors.white : const Color(0xFF19221C),
-                                height: 1.1,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w800,
+                                color: isDark
+                                    ? const Color(0xFF81C784)
+                                    : const Color(0xFF4CAF50),
+                                letterSpacing: 0.4,
                               ),
                             ),
-                          ),
-                          const SizedBox(height: 2),
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.baseline,
-                            textBaseline: TextBaseline.alphabetic,
-                            children: [
-                              Text(
-                                '12',
+                            const SizedBox(height: 1),
+                            FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                isEn ? 'Meals Cooked' : 'Đã nấu ăn',
                                 style: GoogleFonts.outfit(
-                                  fontSize: 22,
+                                  fontSize: 16.5,
                                   fontWeight: FontWeight.w900,
-                                  color: isDark ? Colors.white : const Color(0xFF19221C),
+                                  color: isDark
+                                      ? Colors.white
+                                      : const Color(0xFF19221C),
+                                  height: 1.1,
                                 ),
                               ),
-                              const SizedBox(width: 4),
-                              Text(
-                                isEn ? 'items' : 'món',
-                                style: GoogleFonts.plusJakartaSans(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w700,
-                                  color: isDark ? const Color(0xFF81C784) : const Color(0xFF2E7D32),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    // Left Mascot Image (left.png) popping OUTSIDE top-left (-28px left, -22px top)
-                    Positioned(
-                      left: -28,
-                      top: -22,
-                      width: 100,
-                      height: 100,
-                      child: Image.asset(
-                        'assets/images/left.png',
-                        fit: BoxFit.contain,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(width: 14),
-
-              // Right Card: WASTED - Tomatoes (2 items)
-              Expanded(
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    // Reduced Height Base Card Container (height: 106)
-                    Container(
-                      width: double.infinity,
-                      height: 106,
-                      padding: const EdgeInsets.only(left: 14, top: 8, right: 60, bottom: 8),
-                      decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF2D1C1C) : Colors.white,
-                        borderRadius: BorderRadius.circular(22),
-                        border: isDark
-                            ? Border.all(color: const Color(0xFF5C2525), width: 1)
-                            : null,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.06),
-                            blurRadius: 14,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            isEn ? 'WASTED' : 'LÃNG PHÍ',
-                            style: GoogleFonts.outfit(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w800,
-                              color: isDark ? const Color(0xFFFF8A80) : const Color(0xFFD32F2F),
-                              letterSpacing: 0.4,
                             ),
-                          ),
-                          const SizedBox(height: 1),
-                          FittedBox(
-                            fit: BoxFit.scaleDown,
-                            alignment: Alignment.centerLeft,
-                            child: Text(
-                              isEn ? 'Tomato' : 'Cà chua',
+                            const SizedBox(height: 2),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.baseline,
+                              textBaseline: TextBaseline.alphabetic,
+                              children: [
+                                Text(
+                                  '$mealsCooked',
+                                  style: GoogleFonts.outfit(
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.w900,
+                                    color: isDark
+                                        ? Colors.white
+                                        : const Color(0xFF19221C),
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  isEn ? 'meals' : 'bữa',
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                    color: isDark
+                                        ? const Color(0xFF81C784)
+                                        : const Color(0xFF2E7D32),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      Positioned(
+                        left: -28,
+                        top: -22,
+                        width: 100,
+                        height: 100,
+                        child: Image.asset(
+                          'assets/images/left.png',
+                          fit: BoxFit.contain,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(width: 14),
+
+                // Right Card: WASTED / SẮP HẾT HẠN
+                Expanded(
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Container(
+                        width: double.infinity,
+                        height: 106,
+                        padding: const EdgeInsets.only(
+                            left: 14, top: 8, right: 60, bottom: 8),
+                        decoration: BoxDecoration(
+                          color: isDark
+                              ? const Color(0xFF2D1C1C)
+                              : Colors.white,
+                          borderRadius: BorderRadius.circular(22),
+                          border: isDark
+                              ? Border.all(
+                                  color: const Color(0xFF5C2525), width: 1)
+                              : null,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black
+                                  .withValues(alpha: isDark ? 0.2 : 0.06),
+                              blurRadius: 14,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              isEn ? 'EXPIRING' : 'CẦN CHÚ Ý',
                               style: GoogleFonts.outfit(
-                                fontSize: 17.5,
-                                fontWeight: FontWeight.w900,
-                                color: isDark ? Colors.white : const Color(0xFF19221C),
-                                height: 1.1,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w800,
+                                color: isDark
+                                    ? const Color(0xFFFF8A80)
+                                    : const Color(0xFFD32F2F),
+                                letterSpacing: 0.4,
                               ),
                             ),
-                          ),
-                          const SizedBox(height: 2),
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.baseline,
-                            textBaseline: TextBaseline.alphabetic,
-                            children: [
-                              Text(
-                                '2',
+                            const SizedBox(height: 1),
+                            FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                isEn ? 'Expiring Soon' : 'Sắp hết hạn',
                                 style: GoogleFonts.outfit(
-                                  fontSize: 22,
+                                  fontSize: 16.5,
                                   fontWeight: FontWeight.w900,
-                                  color: isDark ? const Color(0xFFFF8A80) : const Color(0xFFD32F2F),
+                                  color: isDark
+                                      ? Colors.white
+                                      : const Color(0xFF19221C),
+                                  height: 1.1,
                                 ),
                               ),
-                              const SizedBox(width: 4),
-                              Text(
-                                isEn ? 'items' : 'món',
-                                style: GoogleFonts.plusJakartaSans(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w700,
-                                  color: isDark ? const Color(0xFFFF8A80) : const Color(0xFFD32F2F),
+                            ),
+                            const SizedBox(height: 2),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.baseline,
+                              textBaseline: TextBaseline.alphabetic,
+                              children: [
+                                Text(
+                                  '$expiringSoon',
+                                  style: GoogleFonts.outfit(
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.w900,
+                                    color: isDark
+                                        ? const Color(0xFFFF8A80)
+                                        : const Color(0xFFD32F2F),
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
-                        ],
+                                const SizedBox(width: 4),
+                                Text(
+                                  isEn ? 'items' : 'món',
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                    color: isDark
+                                        ? const Color(0xFFFF8A80)
+                                        : const Color(0xFFD32F2F),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-
-                    // Right Mascot Image (right.png) popping OUTSIDE bottom-right (-24px right, -22px bottom)
-                    Positioned(
-                      right: -24,
-                      bottom: -22,
-                      width: 100,
-                      height: 100,
-                      child: Image.asset(
-                        'assets/images/right.png',
-                        fit: BoxFit.contain,
+                      Positioned(
+                        right: -24,
+                        bottom: -22,
+                        width: 100,
+                        height: 100,
+                        child: Image.asset(
+                          'assets/images/right.png',
+                          fit: BoxFit.contain,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
-      ),
 
         const SizedBox(height: 12),
 
         // 3. First Action Banner Button ("Food suggestions for next week")
         GestureDetector(
-          onTap: onMealSuggestionsTap,
+          onTap: widget.onMealSuggestionsTap,
           child: Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -280,7 +333,8 @@ class WeeklyStatisticsSection extends StatelessWidget {
               color: isDark ? const Color(0xFF19271E) : Colors.white,
               borderRadius: BorderRadius.circular(38),
               border: Border.all(
-                color: isDark ? const Color(0xFF81C784) : const Color(0xFF008435),
+                color:
+                    isDark ? const Color(0xFF81C784) : const Color(0xFF008435),
                 width: isDark ? 1.5 : 2.2,
               ),
               boxShadow: [
@@ -293,12 +347,13 @@ class WeeklyStatisticsSection extends StatelessWidget {
             ),
             child: Row(
               children: [
-                // Green Icon Box with white crossed utensils
                 Container(
                   width: 52,
                   height: 52,
                   decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF233629) : const Color(0xFF008435),
+                    color: isDark
+                        ? const Color(0xFF233629)
+                        : const Color(0xFF008435),
                     borderRadius: BorderRadius.circular(18),
                   ),
                   child: Center(
@@ -316,20 +371,27 @@ class WeeklyStatisticsSection extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        isEn ? 'Food suggestions for next week' : 'Gợi ý thực phẩm cho tuần tới',
+                        isEn
+                            ? 'Food suggestions for next week'
+                            : 'Gợi ý thực phẩm cho tuần tới',
                         style: GoogleFonts.outfit(
                           fontSize: 16,
                           fontWeight: FontWeight.w800,
-                          color: isDark ? Colors.white : const Color(0xFF008435),
+                          color:
+                              isDark ? Colors.white : const Color(0xFF008435),
                         ),
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        isEn ? 'Convenient & nutritious' : 'Tiện lợi và dinh dưỡng',
+                        isEn
+                            ? 'Convenient & nutritious'
+                            : 'Tiện lợi và dinh dưỡng',
                         style: GoogleFonts.plusJakartaSans(
                           fontSize: 13.5,
                           fontWeight: FontWeight.w600,
-                          color: isDark ? const Color(0xFF81C784) : const Color(0xFF55A44B),
+                          color: isDark
+                              ? const Color(0xFF81C784)
+                              : const Color(0xFF55A44B),
                         ),
                       ),
                     ],
@@ -344,7 +406,7 @@ class WeeklyStatisticsSection extends StatelessWidget {
 
         // 4. Second Action Banner Button ("Shopping reminder")
         GestureDetector(
-          onTap: onShoppingReminderTap,
+          onTap: widget.onShoppingReminderTap,
           child: Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -352,7 +414,8 @@ class WeeklyStatisticsSection extends StatelessWidget {
               color: isDark ? const Color(0xFF19271E) : Colors.white,
               borderRadius: BorderRadius.circular(38),
               border: Border.all(
-                color: isDark ? const Color(0xFF81C784) : const Color(0xFF008435),
+                color:
+                    isDark ? const Color(0xFF81C784) : const Color(0xFF008435),
                 width: isDark ? 1.5 : 2.2,
               ),
               boxShadow: [
@@ -365,12 +428,13 @@ class WeeklyStatisticsSection extends StatelessWidget {
             ),
             child: Row(
               children: [
-                // Green Icon Box with white crossed utensils
                 Container(
                   width: 52,
                   height: 52,
                   decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF233629) : const Color(0xFF008435),
+                    color: isDark
+                        ? const Color(0xFF233629)
+                        : const Color(0xFF008435),
                     borderRadius: BorderRadius.circular(18),
                   ),
                   child: Center(
@@ -392,16 +456,21 @@ class WeeklyStatisticsSection extends StatelessWidget {
                         style: GoogleFonts.outfit(
                           fontSize: 16,
                           fontWeight: FontWeight.w800,
-                          color: isDark ? Colors.white : const Color(0xFF008435),
+                          color:
+                              isDark ? Colors.white : const Color(0xFF008435),
                         ),
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        isEn ? 'Please check your shopping cart!' : 'Vui lòng kiểm tra giỏ hàng của bạn!',
+                        isEn
+                            ? 'Please check your shopping cart!'
+                            : 'Vui lòng kiểm tra giỏ hàng của bạn!',
                         style: GoogleFonts.plusJakartaSans(
                           fontSize: 13.5,
                           fontWeight: FontWeight.w600,
-                          color: isDark ? const Color(0xFF81C784) : const Color(0xFF55A44B),
+                          color: isDark
+                              ? const Color(0xFF81C784)
+                              : const Color(0xFF55A44B),
                         ),
                       ),
                     ],

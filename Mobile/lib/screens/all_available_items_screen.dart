@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../data/mock_ingredient_data.dart';
+import '../data/models/ingredient_model.dart';
 import '../l10n/app_localizations.dart';
 import 'recipe_suggestions_screen.dart';
+import '../data/services/api_service.dart';
+import '../widgets/ingredient_avatar_widget.dart';
 
 class AllAvailableItemsScreen extends StatefulWidget {
   const AllAvailableItemsScreen({super.key});
@@ -14,13 +16,37 @@ class AllAvailableItemsScreen extends StatefulWidget {
 
 class _AllAvailableItemsScreenState extends State<AllAvailableItemsScreen> {
   final TextEditingController _searchController = TextEditingController();
+  final ApiService _apiService = ApiService();
   List<IngredientModel> _availableItems = [];
   bool _isGridView = true;
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _availableItems = IngredientRepository.getAllAvailableIngredients();
+    _loadItems();
+  }
+
+  Future<void> _loadItems() async {
+    setState(() => _isLoading = true);
+    try {
+      final res = await _apiService.getFridgeItems();
+      final list = res.map((e) => IngredientModel.fromFridgeApi(e)).where((i) => !i.isExpired).toList();
+      if (mounted) {
+        setState(() {
+          _availableItems = list;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading all available items: $e');
+      if (mounted) {
+        setState(() {
+          _availableItems = [];
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   @override
@@ -327,9 +353,11 @@ class _AllAvailableItemsScreenState extends State<AllAvailableItemsScreen> {
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                  child: _isGridView
-                      ? _buildGridView(filteredItems, isEn, isDark)
-                      : ListView.separated(
+                  child: _isLoading
+                      ? const Center(child: CircularProgressIndicator(color: Color(0xFF008435)))
+                      : _isGridView
+                          ? _buildGridView(filteredItems, isEn, isDark)
+                          : ListView.separated(
                           physics: const BouncingScrollPhysics(),
                           itemCount: filteredItems.length,
                           separatorBuilder: (context, index) =>
@@ -360,15 +388,7 @@ class _AllAvailableItemsScreenState extends State<AllAvailableItemsScreen> {
                               ),
                               child: Row(
                                 children: [
-                                  ClipRRect(
-                                    borderRadius: BorderRadius.circular(16),
-                                    child: Image.asset(
-                                      item.imagePath,
-                                      width: 62,
-                                      height: 62,
-                                      fit: BoxFit.cover,
-                                    ),
-                                  ),
+                                  IngredientAvatarWidget(item: item, size: 54),
                                   const SizedBox(width: 14),
                                   Expanded(
                                     child: Column(
@@ -484,32 +504,7 @@ class _AllAvailableItemsScreenState extends State<AllAvailableItemsScreen> {
                 const SizedBox(height: 14),
                 Expanded(
                   child: Center(
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(14),
-                      child: Image.asset(
-                        item.imagePath,
-                        fit: BoxFit.contain,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            width: 52,
-                            height: 52,
-                            decoration: BoxDecoration(
-                              color: isDark
-                                  ? const Color(0xFF233629)
-                                  : const Color(0xFFE8F5E9),
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                            child: Icon(
-                              Icons.fastfood_rounded,
-                              color: isDark
-                                  ? const Color(0xFF81C784)
-                                  : const Color(0xFF008435),
-                              size: 26,
-                            ),
-                          );
-                        },
-                      ),
-                    ),
+                    child: IngredientAvatarWidget(item: item, size: 54),
                   ),
                 ),
                 const SizedBox(height: 8),

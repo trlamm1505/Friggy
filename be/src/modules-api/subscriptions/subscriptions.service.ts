@@ -25,16 +25,12 @@ export class SubscriptionsService {
   // ─────────────────────────────────────────────────────────
 
   async getPlans(): Promise<SubscriptionPlanResponseDto[]> {
+    await this.seedDefaultPlans();
+
     const plans = await this.prisma.subscriptionPlan.findMany({
       where: { isActive: true, deletedAt: null },
       orderBy: { priceVnd: 'asc' },
     });
-
-    // Nếu chưa có seed data → tự seed 2 gói mặc định
-    if (plans.length === 0) {
-      await this.seedDefaultPlans();
-      return this.getPlans();
-    }
 
     return plans.map(this.mapPlan);
   }
@@ -76,8 +72,8 @@ export class SubscriptionsService {
       where: { userId, status: 'active', deletedAt: null },
       include: { plan: true },
     });
-    if (existingSub && existingSub.plan.name === 'individual') {
-      throw new BadRequestException('Bạn đang sử dụng gói Individual — không cần đăng ký lại');
+    if (existingSub && existingSub.plan.id === plan.id) {
+      throw new BadRequestException('Bạn đang sử dụng gói này — không cần đăng ký lại');
     }
 
     // Tạo paymentRef & QR mock
@@ -223,7 +219,7 @@ export class SubscriptionsService {
 
   private async seedDefaultPlans(): Promise<void> {
     const count = await this.prisma.subscriptionPlan.count({ where: { deletedAt: null } });
-    if (count >= 2) return;
+    if (count >= 3) return;
 
     await this.prisma.subscriptionPlan.upsert({
       where: { name: 'free' },
@@ -264,6 +260,29 @@ export class SubscriptionsService {
         isActive: true,
       },
       update: {},
+    });
+
+    await this.prisma.subscriptionPlan.upsert({
+      where: { name: 'family' },
+      create: {
+        name: 'family',
+        displayName: 'Gói Gia Đình',
+        priceVnd: 149000,
+        billingCycle: 'monthly',
+        features: [
+          'Tất cả tính năng của gói Cá Nhân',
+          'Tối đa 5 thành viên dùng chung tủ lạnh',
+          'Quản lý nhiều tủ lạnh gia đình',
+          'Lập thực đơn AI tuần không giới hạn',
+          'Scan ảnh, mã vạch & hóa đơn không giới hạn',
+        ],
+        aiUsagePerWeek: -1,
+        isActive: true,
+      },
+      update: {
+        priceVnd: 149000,
+        displayName: 'Gói Gia Đình',
+      },
     });
   }
 

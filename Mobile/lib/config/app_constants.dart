@@ -34,12 +34,23 @@ class AppConstants {
   static const String epIngredientCategories = '/ingredients/categories';
   
   static const String epFridgeItems = '/fridge/items';
-  static const String epFridgeScan = '/fridge/scan';
+  static const String epFridge = '/fridge';
+  static const String epFridgeExpiring = '/fridge/expiring';
+  static const String epFridgeStats = '/fridge/stats';
+  static const String epFridgeStatsChart = '/fridge/stats/chart';
+  static const String epFridgeScanImage = '/fridge/scan/image';
+  static const String epFridgeScanReceipt = '/fridge/scan/receipt';
+  static const String epFridgeScanBarcode = '/fridge/scan/barcode';
+  static const String epFridgeScanHistory = '/fridge/scan/history';
 
   static const String epRecipes = '/recipes';
   static const String epRecipeDetail = '/recipes'; // + /{id}
   
   static const String epWeeklyPlans = '/weekly-plans';
+  static const String epMealPlanningGenerate = '/meal-planning/plans/generate';
+  static const String epMealPlanningGenerateExpiring = '/meal-planning/plans/generate-from-expiring';
+  static const String epMealPlanningPlans = '/meal-planning/plans';
+  static const String epMealPlanningShoppingLists = '/meal-planning/shopping-lists';
   static const String epChatSessions = '/chat/sessions';
 
   // Subscriptions APIs

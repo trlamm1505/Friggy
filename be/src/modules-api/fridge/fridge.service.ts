@@ -34,7 +34,7 @@ export class FridgeService {
   // ─────────────────────────────────────────────────────────
 
   async findAll(userId: string, query: ListFridgeQueryDto): Promise<FridgeItemResponseDto[]> {
-    const where: any = { userId, deletedAt: null };
+    const where: any = { userId, deletedAt: null, consumedAt: null };
     if (query.storageLocation) where.storageLocation = query.storageLocation;
 
     const items = await this.prisma.fridgeItem.findMany({

@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:friggy/data/mock_fridge_data.dart';
+import 'package:friggy/data/models/fridge_summary_model.dart';
 
 void main() {
   group('FridgeSummaryModel & Repository Tests', () {
