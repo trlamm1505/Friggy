@@ -1,56 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence, useInView } from 'framer-motion';
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Play, ShieldCheck, Sparkles, Move } from 'lucide-react';
 import { heroData } from '../../../data';
 import goodMorningImg from '../../../assets/images/goodmorning-Photoroom.png';
 import goodAfternoonImg from '../../../assets/images/goodafternoon-Photoroom.png';
 import goodEveningImg from '../../../assets/images/goodevening-Photoroom.png';
+import AnimatedCounter from '../../../components/common/AnimatedCounter';
 
-// Animated Number Counter Component
-const AnimatedCounter = ({ target, suffix = '', decimals = 0, delay = 0.35 }) => {
-  const [count, setCount] = useState(0);
-  const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, amount: 0.3 });
-
-  useEffect(() => {
-    if (!isInView) return;
-
-    let startTime = null;
-    let animationFrameId = null;
-    const duration = 1800; // 1.8s smooth number counting
-
-    const startTimer = setTimeout(() => {
-      const step = (timestamp) => {
-        if (!startTime) startTime = timestamp;
-        const progress = Math.min((timestamp - startTime) / duration, 1);
-        const easeProgress = 1 - Math.pow(1 - progress, 3);
-        setCount(target * easeProgress);
-
-        if (progress < 1) {
-          animationFrameId = requestAnimationFrame(step);
-        }
-      };
-
-      animationFrameId = requestAnimationFrame(step);
-    }, delay * 1000);
-
-    return () => {
-      clearTimeout(startTimer);
-      if (animationFrameId) cancelAnimationFrame(animationFrameId);
-    };
-  }, [isInView, target, delay]);
-
-  const formatted = decimals > 0
-    ? count.toFixed(decimals)
-    : Math.floor(count).toLocaleString('vi-VN').replace(/,/g, '.');
-
-  return (
-    <span ref={ref}>
-      {formatted}
-      {suffix}
-    </span>
-  );
-};
 
 export const HeroSection = () => {
   // Determine time of day based on user's local clock

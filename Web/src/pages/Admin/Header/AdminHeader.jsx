@@ -1,23 +1,92 @@
-import React, { useState } from 'react';
-import {
-  Menu,
-  Bell,
-  CheckCircle,
-  AlertCircle,
-  Sparkles,
-} from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Menu, Sparkles } from 'lucide-react';
 
 import cuteMascotImg from '../../../assets/images/cute_mascot.png';
+import { getMeApi } from '../../../services/userService';
 
 export const AdminHeader = ({ activeTab, setMobileOpen, onExitAdmin }) => {
-  const [showNotifications, setShowNotifications] = useState(false);
+  const resolveAvatarUrl = (rawUrl) => {
+    if (!rawUrl) return cuteMascotImg;
+    if (rawUrl.startsWith('http://') || rawUrl.startsWith('https://') || rawUrl.startsWith('data:')) {
+      return rawUrl;
+    }
+    const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3069';
+    const baseUrl = apiBase.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
+    return `${baseUrl}${rawUrl.startsWith('/') ? '' : '/'}${rawUrl}`;
+  };
+
+  // Synchronously get cached user profile from localStorage to eliminate flicker
+  const getInitialHeaderUserInfo = () => {
+    try {
+      const cached = localStorage.getItem('friggy_user') || localStorage.getItem('user');
+      if (cached) {
+        const me = JSON.parse(cached);
+        const name =
+          me.name ||
+          me.profile?.name ||
+          (me.googleEmail ? me.googleEmail.split('@')[0] : null) ||
+          (me.email ? me.email.split('@')[0] : null) ||
+          '';
+        const role = me.roleId === 1 ? 'Super Admin' : 'Admin';
+        const avatarUrl = me.profile?.avatarUrl || me.avatarUrl || me.profile?.avatarPath || me.avatarPath;
+        if (name) {
+          return { name, role, avatarUrl };
+        }
+      }
+    } catch (e) {}
+    return { name: '', role: 'Admin', avatarUrl: null };
+  };
+
+  const [userInfo, setUserInfo] = useState(() => getInitialHeaderUserInfo());
+
+  // Fetch real admin profile for Header
+  const fetchHeaderUserInfo = async () => {
+    try {
+      const res = await getMeApi();
+      const me = res?.data || res;
+      if (me) {
+        try {
+          localStorage.setItem('friggy_user', JSON.stringify(me));
+          localStorage.setItem('user', JSON.stringify(me));
+        } catch (e) {}
+        setUserInfo({
+          name: me.name || me.profile?.name || me.googleEmail?.split('@')[0] || me.email?.split('@')[0] || '',
+          role: me.roleId === 1 ? 'Super Admin' : 'Admin',
+          avatarUrl: me.profile?.avatarUrl || me.avatarUrl || me.profile?.avatarPath || me.avatarPath || null,
+        });
+      }
+    } catch (err) {
+      console.log('Header user info fallback:', err.message);
+    }
+  };
+
+  useEffect(() => {
+    fetchHeaderUserInfo();
+
+    const handleProfileUpdate = () => {
+      fetchHeaderUserInfo();
+    };
+
+    window.addEventListener('user_profile_updated', handleProfileUpdate);
+    return () => {
+      window.removeEventListener('user_profile_updated', handleProfileUpdate);
+    };
+  }, []);
 
   const getTitle = () => {
     switch (activeTab) {
       case 'dashboard':
         return { title: 'Trang Chủ Tổng Quan', sub: 'Thống kê người dùng, gói cước và doanh thu hệ thống' };
+      case 'ingredients':
+        return { title: 'Quản Lý Kho Nguyên Liệu', sub: 'Quản lý nguyên liệu tủ lạnh, danh mục phân loại & thông tin dinh dưỡng' };
       case 'users':
         return { title: 'Quản Lý Người Dùng', sub: 'Quản lý tài khoản, phân quyền và lịch sử hoạt động' };
+      case 'ai':
+        return { title: 'Quản Lý AI Engine', sub: 'Cấu hình Provider AI và System Prompts' };
+      case 'cron':
+        return { title: 'Quản Lý Tiến Trình Cron Jobs', sub: 'Đặt lịch và kích hoạt chạy thử tiến trình tự động' };
+      case 'sponsors':
+        return { title: 'Quản Lý Nhà Tài Trợ & QC', sub: 'Đối tác liên kết và các chiến dịch banner quảng cáo' };
       case 'packages':
         return { title: 'Quản Lý Gói Cước', sub: 'Thiết lập các gói dịch vụ Premium, Family VIP & Chef Pro' };
       case 'profile':
@@ -30,30 +99,6 @@ export const AdminHeader = ({ activeTab, setMobileOpen, onExitAdmin }) => {
   };
 
   const current = getTitle();
-
-  const notifications = [
-    {
-      id: 1,
-      title: 'Đăng ký mới gói Family VIP',
-      user: 'Trần Thị Mai',
-      time: '5 phút trước',
-      type: 'success',
-    },
-    {
-      id: 2,
-      title: 'Giao dịch MoMo 990.000₫ thành công',
-      user: 'Lê Hoàng Nam',
-      time: '25 phút trước',
-      type: 'success',
-    },
-    {
-      id: 3,
-      title: 'Cảnh báo: Server API quá tải 85%',
-      user: 'System Bot',
-      time: '1 giờ trước',
-      type: 'warning',
-    },
-  ];
 
   return (
     <header className="bg-white/90 backdrop-blur-md border-b border-emerald-100 sticky top-0 z-30 px-4 sm:px-8 py-4 flex items-center justify-between shadow-2xs">
@@ -77,65 +122,23 @@ export const AdminHeader = ({ activeTab, setMobileOpen, onExitAdmin }) => {
         </div>
       </div>
 
-      {/* Right side: Notifications & Profile */}
+      {/* Right side: Admin Profile Badge */}
       <div className="flex items-center gap-3 sm:gap-4 relative">
-
-        {/* Notification Dropdown */}
-        <div className="relative">
-          <button
-            onClick={() => setShowNotifications(!showNotifications)}
-            className="p-2.5 rounded-2xl bg-emerald-50/80 hover:bg-emerald-100/90 text-emerald-800 transition-all duration-200 relative cursor-pointer border border-emerald-200/60"
-          >
-            <Bell className="w-5 h-5" />
-            <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-rose-500 rounded-full ring-2 ring-white animate-pulse" />
-          </button>
-
-          {showNotifications && (
-            <div className="absolute right-0 mt-3 w-80 bg-white rounded-3xl shadow-xl border border-emerald-100 p-4 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
-              <div className="flex items-center justify-between pb-3 border-b border-emerald-100">
-                <span className="text-xs font-black text-emerald-950">THÔNG BÁO MỚI</span>
-                <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                  3 Chưa đọc
-                </span>
-              </div>
-              <div className="space-y-2 mt-3 max-h-64 overflow-y-auto">
-                {notifications.map((n) => (
-                  <div
-                    key={n.id}
-                    className="p-2.5 rounded-2xl hover:bg-emerald-50/60 border border-transparent hover:border-emerald-100 flex items-start gap-3 transition-colors cursor-pointer"
-                  >
-                    {n.type === 'success' ? (
-                      <CheckCircle className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
-                    ) : (
-                      <AlertCircle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
-                    )}
-                    <div className="space-y-0.5">
-                      <p className="text-xs font-bold text-slate-800 leading-tight">
-                        {n.title}
-                      </p>
-                      <p className="text-[11px] text-slate-500">
-                        {n.user} • <span className="text-slate-400">{n.time}</span>
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Admin Profile Badge */}
         <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-2xl bg-emerald-50/80 border border-emerald-200/70">
           <img
-            src={cuteMascotImg}
-            alt="Admin Avatar"
-            className="w-8 h-8 rounded-xl object-cover bg-white border border-emerald-300 p-0.5 shadow-xs"
+            src={resolveAvatarUrl(userInfo.avatarUrl)}
+            alt={userInfo.name || 'Admin'}
+            className="w-8 h-8 rounded-xl object-cover bg-white border border-emerald-300 shadow-xs"
+            onError={(e) => {
+              e.target.onerror = null;
+              e.target.src = cuteMascotImg;
+            }}
           />
           <div className="text-left hidden sm:block">
-            <p className="text-xs font-extrabold text-emerald-950 leading-tight">
-              Admin Friggy
+            <p className="text-xs font-extrabold text-emerald-950 leading-tight truncate max-w-[140px]">
+              {userInfo.name || 'Admin'}
             </p>
-            <p className="text-[10px] font-bold text-emerald-600">Super Admin</p>
+            <p className="text-[10px] font-bold text-emerald-600">{userInfo.role}</p>
           </div>
         </div>
       </div>

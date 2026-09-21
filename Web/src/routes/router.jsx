@@ -8,6 +8,10 @@ import UserManagement from '../pages/Admin/UserManagement/UserManagement';
 import PackageManagement from '../pages/Admin/PackageManagement/PackageManagement';
 import AdminSettings from '../pages/Admin/Settings/AdminSettings';
 import AdminProfile from '../pages/Admin/Profile/AdminProfile';
+import AiManagement from '../pages/Admin/AiManagement/AiManagement';
+import CronManagement from '../pages/Admin/CronManagement/CronManagement';
+import SponsorManagement from '../pages/Admin/SponsorManagement/SponsorManagement';
+import IngredientManagement from '../pages/Admin/IngredientManagement/IngredientManagement';
 
 // Routes configuration
 export const routes = [
@@ -34,8 +38,24 @@ export const routes = [
         element: <AdminDashboard />
       },
       {
+        path: "ingredients",
+        element: <IngredientManagement />
+      },
+      {
         path: "users",
         element: <UserManagement />
+      },
+      {
+        path: "ai",
+        element: <AiManagement />
+      },
+      {
+        path: "cron",
+        element: <CronManagement />
+      },
+      {
+        path: "sponsors",
+        element: <SponsorManagement />
       },
       {
         path: "packages",

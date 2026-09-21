@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
 import { X, Package, Check, Plus, Trash2, Save } from 'lucide-react';
 
 export const AddEditPackageModal = ({ packageItem, onClose, onSave }) => {
@@ -28,7 +27,7 @@ export const AddEditPackageModal = ({ packageItem, onClose, onSave }) => {
         popular: packageItem.popular || false,
         color: packageItem.color || 'emerald',
         status: packageItem.status || 'Active',
-        features: packageItem.features?.length ? [...packageItem.features] : [''],
+        features: packageItem.features && packageItem.features.length > 0 ? packageItem.features : [''],
       });
     }
   }, [packageItem]);
@@ -47,11 +46,12 @@ export const AddEditPackageModal = ({ packageItem, onClose, onSave }) => {
     setFormData((prev) => ({ ...prev, features: updated }));
   };
 
-  const addFeature = () => {
+  const handleAddFeatureField = () => {
     setFormData((prev) => ({ ...prev, features: [...prev.features, ''] }));
   };
 
-  const removeFeature = (index) => {
+  const handleRemoveFeatureField = (index) => {
+    if (formData.features.length <= 1) return;
     setFormData((prev) => ({
       ...prev,
       features: prev.features.filter((_, i) => i !== index),
@@ -60,8 +60,10 @@ export const AddEditPackageModal = ({ packageItem, onClose, onSave }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (!formData.name.trim()) return alert('Vui lòng nhập tên gói dịch vụ');
+
     onSave({
-      id: packageItem ? packageItem.id : `pkg_${Date.now()}`,
+      id: packageItem ? packageItem.id : Date.now().toString(),
       subscribersCount: packageItem ? packageItem.subscribersCount : 0,
       ...formData,
       price: Number(formData.price),
@@ -70,12 +72,9 @@ export const AddEditPackageModal = ({ packageItem, onClose, onSave }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95, y: 20 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        className="w-full max-w-xl bg-white rounded-[36px] shadow-2xl border border-slate-100 overflow-hidden relative max-h-[90vh] flex flex-col"
+    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto animate__animated animate__fadeIn animate__faster">
+      <div
+        className="w-full max-w-xl bg-white rounded-[36px] shadow-2xl border border-slate-100 overflow-hidden relative max-h-[90vh] flex flex-col animate__animated animate__zoomIn animate__faster"
       >
         {/* Modal Header */}
         <div className="p-6 border-b border-slate-100 flex items-center justify-between">
@@ -274,7 +273,7 @@ export const AddEditPackageModal = ({ packageItem, onClose, onSave }) => {
             </button>
           </div>
         </form>
-      </motion.div>
+      </div>
     </div>
   );
 };

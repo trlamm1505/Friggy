@@ -127,14 +127,17 @@ export const Login = ({ onBack, onLoginSuccess }) => {
             const res = await googleAuthApi(idToken);
             const authData = res.data || res;
 
-            // Lưu accessToken & refreshToken vào localStorage
+            // Lưu accessToken & refreshToken vào localStorage với tiền tố friggy_
             if (authData.accessToken) {
+              localStorage.setItem('friggy_access_token', authData.accessToken);
               localStorage.setItem('accessToken', authData.accessToken);
             }
             if (authData.refreshToken) {
+              localStorage.setItem('friggy_refresh_token', authData.refreshToken);
               localStorage.setItem('refreshToken', authData.refreshToken);
             }
             if (authData.user) {
+              localStorage.setItem('friggy_user', JSON.stringify(authData.user));
               localStorage.setItem('user', JSON.stringify(authData.user));
             }
 

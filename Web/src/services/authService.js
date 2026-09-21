@@ -26,3 +26,27 @@ export const refreshApi = async (refreshToken) => {
 export const logoutApi = async (refreshToken) => {
   return await axiosClient.post('/auth/logout', { refreshToken });
 };
+
+/**
+ * Helper thực hiện Đăng xuất đầy đủ:
+ * Gọi API POST /api/v1/auth/logout + xóa toàn bộ friggy_ localStorage keys
+ */
+export const logoutHelper = async () => {
+  const refreshToken =
+    localStorage.getItem('friggy_refresh_token') || localStorage.getItem('refreshToken');
+  if (refreshToken) {
+    try {
+      await logoutApi(refreshToken);
+    } catch (err) {
+      console.warn('Lỗi khi gọi API logout:', err.message);
+    }
+  }
+  // Xóa toàn bộ localStorage keys (phần tiền tố friggy_ và legacy keys)
+  localStorage.removeItem('friggy_access_token');
+  localStorage.removeItem('friggy_refresh_token');
+  localStorage.removeItem('friggy_user');
+  localStorage.removeItem('accessToken');
+  localStorage.removeItem('refreshToken');
+  localStorage.removeItem('token');
+  localStorage.removeItem('user');
+};
