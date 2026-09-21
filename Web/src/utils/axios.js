@@ -27,6 +27,9 @@ const processQueue = (error, token = null) => {
 
 // Xóa Token & chuyển về trang chủ Guest khi Refresh Token hết hạn
 const handleSessionExpired = () => {
+  localStorage.removeItem('friggy_access_token');
+  localStorage.removeItem('friggy_refresh_token');
+  localStorage.removeItem('friggy_user');
   localStorage.removeItem('accessToken');
   localStorage.removeItem('refreshToken');
   localStorage.removeItem('token');
@@ -40,7 +43,10 @@ const handleSessionExpired = () => {
 // Request Interceptor: Tự động đính kèm Access Token nếu có
 axiosClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('accessToken') || localStorage.getItem('token');
+    const token =
+      localStorage.getItem('friggy_access_token') ||
+      localStorage.getItem('accessToken') ||
+      localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -81,7 +87,8 @@ axiosClient.interceptors.response.use(
       originalRequest._retry = true;
       isRefreshing = true;
 
-      const refreshToken = localStorage.getItem('refreshToken');
+      const refreshToken =
+        localStorage.getItem('friggy_refresh_token') || localStorage.getItem('refreshToken');
 
       if (!refreshToken) {
         isRefreshing = false;
@@ -102,7 +109,8 @@ axiosClient.interceptors.response.use(
           throw new Error('Không lấy được Access Token mới');
         }
 
-        // Lưu Access Token mới vào localStorage
+        // Lưu Access Token mới vào localStorage với tiền tố friggy_
+        localStorage.setItem('friggy_access_token', newAccessToken);
         localStorage.setItem('accessToken', newAccessToken);
 
         // Cập nhật header cho request vừa bị lỗi và thực hiện lại

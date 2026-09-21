@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Apple, QrCode as QrIcon, Sparkles, ShieldCheck, ArrowRight } from 'lucide-react';
+import { Apple, QrCode as QrIcon } from 'lucide-react';
 import qrCodeImg from '../../../assets/images/qr_code.png';
+import { getSystemSettings } from '../../../utils/systemSettings';
 
 const GooglePlayIcon = (props) => (
   <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5" {...props}>
@@ -10,6 +11,24 @@ const GooglePlayIcon = (props) => (
 );
 
 export const DownloadCtaBanner = () => {
+  const [settings, setSettings] = useState(() => getSystemSettings());
+  const [qrError, setQrError] = useState(false);
+
+  useEffect(() => {
+    const handleSettingsUpdate = () => {
+      setSettings(getSystemSettings());
+      setQrError(false);
+    };
+
+    window.addEventListener('system_settings_updated', handleSettingsUpdate);
+    return () => {
+      window.removeEventListener('system_settings_updated', handleSettingsUpdate);
+    };
+  }, []);
+
+  const downloadUrl = settings.downloadUrl || '#download';
+  const qrImageSrc = !qrError && settings.qrImageUrl ? settings.qrImageUrl : qrCodeImg;
+
   return (
     <section id="download" className="py-20 bg-gradient-to-b from-white via-emerald-50/40 to-emerald-100/30">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -43,7 +62,9 @@ export const DownloadCtaBanner = () => {
               {/* Download Buttons */}
               <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 pt-2">
                 <a
-                  href="#ios"
+                  href={downloadUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="flex items-center gap-3 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3.5 rounded-2xl font-bold text-sm shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-0.5 group"
                 >
                   <Apple className="w-7 h-7 text-white group-hover:scale-110 transition-transform" />
@@ -54,7 +75,9 @@ export const DownloadCtaBanner = () => {
                 </a>
 
                 <a
-                  href="#android"
+                  href={downloadUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="flex items-center gap-3 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3.5 rounded-2xl font-bold text-sm shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-0.5 group"
                 >
                   <div className="w-7 h-7 flex items-center justify-center text-white group-hover:scale-110 transition-transform">
@@ -76,9 +99,10 @@ export const DownloadCtaBanner = () => {
               >
                 <div className="w-full aspect-square bg-emerald-50 rounded-2xl overflow-hidden p-2 mb-3 border border-emerald-100 flex items-center justify-center">
                   <img
-                    src={qrCodeImg}
+                    src={qrImageSrc}
                     alt="Quét mã QR tải app Friggy"
                     className="w-full h-full object-contain rounded-xl"
+                    onError={() => setQrError(true)}
                   />
                 </div>
                 <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-emerald-900">

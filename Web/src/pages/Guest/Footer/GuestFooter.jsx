@@ -1,9 +1,30 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Heart, Phone, Mail, Clock } from 'lucide-react';
 import { footerData } from '../../../data';
+import { getSystemSettings } from '../../../utils/systemSettings';
 
 export const GuestFooter = () => {
+  const [settings, setSettings] = useState(() => getSystemSettings());
+
+  useEffect(() => {
+    const handleSettingsUpdate = () => {
+      setSettings(getSystemSettings());
+    };
+
+    window.addEventListener('system_settings_updated', handleSettingsUpdate);
+    return () => {
+      window.removeEventListener('system_settings_updated', handleSettingsUpdate);
+    };
+  }, []);
+
+  const hotlineText = settings.supportHotline || footerData.hotline;
+  const emailText = settings.supportEmail || footerData.email;
+  const workingHoursText = settings.workingHours || footerData.workingHours;
+
+  const hotlineTel = `tel:${hotlineText.replace(/[^0-9]/g, '')}`;
+  const emailMailto = `mailto:${emailText}`;
+
   return (
     <motion.footer
       initial={{ opacity: 0, y: 70, scaleY: 0.9 }}
@@ -17,7 +38,7 @@ export const GuestFooter = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8 pb-10 border-b border-emerald-900/40">
-          {/* Col 1: Logo & Slogan (4 cols) - Starts AFTER Footer background animation finishes (delay: 0.6s) */}
+          {/* Col 1: Logo & Slogan */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -48,7 +69,7 @@ export const GuestFooter = () => {
             </p>
           </motion.div>
 
-          {/* Col 2: Thông tin liên hệ & Hotline (5 cols) */}
+          {/* Col 2: Thông tin liên hệ & Hotline */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -57,9 +78,9 @@ export const GuestFooter = () => {
             className="md:col-span-5 space-y-3.5 text-left pl-0 md:pl-4"
           >
             <h4 className="text-sm font-bold text-emerald-400 uppercase tracking-wider">
-              Thông Tin Liên Hệ & Hỗ Trợ
+              THÔNG TIN LIÊN HỆ & HỖ TRỢ
             </h4>
-            
+
             <div className="space-y-3 text-xs sm:text-sm text-emerald-100/90 font-medium">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-lg bg-emerald-900/60 border border-emerald-700/50 flex items-center justify-center text-emerald-400 flex-shrink-0">
@@ -67,8 +88,8 @@ export const GuestFooter = () => {
                 </div>
                 <div>
                   <span className="text-emerald-300 text-xs block sm:inline">Hotline / SĐT Hỗ Trợ: </span>
-                  <a href={footerData.hotlineTel} className="font-bold text-white hover:text-emerald-400 transition-colors">
-                    {footerData.hotline}
+                  <a href={hotlineTel} className="font-bold text-white hover:text-emerald-400 transition-colors">
+                    {hotlineText}
                   </a>
                 </div>
               </div>
@@ -79,8 +100,8 @@ export const GuestFooter = () => {
                 </div>
                 <div>
                   <span className="text-emerald-300 text-xs block sm:inline">Email Trợ Giúp: </span>
-                  <a href={footerData.emailMailto} className="font-bold text-white hover:text-emerald-400 transition-colors">
-                    {footerData.email}
+                  <a href={emailMailto} className="font-bold text-white hover:text-emerald-400 transition-colors">
+                    {emailText}
                   </a>
                 </div>
               </div>
@@ -91,13 +112,13 @@ export const GuestFooter = () => {
                 </div>
                 <div>
                   <span className="text-emerald-300 text-xs block sm:inline">Thời Gian Làm Việc: </span>
-                  <span className="font-semibold text-white">{footerData.workingHours}</span>
+                  <span className="font-semibold text-white">{workingHoursText}</span>
                 </div>
               </div>
             </div>
           </motion.div>
 
-          {/* Col 3: Liên kết nhanh (3 cols) */}
+          {/* Col 3: Liên kết nhanh */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}

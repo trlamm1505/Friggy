@@ -4,12 +4,15 @@ import {
   LayoutDashboard,
   Users,
   Package,
+  Cpu,
+  Clock,
+  Building2,
   User,
   Settings,
   LogOut,
   X,
-  ShieldCheck,
   ChevronRight,
+  Utensils,
 } from 'lucide-react';
 import cuteMascotImg from '../../../assets/images/cute_mascot.png';
 
@@ -27,21 +30,42 @@ export const AdminSidebar = ({
       path: '/admin/dashboard',
       label: 'Trang Chủ Overview',
       icon: LayoutDashboard,
-      badge: 'Main',
+    },
+    {
+      id: 'ingredients',
+      path: '/admin/ingredients',
+      label: 'Quản Lý Nguyên Liệu',
+      icon: Utensils,
     },
     {
       id: 'users',
       path: '/admin/users',
       label: 'Quản Lý Người Dùng',
       icon: Users,
-      badge: '12.4K',
+    },
+    {
+      id: 'ai',
+      path: '/admin/ai',
+      label: 'Quản Lý AI Engine',
+      icon: Cpu,
+    },
+    {
+      id: 'cron',
+      path: '/admin/cron',
+      label: 'Tiến Trình Cron Jobs',
+      icon: Clock,
+    },
+    {
+      id: 'sponsors',
+      path: '/admin/sponsors',
+      label: 'Nhà Tài Trợ & QC',
+      icon: Building2,
     },
     {
       id: 'packages',
       path: '/admin/packages',
       label: 'Quản Lý Gói Cước',
       icon: Package,
-      badge: '4 Gói',
     },
     {
       id: 'profile',
@@ -76,7 +100,7 @@ export const AdminSidebar = ({
         {/* Top Brand Logo Header */}
         <div className="p-6 border-b border-emerald-200/80 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-emerald-500 to-green-400 p-0.5 shadow-md flex items-center justify-center">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-emerald-500 to-green-400 p-0.5 shadow-md flex items-center justify-center animate__animated animate__bounceIn">
               <img
                 src={cuteMascotImg}
                 alt="Friggy Admin Logo"
@@ -122,8 +146,8 @@ export const AdminSidebar = ({
                 }}
                 className={`w-full flex items-center justify-between px-3 py-3 rounded-2xl text-xs sm:text-sm font-semibold transition-all duration-200 cursor-pointer group ${
                   isActive
-                    ? 'bg-gradient-to-r from-emerald-500 via-green-600 to-teal-600 text-white shadow-lg shadow-emerald-500/25 font-bold'
-                    : 'text-emerald-900/80 hover:bg-emerald-100/70 hover:text-emerald-950'
+                    ? 'bg-gradient-to-r from-emerald-500 via-green-600 to-teal-600 text-white shadow-lg shadow-emerald-500/25 font-bold animate__animated animate__pulse'
+                    : 'text-emerald-900/80 hover:bg-emerald-100/70 hover:text-emerald-950 hover:translate-x-1'
                 }`}
               >
                 <div className="flex items-center gap-2.5 min-w-0">
@@ -135,26 +159,11 @@ export const AdminSidebar = ({
                   <span className="whitespace-nowrap truncate">{item.label}</span>
                 </div>
 
-                <div className="flex items-center gap-1 flex-shrink-0 ml-1">
-                  {item.badge && (
-                    <span
-                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap ${
-                        isActive
-                          ? 'bg-white/25 text-white'
-                          : 'bg-emerald-200/80 text-emerald-900 group-hover:bg-emerald-200'
-                      }`}
-                    >
-                      {item.badge}
-                    </span>
-                  )}
-                  {isActive && <ChevronRight className="w-4 h-4 text-white/80 flex-shrink-0" />}
-                </div>
+                {isActive && <ChevronRight className="w-4 h-4 text-white/90 flex-shrink-0" />}
               </button>
             );
           })}
         </div>
-
-
 
         {/* Bottom Logout Footer */}
         <div className="p-4 border-t border-emerald-200/80">

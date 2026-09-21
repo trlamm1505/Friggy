@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
 import { X, User, Mail, Phone, Shield, Save } from 'lucide-react';
 
 export const UserEditModal = ({ user, packages, onClose, onSave }) => {
@@ -21,11 +20,11 @@ export const UserEditModal = ({ user, packages, onClose, onSave }) => {
         email: user.email || '',
         phone: user.phone || '',
         role: user.role || 'User',
-        package: user.package || packages[0]?.name || '',
+        package: user.package || 'Miễn Phí',
         status: user.status || 'Active',
       });
     }
-  }, [user, packages]);
+  }, [user]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -43,12 +42,9 @@ export const UserEditModal = ({ user, packages, onClose, onSave }) => {
   if (!user) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95, y: 20 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        className="w-full max-w-lg bg-white rounded-[36px] shadow-2xl border border-slate-100 overflow-hidden relative"
+    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto animate__animated animate__fadeIn animate__faster">
+      <div
+        className="w-full max-w-lg bg-white rounded-[36px] shadow-2xl border border-slate-100 overflow-hidden relative animate__animated animate__zoomIn animate__faster"
       >
         {/* Modal Header */}
         <div className="p-6 border-b border-slate-100 flex items-center justify-between">
@@ -183,7 +179,7 @@ export const UserEditModal = ({ user, packages, onClose, onSave }) => {
             </button>
           </div>
         </form>
-      </motion.div>
+      </div>
     </div>
   );
 };

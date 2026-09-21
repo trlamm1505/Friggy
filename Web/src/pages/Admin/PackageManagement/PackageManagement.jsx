@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
 import { useOutletContext } from 'react-router-dom';
 import { Plus, Sparkles } from 'lucide-react';
 import { AddEditPackageModal } from './AddEditPackageModal';
@@ -33,7 +32,7 @@ export const PackageManagement = (props) => {
   };
 
   return (
-    <div className="space-y-8 pb-12">
+    <div className="space-y-8 pb-12 animate__animated animate__fadeIn animate__faster">
       {/* Action Banner */}
       <div className="p-6 sm:p-8 rounded-[32px] bg-white border border-emerald-100 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
