@@ -7,6 +7,8 @@ import qrMascotImg from '../../../assets/images/QR.png';
 import mascotImg from '../../../assets/images/mascot.png';
 import suggestImg from '../../../assets/images/suggest.png';
 import { adminAccount, initialUsers } from '../../../data/adminMockData';
+import { googleAuthApi } from '../../../services/authService';
+import { showToast } from '../../../components/common/Toast';
 
 export const Login = ({ onBack, onLoginSuccess }) => {
   const navigate = useNavigate();
@@ -86,13 +88,105 @@ export const Login = ({ onBack, onLoginSuccess }) => {
           onLoginSuccess(matchedAccount);
         }
       } else {
-        alert(`Đăng nhập thành công! Chào mừng ${matchedAccount.name || matchedAccount.username}`);
+        showToast.success(`Đăng nhập thành công! Chào mừng ${matchedAccount.name || matchedAccount.username}`);
         navigate('/', { replace: true });
         if (onLoginSuccess) {
           onLoginSuccess(matchedAccount);
         }
       }
     }, 1000);
+  };
+
+  const handleGoogleSignIn = async () => {
+    setError('');
+    setLoading(true);
+
+    try {
+      const clientId =
+        import.meta.env.VITE_GOOGLE_CLIENT_ID ||
+        '302076463841-itoefla7rlbl9rgadphcodev7poj62rn.apps.googleusercontent.com';
+
+      if (!window.google?.accounts?.id) {
+        showToast.error('Thư viện Google SDK đang được tải, vui lòng bấm lại sau 2 giây!');
+        setLoading(false);
+        return;
+      }
+
+      window.google.accounts.id.initialize({
+        client_id: clientId,
+        callback: async (googleRes) => {
+          try {
+            const idToken = googleRes.credential;
+            if (!idToken) {
+              showToast.error('Không lấy được Google ID Token!');
+              setLoading(false);
+              return;
+            }
+
+            // Gọi API POST /api/v1/auth/google
+            const res = await googleAuthApi(idToken);
+            const authData = res.data || res;
+
+            // Lưu accessToken & refreshToken vào localStorage
+            if (authData.accessToken) {
+              localStorage.setItem('accessToken', authData.accessToken);
+            }
+            if (authData.refreshToken) {
+              localStorage.setItem('refreshToken', authData.refreshToken);
+            }
+            if (authData.user) {
+              localStorage.setItem('user', JSON.stringify(authData.user));
+            }
+
+            showToast.success('Đăng nhập thành công với Google!');
+
+            // Check role: nếu role là admin -> chuyển trang chủ admin, nếu user -> trang người dùng
+            const userRole = String(
+              authData.user?.role?.name || authData.user?.role || ''
+            ).toLowerCase();
+
+            if (userRole === 'admin' || userRole.includes('admin')) {
+              navigate('/admin/dashboard', { replace: true });
+              if (onLoginSuccess) onLoginSuccess(authData.user);
+            } else {
+              navigate('/', { replace: true });
+              if (onLoginSuccess) onLoginSuccess(authData.user);
+            }
+          } catch (err) {
+            console.error('Google Auth API Error:', err);
+            const errMsg = err.message || 'Đăng nhập Google thất bại!';
+            setError(errMsg);
+            showToast.error(errMsg);
+          } finally {
+            setLoading(false);
+          }
+        },
+      });
+
+      // Mở hộp thoại chọn tài khoản Google (Google One-Tap Prompt)
+      window.google.accounts.id.prompt((notification) => {
+        if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+          // Fallback: Tự động giả lập hoặc mở giao diện popup nút Google
+          const btnWrapper = document.createElement('div');
+          btnWrapper.style.position = 'fixed';
+          btnWrapper.style.top = '-9999px';
+          document.body.appendChild(btnWrapper);
+          window.google.accounts.id.renderButton(btnWrapper, { theme: 'outline', size: 'large' });
+          const googleBtnEl = btnWrapper.querySelector('div[role="button"]');
+          if (googleBtnEl) {
+            googleBtnEl.click();
+          } else {
+            showToast.error('Hãy cho phép hiển thị cửa sổ Google Login trên trình duyệt.');
+            setLoading(false);
+          }
+          setTimeout(() => btnWrapper.remove(), 3000);
+        }
+      });
+    } catch (err) {
+      console.error('Google Auth Error:', err);
+      showToast.error('Đã xảy ra lỗi khi đăng nhập bằng Google.');
+      setLoading(false);
+    }
   };
 
   return (
@@ -292,7 +386,7 @@ export const Login = ({ onBack, onLoginSuccess }) => {
 
               <button
                 type="button"
-                onClick={() => alert('Vui lòng liên hệ hỗ trợ hoặc nhập lại mật khẩu!')}
+                onClick={() => showToast.info('Vui lòng liên hệ hỗ trợ hoặc nhập lại mật khẩu!')}
                 className="text-xs font-bold text-emerald-600 hover:text-emerald-800 hover:underline transition-colors"
               >
                 Quên mật khẩu?
@@ -311,19 +405,43 @@ export const Login = ({ onBack, onLoginSuccess }) => {
                 <span>Đăng Nhập Ngay</span>
               )}
             </button>
-          </form>
 
-          {/* Bottom Footer Note for perfect proportion */}
-          <div className="pt-2 text-center text-xs text-emerald-900/60 font-medium">
-            Chưa có tài khoản?{' '}
+            {/* Divider */}
+            <div className="relative flex items-center justify-center pt-2 pb-1">
+              <div className="w-full border-t border-emerald-100"></div>
+              <span className="absolute px-3 bg-white text-[11px] font-bold uppercase text-emerald-800/60 tracking-wider">
+                hoặc
+              </span>
+            </div>
+
+            {/* Google Login Button */}
             <button
               type="button"
-              onClick={() => alert('Chức năng Đăng ký đang được phát triển!')}
-              className="font-bold text-emerald-700 hover:text-emerald-900 hover:underline cursor-pointer ml-1"
+              onClick={handleGoogleSignIn}
+              disabled={loading}
+              className="w-full py-3.5 px-6 bg-white hover:bg-emerald-50/60 text-emerald-950 font-bold text-sm rounded-2xl border-2 border-emerald-200 hover:border-emerald-400 shadow-xs hover:shadow-md active:scale-[0.99] transition-all duration-200 cursor-pointer flex items-center justify-center gap-3 group disabled:opacity-50"
             >
-              Đăng ký tài khoản mới
+              <svg className="w-5 h-5 group-hover:scale-110 transition-transform flex-shrink-0" viewBox="0 0 24 24">
+                <path
+                  fill="#4285F4"
+                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                />
+                <path
+                  fill="#34A853"
+                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                />
+                <path
+                  fill="#FBBC05"
+                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+                />
+                <path
+                  fill="#EA4335"
+                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+                />
+              </svg>
+              <span>Đăng nhập bằng Google</span>
             </button>
-          </div>
+          </form>
         </div>
       </motion.div>
     </div>

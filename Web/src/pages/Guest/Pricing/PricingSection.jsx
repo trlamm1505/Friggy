@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { pricingPlans } from '../../../data';
 import { PackageCard } from '../../../components/common/PackageCard';
+import { showToast } from '../../../components/common/Toast';
 
 export const PricingSection = () => {
   const [billingCycle, setBillingCycle] = useState('monthly'); // 'monthly' | 'yearly'
@@ -82,7 +83,7 @@ export const PricingSection = () => {
                 mode="guest"
                 index={index}
                 onSelect={(selectedPlan) => {
-                  alert(`Bạn đã chọn đăng ký: ${selectedPlan.name}`);
+                  showToast.info(`Bạn đã chọn đăng ký gói: ${selectedPlan.name}`);
                 }}
               />
             );
