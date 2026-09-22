@@ -15,7 +15,7 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { PrismaService } from 'src/modules-system/prisma/prisma.service';
-import { createCipheriv, randomBytes } from 'crypto';
+import { encrypt } from 'src/common/utils/encrypt.util';
 import type {
   CreateAiProviderDto,
   CreateAiPromptDto,
@@ -26,23 +26,6 @@ import type {
   AiPromptDetailResponseDto,
   ActivateResponseDto,
 } from './dto/admin-ai-response.dto';
-
-// Khóa mã hóa AES-256 — đọc từ ENCRYPTION_SECRET (cùng key mà ai-service dùng để decrypt)
-const ALGORITHM = 'aes-256-cbc';
-const ENC_KEY = process.env.ENCRYPTION_SECRET ?? '';
-const KEY_BUF = Buffer.alloc(32);
-Buffer.from(ENC_KEY).copy(KEY_BUF);
-
-/** Mã hóa API key bằng AES-256-CBC trước khi lưu vào DB */
-function encryptApiKey(plainText: string): string {
-  const iv = randomBytes(16);
-  const cipher = createCipheriv(ALGORITHM, KEY_BUF, iv);
-  const encrypted = Buffer.concat([
-    cipher.update(plainText, 'utf8'),
-    cipher.final(),
-  ]);
-  return `${iv.toString('hex')}:${encrypted.toString('hex')}`;
-}
 
 @Injectable()
 export class AdminAiService {
@@ -97,7 +80,7 @@ export class AdminAiService {
     }
 
     // Mã hóa API key trước khi lưu (AI Service sẽ decrypt khi đọc)
-    const encryptedApiKey = encryptApiKey(dto.apiKey);
+    const encryptedApiKey = encrypt(dto.apiKey);
 
     const provider = await this.prisma.aiProviderConfig.create({
       data: {
@@ -298,5 +281,64 @@ export class AdminAiService {
       success: true,
       message: `Đã kích hoạt prompt: agentType=${prompt.agentType} v${prompt.version}`,
     } satisfies ActivateResponseDto;
+  }
+
+  /**
+   * Chỉnh sửa nội dung prompt (không cần tạo version mới cho sửa nhỏ).
+   * Không cho phép sửa prompt đang isActive.
+   */
+  async updatePrompt(
+    id: number,
+    dto: Partial<Pick<import('./dto/admin-ai.dto').CreateAiPromptDto, 'version' | 'promptContent'>>,
+  ): Promise<AiPromptDetailResponseDto> {
+    const prompt = await this.prisma.aiSystemPrompt.findFirst({
+      where: { id, deletedAt: null },
+    });
+    if (!prompt) throw new NotFoundException('Không tìm thấy system prompt');
+
+    if (prompt.isActive) {
+      throw new ConflictException(
+        'Không thể sửa prompt đang active. Hãy tạo version mới và activate.',
+      );
+    }
+
+    const updated = await this.prisma.aiSystemPrompt.update({
+      where: { id },
+      data: {
+        ...(dto.version && { version: dto.version }),
+        ...(dto.promptContent && { promptContent: dto.promptContent }),
+      },
+    });
+
+    return {
+      id: updated.id,
+      agentType: updated.agentType,
+      version: updated.version,
+      promptContent: updated.promptContent,
+      isActive: updated.isActive,
+      activatedAt: updated.activatedAt?.toISOString() ?? null,
+      createdAt: updated.createdAt.toISOString(),
+    } satisfies AiPromptDetailResponseDto;
+  }
+
+  /**
+   * Xóa mềm prompt (không xóa prompt đang isActive).
+   */
+  async deletePrompt(id: number): Promise<void> {
+    const prompt = await this.prisma.aiSystemPrompt.findFirst({
+      where: { id, deletedAt: null },
+    });
+    if (!prompt) throw new NotFoundException('Không tìm thấy system prompt');
+
+    if (prompt.isActive) {
+      throw new ConflictException(
+        'Không thể xóa prompt đang active. Hãy activate prompt khác trước.',
+      );
+    }
+
+    await this.prisma.aiSystemPrompt.update({
+      where: { id },
+      data: { deletedAt: new Date() },
+    });
   }
 }

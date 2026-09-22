@@ -128,15 +128,16 @@ model RefreshToken {
 }
 
 model IngredientCategory {
-  id          Int                  @id @default(autoincrement())
-  name        String               @unique @db.VarChar(100)
-  iconPath    String?              @db.VarChar(255)
-  parentId    Int?
-  createdAt   DateTime             @default(now())
-  deletedAt   DateTime?
-  parent      IngredientCategory?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
-  children    IngredientCategory[] @relation("CategoryHierarchy")
-  ingredients Ingredient[]
+  id                  Int                  @id @default(autoincrement())
+  name                String               @unique @db.VarChar(100)
+  iconPath            String?              @db.VarChar(255)
+  parentId            Int?
+  defaultShelfLifeDays Int?                // Số ngày bảo quản mặc định (null = dùng fallback)
+  createdAt           DateTime             @default(now())
+  deletedAt           DateTime?
+  parent              IngredientCategory?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children            IngredientCategory[] @relation("CategoryHierarchy")
+  ingredients         Ingredient[]
 
   @@index([parentId], map: "ingredient_categories_parentId_fkey")
   @@map("ingredient_categories")

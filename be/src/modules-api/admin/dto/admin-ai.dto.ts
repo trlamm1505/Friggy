@@ -45,12 +45,13 @@ export class CreateAiProviderDto {
 export class CreateAiPromptDto {
   @ApiProperty({
     example: 'supervisor',
-    description: 'Loại agent: supervisor | chef_agent | data_agent | evaluator',
+    description:
+      'Loại agent: supervisor | public_chat | chef_agent | data_agent | evaluator | nutrition_agent | accountant_agent',
   })
   @IsString() @IsNotEmpty()
   agentType!: string;
 
-  @ApiProperty({ example: '1.0.0', description: 'Phiên bản prompt (dùng để tracking thay đổi)' })
+  @ApiProperty({ example: 'v1.1', description: 'Phiên bản prompt (dùng để tracking thay đổi)' })
   @IsString() @IsNotEmpty()
   version!: string;
 
@@ -60,4 +61,17 @@ export class CreateAiPromptDto {
   })
   @IsString() @IsNotEmpty()
   promptContent!: string;
+}
+
+export class UpdateAiPromptDto {
+  @ApiPropertyOptional({ example: 'v1.1', description: 'Phiên bản mới' })
+  @IsOptional() @IsString() @IsNotEmpty()
+  version?: string;
+
+  @ApiPropertyOptional({
+    example: 'Bạn là trợ lý AI của Friggy...',
+    description: 'Nội dung prompt mới (chỉ cho prompt chưa active)',
+  })
+  @IsOptional() @IsString() @IsNotEmpty()
+  promptContent?: string;
 }

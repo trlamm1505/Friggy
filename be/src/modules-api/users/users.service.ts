@@ -19,8 +19,6 @@ import type {
   AllergyResponseDto,
 } from './dto/users-response.dto';
 
-const AI_WEEKLY_LIMIT_FREE = 10;
-const AI_WEEKLY_LIMIT_PAID = 999;
 
 @Injectable()
 export class UsersService {
@@ -95,8 +93,38 @@ export class UsersService {
   }
 
   // ─────────────────────────────────────────────────────────
+  // GET profile (internal — dùng cho avatar cleanup)
+  // ─────────────────────────────────────────────────────────
+
+  async getProfile(userId: string): Promise<{ avatarPath: string | null } | null> {
+    return this.prisma.userProfile.findUnique({
+      where: { userId },
+      select: { avatarPath: true },
+    });
+  }
+
+  // ─────────────────────────────────────────────────────────
+  // POST /me/avatar — Cập nhật avatarPath sau upload
+  // ─────────────────────────────────────────────────────────
+
+  async updateAvatarUrl(userId: string, avatarPath: string): Promise<void> {
+    const exists = await this.prisma.userProfile.findUnique({ where: { userId } });
+    if (exists) {
+      await this.prisma.userProfile.update({
+        where: { userId },
+        data: { avatarPath },
+      });
+    } else {
+      await this.prisma.userProfile.create({
+        data: { id: uuid(), userId, displayName: 'Người dùng mới', avatarPath },
+      });
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────
   // GET /me/preferences
   // ─────────────────────────────────────────────────────────
+
 
   async getPreferences(userId: string): Promise<UserPreferenceResponseDto | null> {
     const pref = await this.prisma.userPreference.findUnique({
@@ -287,7 +315,7 @@ export class UsersService {
     return {
       id: user.id,
       name: user.name ?? null,
-      phone: user.phone ?? null,
+      email: user.email ?? null,
       googleEmail: user.googleEmail ?? null,
       status: user.status,
       role: user.role.name,

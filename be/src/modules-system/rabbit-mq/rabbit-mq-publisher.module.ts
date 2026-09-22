@@ -1,4 +1,4 @@
-/**
+﻿/**
  * RabbitMqPublisherModule — Module publish message lên RabbitMQ từ Main BE
  *
  * Main BE chỉ cần publish, không consume.
@@ -14,7 +14,7 @@ import { RabbitMQModule } from '@golevelup/nestjs-rabbitmq';
 import {
   RABBIT_MQ_URL,
   FRIGGY_AI_EXCHANGE,
-} from 'src/common/constant/app.constant';
+} from 'src/common/constants/app.constant';
 import { RabbitMqPublisherService } from './rabbit-mq-publisher.service';
 
 @Global()

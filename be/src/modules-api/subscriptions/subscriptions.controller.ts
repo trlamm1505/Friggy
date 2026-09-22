@@ -86,10 +86,10 @@ export class SubscriptionsController {
   }
 
   // ─────────────────────────────────────────────────────────
-  // POST /cancel-renewal — Hủy gia hạn tự động (vẫn dùng đến hết hạn)
+  // DELETE /me/auto-renewal — Hủy gia hạn tự động (vẫn dùng đến hết endDate)
   // ─────────────────────────────────────────────────────────
 
-  @Post('cancel-renewal')
+  @Delete('me/auto-renewal')
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth('access-token')
   @ApiOperation({
@@ -112,19 +112,5 @@ export class SubscriptionsController {
   @ApiResponse({ status: 200, type: WebhookResponseDto })
   handleWebhook(@Body() body: any): Promise<WebhookResponseDto> {
     return this.subscriptionsService.handleWebhook(body);
-  }
-
-  // ─────────────────────────────────────────────────────────
-  // DELETE /me — Hủy gói ngay lập tức (legacy — nên dùng cancel-renewal)
-  // ─────────────────────────────────────────────────────────
-
-  @Delete('me')
-  @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiBearerAuth('access-token')
-  @ApiOperation({ summary: 'Hủy gói ngay lập tức (giữ nguyên để tương thích)' })
-  @ApiResponse({ status: 204, description: 'Hủy thành công' })
-  @ApiResponse({ status: 400, description: 'Không thể hủy gói Free' })
-  cancelSubscription(@CurrentUser() user: JwtPayload): Promise<void> {
-    return this.subscriptionsService.cancelSubscription(user.sub);
   }
 }

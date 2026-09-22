@@ -2,12 +2,15 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
+  BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from 'src/modules-system/prisma/prisma.service';
 import type {
   ListIngredientsQueryDto,
   CreateIngredientDto,
   UpdateIngredientDto,
+  CreateCategoryDto,
+  UpdateCategoryDto,
 } from './dto/ingredients.dto';
 import type {
   IngredientResponseDto,
@@ -206,6 +209,113 @@ export class IngredientsService {
   }
 
   // ─────────────────────────────────────────────────────────
+  // Category CRUD (Admin)
+  // ─────────────────────────────────────────────────────────
+
+  async createCategory(dto: CreateCategoryDto): Promise<CategoryResponseDto> {
+    // Kiểm tra tên trùng
+    const existing = await this.prisma.ingredientCategory.findUnique({
+      where: { name: dto.name },
+    });
+    if (existing) throw new ConflictException('Tên danh mục đã tồn tại');
+
+    // Kiểm tra parentId hợp lệ (nếu có)
+    if (dto.parentId) {
+      const parent = await this.prisma.ingredientCategory.findFirst({
+        where: { id: dto.parentId, deletedAt: null },
+      });
+      if (!parent) throw new NotFoundException('Danh mục cha không tồn tại');
+      // Chỉ cho phép 2 cấp (parent phải là root)
+      if (parent.parentId !== null)
+        throw new BadRequestException('Chỉ hỗ trợ 2 cấp danh mục');
+    }
+
+    const category = await this.prisma.ingredientCategory.create({
+      data: {
+        name: dto.name,
+        iconPath: dto.iconPath ?? null,
+        parentId: dto.parentId ?? null,
+        defaultShelfLifeDays: dto.defaultShelfLifeDays ?? null,
+      },
+      include: { children: { where: { deletedAt: null } } },
+    });
+
+    return this.mapCategory(category);
+  }
+
+  async updateCategory(id: number, dto: UpdateCategoryDto): Promise<CategoryResponseDto> {
+    const category = await this.prisma.ingredientCategory.findFirst({
+      where: { id, deletedAt: null },
+    });
+    if (!category) throw new NotFoundException('Không tìm thấy danh mục');
+
+    // Kiểm tra tên trùng nếu đổi tên
+    if (dto.name && dto.name !== category.name) {
+      const nameConflict = await this.prisma.ingredientCategory.findUnique({
+        where: { name: dto.name },
+      });
+      if (nameConflict) throw new ConflictException('Tên danh mục đã tồn tại');
+    }
+
+    // Kiểm tra parentId hợp lệ (nếu đổi)
+    if (dto.parentId !== undefined && dto.parentId !== null) {
+      if (dto.parentId === id)
+        throw new BadRequestException('Danh mục không thể là cha của chính nó');
+      const parent = await this.prisma.ingredientCategory.findFirst({
+        where: { id: dto.parentId, deletedAt: null },
+      });
+      if (!parent) throw new NotFoundException('Danh mục cha không tồn tại');
+      if (parent.parentId !== null)
+        throw new BadRequestException('Chỉ hỗ trợ 2 cấp danh mục');
+    }
+
+    const updated = await this.prisma.ingredientCategory.update({
+      where: { id },
+      data: {
+        ...(dto.name && { name: dto.name }),
+        ...(dto.iconPath !== undefined && { iconPath: dto.iconPath }),
+        ...(dto.parentId !== undefined && { parentId: dto.parentId }),
+        ...(dto.defaultShelfLifeDays !== undefined && {
+          defaultShelfLifeDays: dto.defaultShelfLifeDays,
+        }),
+      },
+      include: { children: { where: { deletedAt: null } } },
+    });
+
+    return this.mapCategory(updated);
+  }
+
+  async removeCategory(id: number): Promise<void> {
+    const category = await this.prisma.ingredientCategory.findFirst({
+      where: { id, deletedAt: null },
+    });
+    if (!category) throw new NotFoundException('Không tìm thấy danh mục');
+
+    // Kiểm tra có nguyên liệu thuộc danh mục này không
+    const ingredientCount = await this.prisma.ingredient.count({
+      where: { categoryId: id, deletedAt: null },
+    });
+    if (ingredientCount > 0)
+      throw new BadRequestException(
+        `Không thể xóa: có ${ingredientCount} nguyên liệu thuộc danh mục này`,
+      );
+
+    // Kiểm tra có danh mục con không
+    const childCount = await this.prisma.ingredientCategory.count({
+      where: { parentId: id, deletedAt: null },
+    });
+    if (childCount > 0)
+      throw new BadRequestException(
+        `Không thể xóa: có ${childCount} danh mục con`,
+      );
+
+    await this.prisma.ingredientCategory.update({
+      where: { id },
+      data: { deletedAt: new Date() },
+    });
+  }
+
+  // ─────────────────────────────────────────────────────────
   // HELPERS
   // ─────────────────────────────────────────────────────────
 
@@ -229,11 +339,13 @@ export class IngredientsService {
       name: c.name,
       iconPath: c.iconPath ?? null,
       parentId: c.parentId ?? null,
+      defaultShelfLifeDays: c.defaultShelfLifeDays ?? null,
       children: (c.children ?? []).map((child: any) => ({
         id: child.id,
         name: child.name,
         iconPath: child.iconPath ?? null,
         parentId: child.parentId ?? null,
+        defaultShelfLifeDays: child.defaultShelfLifeDays ?? null,
       })),
     };
   }

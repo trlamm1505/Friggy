@@ -1,4 +1,4 @@
-import {
+﻿import {
   Injectable,
   BadRequestException,
   UnauthorizedException,
@@ -9,7 +9,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from 'src/modules-system/prisma/prisma.service';
 import { TokensService } from 'src/modules-system/tokens/tokens.service';
-import { generateOtp, hashOtp, verifyOtp } from 'src/common/helpers/otp.helper';
+import { generateOtp, hashOtp, verifyOtp } from 'src/common/utils/otp.util';
 import { OAuth2Client } from 'google-auth-library';
 import { v4 as uuid } from 'uuid';
 import * as bcrypt from 'bcryptjs';

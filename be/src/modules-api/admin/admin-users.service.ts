@@ -22,7 +22,7 @@ export class AdminUsersService {
     if (query.q) {
       where.OR = [
         { name: { contains: query.q } },
-        { phone: { contains: query.q } },
+        { email: { contains: query.q } },
         { googleEmail: { contains: query.q } },
       ];
     }

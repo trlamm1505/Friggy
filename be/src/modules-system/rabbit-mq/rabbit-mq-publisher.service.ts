@@ -1,4 +1,4 @@
-/**
+﻿/**
  * RabbitMqPublisherService — Service publish message lên RabbitMQ
  *
  * Wrapper tiện lợi cho AmqpConnection của @golevelup/nestjs-rabbitmq.
@@ -6,7 +6,7 @@
  */
 import { Injectable, Logger } from '@nestjs/common';
 import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
-import { FRIGGY_AI_EXCHANGE } from 'src/common/constant/app.constant';
+import { FRIGGY_AI_EXCHANGE } from 'src/common/constants/app.constant';
 
 @Injectable()
 export class RabbitMqPublisherService {

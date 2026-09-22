@@ -128,3 +128,60 @@ export class UpdateIngredientDto {
   @IsBoolean()
   isCommon?: boolean;
 }
+
+// ─── Category CRUD (Admin) ────────────────────────────────────────────────────
+
+export class CreateCategoryDto {
+  @ApiProperty({ example: 'Rau củ quả', maxLength: 100 })
+  @IsString()
+  @MaxLength(100)
+  name!: string;
+
+  @ApiPropertyOptional({ example: '/public/icons/cat_vegetables.png' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  iconPath?: string;
+
+  @ApiPropertyOptional({ example: 1, description: 'ID danh mục cha (null = root)' })
+  @IsOptional()
+  @IsInt()
+  @IsPositive()
+  @Type(() => Number)
+  parentId?: number;
+
+  @ApiPropertyOptional({ example: 7, description: 'Số ngày bảo quản mặc định' })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Type(() => Number)
+  defaultShelfLifeDays?: number;
+}
+
+export class UpdateCategoryDto {
+  @ApiPropertyOptional({ example: 'Rau lá xanh', maxLength: 100 })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  name?: string;
+
+  @ApiPropertyOptional({ example: '/public/icons/cat_leafy.png' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  iconPath?: string;
+
+  @ApiPropertyOptional({ example: 1, description: 'ID danh mục cha (null = root)' })
+  @IsOptional()
+  @IsInt()
+  @IsPositive()
+  @Type(() => Number)
+  parentId?: number;
+
+  @ApiPropertyOptional({ example: 5, description: 'Số ngày bảo quản mặc định' })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Type(() => Number)
+  defaultShelfLifeDays?: number;
+}

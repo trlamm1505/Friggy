@@ -15,6 +15,7 @@ import {
 import {
   ApiTags,
   ApiOperation,
+  ApiParam,
   ApiResponse,
   ApiBearerAuth,
 } from '@nestjs/swagger';
@@ -23,6 +24,8 @@ import {
   ListIngredientsQueryDto,
   CreateIngredientDto,
   UpdateIngredientDto,
+  CreateCategoryDto,
+  UpdateCategoryDto,
 } from './dto/ingredients.dto';
 import {
   IngredientResponseDto,
@@ -40,14 +43,63 @@ export class IngredientsController {
   constructor(private readonly ingredientsService: IngredientsService) {}
 
   // ─────────────────────────────────────────────────────────
-  // GET /categories — Cây danh mục (public data, chỉ cần JWT)
+  // GET /categories — Cây danh mục (JWT only)
   // ─────────────────────────────────────────────────────────
 
   @Get('categories')
-  @ApiOperation({ summary: 'Lấy cây danh mục nguyên liệu (có children)' })
+  @ApiOperation({ summary: 'Lấy cây danh mục nguyên liệu (có children + defaultShelfLifeDays)' })
   @ApiResponse({ status: 200, type: [CategoryResponseDto] })
   getCategories(): Promise<CategoryResponseDto[]> {
     return this.ingredientsService.getCategories();
+  }
+
+  // ─────────────────────────────────────────────────────────
+  // POST /categories — Tạo danh mục (Admin only)
+  // ─────────────────────────────────────────────────────────
+
+  @Post('categories')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  @ApiOperation({ summary: '[Admin] Tạo danh mục nguyên liệu mới' })
+  @ApiResponse({ status: 201, type: CategoryResponseDto })
+  @ApiResponse({ status: 409, description: 'Tên đã tồn tại' })
+  createCategory(@Body() dto: CreateCategoryDto): Promise<CategoryResponseDto> {
+    return this.ingredientsService.createCategory(dto);
+  }
+
+  // ─────────────────────────────────────────────────────────
+  // PATCH /categories/:id — Cập nhật danh mục (Admin only)
+  // ─────────────────────────────────────────────────────────
+
+  @Patch('categories/:id')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  @ApiOperation({ summary: '[Admin] Cập nhật danh mục (tên, icon, defaultShelfLifeDays...)' })
+  @ApiParam({ name: 'id', description: 'Category ID' })
+  @ApiResponse({ status: 200, type: CategoryResponseDto })
+  @ApiResponse({ status: 404, description: 'Không tìm thấy' })
+  @ApiResponse({ status: 409, description: 'Tên đã tồn tại' })
+  updateCategory(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateCategoryDto,
+  ): Promise<CategoryResponseDto> {
+    return this.ingredientsService.updateCategory(id, dto);
+  }
+
+  // ─────────────────────────────────────────────────────────
+  // DELETE /categories/:id — Soft delete (Admin only)
+  // ─────────────────────────────────────────────────────────
+
+  @Delete('categories/:id')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: '[Admin] Xóa danh mục (soft delete, chặn nếu có nguyên liệu/con)' })
+  @ApiParam({ name: 'id', description: 'Category ID' })
+  @ApiResponse({ status: 204, description: 'Đã xóa' })
+  @ApiResponse({ status: 400, description: 'Có nguyên liệu/con — không thể xóa' })
+  removeCategory(@Param('id', ParseIntPipe) id: number): Promise<void> {
+    return this.ingredientsService.removeCategory(id);
   }
 
   // ─────────────────────────────────────────────────────────

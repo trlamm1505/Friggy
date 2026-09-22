@@ -26,8 +26,6 @@ export class SubscriptionsService {
   // ─────────────────────────────────────────────────────────
 
   async getPlans(): Promise<SubscriptionPlanResponseDto[]> {
-    await this.seedDefaultPlans();
-
     const plans = await this.prisma.subscriptionPlan.findMany({
       where: { isActive: true, deletedAt: null },
       orderBy: { priceVnd: 'asc' },
@@ -207,25 +205,19 @@ export class SubscriptionsService {
       throw new BadRequestException('Không thể gia hạn gói Free');
     }
 
-    // Tính endDate mới = hiện tại hoặc endDate cũ + 30 ngày
-    const baseDate = sub.endDate && sub.endDate > new Date() ? sub.endDate : new Date();
-    const newEndDate = new Date(baseDate);
-    newEndDate.setMonth(newEndDate.getMonth() + 1);
-
     const paymentRef = `FRIGGY-RENEW-${Date.now()}-${Math.floor(Math.random() * 9000 + 1000)}`;
     const expireAt = new Date(Date.now() + 15 * 60 * 1000);
 
+    // Chỉ cập nhật paymentRef + status pending — đợi webhook confirm mới thiết lập endDate
     await this.prisma.userSubscription.update({
       where: { id: sub.id },
       data: {
-        endDate: newEndDate,
-        autoRenew: true,
-        cancelledAt: null,
         paymentRef,
+        status: 'pending',
       },
     });
 
-    this.logger.log(`[Renew] userId=${userId} — gia hạn đến ${newEndDate.toISOString().split('T')[0]}`);
+    this.logger.log(`[Renew] userId=${userId} | ref=${paymentRef} — chờ webhook confirm`);
 
     const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(
       `FRIGGY|${paymentRef}|${sub.plan.priceVnd}|Gia hạn ${sub.plan.displayName}`,
@@ -241,40 +233,14 @@ export class SubscriptionsService {
   }
 
   // ─────────────────────────────────────────────────────────
-  // DELETE /me — Hủy gói ngay lập tức (legacy)
-  // ─────────────────────────────────────────────────────────
-
-  async cancelSubscription(userId: string): Promise<void> {
-    const sub = await this.prisma.userSubscription.findFirst({
-      where: { userId, status: 'active', deletedAt: null },
-      include: { plan: true },
-    });
-    if (!sub) throw new NotFoundException('Không có gói đang hoạt động');
-    if (sub.plan.name === 'free') {
-      throw new BadRequestException('Không thể hủy gói Free');
-    }
-
-    await this.prisma.userSubscription.update({
-      where: { id: sub.id },
-      data: { status: 'cancelled' },
-    });
-
-    // Auto-assign lại Free plan
-    await this.assignFreePlan(userId);
-  }
-
-  // ─────────────────────────────────────────────────────────
   // HELPERS
   // ─────────────────────────────────────────────────────────
 
   private async assignFreePlan(userId: string) {
-    // Đảm bảo Free plan tồn tại
-    await this.seedDefaultPlans();
-
     const freePlan = await this.prisma.subscriptionPlan.findFirst({
       where: { name: 'free' },
     });
-    if (!freePlan) throw new Error('Free plan seed missing');
+    if (!freePlan) throw new Error('Free plan not found — run seed.sql first');
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -299,74 +265,6 @@ export class SubscriptionsService {
     });
   }
 
-  private async seedDefaultPlans(): Promise<void> {
-    const count = await this.prisma.subscriptionPlan.count({ where: { deletedAt: null } });
-    if (count >= 3) return;
-
-    await this.prisma.subscriptionPlan.upsert({
-      where: { name: 'free' },
-      create: {
-        name: 'free',
-        displayName: 'Gói Miễn Phí (Basic)',
-        priceVnd: 0,
-        billingCycle: 'forever',
-        features: [
-          'Tối đa 1 tủ lạnh',
-          'Nhập thực phẩm thủ công',
-          'Cảnh báo hết hạn tiêu chuẩn',
-          'Gợi ý công thức cơ bản',
-          '2 lượt AI / tuần',
-        ],
-        aiUsagePerWeek: 2,
-        isActive: true,
-      },
-      update: {},
-    });
-
-    await this.prisma.subscriptionPlan.upsert({
-      where: { name: 'individual' },
-      create: {
-        name: 'individual',
-        displayName: 'Individual (25k/tháng)',
-        priceVnd: 25000,
-        billingCycle: 'monthly',
-        features: [
-          'Không giới hạn tủ lạnh',
-          'Scan AI (ảnh, barcode, hóa đơn)',
-          'Gợi ý công thức từ tủ lạnh',
-          'Lập thực đơn AI theo tuần',
-          'AI không giới hạn',
-          'Cảnh báo thông minh',
-        ],
-        aiUsagePerWeek: -1,
-        isActive: true,
-      },
-      update: {},
-    });
-
-    await this.prisma.subscriptionPlan.upsert({
-      where: { name: 'family' },
-      create: {
-        name: 'family',
-        displayName: 'Gói Gia Đình',
-        priceVnd: 149000,
-        billingCycle: 'monthly',
-        features: [
-          'Tất cả tính năng của gói Cá Nhân',
-          'Tối đa 5 thành viên dùng chung tủ lạnh',
-          'Quản lý nhiều tủ lạnh gia đình',
-          'Lập thực đơn AI tuần không giới hạn',
-          'Scan ảnh, mã vạch & hóa đơn không giới hạn',
-        ],
-        aiUsagePerWeek: -1,
-        isActive: true,
-      },
-      update: {
-        priceVnd: 149000,
-        displayName: 'Gói Gia Đình',
-      },
-    });
-  }
 
   private mapPlan(p: any): SubscriptionPlanResponseDto {
     return {
