@@ -52,6 +52,7 @@ class AppConstants {
   static const String epMealPlanningPlans = '/meal-planning/plans';
   static const String epMealPlanningShoppingLists = '/meal-planning/shopping-lists';
   static const String epChatSessions = '/chat/sessions';
+  static const String epAiChatSessions = '/ai-chat/sessions';
 
   // Subscriptions APIs
   static const String epSubscriptionsPlans = '/subscriptions/plans';

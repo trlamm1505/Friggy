@@ -57,14 +57,18 @@ class CookingSuggestionsSection extends StatefulWidget {
 
   @override
   State<CookingSuggestionsSection> createState() =>
-      _CookingSuggestionsSectionState();
+      CookingSuggestionsSectionState();
 }
 
-class _CookingSuggestionsSectionState extends State<CookingSuggestionsSection> {
+class CookingSuggestionsSectionState extends State<CookingSuggestionsSection> {
   bool _isLoading = true;
   String? _loadingMealType;
   List<DailyMealSlotData> _dailySlots = [];
   int _dayOfWeek = 1; // 1 = Thứ 2, ..., 7 = Chủ nhật
+
+  void reload() {
+    _loadTodayMealPlan();
+  }
 
   // Alternative recipes pool for AI swap fallback
   final Map<String, List<Map<String, dynamic>>> _alternativeRecipes = {
@@ -129,6 +133,7 @@ class _CookingSuggestionsSectionState extends State<CookingSuggestionsSection> {
   }
 
   Future<void> _loadTodayMealPlan() async {
+    _dayOfWeek = DateTime.now().weekday;
     try {
       final plans = await ApiService().getMealPlans();
       if (plans.isNotEmpty) {

@@ -24,11 +24,33 @@ class _NextWeekSuggestionsScreenState extends State<NextWeekSuggestionsScreen> {
   int _selectedDayOfWeek = 1;
   String? _regeneratingSlotId;
   bool _hasShoppingList = false;
+  final ScrollController _dayTabScrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
+    _selectedDayOfWeek = DateTime.now().weekday;
     _fetchWeeklyPlan();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _scrollToSelectedDayTab();
+    });
+  }
+
+  @override
+  void dispose() {
+    _dayTabScrollController.dispose();
+    super.dispose();
+  }
+
+  void _scrollToSelectedDayTab() {
+    if (_dayTabScrollController.hasClients && _selectedDayOfWeek > 1) {
+      final offset = (_selectedDayOfWeek - 1) * 85.0;
+      _dayTabScrollController.animateTo(
+        offset.clamp(0.0, _dayTabScrollController.position.maxScrollExtent),
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+    }
   }
 
   Future<void> _checkExistingShoppingList() async {
@@ -823,6 +845,7 @@ class _NextWeekSuggestionsScreenState extends State<NextWeekSuggestionsScreen> {
                       SizedBox(
                         height: 46,
                         child: ListView.builder(
+                          controller: _dayTabScrollController,
                           scrollDirection: Axis.horizontal,
                           physics: const BouncingScrollPhysics(),
                           itemCount: 7, // 7 days of the week (1=Mon to 7=Sun)

@@ -18,7 +18,7 @@ import 'my_fridges_screen.dart';
 import 'fridge_inventory_screen.dart';
 import 'all_expired_items_screen.dart';
 import 'all_available_items_screen.dart';
-import 'messages_screen.dart';
+import 'ai_chat_screen.dart';
 import 'recipe_detail_screen.dart';
 import 'ingredient_statistics_screen.dart';
 import 'next_week_suggestions_screen.dart';
@@ -40,6 +40,8 @@ class _HomeScreenState extends State<HomeScreen>
     with SingleTickerProviderStateMixin {
   int _selectedIndex = 0;
   final TextEditingController _searchController = TextEditingController();
+  final GlobalKey<CookingSuggestionsSectionState> _cookingSuggestionsKey =
+      GlobalKey<CookingSuggestionsSectionState>();
   String _userName = 'Trần Quốc Lâm';
   bool _isFamilyPlan = false;
 
@@ -181,6 +183,9 @@ class _HomeScreenState extends State<HomeScreen>
     setState(() {
       _selectedIndex = index;
     });
+    if (index == 0) {
+      _cookingSuggestionsKey.currentState?.reload();
+    }
   }
 
   @override
@@ -302,14 +307,15 @@ class _HomeScreenState extends State<HomeScreen>
                                     ),
                                   );
                                 },
-                                onMealSuggestionsTap: () {
-                                  Navigator.push(
+                                onMealSuggestionsTap: () async {
+                                  await Navigator.push(
                                     context,
                                     MaterialPageRoute(
                                       builder: (context) =>
                                           const NextWeekSuggestionsScreen(),
                                     ),
                                   );
+                                  _cookingSuggestionsKey.currentState?.reload();
                                 },
                                 onShoppingReminderTap: () {
                                   Navigator.push(
@@ -323,6 +329,7 @@ class _HomeScreenState extends State<HomeScreen>
                               ),
                               const SizedBox(height: 24),
                               CookingSuggestionsSection(
+                                key: _cookingSuggestionsKey,
                                 onUpgradeTap: () {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(
@@ -363,8 +370,8 @@ class _HomeScreenState extends State<HomeScreen>
                         // Index 2: Placeholder for Add (modal triggered)
                         const SizedBox.shrink(),
 
-                        // Index 3: Messages & Chat Groups Screen
-                        const MessagesScreen(),
+                        // Index 3: AI Chat Screen (Đầu bếp AI)
+                        const AiChatScreen(),
 
                         // Index 4: Profile & Settings Screen
                         const UserProfileScreen(),
