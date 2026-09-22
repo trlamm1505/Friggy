@@ -8,14 +8,16 @@
  *   - expiry_warning     (default: 0 8 * * *)  — Cảnh báo nguyên liệu sắp hết hạn
  *   - weekly_plan_remind (default: 0 9 * * 0)  — Nhắc lập thực đơn tuần mới
  */
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit, Inject } from '@nestjs/common';
 import { SchedulerRegistry } from '@nestjs/schedule';
 import { CronJob } from 'cron';
 import { PrismaService } from 'src/modules-system/prisma/prisma.service';
+import type { ClientProxy } from '@nestjs/microservices';
 
-// ─── Tên cron job (phải khớp với seed data trong DB) ──────────────────────
+// ─── Tên cron job (phải khớp với seed data trong DB) ──────────────────
 export const CRON_EXPIRY_WARNING = 'expiry_warning';
 export const CRON_WEEKLY_REMIND = 'weekly_plan_remind';
+export const CRON_SUBSCRIPTION_REMINDER = 'subscription_renewal_reminder';
 
 // ─── Mặc định nếu DB chưa có seed ─────────────────────────────────────────
 const DEFAULT_CRON_CONFIGS = [
@@ -31,6 +33,12 @@ const DEFAULT_CRON_CONFIGS = [
     isEnabled: true,
     description: 'Nhắc lập thực đơn tuần mới — Chủ Nhật 9:00',
   },
+  {
+    name: CRON_SUBSCRIPTION_REMINDER,
+    cronExpression: '0 9 * * *',
+    isEnabled: true,
+    description: 'Nhắc gia hạn gói có phí — hàng ngày 9:00 (gửi email nếu còn 7 ngày)',
+  },
 ];
 
 @Injectable()
@@ -40,6 +48,7 @@ export class NotificationCronService implements OnModuleInit {
   constructor(
     private readonly prisma: PrismaService,
     private readonly schedulerRegistry: SchedulerRegistry,
+    @Inject('EMAIL_SERVICE') private readonly emailClient: ClientProxy,
   ) {}
 
   // ─────────────────────────────────────────────────────────
@@ -135,6 +144,8 @@ export class NotificationCronService implements OnModuleInit {
         return () => this.checkExpiringItems();
       case CRON_WEEKLY_REMIND:
         return () => this.remindWeeklyPlan();
+      case CRON_SUBSCRIPTION_REMINDER:
+        return () => this.sendSubscriptionRenewalReminders();
       default:
         return null;
     }
@@ -298,5 +309,130 @@ export class NotificationCronService implements OnModuleInit {
       where: { name },
       data: { lastRunAt: new Date(), lastRunStatus: status },
     });
+  }
+
+  // ─────────────────────────────────────────────────────────
+  // Handler 3: Nhắc gia hạn + hạ cấp gói hết hạn
+  // Default: hàng ngày 9:00 AM
+  // ─────────────────────────────────────────────────────────
+  async sendSubscriptionRenewalReminders(): Promise<void> {
+    const jobName = CRON_SUBSCRIPTION_REMINDER;
+    this.logger.log(`[Cron:${jobName}] Bắt đầu kiểm tra gói sắp hết hạn`);
+
+    const now = new Date();
+    // Chỉ lấy đúng ngày hôm nay + 7 (cả ngày) để tránh bỏ sót
+    const startOf7Days = new Date(now);
+    startOf7Days.setDate(startOf7Days.getDate() + 7);
+    startOf7Days.setHours(0, 0, 0, 0);
+
+    const endOf7Days = new Date(startOf7Days);
+    endOf7Days.setHours(23, 59, 59, 999);
+
+    try {
+      // ── 1. Nhắc user có autoRenew=true (sắp bị trừ tiền) ─────────────
+      // Theo plan: "Tìm subscription có endDate = hôm nay + 7 ngày VÀ autoRenew = true"
+      const autoRenewSubs = await this.prisma.userSubscription.findMany({
+        where: {
+          status: 'active',
+          autoRenew: true,
+          endDate: { gte: startOf7Days, lte: endOf7Days },
+          plan: { name: { not: 'free' } },
+          deletedAt: null,
+        },
+        include: { user: true, plan: true },
+      });
+
+      // ── 2. Nhắc user có autoRenew=false (gói sắp hết, sẽ về Free) ─────
+      const cancelledSubs = await this.prisma.userSubscription.findMany({
+        where: {
+          status: 'active',
+          autoRenew: false,
+          endDate: { gte: startOf7Days, lte: endOf7Days },
+          plan: { name: { not: 'free' } },
+          deletedAt: null,
+        },
+        include: { user: true, plan: true },
+      });
+
+      const allSubs = [...autoRenewSubs, ...cancelledSubs];
+      let emailSent = 0;
+      let notifCreated = 0;
+
+      for (const sub of allSubs) {
+        if (!sub.endDate) continue;
+
+        const isAutoRenew = sub.autoRenew;
+        const bodyText = isAutoRenew
+          ? `Gói ${sub.plan.displayName} sẽ tự động gia hạn vào ${sub.endDate.toLocaleDateString('vi-VN')}. Kiểm tra thanh toán để tránh gián đoạn.`
+          : `Gói ${sub.plan.displayName} sẽ hết hạn vào ${sub.endDate.toLocaleDateString('vi-VN')}. Gia hạn để tiếp tục sử dụng đầy đủ tính năng.`;
+
+        // Gửi email
+        if (sub.user.email) {
+          this.emailClient.emit('email.send', {
+            type: 'subscription_reminder',
+            to: sub.user.email,
+            data: {
+              name: sub.user.name ?? 'bạn',
+              planName: sub.plan.displayName,
+              endDate: sub.endDate.toISOString(),
+            },
+          });
+          emailSent++;
+        }
+
+        // Tạo in-app Notification trong DB
+        await this.prisma.notification.create({
+          data: {
+            userId: sub.userId,
+            type: 'subscription_reminder',
+            title: `Gói ${sub.plan.displayName} sắp hết hạn`,
+            body: bodyText,
+            isRead: false,
+            metadata: {
+              planId: sub.planId,
+              endDate: sub.endDate.toISOString(),
+              autoRenew: isAutoRenew,
+            },
+          },
+        });
+        notifCreated++;
+      }
+
+      // ── 3. Hạ cấp về Free các gói đã hết hạn (autoRenew=false) ────────
+      const expiredSubs = await this.prisma.userSubscription.findMany({
+        where: {
+          status: 'active',
+          autoRenew: false,
+          endDate: { lt: now },
+          plan: { name: { not: 'free' } },
+          deletedAt: null,
+        },
+        include: { plan: true },
+      });
+
+      const freePlan = await this.prisma.subscriptionPlan.findFirst({
+        where: { name: 'free', isActive: true },
+      });
+
+      let downgraded = 0;
+      if (freePlan) {
+        for (const sub of expiredSubs) {
+          await this.prisma.userSubscription.update({
+            where: { id: sub.id },
+            data: { planId: freePlan.id, status: 'active', endDate: null, autoRenew: false },
+          });
+          downgraded++;
+          this.logger.log(`Hạ cấp userId=${sub.userId} từ ${sub.plan.name} → free`);
+        }
+      }
+
+      this.logger.log(
+        `[Cron:${jobName}] Gửi ${emailSent} email, tạo ${notifCreated} notifications, hạ cấp ${downgraded} gói hết hạn`,
+      );
+      await this.updateLastRun(jobName, 'success');
+    } catch (err: any) {
+      this.logger.error(`[Cron:${jobName}] Lỗi: ${err?.message}`);
+      await this.updateLastRun(jobName, 'failed');
+    }
   }
 }

@@ -2,13 +2,13 @@
  * MealPlanningService — Business logic cho Meal Planning Module
  *
  * Xử lý các nghiệp vụ:
- * 1. Đẩy job vào BullMQ queue (generate plan) → trả jobId ngay, không chờ AI
+ * 1. Publish job lên RabbitMQ (generate plan) → trả jobId ngay, không chờ AI
  * 2. CRUD kế hoạch tuần, daily plan, meal slot
  * 3. CRUD shopping list và danh sách mua
  *
  * Điểm mấu chốt:
  *   POST /plans/generate → KHÔNG chạy AI trực tiếp
- *   → Push job vào MEAL_PLAN_QUEUE → BullMQ Worker xử lý background
+ *   → Publish job lên RabbitMQ → ai-service consumer xử lý background
  *   → FE subscribe SSE endpoint để nhận tiến độ
  */
 import {

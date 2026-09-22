@@ -399,7 +399,7 @@ type FieldRefInputType<Model, FieldType> = Model extends never ? never : FieldRe
 export const ModelName = {
   Role: 'Role',
   User: 'User',
-  OtpVerification: 'OtpVerification',
+  EmailOtp: 'EmailOtp',
   UserProfile: 'UserProfile',
   UserPreference: 'UserPreference',
   RefreshToken: 'RefreshToken',
@@ -449,7 +449,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "role" | "user" | "otpVerification" | "userProfile" | "userPreference" | "refreshToken" | "ingredientCategory" | "ingredient" | "tag" | "recipe" | "recipeIngredient" | "recipeStep" | "recipeTag" | "userSavedRecipe" | "fridgeItem" | "ingredientScanLog" | "userAllergy" | "weeklyPlan" | "dailyPlan" | "mealSlot" | "shoppingList" | "shoppingListItem" | "aiSystemPrompt" | "chatSession" | "chatMessage" | "aiEvaluationLog" | "aiProviderConfig" | "aiUsageLog" | "sponsor" | "sponsorCampaign" | "campaignRecipe" | "ingredientPurchaseLink" | "adminActivityLog" | "notification" | "cronJobConfig" | "subscriptionPlan" | "userSubscription"
+    modelProps: "role" | "user" | "emailOtp" | "userProfile" | "userPreference" | "refreshToken" | "ingredientCategory" | "ingredient" | "tag" | "recipe" | "recipeIngredient" | "recipeStep" | "recipeTag" | "userSavedRecipe" | "fridgeItem" | "ingredientScanLog" | "userAllergy" | "weeklyPlan" | "dailyPlan" | "mealSlot" | "shoppingList" | "shoppingListItem" | "aiSystemPrompt" | "chatSession" | "chatMessage" | "aiEvaluationLog" | "aiProviderConfig" | "aiUsageLog" | "sponsor" | "sponsorCampaign" | "campaignRecipe" | "ingredientPurchaseLink" | "adminActivityLog" | "notification" | "cronJobConfig" | "subscriptionPlan" | "userSubscription"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -585,69 +585,69 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
-    OtpVerification: {
-      payload: Prisma.$OtpVerificationPayload<ExtArgs>
-      fields: Prisma.OtpVerificationFieldRefs
+    EmailOtp: {
+      payload: Prisma.$EmailOtpPayload<ExtArgs>
+      fields: Prisma.EmailOtpFieldRefs
       operations: {
         findUnique: {
-          args: Prisma.OtpVerificationFindUniqueArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$OtpVerificationPayload> | null
+          args: Prisma.EmailOtpFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EmailOtpPayload> | null
         }
         findUniqueOrThrow: {
-          args: Prisma.OtpVerificationFindUniqueOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$OtpVerificationPayload>
+          args: Prisma.EmailOtpFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EmailOtpPayload>
         }
         findFirst: {
-          args: Prisma.OtpVerificationFindFirstArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$OtpVerificationPayload> | null
+          args: Prisma.EmailOtpFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EmailOtpPayload> | null
         }
         findFirstOrThrow: {
-          args: Prisma.OtpVerificationFindFirstOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$OtpVerificationPayload>
+          args: Prisma.EmailOtpFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EmailOtpPayload>
         }
         findMany: {
-          args: Prisma.OtpVerificationFindManyArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$OtpVerificationPayload>[]
+          args: Prisma.EmailOtpFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EmailOtpPayload>[]
         }
         create: {
-          args: Prisma.OtpVerificationCreateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$OtpVerificationPayload>
+          args: Prisma.EmailOtpCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EmailOtpPayload>
         }
         createMany: {
-          args: Prisma.OtpVerificationCreateManyArgs<ExtArgs>
+          args: Prisma.EmailOtpCreateManyArgs<ExtArgs>
           result: BatchPayload
         }
         delete: {
-          args: Prisma.OtpVerificationDeleteArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$OtpVerificationPayload>
+          args: Prisma.EmailOtpDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EmailOtpPayload>
         }
         update: {
-          args: Prisma.OtpVerificationUpdateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$OtpVerificationPayload>
+          args: Prisma.EmailOtpUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EmailOtpPayload>
         }
         deleteMany: {
-          args: Prisma.OtpVerificationDeleteManyArgs<ExtArgs>
+          args: Prisma.EmailOtpDeleteManyArgs<ExtArgs>
           result: BatchPayload
         }
         updateMany: {
-          args: Prisma.OtpVerificationUpdateManyArgs<ExtArgs>
+          args: Prisma.EmailOtpUpdateManyArgs<ExtArgs>
           result: BatchPayload
         }
         upsert: {
-          args: Prisma.OtpVerificationUpsertArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$OtpVerificationPayload>
+          args: Prisma.EmailOtpUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EmailOtpPayload>
         }
         aggregate: {
-          args: Prisma.OtpVerificationAggregateArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.AggregateOtpVerification>
+          args: Prisma.EmailOtpAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateEmailOtp>
         }
         groupBy: {
-          args: Prisma.OtpVerificationGroupByArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.OtpVerificationGroupByOutputType>[]
+          args: Prisma.EmailOtpGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.EmailOtpGroupByOutputType>[]
         }
         count: {
-          args: Prisma.OtpVerificationCountArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.OtpVerificationCountAggregateOutputType> | number
+          args: Prisma.EmailOtpCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.EmailOtpCountAggregateOutputType> | number
         }
       }
     }
@@ -2947,7 +2947,8 @@ export type RoleScalarFieldEnum = (typeof RoleScalarFieldEnum)[keyof typeof Role
 
 export const UserScalarFieldEnum = {
   id: 'id',
-  phone: 'phone',
+  email: 'email',
+  passwordHash: 'passwordHash',
   googleId: 'googleId',
   googleEmail: 'googleEmail',
   authProvider: 'authProvider',
@@ -2964,18 +2965,17 @@ export const UserScalarFieldEnum = {
 export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
 
 
-export const OtpVerificationScalarFieldEnum = {
+export const EmailOtpScalarFieldEnum = {
   id: 'id',
-  phone: 'phone',
+  email: 'email',
   otpHash: 'otpHash',
   purpose: 'purpose',
   attempts: 'attempts',
   expiresAt: 'expiresAt',
-  verifiedAt: 'verifiedAt',
   createdAt: 'createdAt'
 } as const
 
-export type OtpVerificationScalarFieldEnum = (typeof OtpVerificationScalarFieldEnum)[keyof typeof OtpVerificationScalarFieldEnum]
+export type EmailOtpScalarFieldEnum = (typeof EmailOtpScalarFieldEnum)[keyof typeof EmailOtpScalarFieldEnum]
 
 
 export const UserProfileScalarFieldEnum = {
@@ -3490,6 +3490,8 @@ export const UserSubscriptionScalarFieldEnum = {
   endDate: 'endDate',
   status: 'status',
   paymentRef: 'paymentRef',
+  autoRenew: 'autoRenew',
+  cancelledAt: 'cancelledAt',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
   deletedAt: 'deletedAt'
@@ -3538,7 +3540,8 @@ export type RoleOrderByRelevanceFieldEnum = (typeof RoleOrderByRelevanceFieldEnu
 
 export const UserOrderByRelevanceFieldEnum = {
   id: 'id',
-  phone: 'phone',
+  email: 'email',
+  passwordHash: 'passwordHash',
   googleId: 'googleId',
   googleEmail: 'googleEmail',
   name: 'name'
@@ -3547,13 +3550,13 @@ export const UserOrderByRelevanceFieldEnum = {
 export type UserOrderByRelevanceFieldEnum = (typeof UserOrderByRelevanceFieldEnum)[keyof typeof UserOrderByRelevanceFieldEnum]
 
 
-export const OtpVerificationOrderByRelevanceFieldEnum = {
+export const EmailOtpOrderByRelevanceFieldEnum = {
   id: 'id',
-  phone: 'phone',
+  email: 'email',
   otpHash: 'otpHash'
 } as const
 
-export type OtpVerificationOrderByRelevanceFieldEnum = (typeof OtpVerificationOrderByRelevanceFieldEnum)[keyof typeof OtpVerificationOrderByRelevanceFieldEnum]
+export type EmailOtpOrderByRelevanceFieldEnum = (typeof EmailOtpOrderByRelevanceFieldEnum)[keyof typeof EmailOtpOrderByRelevanceFieldEnum]
 
 
 export const UserProfileOrderByRelevanceFieldEnum = {
@@ -3949,9 +3952,9 @@ export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel,
 
 
 /**
- * Reference to a field of type 'OtpPurpose'
+ * Reference to a field of type 'EmailOtpPurpose'
  */
-export type EnumOtpPurposeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'OtpPurpose'>
+export type EnumEmailOtpPurposeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'EmailOtpPurpose'>
     
 
 
@@ -4310,7 +4313,7 @@ export type PrismaClientOptions = PrismaClientOptionsWithAccelerateUrl | PrismaC
 export type GlobalOmitConfig = {
   role?: Prisma.RoleOmit
   user?: Prisma.UserOmit
-  otpVerification?: Prisma.OtpVerificationOmit
+  emailOtp?: Prisma.EmailOtpOmit
   userProfile?: Prisma.UserProfileOmit
   userPreference?: Prisma.UserPreferenceOmit
   refreshToken?: Prisma.RefreshTokenOmit

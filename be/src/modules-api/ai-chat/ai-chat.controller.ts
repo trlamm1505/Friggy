@@ -24,8 +24,11 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { Observable } from 'rxjs';
+import { UseGuards } from '@nestjs/common';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import type { JwtPayload } from 'src/common/interfaces/jwt-payload.interface';
+import { AiUsageLimitGuard } from 'src/common/guards/ai-usage-limit.guard';
+import { AiFeature } from 'src/common/decorators/ai-feature.decorator';
 import { AiChatService } from './ai-chat.service';
 import { CreateSessionDto, SendMessageDto, ListSessionsQueryDto } from './dto/ai-chat.dto';
 import {
@@ -103,10 +106,13 @@ export class AiChatController {
 
   @Post('sessions/:id/messages')
   @HttpCode(HttpStatus.ACCEPTED)
+  @UseGuards(AiUsageLimitGuard)
+  @AiFeature('chat')
   @ApiOperation({
     summary: 'Gửi tin nhắn → AI xử lý async. FE mở SSE stream để nhận response.',
   })
   @ApiResponse({ status: 202, type: SendMessageResponseDto })
+  @ApiResponse({ status: 429, description: 'Vượt giới hạn AI chat tuần này' })
   sendMessage(
     @CurrentUser() user: JwtPayload,
     @Param('id') id: string,

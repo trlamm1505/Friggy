@@ -12,6 +12,7 @@ import type {
   UserSubscriptionResponseDto,
   SubscribeResponseDto,
   WebhookResponseDto,
+  CancelRenewalResponseDto,
 } from './dto/subscriptions-response.dto';
 
 @Injectable()
@@ -159,7 +160,88 @@ export class SubscriptionsService {
   }
 
   // ─────────────────────────────────────────────────────────
-  // DELETE /me — Hủy gói
+  // POST /cancel-renewal — Hủy gia hạn tự động
+  // ─────────────────────────────────────────────────────────
+
+  async cancelRenewal(userId: string): Promise<CancelRenewalResponseDto> {
+    const sub = await this.prisma.userSubscription.findFirst({
+      where: { userId, status: 'active', deletedAt: null },
+      include: { plan: true },
+    });
+    if (!sub) throw new NotFoundException('Không có gói đang hoạt động');
+    if (sub.plan.name === 'free') {
+      throw new BadRequestException('Không thể hủy gia hạn gói Free');
+    }
+    if (!sub.autoRenew) {
+      throw new BadRequestException('Gói đã được đặt hủy gia hạn trước đó rồi');
+    }
+
+    await this.prisma.userSubscription.update({
+      where: { id: sub.id },
+      data: { autoRenew: false, cancelledAt: new Date() },
+    });
+
+    const endDateStr = sub.endDate
+      ? (sub.endDate instanceof Date ? sub.endDate.toISOString().split('T')[0] : sub.endDate)
+      : null;
+
+    this.logger.log(`[CancelRenewal] userId=${userId} — gói hết hạn vào ${endDateStr}`);
+
+    return {
+      message: `Đã hủy gia hạn tự động. Gói sẽ hết hạn vào ${endDateStr ?? 'không xác định'}.`,
+      endDate: endDateStr,
+    };
+  }
+
+  // ─────────────────────────────────────────────────────────
+  // POST /renew — Gia hạn thêm 1 tháng (mock)
+  // ─────────────────────────────────────────────────────────
+
+  async renew(userId: string): Promise<SubscribeResponseDto> {
+    const sub = await this.prisma.userSubscription.findFirst({
+      where: { userId, status: 'active', deletedAt: null },
+      include: { plan: true },
+    });
+    if (!sub) throw new NotFoundException('Không có gói đang hoạt động');
+    if (sub.plan.name === 'free') {
+      throw new BadRequestException('Không thể gia hạn gói Free');
+    }
+
+    // Tính endDate mới = hiện tại hoặc endDate cũ + 30 ngày
+    const baseDate = sub.endDate && sub.endDate > new Date() ? sub.endDate : new Date();
+    const newEndDate = new Date(baseDate);
+    newEndDate.setMonth(newEndDate.getMonth() + 1);
+
+    const paymentRef = `FRIGGY-RENEW-${Date.now()}-${Math.floor(Math.random() * 9000 + 1000)}`;
+    const expireAt = new Date(Date.now() + 15 * 60 * 1000);
+
+    await this.prisma.userSubscription.update({
+      where: { id: sub.id },
+      data: {
+        endDate: newEndDate,
+        autoRenew: true,
+        cancelledAt: null,
+        paymentRef,
+      },
+    });
+
+    this.logger.log(`[Renew] userId=${userId} — gia hạn đến ${newEndDate.toISOString().split('T')[0]}`);
+
+    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(
+      `FRIGGY|${paymentRef}|${sub.plan.priceVnd}|Gia hạn ${sub.plan.displayName}`,
+    )}`;
+
+    return {
+      qrCodeUrl,
+      paymentRef,
+      amount: sub.plan.priceVnd,
+      expireAt: expireAt.toISOString(),
+      status: 'pending',
+    };
+  }
+
+  // ─────────────────────────────────────────────────────────
+  // DELETE /me — Hủy gói ngay lập tức (legacy)
   // ─────────────────────────────────────────────────────────
 
   async cancelSubscription(userId: string): Promise<void> {
@@ -306,6 +388,8 @@ export class SubscriptionsService {
       startDate: s.startDate instanceof Date ? s.startDate.toISOString().split('T')[0] : s.startDate,
       endDate: s.endDate ? (s.endDate instanceof Date ? s.endDate.toISOString().split('T')[0] : s.endDate) : null,
       paymentRef: s.paymentRef ?? null,
+      autoRenew: s.autoRenew ?? true,
+      cancelledAt: s.cancelledAt ? s.cancelledAt.toISOString() : null,
       plan: this.mapPlan(s.plan),
       createdAt: s.createdAt.toISOString(),
     };

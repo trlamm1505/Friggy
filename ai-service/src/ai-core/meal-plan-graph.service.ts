@@ -19,6 +19,7 @@
  */
 import { Injectable, Logger } from '@nestjs/common';
 import { RedisService } from 'src/redis/redis.service';
+import { PrismaService } from 'src/prisma/prisma.service';
 import { SupervisorAgent } from './agents/meal-plan/supervisor.agent';
 import { NutritionAgent } from './agents/meal-plan/nutrition.agent';
 import { AccountantAgent } from './agents/meal-plan/accountant.agent';
@@ -63,6 +64,7 @@ export class MealPlanGraphService {
 
   constructor(
     private readonly redis: RedisService,
+    private readonly prisma: PrismaService,
     private readonly supervisor: SupervisorAgent,
     private readonly nutrition: NutritionAgent,
     private readonly accountant: AccountantAgent,
@@ -220,13 +222,22 @@ export class MealPlanGraphService {
         bestPlan.weeklyPlanId = saveResult.weeklyPlanId;
       }
 
-      // ── Bước 5: Pipeline hoàn thành ──
+      // ── Bước 5: Pipeline hoàn thành — log AI usage ──
       await this.emitProgress(channel, 'completed', {
-        message: '🎉 Thực đơn tuần đã sẵn sàng!',
+        message: 'Thực đơn tuần đã sẵn sàng!',
         weeklyPlanId: bestPlan!.weeklyPlanId,
         totalEstimatedCost: bestPlan!.totalEstimatedCost,
         mealCount: bestPlan!.slots.length,
         score: bestScore,
+      });
+
+      // Ghi log AI usage vào DB (fix bug: guard chỉ check nhưng không INSERT)
+      await this.prisma.aiUsageLog.create({
+        data: {
+          userId,
+          featureType: 'meal_plan',
+          usedAt: new Date(),
+        },
       });
 
       this.logger.log(

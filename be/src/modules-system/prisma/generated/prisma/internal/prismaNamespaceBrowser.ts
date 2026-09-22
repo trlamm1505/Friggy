@@ -53,7 +53,7 @@ export const AnyNull = runtime.AnyNull
 export const ModelName = {
   Role: 'Role',
   User: 'User',
-  OtpVerification: 'OtpVerification',
+  EmailOtp: 'EmailOtp',
   UserProfile: 'UserProfile',
   UserPreference: 'UserPreference',
   RefreshToken: 'RefreshToken',
@@ -119,7 +119,8 @@ export type RoleScalarFieldEnum = (typeof RoleScalarFieldEnum)[keyof typeof Role
 
 export const UserScalarFieldEnum = {
   id: 'id',
-  phone: 'phone',
+  email: 'email',
+  passwordHash: 'passwordHash',
   googleId: 'googleId',
   googleEmail: 'googleEmail',
   authProvider: 'authProvider',
@@ -136,18 +137,17 @@ export const UserScalarFieldEnum = {
 export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
 
 
-export const OtpVerificationScalarFieldEnum = {
+export const EmailOtpScalarFieldEnum = {
   id: 'id',
-  phone: 'phone',
+  email: 'email',
   otpHash: 'otpHash',
   purpose: 'purpose',
   attempts: 'attempts',
   expiresAt: 'expiresAt',
-  verifiedAt: 'verifiedAt',
   createdAt: 'createdAt'
 } as const
 
-export type OtpVerificationScalarFieldEnum = (typeof OtpVerificationScalarFieldEnum)[keyof typeof OtpVerificationScalarFieldEnum]
+export type EmailOtpScalarFieldEnum = (typeof EmailOtpScalarFieldEnum)[keyof typeof EmailOtpScalarFieldEnum]
 
 
 export const UserProfileScalarFieldEnum = {
@@ -662,6 +662,8 @@ export const UserSubscriptionScalarFieldEnum = {
   endDate: 'endDate',
   status: 'status',
   paymentRef: 'paymentRef',
+  autoRenew: 'autoRenew',
+  cancelledAt: 'cancelledAt',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
   deletedAt: 'deletedAt'
@@ -710,7 +712,8 @@ export type RoleOrderByRelevanceFieldEnum = (typeof RoleOrderByRelevanceFieldEnu
 
 export const UserOrderByRelevanceFieldEnum = {
   id: 'id',
-  phone: 'phone',
+  email: 'email',
+  passwordHash: 'passwordHash',
   googleId: 'googleId',
   googleEmail: 'googleEmail',
   name: 'name'
@@ -719,13 +722,13 @@ export const UserOrderByRelevanceFieldEnum = {
 export type UserOrderByRelevanceFieldEnum = (typeof UserOrderByRelevanceFieldEnum)[keyof typeof UserOrderByRelevanceFieldEnum]
 
 
-export const OtpVerificationOrderByRelevanceFieldEnum = {
+export const EmailOtpOrderByRelevanceFieldEnum = {
   id: 'id',
-  phone: 'phone',
+  email: 'email',
   otpHash: 'otpHash'
 } as const
 
-export type OtpVerificationOrderByRelevanceFieldEnum = (typeof OtpVerificationOrderByRelevanceFieldEnum)[keyof typeof OtpVerificationOrderByRelevanceFieldEnum]
+export type EmailOtpOrderByRelevanceFieldEnum = (typeof EmailOtpOrderByRelevanceFieldEnum)[keyof typeof EmailOtpOrderByRelevanceFieldEnum]
 
 
 export const UserProfileOrderByRelevanceFieldEnum = {

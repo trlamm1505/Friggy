@@ -18,6 +18,10 @@ import { AdminStatsService } from './admin-stats.service';
 import { AdminSponsorsController } from './admin-sponsors.controller';
 import { AdminSponsorsService } from './admin-sponsors.service';
 
+// ── Phase 14: Plan Management ────────────────────────────
+import { AdminPlansController } from './admin-plans.controller';
+import { AdminPlansService } from './admin-plans.service';
+
 @Module({
   imports: [
     PrismaModule,
@@ -29,6 +33,7 @@ import { AdminSponsorsService } from './admin-sponsors.service';
     AdminUsersController,
     AdminStatsController,
     AdminSponsorsController,
+    AdminPlansController,
   ],
   providers: [
     AdminAiService,
@@ -36,6 +41,7 @@ import { AdminSponsorsService } from './admin-sponsors.service';
     AdminUsersService,
     AdminStatsService,
     AdminSponsorsService,
+    AdminPlansService,
   ],
 })
 export class AdminModule {}

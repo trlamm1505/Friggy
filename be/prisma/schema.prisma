@@ -21,7 +21,8 @@ model Role {
 
 model User {
   id                    String              @id @default(uuid()) @db.Char(36)
-  phone                 String?             @unique @db.VarChar(15)
+  email                 String?             @unique @db.VarChar(255)
+  passwordHash          String?             @db.VarChar(255)
   googleId              String?             @unique @db.VarChar(255)
   googleEmail           String?             @db.VarChar(255)
   authProvider          AuthProvider
@@ -56,18 +57,17 @@ model User {
   @@map("users")
 }
 
-model OtpVerification {
-  id         String     @id @default(uuid()) @db.Char(36)
-  phone      String     @db.VarChar(15)
-  otpHash    String     @db.VarChar(255)
-  purpose    OtpPurpose
-  attempts   Int        @default(0) @db.TinyInt
-  expiresAt  DateTime
-  verifiedAt DateTime?
-  createdAt  DateTime   @default(now())
+model EmailOtp {
+  id        String          @id @default(uuid()) @db.Char(36)
+  email     String          @db.VarChar(255)
+  otpHash   String          @db.VarChar(255)
+  purpose   EmailOtpPurpose
+  attempts  Int             @default(0) @db.TinyInt
+  expiresAt DateTime
+  createdAt DateTime        @default(now())
 
-  @@index([phone, purpose, expiresAt])
-  @@map("otp_verifications")
+  @@index([email, purpose, expiresAt])
+  @@map("email_otps")
 }
 
 model UserProfile {
@@ -652,18 +652,20 @@ model SubscriptionPlan {
 }
 
 model UserSubscription {
-  id         String           @id @default(uuid()) @db.Char(36)
-  userId     String           @unique @db.Char(36)
-  planId     Int
-  startDate  DateTime         @db.Date
-  endDate    DateTime?        @db.Date
-  status     String           @db.VarChar(20)
-  paymentRef String?          @db.VarChar(255)
-  createdAt  DateTime         @default(now())
-  updatedAt  DateTime         @updatedAt
-  deletedAt  DateTime?
-  plan       SubscriptionPlan @relation(fields: [planId], references: [id])
-  user       User             @relation(fields: [userId], references: [id])
+  id          String           @id @default(uuid()) @db.Char(36)
+  userId      String           @unique @db.Char(36)
+  planId      Int
+  startDate   DateTime         @db.Date
+  endDate     DateTime?        @db.Date
+  status      String           @db.VarChar(20)
+  paymentRef  String?          @db.VarChar(255)
+  autoRenew   Boolean          @default(true)  // false = đặt hủy gia hạn cuối kỳ
+  cancelledAt DateTime?                         // thời điểm user yêu cầu hủy gia hạn
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  deletedAt   DateTime?
+  plan        SubscriptionPlan @relation(fields: [planId], references: [id])
+  user        User             @relation(fields: [userId], references: [id])
 
   @@index([userId, status])
   @@index([planId], map: "user_subscriptions_planId_fkey")
@@ -683,13 +685,13 @@ enum UserStatus {
 
 enum AuthProvider {
   google
-  phone
+  email
 }
 
-enum OtpPurpose {
-  login
+enum EmailOtpPurpose {
   register
-  change_phone
+  reset_password
+  change_email
 }
 
 enum Gender {
@@ -865,4 +867,5 @@ enum NotificationType {
   plan_ready
   system
   promo
+  subscription_reminder
 }

@@ -34,6 +34,10 @@ export const AI_CHAT_ROUTING_KEY = 'ai.chat.message';
 export const FRIDGE_SCAN_ROUTING_KEY = 'fridge.scan';
 export const AI_SLOT_REGENERATE_ROUTING_KEY = 'ai.slot.regenerate';
 export const AI_EXPIRING_MEAL_ROUTING_KEY = 'ai.expiring.meal.plan';
+export const PUBLIC_CHAT_ROUTING_KEY = 'public.chat.message'; // Phải khớp ai-service
+
+// Gemini — Public SEO Chatbot (gọi trực tiếp, không qua ai-service)
+export const GEMINI_API_KEY = process.env.GEMINI_API_KEY ?? '';
 
 console.log(
   '\n',

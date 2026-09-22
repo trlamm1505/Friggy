@@ -66,7 +66,8 @@ async function bootstrap() {
       .addTag('Notifications', 'Thông báo & Cài đặt thông báo')
       .addTag('Subscriptions', 'Gói dịch vụ Free & Individual')
       .addTag('Meal Planning', 'Thực đơn tuần & Danh sách mua')
-      .addTag('AI Chat', 'Đầu bếp AI — Chat & Stream')
+      .addTag('AI Chat', 'Đầu bếp AI — Chat có tài khoản & Chatbot công khai')
+      .addTag('AI Public Chat', 'API Chat public (Chatbot SEO)')
       .addTag('Admin', 'Quản trị hệ thống')
       .build();
 

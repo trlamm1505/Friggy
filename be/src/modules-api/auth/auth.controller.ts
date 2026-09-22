@@ -14,17 +14,24 @@ import {
   ApiBearerAuth,
 } from '@nestjs/swagger';
 import type { Request } from 'express';
+import * as bcrypt from 'bcryptjs';
 import { AuthService } from './auth.service';
 import {
-  SendOtpDto,
-  VerifyOtpDto,
+  EmailRegisterDto,
+  EmailLoginDto,
+  VerifyEmailOtpDto,
+  VerifyEmailOtpFullDto,
+  ForgotPasswordDto,
+  ResetPasswordDto,
+  ChangePasswordDto,
   GoogleAuthDto,
   RefreshTokenDto,
   LogoutDto,
 } from './dto/auth.dto';
 import {
   AuthResponseDto,
-  SendOtpResponseDto,
+  OtpSentResponseDto,
+  MessageResponseDto,
   RefreshResponseDto,
 } from './dto/auth-response.dto';
 import { Public } from 'src/common/decorators/public.decorator';
@@ -45,62 +52,107 @@ export class AuthController {
   @Public()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Đăng nhập bằng Google ID Token' })
-  @ApiResponse({
-    status: 200,
-    description: 'Đăng nhập thành công',
-    type: AuthResponseDto,
-  })
+  @ApiResponse({ status: 200, type: AuthResponseDto })
   @ApiResponse({ status: 401, description: 'Google ID Token không hợp lệ' })
-  async googleAuth(
-    @Body() dto: GoogleAuthDto,
-    @Req() req: Request,
-  ): Promise<AuthResponseDto> {
-    const deviceInfo = req.headers['user-agent'];
-    const ipAddress = (req.headers['x-forwarded-for'] as string) ?? req.ip;
-    return this.authService.googleAuth(dto, deviceInfo, ipAddress);
+  async googleAuth(@Body() dto: GoogleAuthDto, @Req() req: Request): Promise<AuthResponseDto> {
+    return this.authService.googleAuth(
+      dto,
+      req.headers['user-agent'],
+      (req.headers['x-forwarded-for'] as string) ?? req.ip,
+    );
   }
 
   // ─────────────────────────────────────────────────────────
-  // PHONE OTP
+  // EMAIL REGISTER
   // ─────────────────────────────────────────────────────────
 
-  @Post('phone/send-otp')
+  @Post('email/register')
   @Public()
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Gửi mã OTP 6 chữ số về số điện thoại' })
-  @ApiResponse({
-    status: 200,
-    description: 'OTP đã gửi thành công',
-    type: SendOtpResponseDto,
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'Vượt quá giới hạn gửi OTP hoặc SĐT không hợp lệ',
-  })
-  async sendOtp(@Body() dto: SendOtpDto): Promise<SendOtpResponseDto> {
-    return this.authService.sendOtp(dto);
+  @ApiOperation({ summary: 'Bước 1: Đăng ký bằng email — gửi OTP xác nhận' })
+  @ApiResponse({ status: 200, type: OtpSentResponseDto })
+  @ApiResponse({ status: 409, description: 'Email đã được đăng ký' })
+  async emailRegister(@Body() dto: EmailRegisterDto): Promise<OtpSentResponseDto> {
+    return this.authService.emailRegister(dto);
   }
 
-  @Post('phone/verify')
+  @Post('email/verify-otp')
   @Public()
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({
-    summary: 'Xác minh OTP và đăng nhập / đăng ký bằng số điện thoại',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Xác minh thành công, trả về JWT',
-    type: AuthResponseDto,
-  })
+  @ApiOperation({ summary: 'Bước 2: Xác nhận OTP → kích hoạt tài khoản và nhận JWT' })
+  @ApiResponse({ status: 200, type: AuthResponseDto })
   @ApiResponse({ status: 400, description: 'OTP sai hoặc hết hạn' })
-  @ApiResponse({ status: 403, description: 'Tài khoản bị khoá' })
-  async verifyOtp(
-    @Body() dto: VerifyOtpDto,
+  async verifyEmailOtp(
+    @Body() dto: VerifyEmailOtpFullDto,
     @Req() req: Request,
   ): Promise<AuthResponseDto> {
-    const deviceInfo = req.headers['user-agent'];
-    const ipAddress = (req.headers['x-forwarded-for'] as string) ?? req.ip;
-    return this.authService.verifyOtp(dto, deviceInfo, ipAddress);
+    const passwordHash = await bcrypt.hash(dto.password, 10);
+    return this.authService.verifyEmailOtp(
+      dto,
+      passwordHash,
+      dto.name,
+      req.headers['user-agent'],
+      (req.headers['x-forwarded-for'] as string) ?? req.ip,
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────
+  // EMAIL LOGIN
+  // ─────────────────────────────────────────────────────────
+
+  @Post('email/login')
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Đăng nhập bằng email + mật khẩu' })
+  @ApiResponse({ status: 200, type: AuthResponseDto })
+  @ApiResponse({ status: 401, description: 'Email hoặc mật khẩu không chính xác' })
+  async emailLogin(@Body() dto: EmailLoginDto, @Req() req: Request): Promise<AuthResponseDto> {
+    return this.authService.emailLogin(
+      dto,
+      req.headers['user-agent'],
+      (req.headers['x-forwarded-for'] as string) ?? req.ip,
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────
+  // FORGOT / RESET PASSWORD
+  // ─────────────────────────────────────────────────────────
+
+  @Post('email/forgot-password')
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Gửi OTP đặt lại mật khẩu về email' })
+  @ApiResponse({ status: 200, type: OtpSentResponseDto })
+  async forgotPassword(@Body() dto: ForgotPasswordDto): Promise<OtpSentResponseDto> {
+    return this.authService.forgotPassword(dto);
+  }
+
+  @Post('email/reset-password')
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Đặt lại mật khẩu bằng OTP' })
+  @ApiResponse({ status: 200, type: MessageResponseDto })
+  @ApiResponse({ status: 400, description: 'OTP sai hoặc hết hạn' })
+  async resetPassword(@Body() dto: ResetPasswordDto): Promise<MessageResponseDto> {
+    return this.authService.resetPassword(dto);
+  }
+
+  // ─────────────────────────────────────────────────────────
+  // CHANGE PASSWORD (cần JWT)
+  // ─────────────────────────────────────────────────────────
+
+  @Post('email/change-password')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Đổi mật khẩu (yêu cầu đăng nhập)' })
+  @ApiResponse({ status: 200, type: MessageResponseDto })
+  @ApiResponse({ status: 400, description: 'Mật khẩu hiện tại không đúng' })
+  async changePassword(
+    @Body() dto: ChangePasswordDto,
+    @CurrentUser() user: JwtPayload,
+  ): Promise<MessageResponseDto> {
+    return this.authService.changePassword(user.sub, dto);
   }
 
   // ─────────────────────────────────────────────────────────
@@ -111,15 +163,8 @@ export class AuthController {
   @Public()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Làm mới Access Token bằng Refresh Token' })
-  @ApiResponse({
-    status: 200,
-    description: 'Trả về access token mới',
-    type: RefreshResponseDto,
-  })
-  @ApiResponse({
-    status: 401,
-    description: 'Refresh token không hợp lệ hoặc đã hết hạn',
-  })
+  @ApiResponse({ status: 200, type: RefreshResponseDto })
+  @ApiResponse({ status: 401, description: 'Refresh token không hợp lệ hoặc đã hết hạn' })
   async refresh(@Body() dto: RefreshTokenDto): Promise<RefreshResponseDto> {
     return this.authService.refresh(dto);
   }
@@ -134,11 +179,7 @@ export class AuthController {
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Đăng xuất — thu hồi Refresh Token' })
   @ApiResponse({ status: 204, description: 'Đăng xuất thành công' })
-  @ApiResponse({ status: 401, description: 'Chưa đăng nhập' })
-  async logout(
-    @Body() dto: LogoutDto,
-    @CurrentUser() user: JwtPayload,
-  ): Promise<void> {
+  async logout(@Body() dto: LogoutDto, @CurrentUser() user: JwtPayload): Promise<void> {
     await this.authService.logout(dto, user.sub);
   }
 }

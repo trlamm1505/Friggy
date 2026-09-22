@@ -235,30 +235,47 @@ export class UsersService {
   // ─────────────────────────────────────────────────────────
 
   async getAiUsage(userId: string): Promise<AiUsageResponseDto> {
-    // Đếm số lần dùng AI trong tháng hiện tại từ bảng ai_usage_logs
-    const startOfMonth = new Date();
-    startOfMonth.setDate(1);
-    startOfMonth.setHours(0, 0, 0, 0);
+    // Tính đầu tuần hiện tại (Thứ 2 00:00:00) — đồng bộ với AiUsageLimitGuard
+    const now = new Date();
+    const dayOfWeek = now.getDay(); // 0=CN, 1=T2, ..., 6=T7
+    const diffToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - diffToMonday);
+    startOfWeek.setHours(0, 0, 0, 0);
 
-    const [usedCount, subscription] = await Promise.all([
-      this.prisma.aiUsageLog.count({
-        where: { userId, usedAt: { gte: startOfMonth } }, // AiUsageLog dùng usedAt
-      }),
+    const [subscription, usageByFeature] = await Promise.all([
       this.prisma.userSubscription.findFirst({
         where: { userId, status: 'active', deletedAt: null },
         include: { plan: { select: { name: true, aiUsagePerWeek: true } } },
       }),
+      this.prisma.aiUsageLog.groupBy({
+        by: ['featureType'],
+        where: { userId, usedAt: { gte: startOfWeek } },
+        _count: { featureType: true },
+      }),
     ]);
 
     const planName = subscription?.plan?.name ?? 'free';
-    const isUnlimited = planName !== 'free';
-    const limit = isUnlimited ? 9999 : 20; // Free: 20 lần/tháng
+    // Lấy từ DB — mặc định 2 nếu không có subscription (đồng bộ với guard)
+    const limit = subscription?.plan?.aiUsagePerWeek ?? 2;
+    const isUnlimited = limit === -1;
+
+    // Tổng usage mọi feature trong 7 ngày
+    const totalUsed = usageByFeature.reduce((sum, g) => sum + g._count.featureType, 0);
+
+    // Chi tiết từng feature
+    const breakdown: Record<string, number> = {};
+    for (const g of usageByFeature) {
+      breakdown[g.featureType] = g._count.featureType;
+    }
 
     return {
-      used: usedCount,
-      limit,
-      remaining: isUnlimited ? 999 : Math.max(0, limit - usedCount),
+      used: totalUsed,
+      limit: isUnlimited ? -1 : limit,
+      remaining: isUnlimited ? -1 : Math.max(0, limit - totalUsed),
       plan: planName,
+      breakdown,        // { meal_plan: 1, chat: 3, slot_regenerate: 0, ... }
+      windowDays: 7,    // Tuần lịch T2-CN, reset mỗi Thứ 2
     };
   }
 

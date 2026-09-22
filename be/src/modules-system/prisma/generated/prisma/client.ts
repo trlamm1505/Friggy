@@ -50,10 +50,10 @@ export type Role = Prisma.RoleModel
  */
 export type User = Prisma.UserModel
 /**
- * Model OtpVerification
+ * Model EmailOtp
  * 
  */
-export type OtpVerification = Prisma.OtpVerificationModel
+export type EmailOtp = Prisma.EmailOtpModel
 /**
  * Model UserProfile
  * 
