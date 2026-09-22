@@ -19,10 +19,10 @@ class UserProfileScreen extends StatefulWidget {
   const UserProfileScreen({super.key});
 
   @override
-  State<UserProfileScreen> createState() => _UserProfileScreenState();
+  State<UserProfileScreen> createState() => UserProfileScreenState();
 }
 
-class _UserProfileScreenState extends State<UserProfileScreen> {
+class UserProfileScreenState extends State<UserProfileScreen> {
   final ApiService _apiService = ApiService();
   String _userName = 'Trần Quốc Lâm';
   String _userContact = 'lam.tran@friggy.app';
@@ -38,7 +38,13 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     _fetchAiUsage();
   }
 
+  void reload() {
+    _loadUserData();
+    _fetchAiUsage();
+  }
+
   Future<void> _loadUserData() async {
+    _fetchAiUsage();
     try {
       final meJson = await _apiService.getMe();
       final me = MeModel.fromJson(meJson);
@@ -231,10 +237,16 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
     final fullAvatar = _getFullAvatarUrl(_avatarUrl);
 
-    return SingleChildScrollView(
-      physics: const BouncingScrollPhysics(),
-      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
-      child: Column(
+    return RefreshIndicator(
+      onRefresh: () async {
+        await _loadUserData();
+        await _fetchAiUsage();
+      },
+      color: const Color(0xFF008435),
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+        padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 28),
@@ -611,8 +623,9 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           const SizedBox(height: 32),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildDivider(bool isDark) {
     return Container(

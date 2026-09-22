@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../data/models/recipe_model.dart';
+import '../data/services/api_exception.dart';
 import '../data/services/api_service.dart';
 import '../l10n/app_localizations.dart';
 import '../screens/recipe_detail_screen.dart';
+import '../screens/package_management_screen.dart';
+import '../theme/app_theme.dart';
 
 class DailyMealSlotData {
   final String id;
@@ -62,6 +65,7 @@ class CookingSuggestionsSection extends StatefulWidget {
 
 class CookingSuggestionsSectionState extends State<CookingSuggestionsSection> {
   bool _isLoading = true;
+  bool _isGenerating = false;
   String? _loadingMealType;
   List<DailyMealSlotData> _dailySlots = [];
   int _dayOfWeek = 1; // 1 = Thứ 2, ..., 7 = Chủ nhật
@@ -96,40 +100,7 @@ class CookingSuggestionsSectionState extends State<CookingSuggestionsSection> {
   void initState() {
     super.initState();
     _dayOfWeek = DateTime.now().weekday;
-    _initDefaultSlots();
     _loadTodayMealPlan();
-  }
-
-  void _initDefaultSlots() {
-    _dailySlots = [
-      const DailyMealSlotData(
-        id: 'slot_bk_1',
-        mealType: 'breakfast',
-        recipeId: 'rec_bk_1',
-        recipeTitle: 'Cháo cánh gà nấm kim châm',
-        servings: 1,
-        cookTimeMinutes: 15,
-        isCompleted: false,
-      ),
-      const DailyMealSlotData(
-        id: 'slot_lc_1',
-        mealType: 'lunch',
-        recipeId: 'rec_lc_1',
-        recipeTitle: 'Lẩu nấm gà thanh ngọt cuối tuần',
-        servings: 1,
-        cookTimeMinutes: 25,
-        isCompleted: false,
-      ),
-      const DailyMealSlotData(
-        id: 'slot_dn_1',
-        mealType: 'dinner',
-        recipeId: 'rec_dn_1',
-        recipeTitle: 'Gà kho sả ớt đậm đà',
-        servings: 1,
-        cookTimeMinutes: 20,
-        isCompleted: false,
-      ),
-    ];
   }
 
   Future<void> _loadTodayMealPlan() async {
@@ -214,8 +185,71 @@ class CookingSuggestionsSectionState extends State<CookingSuggestionsSection> {
 
     if (mounted) {
       setState(() {
+        _dailySlots = [];
         _isLoading = false;
       });
+    }
+  }
+
+  Future<void> _generateTodayMealPlan() async {
+    if (_isGenerating) return;
+
+    setState(() {
+      _isGenerating = true;
+    });
+
+    final isEn = AppLocalizations.of(context)?.locale.languageCode == 'en';
+
+    try {
+      await ApiService().generateFromExpiring(withinDays: 3, days: 1);
+
+      const int maxAttempts = 15; // wait up to ~45s
+      for (int i = 0; i < maxAttempts; i++) {
+        await Future.delayed(const Duration(seconds: 3));
+        if (!mounted) return;
+
+        await _loadTodayMealPlan();
+        if (_dailySlots.isNotEmpty) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  isEn
+                      ? '✨ AI đã tạo xong thực đơn cho hôm nay!'
+                      : '✨ AI đã tạo xong thực đơn cho hôm nay!',
+                ),
+                backgroundColor: const Color(0xFF008435),
+                duration: const Duration(seconds: 2),
+              ),
+            );
+          }
+          break;
+        }
+      }
+    } catch (e) {
+      debugPrint('[CookingSuggestionsSection] Error generating today plan: $e');
+      if (mounted) {
+        String errorMessage = isEn
+            ? 'Failed to generate meal plan for today. Please try again.'
+            : 'Tạo thực đơn cho hôm nay thất bại. Vui lòng thử lại.';
+        if (e is ApiException) {
+          errorMessage = e.message;
+        } else if (e.toString().contains('dùng hết')) {
+          errorMessage = e.toString().replaceAll('Exception: ', '');
+        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: Colors.red.shade700,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isGenerating = false;
+        });
+      }
     }
   }
 
@@ -247,6 +281,7 @@ class CookingSuggestionsSectionState extends State<CookingSuggestionsSection> {
       _loadingMealType = mType;
     });
 
+    final isEn = AppLocalizations.of(context)?.locale.languageCode == 'en';
     try {
       if (targetSlot.id.isNotEmpty && !targetSlot.id.startsWith('slot_')) {
         final res = await ApiService().regenerateSlot(slotId: targetSlot.id);
@@ -273,6 +308,59 @@ class CookingSuggestionsSectionState extends State<CookingSuggestionsSection> {
       }
     } catch (e) {
       debugPrint('[CookingSuggestionsSection] Error regenerating slot: $e');
+      if (mounted) {
+        setState(() {
+          _loadingMealType = null;
+        });
+        String errorMessage = isEn
+            ? 'Failed to swap dish. Please try again.'
+            : 'Đổi món thất bại. Vui lòng thử lại.';
+        if (e is ApiException) {
+          errorMessage = e.message;
+        } else if (e.toString().contains('dùng hết')) {
+          errorMessage = e.toString().replaceAll('Exception: ', '');
+        }
+        final isLimitError = errorMessage.contains('dùng hết') || errorMessage.contains('lượt AI');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.stars_rounded, color: Color(0xFFFFD54F), size: 20),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    errorMessage,
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: const Color(0xFF006428),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            margin: const EdgeInsets.all(16),
+            action: isLimitError
+                ? SnackBarAction(
+                    label: isEn ? 'Upgrade' : 'Nâng cấp',
+                    textColor: const Color(0xFFFFD54F),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const PackageManagementScreen(),
+                        ),
+                      );
+                    },
+                  )
+                : null,
+          ),
+        );
+      }
+      return;
     }
 
     // Local fallback swap
@@ -491,6 +579,87 @@ class CookingSuggestionsSectionState extends State<CookingSuggestionsSection> {
                       color: Color(0xFF008435),
                       strokeWidth: 2.5,
                     ),
+                  ),
+                )
+              else if (_dailySlots.isEmpty)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF19271E) : const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: isDark ? const Color(0xFF2E4D36) : const Color(0xFFE2E8E4),
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 52,
+                        height: 52,
+                        decoration: BoxDecoration(
+                          color: isDark ? const Color(0xFF233629) : const Color(0xFFE8F5E9),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.restaurant_menu_rounded,
+                          size: 28,
+                          color: isDark ? const Color(0xFF81C784) : const Color(0xFF008435),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        isEn ? 'No meal plan for today' : 'Chưa có thực đơn cho hôm nay',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? Colors.white : AppColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        isEn
+                            ? 'Generate a meal plan with AI to get customized recipes for your day.'
+                            : 'Hãy tạo thực đơn bằng AI để tự động lên lịch bữa ăn phù hợp cho bạn.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: isDark ? const Color(0xFFD0D7D1) : const Color(0xFF6B786F),
+                          height: 1.4,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      ElevatedButton.icon(
+                        onPressed: _isGenerating ? null : _generateTodayMealPlan,
+                        icon: _isGenerating
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Icon(Icons.auto_awesome_rounded, size: 18),
+                        label: Text(
+                          _isGenerating
+                              ? (isEn ? 'AI is creating your plan...' : 'AI đang phân tích & lên thực đơn...')
+                              : (isEn ? 'Generate Today\'s Meal Plan' : 'Tạo thực đơn AI'),
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF008435),
+                          foregroundColor: Colors.white,
+                          disabledBackgroundColor: const Color(0xFF008435).withValues(alpha: 0.8),
+                          disabledForegroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          elevation: 0,
+                        ),
+                      ),
+                    ],
                   ),
                 )
               else

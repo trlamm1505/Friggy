@@ -151,6 +151,217 @@ class AuthService {
     }
   }
 
+  /// Helper to save authentication result to StorageService
+  Future<bool> _handleAuthResult(BuildContext context, dynamic apiResult, String logTag) async {
+    final Map<String, dynamic> result = (apiResult is Map<String, dynamic>) ? apiResult : {};
+    final payload = (result.containsKey('data') && result['data'] is Map<String, dynamic>)
+        ? result['data'] as Map<String, dynamic>
+        : result;
+
+    final String? accessToken = payload['accessToken'] as String?;
+    final String? refreshToken = payload['refreshToken'] as String?;
+    final Map<String, dynamic>? user = (payload['user'] is Map<String, dynamic>)
+        ? payload['user'] as Map<String, dynamic>
+        : null;
+
+    final dynamic userRole = user?['role'];
+    if (!isAllowedRole(userRole)) {
+      final String roleDisplay = (userRole is Map ? userRole['name'] : userRole)?.toString() ?? 'Khác';
+      debugPrint('[$logTag] Rejected Auth: User role "$roleDisplay" is not allowed.');
+      if (context.mounted) {
+        _showSnackBar(
+          context,
+          'Tài khoản của bạn ($roleDisplay) không có quyền truy cập ứng dụng di động (Chỉ dành cho tài khoản User).',
+          isError: true,
+        );
+      }
+      return false;
+    }
+
+    if (accessToken != null && accessToken.isNotEmpty) {
+      final storage = await StorageService.getInstance();
+      await storage.saveAccessToken(accessToken);
+      if (refreshToken != null) await storage.saveRefreshToken(refreshToken);
+
+      final Map<String, dynamic> userDataToSave = user ?? {};
+      if (userDataToSave['id'] != null) await storage.saveUserId(userDataToSave['id'].toString());
+      await storage.saveUserData(jsonEncode(userDataToSave));
+
+      debugPrint('[$logTag] Login/Auth successful. User saved in StorageService.');
+      return true;
+    } else {
+      if (context.mounted) {
+        _showSnackBar(context, 'Xác thực không thành công. Vui lòng thử lại', isError: true);
+      }
+      return false;
+    }
+  }
+
+  /// Handles Email + Password Login
+  Future<bool> loginWithEmail(BuildContext context, String email, String password) async {
+    try {
+      final dynamic apiResult = await _apiService.emailLogin(email, password);
+      if (!context.mounted) return false;
+      return await _handleAuthResult(context, apiResult, 'AuthService:EmailLogin');
+    } on ApiException catch (e) {
+      debugPrint('[AuthService] ApiException during Email login: ${e.message}');
+      if (context.mounted) {
+        _showSnackBar(context, e.message, isError: true);
+      }
+      return false;
+    } catch (e) {
+      debugPrint('[AuthService] Unexpected error during Email login: $e');
+      if (context.mounted) {
+        _showSnackBar(context, 'Đã xảy ra lỗi khi đăng nhập', isError: true);
+      }
+      return false;
+    }
+  }
+
+  /// Step 1: Request OTP for Email registration
+  Future<bool> registerEmailSendOtp(BuildContext context, String email) async {
+    try {
+      final res = await _apiService.emailRegister(email);
+      final msg = res['message']?.toString() ?? 'Mã OTP đã được gửi đến email của bạn';
+      if (context.mounted) {
+        _showSnackBar(context, msg, isError: false);
+      }
+      return true;
+    } on ApiException catch (e) {
+      debugPrint('[AuthService] ApiException during Email register OTP send: ${e.message}');
+      if (context.mounted) {
+        _showSnackBar(context, e.message, isError: true);
+      }
+      return false;
+    } catch (e) {
+      debugPrint('[AuthService] Unexpected error during Email register OTP send: $e');
+      if (context.mounted) {
+        _showSnackBar(context, 'Đã xảy ra lỗi khi gửi mã OTP đăng ký', isError: true);
+      }
+      return false;
+    }
+  }
+
+  /// Step 2: Verify Email OTP, activate account & receive JWT session
+  Future<bool> verifyEmailOtpAndRegister(
+    BuildContext context, {
+    required String email,
+    required String otpCode,
+    required String password,
+    String? name,
+  }) async {
+    try {
+      final dynamic apiResult = await _apiService.verifyEmailOtp(
+        email: email,
+        otpCode: otpCode,
+        password: password,
+        name: name,
+      );
+      if (!context.mounted) return false;
+      return await _handleAuthResult(context, apiResult, 'AuthService:VerifyEmailOtp');
+    } on ApiException catch (e) {
+      debugPrint('[AuthService] ApiException during Verify Email OTP: ${e.message}');
+      if (context.mounted) {
+        _showSnackBar(context, e.message, isError: true);
+      }
+      return false;
+    } catch (e) {
+      debugPrint('[AuthService] Unexpected error during Verify Email OTP: $e');
+      if (context.mounted) {
+        _showSnackBar(context, 'Mã OTP không hợp lệ hoặc đã hết hạn', isError: true);
+      }
+      return false;
+    }
+  }
+
+  /// Forgot Password Step 1: Send OTP to Email
+  Future<bool> sendForgotPasswordOtp(BuildContext context, String email) async {
+    try {
+      final res = await _apiService.forgotPassword(email);
+      final msg = res['message']?.toString() ?? 'Mã OTP đã được gửi đến email của bạn';
+      if (context.mounted) {
+        _showSnackBar(context, msg, isError: false);
+      }
+      return true;
+    } on ApiException catch (e) {
+      debugPrint('[AuthService] ApiException during Forgot Password OTP send: ${e.message}');
+      if (context.mounted) {
+        _showSnackBar(context, e.message, isError: true);
+      }
+      return false;
+    } catch (e) {
+      debugPrint('[AuthService] Unexpected error during Forgot Password OTP send: $e');
+      if (context.mounted) {
+        _showSnackBar(context, 'Đã xảy ra lỗi khi gửi OTP quên mật khẩu', isError: true);
+      }
+      return false;
+    }
+  }
+
+  /// Forgot Password Step 2: Reset password using OTP + new password
+  Future<bool> resetPasswordWithOtp(
+    BuildContext context, {
+    required String email,
+    required String otpCode,
+    required String newPassword,
+  }) async {
+    try {
+      final res = await _apiService.resetPassword(
+        email: email,
+        otpCode: otpCode,
+        newPassword: newPassword,
+      );
+      final msg = res['message']?.toString() ?? 'Đặt lại mật khẩu thành công';
+      if (context.mounted) {
+        _showSnackBar(context, msg, isError: false);
+      }
+      return true;
+    } on ApiException catch (e) {
+      debugPrint('[AuthService] ApiException during Reset Password: ${e.message}');
+      if (context.mounted) {
+        _showSnackBar(context, e.message, isError: true);
+      }
+      return false;
+    } catch (e) {
+      debugPrint('[AuthService] Unexpected error during Reset Password: $e');
+      if (context.mounted) {
+        _showSnackBar(context, 'Đã xảy ra lỗi khi đặt lại mật khẩu', isError: true);
+      }
+      return false;
+    }
+  }
+
+  /// Change Password for logged-in user
+  Future<bool> changePassword(
+    BuildContext context, {
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    try {
+      final res = await _apiService.changePassword(
+        currentPassword: currentPassword,
+        newPassword: newPassword,
+      );
+      final msg = res['message']?.toString() ?? 'Đổi mật khẩu thành công';
+      if (context.mounted) {
+        _showSnackBar(context, msg, isError: false);
+      }
+      return true;
+    } on ApiException catch (e) {
+      debugPrint('[AuthService] ApiException during Change Password: ${e.message}');
+      if (context.mounted) {
+        _showSnackBar(context, e.message, isError: true);
+      }
+      return false;
+    } catch (e) {
+      debugPrint('[AuthService] Unexpected error during Change Password: $e');
+      if (context.mounted) {
+        _showSnackBar(context, 'Đã xảy ra lỗi khi đổi mật khẩu', isError: true);
+      }
+      return false;
+    }
+  }
+
   /// Handles Phone OTP verification & login:
   /// 1. Calls backend POST /api/v1/auth/phone/verify
   /// 2. Verifies user.role == 'user' / 'users'

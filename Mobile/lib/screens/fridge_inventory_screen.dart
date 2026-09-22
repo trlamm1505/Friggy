@@ -22,10 +22,10 @@ class FridgeInventoryScreen extends StatefulWidget {
   });
 
   @override
-  State<FridgeInventoryScreen> createState() => _FridgeInventoryScreenState();
+  State<FridgeInventoryScreen> createState() => FridgeInventoryScreenState();
 }
 
-class _FridgeInventoryScreenState extends State<FridgeInventoryScreen> {
+class FridgeInventoryScreenState extends State<FridgeInventoryScreen> {
   // Compartment Filter: 'All', 'Fridge', 'Freezer', 'Pantry'
   String _selectedStorage = 'All';
 
@@ -43,15 +43,14 @@ class _FridgeInventoryScreenState extends State<FridgeInventoryScreen> {
     _loadIngredients();
   }
 
+  Future<void> reload() async {
+    await _loadIngredients();
+  }
+
   Future<void> _loadIngredients() async {
     setState(() => _isLoading = true);
     try {
-      String? locFilter;
-      if (_selectedStorage == 'Fridge') locFilter = 'fridge';
-      if (_selectedStorage == 'Freezer') locFilter = 'freezer';
-      if (_selectedStorage == 'Pantry') locFilter = 'pantry';
-
-      final res = await _apiService.getFridgeItems(storageLocation: locFilter);
+      final res = await _apiService.getFridgeItems();
       final list = res.map((e) => IngredientModel.fromFridgeApi(e, widget.fridge.id, widget.fridge.name)).toList();
       if (mounted) {
         setState(() {
@@ -880,36 +879,45 @@ class _FridgeInventoryScreenState extends State<FridgeInventoryScreen> {
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                  child: _isLoading
-                      ? const Center(
-                          child: CircularProgressIndicator(
-                            color: Color(0xFF008435),
-                          ),
-                        )
-                      : filteredItems.isEmpty
-                          ? Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
+                  child: RefreshIndicator(
+                    color: const Color(0xFF008435),
+                    onRefresh: _loadIngredients,
+                    child: _isLoading
+                        ? const Center(
+                            child: CircularProgressIndicator(
+                              color: Color(0xFF008435),
+                            ),
+                          )
+                        : filteredItems.isEmpty
+                            ? ListView(
+                                physics: const AlwaysScrollableScrollPhysics(),
                                 children: [
-                                  Icon(
-                                    Icons.kitchen_outlined,
-                                    size: 56,
-                                    color: Colors.white.withValues(alpha: 0.6),
-                                  ),
-                                  const SizedBox(height: 10),
-                                  Text(
-                                    isEn ? 'No food items found' : 'Không tìm thấy thực phẩm nào',
-                                    style: GoogleFonts.plusJakartaSans(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w700,
-                                      color: isDark ? const Color(0xFF81C784) : const Color(0xFF1B5E20),
+                                  SizedBox(
+                                    height: MediaQuery.of(context).size.height * 0.4,
+                                    child: Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                          Icons.kitchen_outlined,
+                                          size: 56,
+                                          color: Colors.white.withValues(alpha: 0.6),
+                                        ),
+                                        const SizedBox(height: 10),
+                                        Text(
+                                          isEn ? 'No food items found' : 'Không tìm thấy thực phẩm nào',
+                                          style: GoogleFonts.plusJakartaSans(
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.w700,
+                                            color: isDark ? const Color(0xFF81C784) : const Color(0xFF1B5E20),
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
                                 ],
-                              ),
-                            )
-                          : _isGridView
-                              ? _buildGridView(filteredItems, isEn, isDark)
+                              )
+                            : _isGridView
+                                ? _buildGridView(filteredItems, isEn, isDark)
                               : ListView.separated(
                                   physics: const BouncingScrollPhysics(),
                                   padding: const EdgeInsets.only(bottom: 120),
@@ -1007,6 +1015,7 @@ class _FridgeInventoryScreenState extends State<FridgeInventoryScreen> {
                                     );
                                   },
                                 ),
+                  ),
                 ),
               ),
             ],
@@ -1136,7 +1145,7 @@ class _FridgeInventoryScreenState extends State<FridgeInventoryScreen> {
     final categories = categoryMap.keys.toList();
 
     return ListView.builder(
-      physics: const BouncingScrollPhysics(),
+      physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
       padding: const EdgeInsets.only(bottom: 120),
       itemCount: categories.length,
       itemBuilder: (context, catIdx) {

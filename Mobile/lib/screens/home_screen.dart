@@ -42,6 +42,10 @@ class _HomeScreenState extends State<HomeScreen>
   final TextEditingController _searchController = TextEditingController();
   final GlobalKey<CookingSuggestionsSectionState> _cookingSuggestionsKey =
       GlobalKey<CookingSuggestionsSectionState>();
+  final GlobalKey<UserProfileScreenState> _userProfileKey =
+      GlobalKey<UserProfileScreenState>();
+  final GlobalKey<FridgeInventoryScreenState> _fridgeKey =
+      GlobalKey<FridgeInventoryScreenState>();
   String _userName = 'Trần Quốc Lâm';
   bool _isFamilyPlan = false;
 
@@ -101,22 +105,12 @@ class _HomeScreenState extends State<HomeScreen>
       if (userDataStr != null && userDataStr.isNotEmpty) {
         final Map<String, dynamic> userMap = jsonDecode(userDataStr);
         final String? name = userMap['name'] ?? userMap['fullName'];
-        final String? googleEmail = userMap['googleEmail'] ?? userMap['email'];
-        final String? phone = userMap['phone'] ?? userMap['emailOrPhone'];
-
-        String parsedName = 'Người dùng Friggy';
         if (name != null && name.trim().isNotEmpty) {
-          parsedName = name.trim();
-        } else if (googleEmail != null && googleEmail.trim().isNotEmpty) {
-          parsedName = googleEmail.split('@').first;
-        } else if (phone != null && phone.trim().isNotEmpty) {
-          parsedName = phone.trim();
-        }
-
-        if (mounted) {
-          setState(() {
-            _userName = parsedName;
-          });
+          if (mounted) {
+            setState(() {
+              _userName = name.trim();
+            });
+          }
         }
       }
     } catch (e) {
@@ -175,7 +169,14 @@ class _HomeScreenState extends State<HomeScreen>
             MaterialPageRoute(
               builder: (context) => targetScreen,
             ),
-          );
+          ).then((result) {
+            _fridgeKey.currentState?.reload();
+            if (mounted) {
+              setState(() {
+                _selectedIndex = 1;
+              });
+            }
+          });
         },
       );
       return;
@@ -185,6 +186,10 @@ class _HomeScreenState extends State<HomeScreen>
     });
     if (index == 0) {
       _cookingSuggestionsKey.currentState?.reload();
+    } else if (index == 1) {
+      _fridgeKey.currentState?.reload();
+    } else if (index == 4) {
+      _userProfileKey.currentState?.reload();
     }
   }
 
@@ -355,6 +360,7 @@ class _HomeScreenState extends State<HomeScreen>
 
                         // Index 1: Direct Fridge Inventory Screen
                         FridgeInventoryScreen(
+                          key: _fridgeKey,
                           fridge: FridgeModel(
                             id: 'family',
                             name: 'Tủ lạnh',
@@ -374,7 +380,7 @@ class _HomeScreenState extends State<HomeScreen>
                         const AiChatScreen(),
 
                         // Index 4: Profile & Settings Screen
-                        const UserProfileScreen(),
+                        UserProfileScreen(key: _userProfileKey),
                       ],
                     ),
                   ),

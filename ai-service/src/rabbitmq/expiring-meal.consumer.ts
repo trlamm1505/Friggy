@@ -87,7 +87,7 @@ export class ExpiringMealPlanConsumer {
       let result = '';
       const stream$ = this.singleAgent.run({
         userId,
-        featureType: 'chat',
+        featureType: 'expiring_plan',
         message: prompt,
       });
 
@@ -117,11 +117,6 @@ export class ExpiringMealPlanConsumer {
         summary: result,
         withinDays,
         days,
-      });
-
-      // Ghi log AI usage (fix bug: guard chỉ check nhưng không INSERT)
-      await this.prisma.aiUsageLog.create({
-        data: { userId, featureType: 'expiring_plan', usedAt: new Date() },
       });
 
       this.logger.log(`[ExpiringMeal] Done: jobId=${jobId}`);

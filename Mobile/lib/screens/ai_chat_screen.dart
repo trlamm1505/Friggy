@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../data/models/ai_chat_model.dart';
 import '../data/services/ai_chat_service.dart';
+import '../data/services/api_exception.dart';
+import 'package_management_screen.dart';
 import '../l10n/app_localizations.dart';
 
 class AiChatScreen extends StatefulWidget {
@@ -341,12 +343,20 @@ class _AiChatScreenState extends State<AiChatScreen> {
       if (!mounted) return;
       _pollTimer?.cancel();
       _streamSubscription?.cancel();
+
+      String cleanMsg = e is ApiException
+          ? e.message
+          : e.toString().replaceAll('ApiException: ', '').replaceAll('Exception: ', '');
+
       setState(() {
-        assistantMsg.content = 'Lỗi gửi tin nhắn: $e';
-        assistantMsg.isStreaming = false;
+        if (assistantMsg.content.trim().isEmpty) {
+          _messages.remove(assistantMsg);
+        } else {
+          assistantMsg.isStreaming = false;
+        }
         _isGenerating = false;
       });
-      _showSnackBar('Không thể gửi tin nhắn: $e', isError: true);
+      _showSnackBar(cleanMsg, isError: true);
     }
   }
 
@@ -363,15 +373,49 @@ class _AiChatScreenState extends State<AiChatScreen> {
   }
 
   void _showSnackBar(String message, {bool isError = false}) {
+    final isLimitError = message.contains('dùng hết') || message.contains('lượt AI');
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(
-          message,
-          style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600),
+        content: Row(
+          children: [
+            Icon(
+              isLimitError
+                  ? Icons.stars_rounded
+                  : (isError ? Icons.info_outline_rounded : Icons.check_circle_rounded),
+              color: const Color(0xFFFFD54F),
+              size: 20,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                message,
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ],
         ),
-        backgroundColor: isError ? Colors.red[700] : const Color(0xFF008435),
+        backgroundColor: const Color(0xFF006428),
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        margin: const EdgeInsets.all(16),
+        action: isLimitError
+            ? SnackBarAction(
+                label: 'Nâng cấp',
+                textColor: const Color(0xFFFFD54F),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const PackageManagementScreen(),
+                    ),
+                  );
+                },
+              )
+            : null,
       ),
     );
   }

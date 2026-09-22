@@ -44,14 +44,24 @@ export class AiUsageLimitGuard implements CanActivate {
 
     if (!userId) return true; // JwtAuthGuard sẽ xử lý nếu không có userId
 
-    // ── Lấy giới hạn từ subscription plan ──────────────────
-    const subscription = await this.prisma.userSubscription.findUnique({
-      where: { userId },
-      include: { plan: { select: { aiUsagePerWeek: true, name: true } } },
-    });
+    // ── Lấy giới hạn từ subscription plan & thông tin gói nâng cấp ──
+    const [subscription, individualPlan] = await Promise.all([
+      this.prisma.userSubscription.findUnique({
+        where: { userId },
+        include: { plan: { select: { aiUsagePerWeek: true, name: true } } },
+      }),
+      this.prisma.subscriptionPlan.findFirst({
+        where: { name: 'individual', isActive: true, deletedAt: null },
+        select: { priceVnd: true, displayName: true },
+      }),
+    ]);
 
     // Nếu không có subscription (free) → dùng default limit = 2
     const limit = subscription?.plan?.aiUsagePerWeek ?? 2;
+    const priceText = individualPlan?.priceVnd
+      ? `${Math.round(individualPlan.priceVnd / 1000)}k/tháng`
+      : '25k/tháng';
+    const planDisplayName = individualPlan?.displayName ?? 'Individual';
 
     // Tính đầu tuần hiện tại (Thứ 2 00:00:00) — reset mỗi tuần
     const now = new Date();
@@ -64,7 +74,6 @@ export class AiUsageLimitGuard implements CanActivate {
     const usedCount = await this.prisma.aiUsageLog.count({
       where: {
         userId,
-        featureType,
         usedAt: { gte: startOfWeek },
       },
     });
@@ -80,12 +89,12 @@ export class AiUsageLimitGuard implements CanActivate {
     // limit = -1 → gói không giới hạn → bỏ qua check
     if (limit !== -1 && usedCount >= limit) {
       this.logger.warn(
-        `⛔ User ${userId} đã đạt giới hạn AI [${featureType}]: ${usedCount}/${limit}/tuần`,
+        `⛔ User ${userId} đã đạt giới hạn AI tổng hợp: ${usedCount}/${limit}/tuần`,
       );
       throw new HttpException(
         {
           statusCode: 429,
-          message: `Bạn đã sử dụng hết ${limit} lượt ${featureType} trong tuần này. Nâng cấp gói để dùng thêm!`,
+          message: `Bạn đã dùng hết ${limit} lượt AI trong tuần này. Nâng cấp lên gói ${planDisplayName} (${priceText}) để sử dụng không giới hạn.`,
           featureType,
           usedCount,
           limit,

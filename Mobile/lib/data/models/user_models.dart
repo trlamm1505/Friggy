@@ -257,6 +257,8 @@ class UserSubscriptionModel {
   final String startDate;
   final String? endDate;
   final String? paymentRef;
+  final bool autoRenew;
+  final String? cancelledAt;
   final SubscriptionPlanModel plan;
   final String createdAt;
 
@@ -266,6 +268,8 @@ class UserSubscriptionModel {
     required this.startDate,
     this.endDate,
     this.paymentRef,
+    this.autoRenew = true,
+    this.cancelledAt,
     required this.plan,
     required this.createdAt,
   });
@@ -277,6 +281,8 @@ class UserSubscriptionModel {
       startDate: json['startDate'] as String? ?? '',
       endDate: json['endDate'] as String?,
       paymentRef: json['paymentRef'] as String?,
+      autoRenew: json['autoRenew'] as bool? ?? true,
+      cancelledAt: json['cancelledAt'] as String?,
       plan: SubscriptionPlanModel.fromJson(json['plan'] as Map<String, dynamic>),
       createdAt: json['createdAt'] as String? ?? '',
     );

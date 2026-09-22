@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../data/services/auth_service.dart';
 import '../l10n/app_localizations.dart';
 import '../theme/app_theme.dart';
 import '../widgets/custom_text_field.dart';
@@ -18,7 +19,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   int _currentStep = 1; // 1: Phone, 2: OTP Verify, 3: Reset Password
 
   // Step 1 Controllers & State
-  final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
 
   // Step 2 Single Controller & FocusNode for 100% bulletproof soft keyboard popup
   final TextEditingController _otpSingleController = TextEditingController();
@@ -40,7 +41,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
   @override
   void dispose() {
-    _phoneController.dispose();
+    _emailController.dispose();
     _otpSingleController.dispose();
     _otpSingleFocusNode.dispose();
     _resendTimer?.cancel();
@@ -69,149 +70,64 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     });
   }
 
-  void _goToStep2() {
+  void _goToStep2() async {
     if (!(_step1FormKey.currentState?.validate() ?? false)) {
       return;
     }
 
-    setState(() {
-      _currentStep = 2;
-    });
-    _startResendTimer();
+    final email = _emailController.text.trim();
+    setState(() => _isVerifyingOtp = true);
 
-    // Focus single OTP node
-    void requestOtpFocus() {
-      if (mounted && _currentStep == 2) {
-        _otpSingleFocusNode.requestFocus();
+    final success = await AuthService().sendForgotPasswordOtp(context, email);
+
+    if (!mounted) return;
+    setState(() => _isVerifyingOtp = false);
+
+    if (success) {
+      setState(() {
+        _currentStep = 2;
+      });
+      _startResendTimer();
+
+      void requestOtpFocus() {
+        if (mounted && _currentStep == 2) {
+          _otpSingleFocusNode.requestFocus();
+        }
       }
-    }
 
-    WidgetsBinding.instance.addPostFrameCallback((_) => requestOtpFocus());
+      WidgetsBinding.instance.addPostFrameCallback((_) => requestOtpFocus());
+    }
   }
 
   void _checkAndVerifyOtp(String otp) {
-    if (otp.length == 4 && !_isVerifyingOtp) {
+    if (otp.length == 6 && !_isVerifyingOtp) {
       setState(() {
-        _isVerifyingOtp = true;
+        _currentStep = 3;
       });
-
-      // Show bottom sheet modal
-      _showVerifiedBottomSheet();
     }
   }
 
-  void _showVerifiedBottomSheet() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final loc = AppLocalizations.of(context);
-    final isEn = loc?.locale.languageCode == 'en';
-
-    showModalBottomSheet(
-      context: context,
-      isDismissible: false,
-      enableDrag: false,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF19271E) : Colors.white,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Handle bar top
-              Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF2E4D36) : const Color(0xFFE2E8E4),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // Circle with Checkmark
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF81C784) : Colors.black,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.check_rounded,
-                  color: isDark ? const Color(0xFF0E1611) : Colors.white,
-                  size: 32,
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              // Title "You're verified"
-              Text(
-                isEn ? "Verification Successful" : "Xác thực thành công",
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: isDark ? Colors.white : AppColors.textPrimary,
-                ),
-              ),
-              const SizedBox(height: 8),
-
-              // Subtitle
-              Text(
-                isEn
-                    ? "Only one step left — create password to secure your Friggy account."
-                    : "Chỉ còn một bước nữa — đặt mật khẩu để bảo vệ tài khoản Friggy của bạn.",
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: isDark ? const Color(0xFFD0D7D1) : const Color(0xFF7A867E),
-                  height: 1.4,
-                ),
-              ),
-              const SizedBox(height: 28),
-
-              // Action Button "Create Password"
-              SizedBox(
-                width: double.infinity,
-                height: 54,
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.of(context).pop(); // Close bottom sheet
-                    setState(() {
-                      _currentStep = 3;
-                      _isVerifyingOtp = false;
-                    });
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: isDark ? const Color(0xFF81C784) : const Color(0xFF1E211F),
-                    foregroundColor: isDark ? const Color(0xFF0E1611) : Colors.white,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                  child: Text(
-                    isEn ? 'Create Password' : 'Tạo mật khẩu',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: isDark ? const Color(0xFF0E1611) : Colors.white,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  void _finishResetPassword() {
+  void _finishResetPassword() async {
     if (_step3FormKey.currentState?.validate() ?? false) {
-      _showWelcomeSuccessScreen();
+      final email = _emailController.text.trim();
+      final otp = _otpSingleController.text.trim();
+      final newPassword = _newPasswordController.text;
+
+      setState(() => _isVerifyingOtp = true);
+
+      final success = await AuthService().resetPasswordWithOtp(
+        context,
+        email: email,
+        otpCode: otp,
+        newPassword: newPassword,
+      );
+
+      if (!mounted) return;
+      setState(() => _isVerifyingOtp = false);
+
+      if (success) {
+        _showWelcomeSuccessScreen();
+      }
     }
   }
 
@@ -524,7 +440,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     }
   }
 
-  // STEP 1: Phone Number Only
+  // STEP 1: Email Address
   Widget _buildStep1PhoneEmail() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final loc = AppLocalizations.of(context);
@@ -536,7 +452,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            isEn ? 'Enter your phone number.' : 'Nhập số điện thoại của bạn.',
+            isEn ? 'Enter your email.' : 'Nhập email của bạn.',
             style: GoogleFonts.plusJakartaSans(
               fontSize: 28,
               fontWeight: FontWeight.w900,
@@ -547,8 +463,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           const SizedBox(height: 8),
           Text(
             isEn
-                ? "We will send a verification code via SMS to verify."
-                : "Chúng tôi sẽ gửi mã xác nhận qua tin nhắn SMS để xác minh.",
+                ? "We will send a 6-digit verification code to your email."
+                : "Chúng tôi sẽ gửi mã xác thực 6 chữ số tới email của bạn.",
             style: TextStyle(
               fontSize: 14,
               color: isDark ? const Color(0xFFD0D7D1) : const Color(0xFF7A867E),
@@ -557,111 +473,21 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           ),
           const SizedBox(height: 24),
 
-          Text(
-            isEn ? 'Phone Number' : 'Số điện thoại',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: isDark ? Colors.white : AppColors.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 8),
-
-          FormField<String>(
-            key: const ValueKey('phone_form_field'),
-            validator: (_) {
-              final input = _phoneController.text.trim();
-              if (input.isEmpty) {
-                return isEn ? 'Please enter phone number' : 'Vui lòng nhập số điện thoại';
+          CustomTextField(
+            controller: _emailController,
+            hintText: isEn ? 'Email address' : 'Địa chỉ email',
+            prefixIcon: Icons.email_outlined,
+            keyboardType: TextInputType.emailAddress,
+            validator: (value) {
+              if (value == null || value.trim().isEmpty) {
+                return isEn ? 'Please enter email address' : 'Vui lòng nhập địa chỉ email';
               }
-              final isNumeric = RegExp(r'^[0-9]+$').hasMatch(input);
-              if (!isNumeric || input.length != 10) {
-                return isEn ? 'Phone number must be 10 digits' : 'Số điện thoại phải có đúng 10 chữ số';
+              final input = value.trim();
+              final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+              if (!emailRegex.hasMatch(input)) {
+                return isEn ? 'Invalid email address' : 'Email không hợp lệ';
               }
               return null;
-            },
-            builder: (FormFieldState<String> state) {
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF19271E) : const Color(0xFFF7FAF8),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: state.hasError
-                            ? AppColors.error
-                            : (isDark ? const Color(0xFF2E4D36) : const Color(0xFFE2E8E4)),
-                        width: 1.5,
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        const SizedBox(width: 14),
-                        Icon(
-                          Icons.phone_android_rounded,
-                          color: isDark ? const Color(0xFF81C784) : const Color(0xFF7A867E),
-                          size: 20,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          '+84',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                            color: isDark ? Colors.white : AppColors.textPrimary,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Container(
-                          width: 1,
-                          height: 24,
-                          color: isDark ? const Color(0xFF2E4D36) : const Color(0xFFE2E8E4),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: TextField(
-                            controller: _phoneController,
-                            keyboardType: TextInputType.phone,
-                            onChanged: (val) {
-                              state.didChange(val);
-                              setState(() {});
-                            },
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: isDark ? Colors.white : AppColors.textPrimary,
-                            ),
-                            decoration: InputDecoration(
-                              hintText: '812 345 678',
-                              hintStyle: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w500,
-                                color: isDark ? const Color(0xFF9DA8A0) : AppColors.hintText,
-                              ),
-                              border: InputBorder.none,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (state.hasError) ...[
-                    const SizedBox(height: 6),
-                    Padding(
-                      padding: const EdgeInsets.only(left: 12),
-                      child: Text(
-                        state.errorText!,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: AppColors.error,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ],
-                ],
-              );
             },
           ),
 
@@ -694,19 +520,19 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     );
   }
 
-  // STEP 2: OTP Verification UI (Always-visible numeric keypad & 4 OTP digit boxes)
+  // STEP 2: OTP Verification UI (6 OTP digit boxes)
   Widget _buildStep2Otp() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final loc = AppLocalizations.of(context);
     final isEn = loc?.locale.languageCode == 'en';
 
-    String destination = '(+84) ${_phoneController.text.trim()}';
+    String destination = _emailController.text.trim();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Text(
-          isEn ? 'Enter 4-digit code.' : 'Nhập mã xác thực 4 chữ số.',
+          isEn ? 'Enter 6-digit code.' : 'Nhập mã xác thực 6 chữ số.',
           textAlign: TextAlign.center,
           style: GoogleFonts.plusJakartaSans(
             fontSize: 28,
@@ -726,7 +552,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             ),
             children: [
               TextSpan(
-                text: isEn ? "Verification code sent via SMS to\n" : "Mã xác thực đã được gửi qua SMS tới\n",
+                text: isEn ? "Verification code sent to email\n" : "Mã xác thực đã được gửi tới email\n",
               ),
               TextSpan(
                 text: destination,
@@ -740,25 +566,25 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         ),
         const SizedBox(height: 28),
 
-        // 4 Visual OTP digit boxes driven by single controller
+        // 6 Visual OTP digit boxes
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: List.generate(4, (index) {
+          children: List.generate(6, (index) {
             String text = "";
             if (index < _otpSingleController.text.length) {
               text = _otpSingleController.text[index];
             }
 
             bool isFocused = (index == _otpSingleController.text.length) ||
-                (index == 3 && _otpSingleController.text.length == 4);
+                (index == 5 && _otpSingleController.text.length == 6);
 
             return Container(
-              width: 62,
-              height: 66,
-              margin: const EdgeInsets.symmetric(horizontal: 6),
+              width: 44,
+              height: 56,
+              margin: const EdgeInsets.symmetric(horizontal: 4),
               decoration: BoxDecoration(
                 color: isDark ? const Color(0xFF19271E) : Colors.white,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(12),
                 border: Border.all(
                   color: isFocused
                       ? (isDark ? const Color(0xFF81C784) : Colors.black)
@@ -770,7 +596,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 child: Text(
                   text,
                   style: TextStyle(
-                    fontSize: 24,
+                    fontSize: 22,
                     fontWeight: FontWeight.bold,
                     color: isDark ? Colors.white : AppColors.textPrimary,
                   ),
@@ -786,7 +612,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         Center(
           child: _canResend
               ? TextButton(
-                  onPressed: _startResendTimer,
+                  onPressed: () async {
+                    _startResendTimer();
+                    await AuthService().sendForgotPasswordOtp(context, _emailController.text.trim());
+                  },
                   child: Text(
                     isEn ? 'Resend code' : 'Gửi lại mã',
                     style: TextStyle(
@@ -826,7 +655,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final loc = AppLocalizations.of(context);
     final isEn = loc?.locale.languageCode == 'en';
-    final isFilled = _otpSingleController.text.length == 4;
+    final isFilled = _otpSingleController.text.length == 6;
 
     return Container(
       padding: const EdgeInsets.only(left: 20, right: 20, top: 12, bottom: 8),
@@ -848,7 +677,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             height: 54,
             child: ElevatedButton(
               onPressed: () {
-                if (_otpSingleController.text.length == 4) {
+                if (_otpSingleController.text.length == 6) {
                   _checkAndVerifyOtp(_otpSingleController.text);
                 }
               },
@@ -933,7 +762,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                           });
                         }
                       } else {
-                        if (_otpSingleController.text.length < 4) {
+                        if (_otpSingleController.text.length < 6) {
                           setState(() {
                             _otpSingleController.text += key;
                           });

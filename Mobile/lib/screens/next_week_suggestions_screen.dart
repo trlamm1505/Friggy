@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../data/models/recipe_model.dart';
+import '../data/services/api_exception.dart';
 import '../data/services/api_service.dart';
 import '../l10n/app_localizations.dart';
 import '../widgets/friggy_app_bar.dart';
 import 'recipe_detail_screen.dart';
+import 'package_management_screen.dart';
 import 'shopping_reminder_screen.dart';
 
 class NextWeekSuggestionsScreen extends StatefulWidget {
@@ -164,9 +166,57 @@ class _NextWeekSuggestionsScreenState extends State<NextWeekSuggestionsScreen> {
     } catch (e) {
       debugPrint('[NextWeekSuggestionsScreen] Error regenerating slot: $e');
       if (mounted) {
+        final isEn = AppLocalizations.of(context)?.locale.languageCode == 'en';
+        String errorMessage = isEn
+            ? 'Failed to swap dish. Please try again.'
+            : 'Đổi món thất bại. Vui lòng thử lại.';
+        if (e is ApiException) {
+          errorMessage = e.message;
+        } else if (e.toString().contains('dùng hết')) {
+          errorMessage = e.toString().replaceAll('Exception: ', '');
+        }
         setState(() {
           _regeneratingSlotId = null;
         });
+        final isLimitError = errorMessage.contains('dùng hết') || errorMessage.contains('lượt AI');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.stars_rounded, color: Color(0xFFFFD54F), size: 20),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    errorMessage,
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: const Color(0xFF006428),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            margin: const EdgeInsets.all(16),
+            action: isLimitError
+                ? SnackBarAction(
+                    label: isEn ? 'Upgrade' : 'Nâng cấp',
+                    textColor: const Color(0xFFFFD54F),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const PackageManagementScreen(),
+                        ),
+                      );
+                    },
+                  )
+                : null,
+          ),
+        );
       }
     }
   }

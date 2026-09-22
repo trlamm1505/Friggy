@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
-import '../data/models/ingredient_model.dart';
+import '../data/models/fridge_models.dart';
+import '../widgets/scan_result_review_modal.dart';
 import '../l10n/app_localizations.dart';
 import '../data/services/api_service.dart';
 
@@ -51,177 +52,43 @@ class _ScanBarcodeScreenState extends State<ScanBarcodeScreen>
   }
 
   Future<void> _showResultDialog(String barcode) async {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final isEn = AppLocalizations.of(context)?.locale.languageCode == 'en';
-    
-    List<IngredientModel> allItems = [];
+    String scanId = '';
+    List<DetectedScanItemModel> detectedItems = [];
+
     try {
-      final res = await ApiService().getFridgeItems();
-      allItems = res.map((e) => IngredientModel.fromFridgeApi(e)).toList();
+      final res = await ApiService().scanBarcodeImage(barcode);
+      scanId = res['scanId'] as String? ?? '';
+      final statusModel = ScanStatusModel.fromJson(res);
+      detectedItems = statusModel.detectedItems;
     } catch (e) {
-      debugPrint('Error loading fridge items for scan: $e');
+      debugPrint('Barcode scan error: $e');
     }
 
-    final matchedItem = allItems.isNotEmpty
-        ? allItems.firstWhere(
-            (item) => item.id == barcode || item.name.contains(barcode),
-            orElse: () => allItems.first,
-          )
-        : IngredientModel(
-            id: 'scanned_item',
-            fridgeId: 'family',
-            fridgeName: 'Tủ Lạnh Gia Đình',
-            name: 'Món ăn mới ($barcode)',
-            englishName: 'New Item ($barcode)',
-            quantity: '1 kg',
-            unit: 'kg',
-            category: 'Thực phẩm',
-            storageArea: 'Fridge',
-            daysUntilExpiry: 7,
-            expiryText: 'Còn 7 ngày',
-            imagePath: 'assets/images/available_veggies.png',
-            badgeBgColor: const Color(0xFFE8F5E9),
-            badgeTextColor: const Color(0xFF2E7D32),
-          );
+    if (detectedItems.isEmpty) {
+      detectedItems = [
+        DetectedScanItemModel(
+          name: 'Sản phẩm ($barcode)',
+          quantity: 1.0,
+          unit: 'pcs',
+        ),
+      ];
+    }
 
     if (!mounted) return;
 
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24),
-            side: isDark
-                ? const BorderSide(color: Color(0xFF2E4D36), width: 1.2)
-                : BorderSide.none,
-          ),
-          backgroundColor: isDark ? const Color(0xFF19271E) : Colors.white,
-          title: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF233629) : const Color(0xFFE8F5E9),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.check_circle_rounded,
-                  color: isDark ? const Color(0xFF81C784) : const Color(0xFF4CAF50),
-                  size: 28,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                isEn ? 'Barcode Scanned!' : 'Đã quét mã vạch!',
-                style: GoogleFonts.outfit(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: isDark ? Colors.white : const Color(0xFF19221C),
-                ),
-              ),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                isEn ? 'Scanned code: $barcode' : 'Mã đã quét: $barcode',
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: isDark ? const Color(0xFFD0D7D1) : Colors.grey[700],
-                ),
-              ),
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF0E1611) : const Color(0xFFF7F9F7),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: isDark ? const Color(0xFF2E4D36) : Colors.grey.shade300,
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: Image.asset(
-                        matchedItem.imagePath,
-                        width: 50,
-                        height: 50,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            matchedItem.displayName(isEn),
-                            style: GoogleFonts.outfit(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: isDark ? Colors.white : const Color(0xFF19221C),
-                            ),
-                          ),
-                          Text(
-                            isEn ? 'Category: ${matchedItem.category}' : 'Danh mục: ${matchedItem.category}',
-                            style: GoogleFonts.plusJakartaSans(
-                              fontSize: 12,
-                              color: isDark ? const Color(0xFFD0D7D1) : Colors.grey[600],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-                setState(() {
-                  _hasDetected = false;
-                });
-              },
-              child: Text(
-                isEn ? 'Scan Again' : 'Quét lại',
-                style: GoogleFonts.plusJakartaSans(
-                  fontWeight: FontWeight.bold,
-                  color: isDark ? const Color(0xFFD0D7D1) : Colors.grey[700],
-                ),
-              ),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context);
-                Navigator.pop(context, matchedItem);
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: isDark ? const Color(0xFF81C784) : const Color(0xFF4CAF50),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-              ),
-              child: Text(
-                isEn ? 'Add to Fridge' : 'Thêm vào tủ lạnh',
-                style: GoogleFonts.plusJakartaSans(
-                  fontWeight: FontWeight.bold,
-                  color: isDark ? const Color(0xFF0E1611) : Colors.white,
-                ),
-              ),
-            ),
-          ],
-        );
-      },
+    final confirmSuccess = await ScanResultReviewModal.show(
+      context,
+      scanId: scanId.isNotEmpty ? scanId : 'barcode_$barcode',
+      initialItems: detectedItems,
     );
+
+    if (confirmSuccess == true && mounted) {
+      Navigator.pop(context, true);
+    } else if (mounted) {
+      setState(() {
+        _hasDetected = false;
+      });
+    }
   }
 
   Future<void> _pickImageFromGallery() async {

@@ -16,6 +16,12 @@ class AppConstants {
 
   // API Endpoints - Auth & Users
   static const String epAuthGoogle = '/auth/google';
+  static const String epAuthEmailRegister = '/auth/email/register';
+  static const String epAuthEmailVerifyOtp = '/auth/email/verify-otp';
+  static const String epAuthEmailLogin = '/auth/email/login';
+  static const String epAuthEmailForgotPassword = '/auth/email/forgot-password';
+  static const String epAuthEmailResetPassword = '/auth/email/reset-password';
+  static const String epAuthEmailChangePassword = '/auth/email/change-password';
   static const String epAuthPhoneSendOtp = '/auth/phone/send-otp';
   static const String epAuthPhoneVerify = '/auth/phone/verify';
   static const String epAuthRefreshToken = '/auth/refresh';
@@ -58,6 +64,8 @@ class AppConstants {
   static const String epSubscriptionsPlans = '/subscriptions/plans';
   static const String epSubscriptionsMe = '/subscriptions/me';
   static const String epSubscriptionsSubscribe = '/subscriptions/subscribe';
+  static const String epSubscriptionsRenew = '/subscriptions/renew';
+  static const String epSubscriptionsAutoRenewal = '/subscriptions/me/auto-renewal';
   static const String epSubscriptionsWebhook = '/subscriptions/webhook';
 
   // Notifications APIs

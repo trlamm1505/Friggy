@@ -21,6 +21,92 @@ class ApiService {
     return response as Map<String, dynamic>;
   }
 
+  /// Step 1: Register with Email -> sends OTP
+  Future<Map<String, dynamic>> emailRegister(String email) async {
+    final response = await _dioClient.post(
+      AppConstants.epAuthEmailRegister,
+      data: {'email': email},
+      skipAuth: true,
+    );
+    return response as Map<String, dynamic>;
+  }
+
+  /// Step 2: Verify OTP -> activates account & receives JWT tokens
+  Future<Map<String, dynamic>> verifyEmailOtp({
+    required String email,
+    required String otpCode,
+    required String password,
+    String? name,
+  }) async {
+    final data = <String, dynamic>{
+      'email': email,
+      'otpCode': otpCode,
+      'password': password,
+    };
+    if (name != null && name.trim().isNotEmpty) {
+      data['name'] = name.trim();
+    }
+    final response = await _dioClient.post(
+      AppConstants.epAuthEmailVerifyOtp,
+      data: data,
+      skipAuth: true,
+    );
+    return response as Map<String, dynamic>;
+  }
+
+  /// Login with email + password
+  Future<Map<String, dynamic>> emailLogin(String email, String password) async {
+    final response = await _dioClient.post(
+      AppConstants.epAuthEmailLogin,
+      data: {'email': email, 'password': password},
+      skipAuth: true,
+    );
+    return response as Map<String, dynamic>;
+  }
+
+  /// Request forgot password OTP to email
+  Future<Map<String, dynamic>> forgotPassword(String email) async {
+    final response = await _dioClient.post(
+      AppConstants.epAuthEmailForgotPassword,
+      data: {'email': email},
+      skipAuth: true,
+    );
+    return response as Map<String, dynamic>;
+  }
+
+  /// Reset password with OTP + new password
+  Future<Map<String, dynamic>> resetPassword({
+    required String email,
+    required String otpCode,
+    required String newPassword,
+  }) async {
+    final response = await _dioClient.post(
+      AppConstants.epAuthEmailResetPassword,
+      data: {
+        'email': email,
+        'otpCode': otpCode,
+        'newPassword': newPassword,
+      },
+      skipAuth: true,
+    );
+    return response as Map<String, dynamic>;
+  }
+
+  /// POST /auth/email/change-password - Change password for logged-in user
+  Future<Map<String, dynamic>> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    final response = await _dioClient.post(
+      AppConstants.epAuthEmailChangePassword,
+      data: {
+        'currentPassword': currentPassword,
+        'newPassword': newPassword,
+      },
+    );
+    return response as Map<String, dynamic>;
+  }
+
   /// Send OTP to phone number
   Future<dynamic> sendPhoneOtp(String phone) async {
     return await _dioClient.post(
@@ -150,8 +236,8 @@ class ApiService {
   // ------------------------------------------------------------------
 
   /// Get list of ingredients
-  Future<List<dynamic>> getIngredients({int? categoryId, String? search}) async {
-    final queryParams = <String, dynamic>{};
+  Future<List<dynamic>> getIngredients({int? categoryId, String? search, int limit = 500}) async {
+    final queryParams = <String, dynamic>{'limit': limit};
     if (categoryId != null) queryParams['categoryId'] = categoryId;
     if (search != null && search.isNotEmpty) queryParams['search'] = search;
 
@@ -294,12 +380,29 @@ class ApiService {
 
   /// POST /fridge/scan/:scanId/confirm - Confirm scan items into fridge
   Future<List<dynamic>> confirmScan(String scanId, List<Map<String, dynamic>> items) async {
-    final response = await _dioClient.post(
-      '/fridge/scan/$scanId/confirm',
-      data: {'items': items},
-    );
-    if (response is List<dynamic>) return response;
-    return [];
+    try {
+      if (scanId.isNotEmpty && !scanId.startsWith('barcode_')) {
+        final response = await _dioClient.post(
+          '/fridge/scan/$scanId/confirm',
+          data: {'items': items},
+        );
+        if (response is List<dynamic>) return response;
+      }
+    } catch (e) {
+      debugPrint('[ApiService confirmScan] Scan confirm API error: $e, falling back to direct item creation.');
+    }
+
+    // Fallback: Add items individually directly to fridge
+    final List<dynamic> resultList = [];
+    for (final item in items) {
+      try {
+        final added = await addFridgeItem(item);
+        resultList.add(added);
+      } catch (e) {
+        debugPrint('[ApiService confirmScan] Fallback add item error: $e');
+      }
+    }
+    return resultList;
   }
 
   /// GET /fridge/scan/history - Get scan history
@@ -496,9 +599,21 @@ class ApiService {
     return response as Map<String, dynamic>;
   }
 
-  /// DELETE /subscriptions/me - Cancel Individual subscription
-  Future<void> cancelSubscription() async {
-    await _dioClient.delete(AppConstants.epSubscriptionsMe);
+  /// POST /subscriptions/renew - Renew subscription 1 month (returns payment QR mock)
+  Future<Map<String, dynamic>> renewSubscription() async {
+    final response = await _dioClient.post(AppConstants.epSubscriptionsRenew);
+    return response as Map<String, dynamic>;
+  }
+
+  /// DELETE /subscriptions/me/auto-renewal - Cancel auto renewal
+  Future<Map<String, dynamic>> cancelAutoRenewal() async {
+    final response = await _dioClient.delete(AppConstants.epSubscriptionsAutoRenewal);
+    return response as Map<String, dynamic>;
+  }
+
+  /// Deprecated alias: Cancel Individual subscription auto-renewal
+  Future<Map<String, dynamic>> cancelSubscription() async {
+    return await cancelAutoRenewal();
   }
 
   // ------------------------------------------------------------------

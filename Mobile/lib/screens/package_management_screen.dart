@@ -156,12 +156,21 @@ class _PackageManagementScreenState extends State<PackageManagementScreen> {
 
                   if (isCurrentPlan) {
                     if (plan.priceVnd > 0) {
-                      buttonText = isEn ? 'Cancel Plan' : 'Hủy gói (Về Free)';
-                      buttonColor = const Color(0xFFE53935);
-                      onTapAction = () {
-                        Navigator.pop(context);
-                        _confirmCancelSubscription();
-                      };
+                      if (_userSub?.autoRenew == true) {
+                        buttonText = isEn ? 'Cancel Auto-Renewal' : 'Hủy gia hạn tự động';
+                        buttonColor = const Color(0xFFE53935);
+                        onTapAction = () {
+                          Navigator.pop(context);
+                          _confirmCancelAutoRenewal();
+                        };
+                      } else {
+                        buttonText = isEn ? 'Renew Plan (+1 month)' : 'Gia hạn gói (+1 tháng)';
+                        buttonColor = const Color(0xFF008435);
+                        onTapAction = () {
+                          Navigator.pop(context);
+                          _handleRenew();
+                        };
+                      }
                     } else {
                       buttonText = isEn ? 'Current Default Plan' : 'Gói mặc định hiện tại';
                       buttonColor = Colors.grey.shade400;
@@ -484,7 +493,31 @@ class _PackageManagementScreenState extends State<PackageManagementScreen> {
     );
   }
 
-  void _confirmCancelSubscription() {
+  Future<void> _handleRenew() async {
+    setState(() => _isLoading = true);
+    try {
+      final res = await _apiService.renewSubscription();
+      final subscribeData = SubscribeResponseModel.fromJson(res);
+      if (mounted) {
+        setState(() => _isLoading = false);
+        _showQrPaymentModal(subscribeData);
+      }
+    } catch (e) {
+      debugPrint('[PackageManagementScreen] Error renewing plan: $e');
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString().replaceAll('ApiException: ', '')),
+            backgroundColor: const Color(0xFFE53935),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
+  void _confirmCancelAutoRenewal() {
     final loc = AppLocalizations.of(context);
     final isEn = loc?.locale.languageCode == 'en';
 
@@ -493,16 +526,16 @@ class _PackageManagementScreenState extends State<PackageManagementScreen> {
       builder: (context) {
         return AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: Text(isEn ? 'Cancel Subscription?' : 'Hủy gói Individual?'),
+          title: Text(isEn ? 'Cancel Auto-Renewal?' : 'Hủy gia hạn tự động?'),
           content: Text(
             isEn
-                ? 'Are you sure you want to cancel Individual plan? Your account will revert to Free plan.'
-                : 'Bạn có chắc chắn muốn hủy gói Individual? Tài khoản của bạn sẽ tự động chuyển về gói Miễn Phí (Basic).',
+                ? 'Your subscription will stay active until expiry date, then automatically revert to Free plan.'
+                : 'Gói dịch vụ của bạn vẫn giữ nguyên đến hết ngày hết hạn, sau đó mới chuyển về gói Miễn Phí.',
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: Text(isEn ? 'Keep Plan' : 'Giữ lại gói'),
+              child: Text(isEn ? 'Keep Auto-Renewal' : 'Giữ gia hạn'),
             ),
             ElevatedButton(
               onPressed: () async {
@@ -510,12 +543,13 @@ class _PackageManagementScreenState extends State<PackageManagementScreen> {
                 Navigator.pop(context);
                 setState(() => _isLoading = true);
                 try {
-                  await _apiService.cancelSubscription();
+                  final res = await _apiService.cancelAutoRenewal();
+                  final msg = res['message']?.toString() ?? 'Đã hủy gia hạn tự động thành công.';
                   if (mounted) {
                     messenger.showSnackBar(
-                      const SnackBar(
-                        content: Text('Đã hủy gói thành công. Bạn đã chuyển về gói Free.'),
-                        backgroundColor: Color(0xFF008435),
+                      SnackBar(
+                        content: Text(msg),
+                        backgroundColor: const Color(0xFF008435),
                         behavior: SnackBarBehavior.floating,
                       ),
                     );
@@ -538,7 +572,7 @@ class _PackageManagementScreenState extends State<PackageManagementScreen> {
                 backgroundColor: const Color(0xFFE53935),
                 foregroundColor: Colors.white,
               ),
-              child: Text(isEn ? 'Confirm Cancel' : 'Xác nhận hủy'),
+              child: Text(isEn ? 'Confirm Cancel' : 'Xác nhận hủy gia hạn'),
             ),
           ],
         );
@@ -1019,9 +1053,66 @@ class _PackageManagementScreenState extends State<PackageManagementScreen> {
                                   ),
                                 ],
                               ),
-                            ],
-                          ),
-                        ),
+                              if (isIndividual || (currentPlan != null && currentPlan.priceVnd > 0)) ...[
+                                Divider(
+                                    height: 22,
+                                    color: isDark
+                                        ? const Color(0xFF2E4D36)
+                                        : const Color(0xFFE8F5E9)),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: ElevatedButton.icon(
+                                        onPressed: _handleRenew,
+                                        icon: const Icon(Icons.autorenew_rounded, size: 16),
+                                        label: Text(
+                                          isEn ? 'Renew (+1 Mo)' : 'Gia hạn gói',
+                                          style: GoogleFonts.plusJakartaSans(
+                                            fontSize: 12.5,
+                                            fontWeight: FontWeight.w800,
+                                          ),
+                                        ),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: const Color(0xFF008435),
+                                          foregroundColor: Colors.white,
+                                          padding: const EdgeInsets.symmetric(vertical: 8),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(12),
+                                          ),
+                                          elevation: 0,
+                                        ),
+                                      ),
+                                    ),
+                                    if (_userSub?.autoRenew == true) ...[
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: OutlinedButton.icon(
+                                          onPressed: _confirmCancelAutoRenewal,
+                                          icon: const Icon(Icons.cancel_outlined, size: 16),
+                                          label: Text(
+                                            isEn ? 'Cancel Auto-Renew' : 'Hủy gia hạn tự động',
+                                            style: GoogleFonts.plusJakartaSans(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                          ),
+                                          style: OutlinedButton.styleFrom(
+                                            foregroundColor: const Color(0xFFE53935),
+                                            side: const BorderSide(color: Color(0xFFE53935), width: 1.2),
+                                            padding: const EdgeInsets.symmetric(vertical: 8),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius: BorderRadius.circular(12),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                     ],
+                                   ],
+                                 ),
+                               ],
+                             ],
+                           ),
+                         ),
 
                         const SizedBox(height: 24),
 

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../data/services/api_service.dart';
 import '../data/services/auth_service.dart';
 import '../l10n/app_localizations.dart';
 import '../theme/app_theme.dart';
@@ -19,7 +18,7 @@ class RegisterScreen extends StatefulWidget {
 class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _fullNameController = TextEditingController();
-  final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController = TextEditingController();
 
@@ -30,21 +29,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   void dispose() {
     _fullNameController.dispose();
-    _phoneController.dispose();
+    _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
-  }
-
-  String _formatPhone(String input) {
-    final clean = input.trim().replaceAll(RegExp(r'\s+'), '');
-    if (clean.startsWith('0')) {
-      return '+84${clean.substring(1)}';
-    }
-    if (!clean.startsWith('+')) {
-      return '+84$clean';
-    }
-    return clean;
   }
 
   int _calculatePasswordStrength(String password) {
@@ -151,44 +139,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   void _handleRegister() async {
     if (_formKey.currentState?.validate() ?? false) {
-      final formattedPhone = _formatPhone(_phoneController.text);
+      final email = _emailController.text.trim();
+      final password = _passwordController.text;
+      final fullName = _fullNameController.text.trim();
       setState(() => _isLoading = true);
 
-      try {
-        await ApiService().sendPhoneOtp(formattedPhone);
+      final success = await AuthService().registerEmailSendOtp(context, email);
 
-        if (!mounted) return;
-        setState(() => _isLoading = false);
+      if (!mounted) return;
+      setState(() => _isLoading = false);
 
-        _showOtpVerificationModal(formattedPhone);
-      } catch (e) {
-        if (!mounted) return;
-        setState(() => _isLoading = false);
-        final errorMsg = e.toString().replaceAll('ApiException: ', '');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.error_outline, color: Colors.white),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    errorMsg,
-                    style: const TextStyle(fontWeight: FontWeight.w600),
-                  ),
-                ),
-              ],
-            ),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-        );
+      if (success) {
+        _showOtpVerificationModal(email, password, fullName);
       }
     }
   }
 
-  void _showOtpVerificationModal(String phone) {
+  void _showOtpVerificationModal(String email, String password, String name) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final loc = AppLocalizations.of(context);
     final isEn = loc?.locale.languageCode == 'en';
@@ -235,8 +202,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     const SizedBox(height: 8),
                     Text(
                       isEn
-                          ? '6-digit verification OTP code was sent to $phone'
-                          : 'Mã OTP 6 chữ số đã được gửi đến $phone',
+                          ? '6-digit verification OTP code was sent to $email'
+                          : 'Mã OTP 6 chữ số đã được gửi đến $email',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 14,
@@ -272,10 +239,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                                 setModalState(() => isVerifying = true);
 
-                                final success = await AuthService().verifyPhoneOtpAndLogin(
+                                final success = await AuthService().verifyEmailOtpAndRegister(
                                   context,
-                                  phone,
-                                  otp,
+                                  email: email,
+                                  otpCode: otp,
+                                  password: password,
+                                  name: name.isNotEmpty ? name : null,
                                 );
 
                                 if (context.mounted) {
@@ -497,20 +466,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       const SizedBox(height: 10),
 
-                      // 2. Phone Number Input Field
+                      // 2. Email Address Input Field
                       CustomTextField(
-                        controller: _phoneController,
-                        hintText: isEn ? 'Phone Number' : 'Số điện thoại',
-                        prefixIcon: Icons.phone_android_outlined,
-                        keyboardType: TextInputType.phone,
+                        controller: _emailController,
+                        hintText: isEn ? 'Email address' : 'Địa chỉ email',
+                        prefixIcon: Icons.email_outlined,
+                        keyboardType: TextInputType.emailAddress,
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
-                            return isEn ? 'Please enter phone number' : 'Vui lòng nhập số điện thoại';
+                            return isEn ? 'Please enter email address' : 'Vui lòng nhập địa chỉ email';
                           }
                           final input = value.trim();
-                          final isNumeric = RegExp(r'^[0-9]+$').hasMatch(input);
-                          if (!isNumeric || input.length != 10) {
-                            return isEn ? 'Phone number must be 10 digits' : 'Số điện thoại phải bao gồm đúng 10 chữ số';
+                          final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+                          if (!emailRegex.hasMatch(input)) {
+                            return isEn ? 'Invalid email address' : 'Email không hợp lệ';
                           }
                           return null;
                         },
