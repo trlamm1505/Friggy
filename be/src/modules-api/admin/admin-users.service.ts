@@ -36,7 +36,7 @@ export class AdminUsersService {
         select: {
           id: true,
           name: true,
-          phone: true,
+          email: true,
           googleEmail: true,
           authProvider: true,
           status: true,
@@ -72,7 +72,7 @@ export class AdminUsersService {
       select: {
         id: true,
         name: true,
-        phone: true,
+        email: true,
         googleEmail: true,
         authProvider: true,
         status: true,

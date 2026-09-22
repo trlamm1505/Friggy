@@ -7,8 +7,8 @@ export class AuthUserDto {
   @ApiProperty({ example: 'Nguyễn Văn A', nullable: true })
   name!: string | null;
 
-  @ApiProperty({ example: '+84912345678', nullable: true })
-  phone!: string | null;
+  @ApiProperty({ example: 'user@gmail.com', nullable: true })
+  email!: string | null;
 
   @ApiProperty({ example: 'user@gmail.com', nullable: true })
   googleEmail!: string | null;
@@ -37,12 +37,17 @@ export class AuthResponseDto {
   isNewUser!: boolean;
 }
 
-export class SendOtpResponseDto {
-  @ApiProperty({ example: 'OTP đã được gửi đến +84912345678' })
+export class OtpSentResponseDto {
+  @ApiProperty({ example: 'OTP đã được gửi tới user@gmail.com' })
   message!: string;
 
   @ApiProperty({ example: 300, description: 'Thời gian hiệu lực (giây)' })
   expiresIn!: number;
+}
+
+export class MessageResponseDto {
+  @ApiProperty({ example: 'Thao tác thành công' })
+  message!: string;
 }
 
 export class RefreshResponseDto {

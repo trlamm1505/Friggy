@@ -20,23 +20,24 @@ import {
   UserSubscriptionResponseDto,
   SubscribeResponseDto,
   WebhookResponseDto,
+  CancelRenewalResponseDto,
 } from './dto/subscriptions-response.dto';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import type { JwtPayload } from 'src/common/interfaces/jwt-payload.interface';
 import { Public } from 'src/common/decorators/public.decorator';
 
 @ApiTags('Subscriptions')
-@ApiBearerAuth('access-token')
 @Controller('subscriptions')
 export class SubscriptionsController {
   constructor(private readonly subscriptionsService: SubscriptionsService) {}
 
   // ─────────────────────────────────────────────────────────
-  // GET /plans — DS gói
+  // GET /plans — DS gói (Public — cho Web SEO gọi không cần auth)
   // ─────────────────────────────────────────────────────────
 
   @Get('plans')
-  @ApiOperation({ summary: 'Danh sách 2 gói dịch vụ: Free & Individual' })
+  @Public()
+  @ApiOperation({ summary: '[Public] Danh sách gói dịch vụ: Free, Individual, Family' })
   @ApiResponse({ status: 200, type: [SubscriptionPlanResponseDto] })
   getPlans(): Promise<SubscriptionPlanResponseDto[]> {
     return this.subscriptionsService.getPlans();
@@ -47,20 +48,20 @@ export class SubscriptionsController {
   // ─────────────────────────────────────────────────────────
 
   @Get('me')
-  @ApiOperation({ summary: 'Gói dịch vụ hiện tại của user (tự tạo Free nếu chưa có)' })
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Gói dịch vụ hiện tại của user' })
   @ApiResponse({ status: 200, type: UserSubscriptionResponseDto })
-  getMySubscription(
-    @CurrentUser() user: JwtPayload,
-  ): Promise<UserSubscriptionResponseDto> {
+  getMySubscription(@CurrentUser() user: JwtPayload): Promise<UserSubscriptionResponseDto> {
     return this.subscriptionsService.getMySubscription(user.sub);
   }
 
   // ─────────────────────────────────────────────────────────
-  // POST /subscribe — Đăng ký Individual
+  // POST /subscribe — Đăng ký gói có phí
   // ─────────────────────────────────────────────────────────
 
   @Post('subscribe')
-  @ApiOperation({ summary: 'Đăng ký gói Individual → nhận QR thanh toán (mock)' })
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Đăng ký gói Individual/Family → nhận QR thanh toán (mock)' })
   @ApiResponse({ status: 201, type: SubscribeResponseDto })
   @ApiResponse({ status: 400, description: 'Gói không hợp lệ hoặc đã đăng ký rồi' })
   subscribe(
@@ -68,6 +69,36 @@ export class SubscriptionsController {
     @Body() dto: SubscribeDto,
   ): Promise<SubscribeResponseDto> {
     return this.subscriptionsService.subscribe(user.sub, dto);
+  }
+
+  // ─────────────────────────────────────────────────────────
+  // POST /renew — Gia hạn thêm 1 tháng (mock)
+  // ─────────────────────────────────────────────────────────
+
+  @Post('renew')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Gia hạn gói thêm 1 tháng (mock — chưa gắn thanh toán)' })
+  @ApiResponse({ status: 200, type: SubscribeResponseDto })
+  @ApiResponse({ status: 400, description: 'Không thể gia hạn gói Free' })
+  renew(@CurrentUser() user: JwtPayload): Promise<SubscribeResponseDto> {
+    return this.subscriptionsService.renew(user.sub);
+  }
+
+  // ─────────────────────────────────────────────────────────
+  // POST /cancel-renewal — Hủy gia hạn tự động (vẫn dùng đến hết hạn)
+  // ─────────────────────────────────────────────────────────
+
+  @Post('cancel-renewal')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({
+    summary: 'Hủy gia hạn tự động — gói giữ nguyên đến hết endDate rồi về Free',
+  })
+  @ApiResponse({ status: 200, type: CancelRenewalResponseDto })
+  @ApiResponse({ status: 400, description: 'Không thể hủy gia hạn gói Free' })
+  cancelRenewal(@CurrentUser() user: JwtPayload): Promise<CancelRenewalResponseDto> {
+    return this.subscriptionsService.cancelRenewal(user.sub);
   }
 
   // ─────────────────────────────────────────────────────────
@@ -84,12 +115,13 @@ export class SubscriptionsController {
   }
 
   // ─────────────────────────────────────────────────────────
-  // DELETE /me — Hủy gói
+  // DELETE /me — Hủy gói ngay lập tức (legacy — nên dùng cancel-renewal)
   // ─────────────────────────────────────────────────────────
 
   @Delete('me')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ summary: 'Hủy gói Individual → tự động chuyển về Free' })
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Hủy gói ngay lập tức (giữ nguyên để tương thích)' })
   @ApiResponse({ status: 204, description: 'Hủy thành công' })
   @ApiResponse({ status: 400, description: 'Không thể hủy gói Free' })
   cancelSubscription(@CurrentUser() user: JwtPayload): Promise<void> {

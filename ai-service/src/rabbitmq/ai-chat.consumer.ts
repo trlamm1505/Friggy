@@ -94,8 +94,13 @@ export class AiChatConsumer {
         },
       });
 
+      // Ghi log AI usage (fix bug: guard chỉ check nhưng không INSERT)
+      await this.prisma.aiUsageLog.create({
+        data: { userId, featureType: 'chat', usedAt: new Date() },
+      });
+
       this.logger.log(
-        `✅ [AiChatConsumer] Hoàn thành: sessionId=${sessionId} | tokens=${tokensUsed}`,
+        `[AiChatConsumer] Hoàn thành: sessionId=${sessionId} | tokens=${tokensUsed}`,
       );
     } catch (error: any) {
       this.logger.error(

@@ -13,6 +13,7 @@ import {
   AI_SLOT_REGENERATE_QUEUE_NAME,
 } from 'src/common/constant/app.constant';
 import { RedisService } from 'src/redis/redis.service';
+import { PrismaService } from 'src/prisma/prisma.service';
 import { SingleAgentService } from 'src/ai-core/single-agent.service';
 
 export interface SlotRegenerateJob {
@@ -20,8 +21,8 @@ export interface SlotRegenerateJob {
   userId: string;
   slotId: string;
   currentRecipeName: string | null;
-  mealType: string;       // breakfast | lunch | dinner | snack
-  dayOfWeek: number;      // 1–7
+  mealType: string; // breakfast | lunch | dinner | snack
+  dayOfWeek: number; // 1–7
   budgetRemaining: number;
   reason: string;
 }
@@ -47,6 +48,7 @@ export class SlotRegenerateConsumer {
 
   constructor(
     private readonly redis: RedisService,
+    private readonly prisma: PrismaService,
     private readonly singleAgent: SingleAgentService,
   ) {}
 
@@ -57,7 +59,16 @@ export class SlotRegenerateConsumer {
     queueOptions: { durable: true },
   })
   async handle(data: SlotRegenerateJob): Promise<void | Nack> {
-    const { jobId, userId, slotId, currentRecipeName, mealType, dayOfWeek, budgetRemaining, reason } = data;
+    const {
+      jobId,
+      userId,
+      slotId,
+      currentRecipeName,
+      mealType,
+      dayOfWeek,
+      budgetRemaining,
+      reason,
+    } = data;
     const channel = `slot_regenerate:${jobId}:result`;
 
     this.logger.log(
@@ -115,10 +126,15 @@ export class SlotRegenerateConsumer {
       await emit('done', {
         slotId,
         suggestions,
-        message: '✅ AI đã tìm được 3 gợi ý thay thế',
+        message: 'AI đã tìm được 3 gợi ý món thay thế',
       });
 
-      this.logger.log(`✅ [SlotRegenerate] Done: jobId=${jobId}`);
+      // Ghi log AI usage (fix bug: guard chỉ check nhưng không INSERT)
+      await this.prisma.aiUsageLog.create({
+        data: { userId, featureType: 'slot_regenerate', usedAt: new Date() },
+      });
+
+      this.logger.log(`[SlotRegenerate] Done: jobId=${jobId}`);
     } catch (err: any) {
       this.logger.error(`❌ [SlotRegenerate] Lỗi: ${err?.message}`);
       await emit('error', { message: err?.message ?? 'Đã xảy ra lỗi' });

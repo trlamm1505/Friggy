@@ -1,50 +1,114 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsString,
   IsNotEmpty,
-  Matches,
+  IsEmail,
+  MinLength,
+  MaxLength,
   Length,
+  Matches,
+  IsOptional,
 } from 'class-validator';
 
-/**
- * DTO gửi OTP về số điện thoại
- */
-export class SendOtpDto {
-  @ApiProperty({
-    example: '+84912345678',
-    description: 'Số điện thoại định dạng E.164 (bắt đầu bằng +84)',
-  })
-  @IsString()
-  @IsNotEmpty()
-  @Matches(/^\+84[3-9]\d{8}$/, {
-    message: 'Số điện thoại không hợp lệ (cần định dạng +84xxxxxxxxx)',
-  })
-  phone!: string;
+// ─────────────────────────────────────────────────────────
+// Email + Password Auth
+// ─────────────────────────────────────────────────────────
+
+export class EmailRegisterDto {
+  @ApiProperty({ example: 'user@gmail.com' })
+  @IsEmail({}, { message: 'Email không hợp lệ' })
+  email!: string;
 }
 
-/**
- * DTO xác minh OTP
- */
-export class VerifyOtpDto {
-  @ApiProperty({ example: '+84912345678' })
+export class EmailLoginDto {
+  @ApiProperty({ example: 'user@gmail.com' })
+  @IsEmail({}, { message: 'Email không hợp lệ' })
+  email!: string;
+
+  @ApiProperty({ example: 'MyPassword123!' })
   @IsString()
   @IsNotEmpty()
-  @Matches(/^\+84[3-9]\d{8}$/, {
-    message: 'Số điện thoại không hợp lệ',
-  })
-  phone!: string;
+  password!: string;
+}
+
+export class VerifyEmailOtpDto {
+  @ApiProperty({ example: 'user@gmail.com' })
+  @IsEmail()
+  email!: string;
 
   @ApiProperty({ example: '123456', description: 'Mã OTP 6 chữ số' })
   @IsString()
-  @IsNotEmpty()
   @Length(6, 6, { message: 'OTP phải đúng 6 chữ số' })
   @Matches(/^\d{6}$/, { message: 'OTP chỉ gồm chữ số' })
   otpCode!: string;
 }
 
-/**
- * DTO đăng nhập bằng Google
- */
+/** DTO đầy đủ cho POST /auth/email/verify-otp — Swagger hiển thị đúng payload */
+export class VerifyEmailOtpFullDto {
+  @ApiProperty({ example: 'user@gmail.com' })
+  @IsEmail()
+  email!: string;
+
+  @ApiProperty({ example: '123456', description: 'Mã OTP 6 chữ số gửi về email' })
+  @IsString()
+  @Length(6, 6, { message: 'OTP phải đúng 6 chữ số' })
+  @Matches(/^\d{6}$/, { message: 'OTP chỉ gồm chữ số' })
+  otpCode!: string;
+
+  @ApiProperty({ example: 'MyPassword123!', minLength: 8, description: 'Mật khẩu cho tài khoản' })
+  @IsString()
+  @MinLength(8, { message: 'Mật khẩu tối thiểu 8 ký tự' })
+  @MaxLength(64)
+  password!: string;
+
+  @ApiPropertyOptional({ example: 'Nguyễn Văn A', description: 'Tên hiển thị (tùy chọn)' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  name?: string;
+}
+
+export class ForgotPasswordDto {
+  @ApiProperty({ example: 'user@gmail.com' })
+  @IsEmail({}, { message: 'Email không hợp lệ' })
+  email!: string;
+}
+
+export class ResetPasswordDto {
+  @ApiProperty({ example: 'user@gmail.com' })
+  @IsEmail()
+  email!: string;
+
+  @ApiProperty({ example: '123456' })
+  @IsString()
+  @Length(6, 6)
+  @Matches(/^\d{6}$/)
+  otpCode!: string;
+
+  @ApiProperty({ example: 'NewPassword123!', minLength: 8 })
+  @IsString()
+  @MinLength(8, { message: 'Mật khẩu mới tối thiểu 8 ký tự' })
+  @MaxLength(64)
+  newPassword!: string;
+}
+
+export class ChangePasswordDto {
+  @ApiProperty({ example: 'OldPassword123!' })
+  @IsString()
+  @IsNotEmpty()
+  currentPassword!: string;
+
+  @ApiProperty({ example: 'NewPassword123!', minLength: 8 })
+  @IsString()
+  @MinLength(8, { message: 'Mật khẩu mới tối thiểu 8 ký tự' })
+  @MaxLength(64)
+  newPassword!: string;
+}
+
+// ─────────────────────────────────────────────────────────
+// Google Auth (giữ nguyên)
+// ─────────────────────────────────────────────────────────
+
 export class GoogleAuthDto {
   @ApiProperty({
     example: 'eyJhbGciOiJSUzI1NiIs...',
@@ -55,9 +119,10 @@ export class GoogleAuthDto {
   idToken!: string;
 }
 
-/**
- * DTO làm mới access token
- */
+// ─────────────────────────────────────────────────────────
+// Token management (giữ nguyên)
+// ─────────────────────────────────────────────────────────
+
 export class RefreshTokenDto {
   @ApiProperty({ description: 'Refresh Token hợp lệ' })
   @IsString()
@@ -65,9 +130,6 @@ export class RefreshTokenDto {
   refreshToken!: string;
 }
 
-/**
- * DTO đăng xuất
- */
 export class LogoutDto {
   @ApiProperty({ description: 'Refresh Token cần thu hồi' })
   @IsString()

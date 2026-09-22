@@ -125,4 +125,23 @@ export class RedisService implements OnModuleInit {
   getClient(): Redis {
     return this.client;
   }
+
+  // ─────────────────────────────────────────────────────────
+  // Atomic increment — dùng cho rate limiting
+  // Trả về giá trị sau khi tăng
+  // ─────────────────────────────────────────────────────────
+  async incr(key: string): Promise<number> {
+    return this.client.incr(key);
+  }
+
+  // ─────────────────────────────────────────────────────────
+  // Đặt TTL (giây) cho key — chỉ set nếu key chưa có TTL
+  // ─────────────────────────────────────────────────────────
+  async expireIfNew(key: string, ttlSeconds: number): Promise<void> {
+    const ttl = await this.client.ttl(key);
+    if (ttl === -1) {
+      // -1 = key tồn tại nhưng không có TTL → set TTL
+      await this.client.expire(key, ttlSeconds);
+    }
+  }
 }

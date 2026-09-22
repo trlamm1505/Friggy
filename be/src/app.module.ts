@@ -19,6 +19,7 @@ import { SubscriptionsModule } from './modules-api/subscriptions/subscriptions.m
 import { AdminModule } from './modules-api/admin/admin.module';
 import { MealPlanningModule } from './modules-api/meal-planning/meal-planning.module';
 import { AiChatModule } from './modules-api/ai-chat/ai-chat.module';
+import { PublicChatModule } from './modules-api/public-chat/public-chat.module';
 
 // Global guards
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
@@ -55,6 +56,7 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter';
     // AiCoreModule sẽ được bỏ ở Phase 9 khi AI Chat cũng chuyển sang AI Service
     MealPlanningModule,
     AiChatModule,
+    PublicChatModule,
   ],
   controllers: [],
   providers: [

@@ -26,6 +26,8 @@ export class UserSubscriptionResponseDto {
   @ApiProperty({ example: '2026-09-01', description: 'Ngày bắt đầu (YYYY-MM-DD)' }) startDate!: string;
   @ApiPropertyOptional({ example: '2026-10-01', description: 'Ngày hết hạn (null = gói free)' }) endDate!: string | null;
   @ApiPropertyOptional({ example: 'FRIGGY-2026-001', description: 'Mã tham chiếu thanh toán' }) paymentRef!: string | null;
+  @ApiProperty({ example: true, description: 'false = đã đặt hủy gia hạn, gói hết hạn sẽ về Free' }) autoRenew!: boolean;
+  @ApiPropertyOptional({ example: '2026-09-22T...', description: 'Thời điểm yêu cầu hủy gia hạn' }) cancelledAt!: string | null;
   @ApiProperty({ type: SubscriptionPlanResponseDto }) plan!: SubscriptionPlanResponseDto;
   @ApiProperty() createdAt!: string;
 }
@@ -44,4 +46,11 @@ export class SubscribeResponseDto {
 
 export class WebhookResponseDto {
   @ApiProperty({ example: true, description: 'Đã nhận và xử lý webhook thành công' }) received!: boolean;
+}
+
+// ─── Hủy gia hạn ─────────────────────────────────────────────────────────────
+
+export class CancelRenewalResponseDto {
+  @ApiProperty({ example: 'Đã hủy gia hạn tự động. Gói sẽ hết hạn vào 2026-10-22.' }) message!: string;
+  @ApiProperty({ example: '2026-10-22', description: 'Ngày hết hạn thực tế' }) endDate!: string | null;
 }

@@ -50,7 +50,7 @@ export class AdminCronController {
   })
   @ApiParam({
     name: 'name',
-    description: 'Tên cron job (expiry_warning | weekly_plan_remind)',
+    description: 'Tên cron job: expiry_warning | weekly_plan_remind | subscription_renewal_reminder',
   })
   @ApiResponse({ status: 200, description: 'Đã cập nhật cron job' })
   async updateCronJob(

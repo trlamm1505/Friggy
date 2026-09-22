@@ -226,21 +226,21 @@ export type BoolWithAggregatesFilter<$PrismaModel = never> = {
   _max?: Prisma.NestedBoolFilter<$PrismaModel>
 }
 
-export type EnumOtpPurposeFilter<$PrismaModel = never> = {
-  equals?: $Enums.OtpPurpose | Prisma.EnumOtpPurposeFieldRefInput<$PrismaModel>
-  in?: $Enums.OtpPurpose[]
-  notIn?: $Enums.OtpPurpose[]
-  not?: Prisma.NestedEnumOtpPurposeFilter<$PrismaModel> | $Enums.OtpPurpose
+export type EnumEmailOtpPurposeFilter<$PrismaModel = never> = {
+  equals?: $Enums.EmailOtpPurpose | Prisma.EnumEmailOtpPurposeFieldRefInput<$PrismaModel>
+  in?: $Enums.EmailOtpPurpose[]
+  notIn?: $Enums.EmailOtpPurpose[]
+  not?: Prisma.NestedEnumEmailOtpPurposeFilter<$PrismaModel> | $Enums.EmailOtpPurpose
 }
 
-export type EnumOtpPurposeWithAggregatesFilter<$PrismaModel = never> = {
-  equals?: $Enums.OtpPurpose | Prisma.EnumOtpPurposeFieldRefInput<$PrismaModel>
-  in?: $Enums.OtpPurpose[]
-  notIn?: $Enums.OtpPurpose[]
-  not?: Prisma.NestedEnumOtpPurposeWithAggregatesFilter<$PrismaModel> | $Enums.OtpPurpose
+export type EnumEmailOtpPurposeWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.EmailOtpPurpose | Prisma.EnumEmailOtpPurposeFieldRefInput<$PrismaModel>
+  in?: $Enums.EmailOtpPurpose[]
+  notIn?: $Enums.EmailOtpPurpose[]
+  not?: Prisma.NestedEnumEmailOtpPurposeWithAggregatesFilter<$PrismaModel> | $Enums.EmailOtpPurpose
   _count?: Prisma.NestedIntFilter<$PrismaModel>
-  _min?: Prisma.NestedEnumOtpPurposeFilter<$PrismaModel>
-  _max?: Prisma.NestedEnumOtpPurposeFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumEmailOtpPurposeFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumEmailOtpPurposeFilter<$PrismaModel>
 }
 
 export type EnumGenderNullableFilter<$PrismaModel = never> = {
@@ -1114,21 +1114,21 @@ export type NestedBoolWithAggregatesFilter<$PrismaModel = never> = {
   _max?: Prisma.NestedBoolFilter<$PrismaModel>
 }
 
-export type NestedEnumOtpPurposeFilter<$PrismaModel = never> = {
-  equals?: $Enums.OtpPurpose | Prisma.EnumOtpPurposeFieldRefInput<$PrismaModel>
-  in?: $Enums.OtpPurpose[]
-  notIn?: $Enums.OtpPurpose[]
-  not?: Prisma.NestedEnumOtpPurposeFilter<$PrismaModel> | $Enums.OtpPurpose
+export type NestedEnumEmailOtpPurposeFilter<$PrismaModel = never> = {
+  equals?: $Enums.EmailOtpPurpose | Prisma.EnumEmailOtpPurposeFieldRefInput<$PrismaModel>
+  in?: $Enums.EmailOtpPurpose[]
+  notIn?: $Enums.EmailOtpPurpose[]
+  not?: Prisma.NestedEnumEmailOtpPurposeFilter<$PrismaModel> | $Enums.EmailOtpPurpose
 }
 
-export type NestedEnumOtpPurposeWithAggregatesFilter<$PrismaModel = never> = {
-  equals?: $Enums.OtpPurpose | Prisma.EnumOtpPurposeFieldRefInput<$PrismaModel>
-  in?: $Enums.OtpPurpose[]
-  notIn?: $Enums.OtpPurpose[]
-  not?: Prisma.NestedEnumOtpPurposeWithAggregatesFilter<$PrismaModel> | $Enums.OtpPurpose
+export type NestedEnumEmailOtpPurposeWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.EmailOtpPurpose | Prisma.EnumEmailOtpPurposeFieldRefInput<$PrismaModel>
+  in?: $Enums.EmailOtpPurpose[]
+  notIn?: $Enums.EmailOtpPurpose[]
+  not?: Prisma.NestedEnumEmailOtpPurposeWithAggregatesFilter<$PrismaModel> | $Enums.EmailOtpPurpose
   _count?: Prisma.NestedIntFilter<$PrismaModel>
-  _min?: Prisma.NestedEnumOtpPurposeFilter<$PrismaModel>
-  _max?: Prisma.NestedEnumOtpPurposeFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumEmailOtpPurposeFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumEmailOtpPurposeFilter<$PrismaModel>
 }
 
 export type NestedEnumGenderNullableFilter<$PrismaModel = never> = {

@@ -53,15 +53,19 @@ export class AiUsageLimitGuard implements CanActivate {
     // Nếu không có subscription (free) → dùng default limit = 2
     const limit = subscription?.plan?.aiUsagePerWeek ?? 2;
 
-    // ── Đếm usage trong 7 ngày ──────────────────────────────
-    const weekAgo = new Date();
-    weekAgo.setDate(weekAgo.getDate() - 7);
+    // Tính đầu tuần hiện tại (Thứ 2 00:00:00) — reset mỗi tuần
+    const now = new Date();
+    const dayOfWeek = now.getDay(); // 0=CN, 1=T2, ..., 6=T7
+    const diffToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - diffToMonday);
+    startOfWeek.setHours(0, 0, 0, 0);
 
     const usedCount = await this.prisma.aiUsageLog.count({
       where: {
         userId,
         featureType,
-        usedAt: { gte: weekAgo },
+        usedAt: { gte: startOfWeek },
       },
     });
 

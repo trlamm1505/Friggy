@@ -16,6 +16,7 @@ import {
   AI_EXPIRING_MEAL_QUEUE_NAME,
 } from 'src/common/constant/app.constant';
 import { RedisService } from 'src/redis/redis.service';
+import { PrismaService } from 'src/prisma/prisma.service';
 import { SingleAgentService } from 'src/ai-core/single-agent.service';
 
 export interface ExpiringMealJob {
@@ -31,6 +32,7 @@ export class ExpiringMealPlanConsumer {
 
   constructor(
     private readonly redis: RedisService,
+    private readonly prisma: PrismaService,
     private readonly singleAgent: SingleAgentService,
   ) { }
 
@@ -111,13 +113,18 @@ export class ExpiringMealPlanConsumer {
       });
 
       await emit('completed', {
-        message: '✅ Thực đơn từ nguyên liệu sắp hết hạn đã sẵn sàng!',
+        message: 'Thuc don tu nguyen lieu sap het han da san sang!',
         summary: result,
         withinDays,
         days,
       });
 
-      this.logger.log(`✅ [ExpiringMeal] Done: jobId=${jobId}`);
+      // Ghi log AI usage (fix bug: guard chỉ check nhưng không INSERT)
+      await this.prisma.aiUsageLog.create({
+        data: { userId, featureType: 'expiring_plan', usedAt: new Date() },
+      });
+
+      this.logger.log(`[ExpiringMeal] Done: jobId=${jobId}`);
     } catch (err: any) {
       this.logger.error(`❌ [ExpiringMeal] Lỗi: ${err?.message}`);
       await emit('failed', { message: err?.message ?? 'Đã xảy ra lỗi' });
