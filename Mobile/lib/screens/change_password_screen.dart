@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../data/services/auth_service.dart';
 import '../l10n/app_localizations.dart';
 
 class ChangePasswordScreen extends StatefulWidget {
@@ -18,6 +19,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   bool _obscureOld = true;
   bool _obscureNew = true;
   bool _obscureConfirm = true;
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -39,7 +41,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     if (password.isEmpty) return 0;
     int score = 0;
 
-    final hasMinLength = password.length >= 6;
+    final hasMinLength = password.length >= 8;
     final hasLetterOrDigit = password.contains(RegExp(r'[A-Za-z0-9]'));
     final hasSpecialChar =
         password.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]')) ||
@@ -170,22 +172,29 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     );
   }
 
-  void _updatePassword() {
+  Future<void> _updatePassword() async {
     FocusScope.of(context).unfocus();
 
-    if (_formKey.currentState?.validate() ?? false) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Đã cập nhật mật khẩu mới thành công!'),
-          backgroundColor: const Color(0xFF008435),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-          ),
-          duration: const Duration(seconds: 2),
-        ),
-      );
-      Navigator.pop(context);
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+    if (_isLoading) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    final success = await AuthService().changePassword(
+      context,
+      currentPassword: _oldPasswordController.text,
+      newPassword: _newPasswordController.text,
+    );
+
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
+      if (success) {
+        Navigator.pop(context);
+      }
     }
   }
 
@@ -195,7 +204,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     final loc = AppLocalizations.of(context);
     final isEn = loc?.locale.languageCode == 'en';
     final newPassword = _newPasswordController.text;
-    final hasMinLength = newPassword.length >= 6;
+    final hasMinLength = newPassword.length >= 8;
     final hasLetterOrDigit = newPassword.contains(RegExp(r'[A-Z0-9a-z]'));
     final hasSpecialChar =
         newPassword.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]')) ||
@@ -358,8 +367,8 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                                   if (val == null || val.trim().isEmpty) {
                                     return isEn ? 'Please enter new password' : 'Vui lòng nhập mật khẩu mới';
                                   }
-                                  if (val.length < 6) {
-                                    return isEn ? 'New password must be at least 6 characters' : 'Mật khẩu mới phải có ít nhất 6 ký tự';
+                                  if (val.length < 8) {
+                                    return isEn ? 'New password must be at least 8 characters' : 'Mật khẩu mới phải có ít nhất 8 ký tự';
                                   }
                                   return null;
                                 },
@@ -416,7 +425,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                                     ),
                                     const SizedBox(height: 8),
                                     _buildRuleItem(
-                                      isEn ? '6 characters or more' : 'Từ 6 ký tự trở lên',
+                                      isEn ? '8 characters or more' : 'Từ 8 ký tự trở lên',
                                       hasMinLength,
                                     ),
                                     _buildRuleItem(
@@ -441,7 +450,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                           width: double.infinity,
                           height: 52,
                           child: ElevatedButton(
-                            onPressed: _updatePassword,
+                            onPressed: _isLoading ? null : _updatePassword,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: isDark ? const Color(0xFF81C784) : const Color(0xFF4CAF50),
                               elevation: 2,
@@ -449,14 +458,23 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                                 borderRadius: BorderRadius.circular(28),
                               ),
                             ),
-                            child: Text(
-                              isEn ? 'Update Password' : 'Cập nhật mật khẩu',
-                              style: GoogleFonts.plusJakartaSans(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w900,
-                                color: isDark ? const Color(0xFF0E1611) : Colors.white,
-                              ),
-                            ),
+                            child: _isLoading
+                                ? const SizedBox(
+                                    width: 24,
+                                    height: 24,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2.5,
+                                    ),
+                                  )
+                                : Text(
+                                    isEn ? 'Update Password' : 'Cập nhật mật khẩu',
+                                    style: GoogleFonts.plusJakartaSans(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w900,
+                                      color: isDark ? const Color(0xFF0E1611) : Colors.white,
+                                    ),
+                                  ),
                           ),
                         ),
                         const SizedBox(height: 20),

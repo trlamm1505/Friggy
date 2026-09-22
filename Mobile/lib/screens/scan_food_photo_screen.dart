@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import '../data/services/api_service.dart';
 import '../data/models/fridge_models.dart';
+import '../widgets/scan_result_review_modal.dart';
 import '../l10n/app_localizations.dart';
 
 class ScanFoodPhotoScreen extends StatefulWidget {
@@ -56,7 +57,6 @@ class _ScanFoodPhotoScreenState extends State<ScanFoodPhotoScreen> {
 
   Future<void> _processScan(File file) async {
     setState(() => _isAnalyzing = true);
-    final isEn = AppLocalizations.of(context)?.locale.languageCode == 'en';
     try {
       final scanRes = await _apiService.scanFoodImage(file.path);
       final scanId = scanRes['scanId'] as String? ?? '';
@@ -78,107 +78,23 @@ class _ScanFoodPhotoScreenState extends State<ScanFoodPhotoScreen> {
       setState(() => _isAnalyzing = false);
 
       final statusModel = ScanStatusModel.fromJson(statusRes);
-      if (statusModel.detectedItems.isNotEmpty) {
-        _showConfirmationBottomSheet(scanId, statusModel.detectedItems);
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(isEn ? 'AI Recognized food! Added to Fridge.' : 'AI đã nhận diện thực phẩm! Đã thêm vào tủ.'),
-            backgroundColor: const Color(0xFF008435),
-          ),
-        );
+      final confirmSuccess = await ScanResultReviewModal.show(
+        context,
+        scanId: scanId,
+        initialItems: statusModel.detectedItems,
+      );
+
+      if (confirmSuccess == true && mounted) {
+        Navigator.pop(context, true);
       }
     } catch (e) {
       debugPrint('Scan error: $e');
       if (!mounted) return;
       setState(() => _isAnalyzing = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(isEn ? 'AI Recognized food! Added to Fridge.' : 'AI đã nhận diện thực phẩm! Đã thêm vào tủ.'),
-          backgroundColor: const Color(0xFF008435),
-        ),
-      );
     }
   }
 
-  void _showConfirmationBottomSheet(String scanId, List<DetectedScanItemModel> items) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final isEn = AppLocalizations.of(context)?.locale.languageCode == 'en';
 
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        return Container(
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF19271E) : Colors.white,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-          ),
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                isEn ? 'Recognized Food Items' : 'Thực Phẩm Nhận Diện',
-                style: GoogleFonts.outfit(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: isDark ? Colors.white : const Color(0xFF006428),
-                ),
-              ),
-              const SizedBox(height: 12),
-              ...items.map((it) => ListTile(
-                    leading: const Icon(Icons.check_circle, color: Color(0xFF008435)),
-                    title: Text(it.name, style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold)),
-                    subtitle: Text('${it.quantity} ${it.unit}'),
-                    trailing: it.allergyWarning
-                        ? const Tooltip(
-                            message: 'Allergy warning!',
-                            child: Icon(Icons.warning_amber_rounded, color: Colors.orange),
-                          )
-                        : null,
-                  )),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF008435),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  ),
-                  onPressed: () async {
-                    try {
-                      final confirmItems = items.map((e) => e.toConfirmJson()).toList();
-                      await _apiService.confirmScan(scanId, confirmItems);
-                    } catch (e) {
-                      debugPrint('Confirm scan error: $e');
-                    }
-                    if (context.mounted) {
-                      Navigator.pop(context);
-                      Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(isEn ? 'Items added to fridge!' : 'Đã thêm thực phẩm vào tủ lạnh!'),
-                          backgroundColor: const Color(0xFF008435),
-                        ),
-                      );
-                    }
-                  },
-                  child: Text(
-                    isEn ? 'Confirm & Add to Fridge' : 'Xác Nhận & Thêm Vào Tủ',
-                    style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
-                  ),
-                ),
-              )
-            ],
-          ),
-        );
-      },
-    );
-  }
 
   void _toggleFlash() {
     setState(() => _isFlashOn = !_isFlashOn);

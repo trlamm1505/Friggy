@@ -1,4 +1,4 @@
-﻿/**
+/**
  * RateLimitService — Dịch vụ kiểm soát hạn mức sử dụng AI
  *
  * Friggy có 2 gói dịch vụ với hạn mức AI khác nhau:
@@ -24,7 +24,9 @@ export type AiFeatureType =
   | 'recipe_suggest' // Gợi ý công thức từ tủ lạnh
   | 'scan'           // Scan ảnh nguyên liệu/barcode bằng AI
   | 'chat'           // Trò chuyện với AI đầu bếp
-  | 'meal_plan';     // Lập thực đơn tuần bằng AI
+  | 'meal_plan'      // Lập thực đơn tuần bằng AI
+  | 'expiring_plan'  // Gợi ý món ăn từ đồ sắp hết hạn
+  | 'slot_regenerate'; // Đổi món AI trong thực đơn
 
 /** Hạn mức mặc định khi không tìm được thông tin subscription trong DB */
 const DEFAULT_WEEKLY_LIMIT = 2;
@@ -71,9 +73,18 @@ export class RateLimitService {
 
     // Hết hạn mức → từ chối và thông báo nâng cấp gói
     if (usedCount >= weeklyLimit) {
+      const individualPlan = await this.prisma.subscriptionPlan.findFirst({
+        where: { name: 'individual', isActive: true, deletedAt: null },
+        select: { priceVnd: true, displayName: true },
+      });
+      const priceText = individualPlan?.priceVnd
+        ? `${Math.round(individualPlan.priceVnd / 1000)}k/tháng`
+        : '25k/tháng';
+      const planName = individualPlan?.displayName ?? 'Individual';
+
       throw new ForbiddenException(
         `Bạn đã dùng hết ${weeklyLimit} lượt AI trong tuần này. ` +
-        `Nâng cấp lên gói Individual (25k/tháng) để sử dụng không giới hạn.`,
+        `Nâng cấp lên gói ${planName} (${priceText}) để sử dụng không giới hạn.`,
       );
     }
   }

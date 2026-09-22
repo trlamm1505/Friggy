@@ -107,7 +107,7 @@ export class SlotRegenerateConsumer {
       let suggestions = '';
       const stream$ = this.singleAgent.run({
         userId,
-        featureType: 'chat',
+        featureType: 'slot_regenerate',
         message: prompt,
       });
 
@@ -127,11 +127,6 @@ export class SlotRegenerateConsumer {
         slotId,
         suggestions,
         message: 'AI đã tìm được 3 gợi ý món thay thế',
-      });
-
-      // Ghi log AI usage (fix bug: guard chỉ check nhưng không INSERT)
-      await this.prisma.aiUsageLog.create({
-        data: { userId, featureType: 'slot_regenerate', usedAt: new Date() },
       });
 
       this.logger.log(`[SlotRegenerate] Done: jobId=${jobId}`);

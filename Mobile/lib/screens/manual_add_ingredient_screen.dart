@@ -74,8 +74,6 @@ class _ManualAddIngredientScreenState
       if (item['defaultUnit'] != null) {
         _selectedUnit = item['defaultUnit'] as String;
       }
-      final shelfDays = item['defaultShelfLifeDays'] as int? ?? 7;
-      _selectedExpirationDate = DateTime.now().add(Duration(days: shelfDays));
       _showSuggestions = false;
     });
   }
@@ -536,27 +534,22 @@ class _ManualAddIngredientScreenState
         final ingredients = await ApiService().getIngredients(search: name);
         if (ingredients.isNotEmpty && ingredients[0] is Map<String, dynamic>) {
           ingredientId = ingredients[0]['id'] as int?;
+        } else {
+          final words = name.split(' ').where((w) => w.isNotEmpty).toList();
+          if (words.isNotEmpty) {
+            final fallbackIngredients =
+                await ApiService().getIngredients(search: words.last);
+            if (fallbackIngredients.isNotEmpty &&
+                fallbackIngredients[0] is Map<String, dynamic>) {
+              ingredientId = fallbackIngredients[0]['id'] as int?;
+            }
+          }
         }
       }
 
-      if (ingredientId == null) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              isEn
-                  ? 'Ingredient "$name" not found in list. Please select an existing ingredient.'
-                  : 'Nguyên liệu "$name" chưa có sẵn trong danh sách. Vui lòng chọn từ gợi ý hệ thống.',
-            ),
-            backgroundColor: Colors.red.shade700,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-        return;
-      }
-
       await ApiService().addFridgeItem({
-        'ingredientId': ingredientId,
+        'ingredientId': ingredientId ?? 0,
+        'name': name,
         'quantity': qtyNum,
         'unit': _selectedUnit,
         if (_selectedExpirationDate != null)
@@ -571,10 +564,14 @@ class _ManualAddIngredientScreenState
             isEn ? 'Added $name to fridge!' : 'Đã thêm $name vào tủ lạnh thành công!',
           ),
           backgroundColor: const Color(0xFF008435),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
       );
 
-      Navigator.pop(context);
+      Navigator.pop(context, true);
     } catch (e) {
       debugPrint('Add fridge item error: $e');
       if (!mounted) return;
@@ -583,7 +580,11 @@ class _ManualAddIngredientScreenState
           content: Text(
             isEn ? 'Failed to add item to fridge' : 'Không thể thêm nguyên liệu vào tủ',
           ),
-          backgroundColor: Colors.red.shade700,
+          backgroundColor: const Color(0xFF008435),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
       );
     }
@@ -875,7 +876,7 @@ class _ManualAddIngredientScreenState
                               Expanded(
                                 child: Text(
                                   _selectedExpirationDate == null
-                                      ? (isEn ? 'Auto-calculated or tap to set' : 'Tự động tính hoặc bấm để chọn')
+                                      ? (isEn ? 'Tap to set date (Optional)' : 'Bấm để chọn ngày (Không bắt buộc)')
                                       : '${_selectedExpirationDate!.day.toString().padLeft(2, '0')}/${_selectedExpirationDate!.month.toString().padLeft(2, '0')}/${_selectedExpirationDate!.year}',
                                   style: GoogleFonts.plusJakartaSans(
                                     fontSize: 14.5,
@@ -886,6 +887,22 @@ class _ManualAddIngredientScreenState
                                   ),
                                 ),
                               ),
+                              if (_selectedExpirationDate != null)
+                                GestureDetector(
+                                  onTap: () {
+                                    setState(() {
+                                      _selectedExpirationDate = null;
+                                    });
+                                  },
+                                  child: Padding(
+                                    padding: const EdgeInsets.only(right: 8.0),
+                                    child: Icon(
+                                      Icons.cancel_rounded,
+                                      size: 18,
+                                      color: isDark ? Colors.white54 : Colors.grey.shade400,
+                                    ),
+                                  ),
+                                ),
                               Icon(
                                 Icons.calendar_today_rounded,
                                 size: 20,
