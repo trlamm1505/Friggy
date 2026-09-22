@@ -133,85 +133,6 @@ class _ScanResultReviewModalState extends State<ScanResultReviewModal> {
     });
   }
 
-  String _removeAccents(String str) {
-    var withAccents =
-        'àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđÀÁẠẢÃÂẦẤẬẨẪĂẰẮẶẲẴÈÉẸẺẼÊỀẾỆỂỄÌÍỊỈĨÒÓỌỎÕÔỒỐỘỔỖƠỜỚỢỞỠÙÚỤỦŨƯỪỨỰỬỮỲÝỴỶỸĐ';
-    var withoutAccents =
-        'aaaaaaaaaaaaaaaaaeeeeeeeeeeeiiiiiooooooooooooooooouuuuuuuuuuuyyyydaaaaaaaaaaaaaaaaaeeeeeeeeeeeiiiiiooooooooooooooooouuuuuuuuuuuyyyyd';
-    for (int i = 0; i < withAccents.length; i++) {
-      str = str.replaceAll(withAccents[i], withoutAccents[i]);
-    }
-    return str.toLowerCase();
-  }
-
-  Future<int> _resolveIngredientId(String name, int? existingId) async {
-    final rawName = name.trim();
-    final trimmedName = rawName.toLowerCase();
-    if (trimmedName.isEmpty) return 9;
-
-    try {
-      final all = await ApiService().getIngredients(limit: 500);
-
-      // 1. If existingId is provided, verify it actually matches the name
-      if (existingId != null && existingId > 0) {
-        final existingMatch = all.firstWhere(
-          (ing) => ing is Map<String, dynamic> && ing['id'] == existingId,
-          orElse: () => null,
-        );
-        if (existingMatch != null && existingMatch is Map<String, dynamic>) {
-          final existingName = (existingMatch['name'] as String? ?? '').toLowerCase();
-          if (_removeAccents(existingName) == _removeAccents(trimmedName) ||
-              existingName.contains(trimmedName) ||
-              trimmedName.contains(existingName)) {
-            return existingId;
-          }
-        }
-      }
-
-      // 2. Exact match (accent or case insensitive)
-      final cleanTarget = _removeAccents(trimmedName);
-      for (final ing in all) {
-        if (ing is Map<String, dynamic>) {
-          final ingName = (ing['name'] as String? ?? '').toLowerCase();
-          if (_removeAccents(ingName) == cleanTarget) {
-            final id = ing['id'] as int?;
-            if (id != null && id > 0) return id;
-          }
-        }
-      }
-
-      // 3. Substring match
-      for (final ing in all) {
-        if (ing is Map<String, dynamic>) {
-          final ingName = (ing['name'] as String? ?? '').toLowerCase();
-          final cleanIng = _removeAccents(ingName);
-          if (cleanIng.contains(cleanTarget) || cleanTarget.contains(cleanIng)) {
-            final id = ing['id'] as int?;
-            if (id != null && id > 0) return id;
-          }
-        }
-      }
-
-      // 4. Word match
-      final words = cleanTarget.split(' ').where((w) => w.length > 1).toList();
-      for (final word in words.reversed) {
-        for (final ing in all) {
-          if (ing is Map<String, dynamic>) {
-            final cleanIng = _removeAccents((ing['name'] as String? ?? '').toLowerCase());
-            if (cleanIng.contains(word)) {
-              final id = ing['id'] as int?;
-              if (id != null && id > 0) return id;
-            }
-          }
-        }
-      }
-    } catch (e) {
-      debugPrint('Resolve ingredient error: $e');
-    }
-
-    return 9;
-  }
-
   Future<void> _confirmAndSave() async {
     final isEn = AppLocalizations.of(context)?.locale.languageCode == 'en';
     final validItems = _editableItems.where((it) => it.nameController.text.trim().isNotEmpty).toList();
@@ -235,10 +156,11 @@ class _ScanResultReviewModalState extends State<ScanResultReviewModal> {
       for (var item in validItems) {
         final name = item.nameController.text.trim();
         final qty = double.tryParse(item.qtyController.text.trim()) ?? 1.0;
-        final ingId = await _resolveIngredientId(name, item.ingredientId);
 
         confirmPayload.add({
-          'ingredientId': ingId,
+          if (item.ingredientId != null && item.ingredientId! > 0)
+            'ingredientId': item.ingredientId,
+          'name': name,
           'quantity': qty,
           'unit': item.unit,
           'storageLocation': item.storageLocation,
