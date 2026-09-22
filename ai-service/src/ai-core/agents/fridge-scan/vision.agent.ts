@@ -38,8 +38,8 @@ export class VisionAgent {
     const llmClient = await this.aiProvider.getActiveClient();
     const systemPrompt = this.getDefaultPrompt(params.scanType);
 
-    // Gemini Vision — gửi ảnh base64 kèm text prompt
-    const imageUrl = `data:${params.mimeType};base64,${params.imageBase64}`;
+    const validMimeType = params.mimeType && params.mimeType.startsWith('image/') ? params.mimeType : 'image/jpeg';
+    const imageUrl = `data:${validMimeType};base64,${params.imageBase64}`;
 
     const messages: ChatCompletionMessageParam[] = [
       { role: 'system', content: systemPrompt },
@@ -52,7 +52,7 @@ export class VisionAgent {
           },
           {
             type: 'text',
-            text: 'Phân tích ảnh và trả về JSON theo đúng cấu trúc đã yêu cầu. CHỈ trả về JSON, không thêm text.',
+            text: 'Phân tích ảnh và nhận diện tất cả nguyên liệu thực phẩm có trong ảnh. Trả về JSON theo đúng cấu trúc đã yêu cầu. CHỈ trả về JSON, không thêm text.',
           },
         ] as any,
       },
@@ -93,12 +93,16 @@ export class VisionAgent {
       }
 
       const items: RawDetectedItem[] = rawArray
-        .map((item: any) => ({
-          name: (item.name ?? item.ingredient ?? item.ten ?? item.product ?? '').trim(),
-          quantity: Number(item.quantity ?? item.amount ?? item.so_luong ?? 1),
-          unit: (item.unit ?? item.don_vi ?? item.unit_of_measure ?? 'cái').toString(),
-          confidence: Number(item.confidence ?? item.score ?? 0.8),
-        }))
+        .map((item: any) => {
+          let conf = Number(item.confidence ?? item.score ?? 0.85);
+          if (conf > 1.0) conf = conf / 100.0;
+          return {
+            name: (item.name ?? item.ingredient ?? item.ten ?? item.product ?? '').trim(),
+            quantity: Number(item.quantity ?? item.amount ?? item.so_luong ?? 1),
+            unit: (item.unit ?? item.don_vi ?? item.unit_of_measure ?? 'cái').toString(),
+            confidence: conf,
+          };
+        })
         .filter((item: RawDetectedItem) => item.name.length > 1);
 
       this.logger.log(`✅ [VisionAgent] Nhận diện xong: ${items.length} items thô`);
@@ -112,9 +116,20 @@ export class VisionAgent {
   private getDefaultPrompt(scanType: 'image' | 'receipt' | 'barcode'): string {
     const prompts = {
       image: `Bạn là AI chuyên nhận diện thực phẩm trong tủ lạnh và bếp.
-Phân tích ảnh và nhận diện TẤT CẢ nguyên liệu thực phẩm nhìn thấy được.
+Nhiệm vụ của bạn: Phân tích ảnh và nhận diện TẤT CẢ các loại thực phẩm/nguyên liệu có trong ảnh.
+ĐẶC BIỆT LƯU Ý: Nếu ảnh có NHIỀU LOẠI THỰC PHẨM KHÁC NHAU (ví dụ: vừa có cà chua, dưa chuột, xà lách, thịt...), bạn BẮT BUỘC phải tách thành TỪNG NGUYÊN LIỆU RIÊNG BIỆT trong danh sách "items". KHÔNG ĐƯỢC gộp chung hay bỏ sót nguyên liệu nào.
+
 Trả về JSON với cấu trúc CHÍNH XÁC:
-{ "items": [ { "name": "tên nguyên liệu tiếng Việt", "quantity": 1, "unit": "cái/kg/g/ml/gói/hộp/chai", "confidence": 0.95 } ] }`,
+{
+  "items": [
+    {
+      "name": "tên nguyên liệu bằng tiếng Việt (ví dụ: Cà chua, Dưa chuột)",
+      "quantity": 1,
+      "unit": "quả/củ/kg/g/cái/bó/gói/hộp/chai/miếng",
+      "confidence": 0.95
+    }
+  ]
+}`,
 
       receipt: `Bạn là AI chuyên đọc hóa đơn mua sắm siêu thị.
 Trích xuất danh sách thực phẩm từ hóa đơn (bỏ qua đồ dùng, hóa mỹ phẩm).

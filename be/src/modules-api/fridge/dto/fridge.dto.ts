@@ -24,9 +24,13 @@ export enum StorageLocationEnum {
 // ─── Add Fridge Item ─────────────────────────────────────────────────────────
 
 export class AddFridgeItemDto {
-  @ApiProperty({ example: 1 })
-  @IsInt() @IsPositive() @Type(() => Number)
-  ingredientId!: number;
+  @ApiPropertyOptional({ example: 1 })
+  @IsOptional() @IsInt() @Type(() => Number)
+  ingredientId?: number;
+
+  @ApiPropertyOptional({ example: 'Cà chua' })
+  @IsOptional() @IsString()
+  name?: string;
 
   @ApiProperty({ example: 500 })
   @IsNumber() @Min(0) @Type(() => Number)
@@ -90,9 +94,13 @@ export class ExpiringQueryDto {
 // ─── Confirm Scan ─────────────────────────────────────────────────────────────
 
 export class ConfirmedScanItemDto {
-  @ApiProperty({ example: 1 })
-  @IsInt() @IsPositive() @Type(() => Number)
-  ingredientId!: number;
+  @ApiPropertyOptional({ example: 1 })
+  @IsOptional() @IsInt() @Type(() => Number)
+  ingredientId?: number;
+
+  @ApiPropertyOptional({ example: 'Cà chua' })
+  @IsOptional() @IsString()
+  name?: string;
 
   @ApiProperty({ example: 500 })
   @IsNumber() @Min(0) @Type(() => Number)

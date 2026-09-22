@@ -1,4 +1,4 @@
-﻿import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from 'src/modules-system/prisma/prisma.service';
 import { RabbitMqPublisherService } from 'src/modules-system/rabbit-mq/rabbit-mq-publisher.service';
 import { FRIDGE_SCAN_ROUTING_KEY } from 'src/common/constants/app.constant';
@@ -137,11 +137,10 @@ export class FridgeService {
   // ─────────────────────────────────────────────────────────
 
   async addItem(userId: string, dto: AddFridgeItemDto): Promise<FridgeItemResponseDto> {
-    const ingredient = await this.prisma.ingredient.findFirst({
-      where: { id: dto.ingredientId, deletedAt: null },
-      include: { category: true }, // join để lấy category name cho expiry estimate
-    });
-    if (!ingredient) throw new NotFoundException('Nguyên liệu không tồn tại');
+    const ingredient = await this.resolveIngredient(dto.ingredientId, dto.name, dto.unit);
+    if (!ingredient) {
+      throw new BadRequestException(`Nguyên liệu '${dto.name || ''}' chưa có trong danh mục hệ thống.`);
+    }
 
     // Tự tính ngày hết hạn nếu FE không truyền (ưu tiên DB → category name → keyword → 7 ngày)
     const expiresAt = dto.expiresAt
@@ -156,7 +155,7 @@ export class FridgeService {
       data: {
         id: uuid(),
         userId,
-        ingredientId: dto.ingredientId,
+        ingredientId: ingredient.id,
         quantity: dto.quantity,
         unit: dto.unit,
         purchasedAt: dto.purchasedAt ? new Date(dto.purchasedAt) : null,
@@ -390,11 +389,10 @@ export class FridgeService {
     // Tạo fridge items từ confirmed list
     const createdItems: FridgeItemResponseDto[] = [];
     for (const item of dto.items) {
-      const ingredient = await this.prisma.ingredient.findFirst({
-        where: { id: item.ingredientId, deletedAt: null },
-        include: { category: true }, // join để lấy category name cho expiry estimate
-      });
-      if (!ingredient) continue;
+      const ingredient = await this.resolveIngredient(item.ingredientId, item.name, item.unit);
+      if (!ingredient) {
+        throw new BadRequestException(`Nguyên liệu '${item.name || ''}' chưa có trong danh mục hệ thống.`);
+      }
 
       // Tự tính ngày hết hạn nếu FE không truyền (ưu tiên DB → category name → keyword → 7 ngày)
       const expiresAt = item.expiresAt
@@ -409,7 +407,7 @@ export class FridgeService {
         data: {
           id: uuid(),
           userId,
-          ingredientId: item.ingredientId,
+          ingredientId: ingredient.id,
           quantity: item.quantity,
           unit: item.unit,
           expiresAt,
@@ -462,6 +460,81 @@ export class FridgeService {
   // ─────────────────────────────────────────────────────────
   // HELPER
   // ─────────────────────────────────────────────────────────
+
+  private removeAccents(str: string): string {
+    const withAccents =
+      'àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđÀÁẠẢÃÂẦẤẬẨẪĂẰẮẶẲẴÈÉẸẺẼÊỀẾỆỂỄÌÍỊỈĨÒÓỌỎÕÔỒỐỘỔỖƠỜỚỢỞỠÙÚỤỦŨƯỪỨỰỬỮỲÝỴỶỸĐ';
+    const withoutAccents =
+      'aaaaaaaaaaaaaaaaaeeeeeeeeeeeiiiiiooooooooooooooooouuuuuuuuuuuyyyydaaaaaaaaaaaaaaaaaeeeeeeeeeeeiiiiiooooooooooooooooouuuuuuuuuuuyyyyd';
+    let res = str;
+    for (let i = 0; i < withAccents.length; i++) {
+      res = res.replaceAll(withAccents[i], withoutAccents[i]);
+    }
+    return res.toLowerCase();
+  }
+
+  private async resolveIngredient(ingredientId?: number, name?: string, unit?: string) {
+    const rawName = name?.trim() ?? '';
+    const cleanTarget = this.removeAccents(rawName.toLowerCase());
+
+    const allIngredients = await this.prisma.ingredient.findMany({
+      where: { deletedAt: null },
+      include: { category: true },
+    });
+
+    // 1. If ingredientId is provided and valid, verify if its name actually matches target name
+    if (ingredientId && ingredientId > 0) {
+      const existingMatch = allIngredients.find((ing) => ing.id === ingredientId);
+      if (existingMatch) {
+        const cleanExisting = this.removeAccents(existingMatch.name.toLowerCase());
+        if (
+          !cleanTarget ||
+          cleanExisting === cleanTarget ||
+          cleanExisting.includes(cleanTarget) ||
+          cleanTarget.includes(cleanExisting)
+        ) {
+          return existingMatch;
+        }
+      }
+    }
+
+    // 2. If name is provided, search by exact name (accent-free)
+    if (cleanTarget.length > 0) {
+      for (const ing of allIngredients) {
+        if (this.removeAccents(ing.name.toLowerCase()) === cleanTarget) {
+          return ing;
+        }
+      }
+
+      // 3. Substring match
+      for (const ing of allIngredients) {
+        const cleanIng = this.removeAccents(ing.name.toLowerCase());
+        if (cleanIng.includes(cleanTarget) || cleanTarget.includes(cleanIng)) {
+          return ing;
+        }
+      }
+
+      // 4. Word-by-word match (only words > 2 chars)
+      const words = cleanTarget.split(/\s+/).filter((w) => w.length > 2);
+      for (const word of words.reverse()) {
+        for (const ing of allIngredients) {
+          const cleanIng = this.removeAccents(ing.name.toLowerCase());
+          if (cleanIng.includes(word)) {
+            return ing;
+          }
+        }
+      }
+    }
+
+    // 5. Fallback only if ingredientId was valid
+    if (ingredientId && ingredientId > 0) {
+      const matchById = allIngredients.find((ing) => ing.id === ingredientId);
+      if (matchById) return matchById;
+    }
+
+    // Return null if ingredient is not found in system catalog
+    return null;
+  }
 
   private mapFridgeItem(item: any): FridgeItemResponseDto {
     let daysUntilExpiry: number | null = null;

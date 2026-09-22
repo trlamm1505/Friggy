@@ -529,26 +529,9 @@ class _ManualAddIngredientScreenState
     if (_selectedStorageArea == 'Pantry') storageLoc = 'pantry';
 
     try {
-      int? ingredientId = _selectedIngredientId;
-      if (ingredientId == null) {
-        final ingredients = await ApiService().getIngredients(search: name);
-        if (ingredients.isNotEmpty && ingredients[0] is Map<String, dynamic>) {
-          ingredientId = ingredients[0]['id'] as int?;
-        } else {
-          final words = name.split(' ').where((w) => w.isNotEmpty).toList();
-          if (words.isNotEmpty) {
-            final fallbackIngredients =
-                await ApiService().getIngredients(search: words.last);
-            if (fallbackIngredients.isNotEmpty &&
-                fallbackIngredients[0] is Map<String, dynamic>) {
-              ingredientId = fallbackIngredients[0]['id'] as int?;
-            }
-          }
-        }
-      }
-
       await ApiService().addFridgeItem({
-        'ingredientId': ingredientId ?? 0,
+        if (_selectedIngredientId != null && _selectedIngredientId! > 0)
+          'ingredientId': _selectedIngredientId,
         'name': name,
         'quantity': qtyNum,
         'unit': _selectedUnit,

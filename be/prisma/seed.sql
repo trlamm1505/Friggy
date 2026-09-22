@@ -147,7 +147,9 @@ INSERT IGNORE INTO `ingredients` (`id`, `name`, `categoryId`, `defaultUnit`, `ca
   -- Đậu & Hạt (cat 10)
   (59, 'Đậu phụ',       10, 'miếng', 76,  8000,   '/public/ingredients/dau_phu.jpg',      1, NOW(), NOW()),
   (60, 'Đậu đen',       10, 'gram',  339, 25000,  '/public/ingredients/dau_den.jpg',      0, NOW(), NOW()),
-  (61, 'Lạc rang',      10, 'gram',  567, 30000,  '/public/ingredients/lac_rang.jpg',     0, NOW(), NOW());
+  (61, 'Lạc rang',      10, 'gram',  567, 30000,  '/public/ingredients/lac_rang.jpg',     0, NOW(), NOW()),
+  (62, 'Dưa chuột',     12, 'quả',   15,  12000,  '/public/ingredients/dua_chuot.jpg',    1, NOW(), NOW()),
+  (63, 'Dưa leo',       12, 'quả',   15,  12000,  '/public/ingredients/dua_leo.jpg',      1, NOW(), NOW());
 
 -- ============================================================
 -- [5] TAGS (22 tags phân loại công thức)

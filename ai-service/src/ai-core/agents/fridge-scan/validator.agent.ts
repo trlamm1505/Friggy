@@ -24,7 +24,7 @@ export interface DetectedItem {
 }
 
 // Ngưỡng confidence
-const CONFIDENCE_REJECT   = 0.4;  // < 0.4 → loại hoàn toàn
+const CONFIDENCE_REJECT   = 0.2;  // < 0.2 → loại hoàn toàn
 const CONFIDENCE_CONFIRM  = 0.7;  // < 0.7 → giữ nhưng cần xác nhận
 
 @Injectable()
