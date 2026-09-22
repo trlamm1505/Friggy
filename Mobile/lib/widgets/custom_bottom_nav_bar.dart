@@ -82,16 +82,16 @@ class CustomBottomNavigationBar extends StatelessWidget {
             // Tab 2: Fixed Deep Green Add Button (Enlarged 56x56, NO white border ring!)
             _buildFixedAddButton(),
 
-            // Tab 3: Messages
+            // Tab 3: AI Chat (Đầu bếp AI)
             _buildTabItem(
               context: context,
               index: 3,
               iconWidget: (color) => Icon(
-                Icons.chat_bubble_rounded,
-                size: 24,
+                Icons.smart_toy_rounded,
+                size: 25,
                 color: color,
               ),
-              label: loc?.messages ?? 'Tin nhắn',
+              label: 'Đầu bếp AI',
             ),
 
             // Tab 4: Profile
