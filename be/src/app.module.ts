@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+﻿import { Module } from '@nestjs/common';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
 
@@ -27,7 +27,7 @@ import { RolesGuard } from './common/guards/roles.guard';
 
 // Global interceptors
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
-import { ResponseSuccessInterceptor } from './common/interceptors/responese-success.interceptor';
+import { ResponseSuccessInterceptor } from './common/interceptors/response-success.interceptor';
 
 // Global filter
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';

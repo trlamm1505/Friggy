@@ -1,4 +1,4 @@
-/**
+﻿/**
  * PublicChatService — Orchestrator cho SEO Public Chatbot
  *
  * be/ chịu trách nhiệm:
@@ -16,10 +16,10 @@
  *
  * Không bị race condition vì XREAD với lastId='0' đọc từ đầu stream.
  */
-import { Injectable, Logger, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { RabbitMqPublisherService } from 'src/modules-system/rabbit-mq/rabbit-mq-publisher.service';
 import { RedisService } from 'src/modules-system/redis/redis.service';
-import { PUBLIC_CHAT_ROUTING_KEY } from 'src/common/constant/app.constant';
+import { PUBLIC_CHAT_ROUTING_KEY } from 'src/common/constants/app.constant';
 import { throwIfInjection } from 'src/common/utils/prompt-injection.util';
 import { Observable } from 'rxjs';
 import type { MessageEvent } from '@nestjs/common';
@@ -29,11 +29,8 @@ import { v4 as uuid } from 'uuid';
 // Constants
 // ─────────────────────────────────────────────────────────
 const MAX_MESSAGE_LENGTH = 500;
-const SESSION_TTL_SECONDS = 30 * 60;   // 30 phút không activity → session hết hạn
-const STREAM_TTL_SECONDS = 5 * 60;     // Redis Stream tự xóa sau 5 phút
 const SSE_TIMEOUT_MS = 35_000;         // Timeout tổng SSE
 const XREAD_BLOCK_MS = 5_000;          // Block mỗi 5s khi không có token mới
-const MAX_HISTORY_MESSAGES = 10;       // Tối đa 10 tin trong history
 
 // ─────────────────────────────────────────────────────────
 // Types
@@ -81,14 +78,6 @@ export class PublicChatService {
     try { return JSON.parse(raw) as ChatHistoryItem[]; } catch { return []; }
   }
 
-  private async saveHistory(sessionId: string, history: ChatHistoryItem[]): Promise<void> {
-    const trimmed = history.slice(-MAX_HISTORY_MESSAGES);
-    await this.redis.getClient().setex(
-      this.sessionRedisKey(sessionId),
-      SESSION_TTL_SECONDS,
-      JSON.stringify(trimmed),
-    );
-  }
 
   // ─────────────────────────────────────────────────────────
   // POST — Session check → publish RabbitMQ → trả streamKey
@@ -207,16 +196,4 @@ export class PublicChatService {
     });
   }
 
-  // ─────────────────────────────────────────────────────────
-  // Được gọi bởi ai-service sau khi stream xong (qua RabbitMQ reply)
-  // Lưu history để session có context cho lần sau
-  // ─────────────────────────────────────────────────────────
-  async saveSessionHistory(sessionId: string, userMessage: string, assistantReply: string): Promise<void> {
-    const history = await this.loadHistory(sessionId);
-    await this.saveHistory(sessionId, [
-      ...history,
-      { role: 'user', content: userMessage },
-      { role: 'assistant', content: assistantReply },
-    ]);
-  }
 }

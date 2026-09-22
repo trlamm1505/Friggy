@@ -18,7 +18,7 @@ import {
   ApiParam,
 } from '@nestjs/swagger';
 import { AdminAiService } from './admin-ai.service';
-import { CreateAiProviderDto, CreateAiPromptDto } from './dto/admin-ai.dto';
+import { CreateAiProviderDto, CreateAiPromptDto, UpdateAiPromptDto } from './dto/admin-ai.dto';
 import {
   AiProviderResponseDto,
   AiPromptResponseDto,
@@ -137,5 +137,31 @@ export class AdminAiController {
     @CurrentUser() user: JwtPayload,
   ): Promise<ActivateResponseDto> {
     return this.adminAiService.activatePrompt(id, user.sub);
+  }
+
+  @Patch('prompts/:id')
+  @ApiOperation({
+    summary: '[Admin] Sửa nội dung prompt (chỉ được sửa prompt chưa active)',
+    description: 'Dùng cho sửa nhỏ (typo, cập nhật câu từ). Không cho phép sửa prompt đang active.',
+  })
+  @ApiParam({ name: 'id', description: 'ID của prompt cần sửa' })
+  @ApiResponse({ status: 200, type: AiPromptDetailResponseDto })
+  @ApiResponse({ status: 404, description: 'Không tìm thấy' })
+  @ApiResponse({ status: 409, description: 'Prompt đang active — không thể sửa' })
+  updatePrompt(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateAiPromptDto,
+  ): Promise<AiPromptDetailResponseDto> {
+    return this.adminAiService.updatePrompt(id, dto);
+  }
+
+  @Delete('prompts/:id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: '[Admin] Xóa system prompt (soft delete, không xóa prompt đang active)' })
+  @ApiParam({ name: 'id', description: 'ID của prompt cần xóa' })
+  @ApiResponse({ status: 204, description: 'Đã xóa' })
+  @ApiResponse({ status: 409, description: 'Prompt đang active — không thể xóa' })
+  deletePrompt(@Param('id', ParseIntPipe) id: number): Promise<void> {
+    return this.adminAiService.deletePrompt(id);
   }
 }

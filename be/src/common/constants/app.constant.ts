@@ -1,4 +1,4 @@
-import 'dotenv/config';
+﻿import 'dotenv/config';
 
 export const PORT = process.env.PORT;
 export const NODE_ENV = process.env.NODE_ENV ?? 'development';
@@ -27,7 +27,7 @@ export const REDIS_URL = process.env.DATABASE_REDIS ?? 'redis://localhost:6380';
 export const RABBIT_MQ_URL =
   process.env.RABBIT_MQ_URL ?? 'amqp://user:12345@localhost:5673';
 
-// RabbitMQ Exchange & Routing Keys (phải khớp với ai-service/src/common/constant/app.constant.ts)
+// RabbitMQ Exchange & Routing Keys (phải khớp với ai-service/src/common/constants/app.constant.ts)
 export const FRIGGY_AI_EXCHANGE = 'friggy.ai';
 export const MEAL_PLAN_ROUTING_KEY = 'meal.plan.generate';
 export const AI_CHAT_ROUTING_KEY = 'ai.chat.message';

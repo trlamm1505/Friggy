@@ -1,4 +1,4 @@
-/**
+﻿/**
  * RedisService — Wrapper tiện lợi cho Redis cache
  *
  * Cung cấp các thao tác cơ bản: get/set/del/invalidatePattern
@@ -13,7 +13,7 @@
  */
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import Redis from 'ioredis';
-import { REDIS_URL } from 'src/common/constant/app.constant';
+import { REDIS_URL } from 'src/common/constants/app.constant';
 
 @Injectable()
 export class RedisService implements OnModuleInit {

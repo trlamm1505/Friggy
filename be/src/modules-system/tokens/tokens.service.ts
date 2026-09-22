@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+﻿import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import {
@@ -6,9 +6,9 @@ import {
   JWT_ACCESS_SECRET,
   JWT_REFRESH_EXPIRES_IN,
   JWT_REFRESH_SECRET,
-} from 'src/common/constant/app.constant';
+} from 'src/common/constants/app.constant';
 import { JwtPayload } from 'src/common/interfaces/jwt-payload.interface';
-import { hashToken, verifyToken } from 'src/common/helpers/otp.helper';
+import { hashToken, verifyToken } from 'src/common/utils/otp.util';
 import { v4 as uuid } from 'uuid';
 
 export interface TokenPair {

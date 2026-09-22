@@ -5,6 +5,7 @@ export class CategoryResponseDto {
   @ApiProperty() name!: string;
   @ApiPropertyOptional() iconPath!: string | null;
   @ApiPropertyOptional() parentId!: number | null;
+  @ApiPropertyOptional() defaultShelfLifeDays!: number | null;
   @ApiPropertyOptional({ type: () => [CategoryResponseDto] }) children?: CategoryResponseDto[];
 }
 

@@ -30,7 +30,10 @@ export class AdminStatsService {
       this.prisma.user.count({ where: { deletedAt: null, status: 'suspended' } }),
       this.prisma.user.count({ where: { deletedAt: null, createdAt: { gte: monthStart } } }),
       this.prisma.userSubscription.count({
-        where: { status: 'active', endDate: { gte: now } },
+        where: {
+          status: 'active',
+          OR: [{ endDate: null }, { endDate: { gte: now } }],
+        },
       }),
       // Revenue = tổng priceVnd của các subscription active tháng này
       this.prisma.userSubscription.findMany({

@@ -10,6 +10,7 @@ import {
   HttpStatus,
   UploadedFile,
   UseInterceptors,
+  BadRequestException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -20,6 +21,8 @@ import {
 } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { multerAvatarConfig } from 'src/common/configs/multer.config';
+import { unlinkSync, existsSync } from 'fs';
+import { join } from 'path';
 import { UsersService } from './users.service';
 import {
   UpdateProfileDto,
@@ -78,17 +81,26 @@ export class UsersController {
   // ─────────────────────────────────────────────────────────
 
   @Post('me/avatar')
-  @ApiOperation({ summary: 'Upload ảnh đại diện (JPEG/PNG, resize 256×256)' })
+  @ApiOperation({ summary: 'Upload ảnh đại diện (JPEG/PNG/WEBP, tối đa 5MB)' })
   @ApiConsumes('multipart/form-data')
-  @ApiResponse({ status: 200, description: 'Avatar URL mới', schema: { example: { avatarUrl: '/uploads/avatars/uuid.webp' } } })
+  @ApiResponse({ status: 200, description: 'Avatar URL mới', schema: { example: { avatarUrl: '/avatars/uuid.jpg' } } })
   @UseInterceptors(FileInterceptor('file', multerAvatarConfig))
   async uploadAvatar(
     @CurrentUser() user: JwtPayload,
     @UploadedFile() file: Express.Multer.File,
   ): Promise<{ avatarUrl: string }> {
-    // TODO Phase 5: tích hợp Sharp resize + lưu file
-    // Hiện trả về placeholder
-    return { avatarUrl: `/uploads/avatars/${user.sub}.webp` };
+    if (!file) throw new BadRequestException('Chưa chọn file');
+
+    // Xóa avatar cũ nếu có
+    const profile = await this.usersService.getProfile(user.sub);
+    if (profile?.avatarPath) {
+      const oldPath = join(process.cwd(), 'public', profile.avatarPath);
+      if (existsSync(oldPath)) unlinkSync(oldPath);
+    }
+
+    const avatarUrl = `/avatars/${file.filename}`;
+    await this.usersService.updateAvatarUrl(user.sub, avatarUrl);
+    return { avatarUrl };
   }
 
   // ─────────────────────────────────────────────────────────

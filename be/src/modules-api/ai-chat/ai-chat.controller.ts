@@ -76,13 +76,20 @@ export class AiChatController {
   // ─────────────────────────────────────────────────────────
 
   @Get('sessions/:id')
-  @ApiOperation({ summary: 'Chi tiết phiên chat + 50 messages gần nhất' })
+  @ApiOperation({ summary: 'Chi tiết phiên chat + messages (phân trang, mặc định 50/trang)' })
   @ApiResponse({ status: 200, type: SessionDetailDto })
   getSessionDetail(
     @CurrentUser() user: JwtPayload,
     @Param('id') id: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
   ): Promise<SessionDetailDto> {
-    return this.aiChatService.getSessionDetail(user.sub, id);
+    return this.aiChatService.getSessionDetail(
+      user.sub,
+      id,
+      page ? parseInt(page, 10) : 1,
+      limit ? Math.min(parseInt(limit, 10), 100) : 50,
+    );
   }
 
   // ─────────────────────────────────────────────────────────

@@ -113,7 +113,7 @@ export class ExpiringMealPlanConsumer {
       });
 
       await emit('completed', {
-        message: 'Thuc don tu nguyen lieu sap het han da san sang!',
+        message: 'Thực đơn từ nguyên liệu sắp hết hạn đã sẵn sàng!',
         summary: result,
         withinDays,
         days,

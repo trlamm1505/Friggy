@@ -1,7 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
+﻿import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from 'src/modules-system/prisma/prisma.service';
 import { RabbitMqPublisherService } from 'src/modules-system/rabbit-mq/rabbit-mq-publisher.service';
-import { FRIDGE_SCAN_ROUTING_KEY } from 'src/common/constant/app.constant';
+import { FRIDGE_SCAN_ROUTING_KEY } from 'src/common/constants/app.constant';
+import { estimateExpiryDate } from 'src/common/utils/expiry-estimator.util';
 import { v4 as uuid } from 'uuid';
 import type {
   AddFridgeItemDto,
@@ -138,8 +139,18 @@ export class FridgeService {
   async addItem(userId: string, dto: AddFridgeItemDto): Promise<FridgeItemResponseDto> {
     const ingredient = await this.prisma.ingredient.findFirst({
       where: { id: dto.ingredientId, deletedAt: null },
+      include: { category: true }, // join để lấy category name cho expiry estimate
     });
     if (!ingredient) throw new NotFoundException('Nguyên liệu không tồn tại');
+
+    // Tự tính ngày hết hạn nếu FE không truyền (ưu tiên DB → category name → keyword → 7 ngày)
+    const expiresAt = dto.expiresAt
+      ? new Date(dto.expiresAt)
+      : estimateExpiryDate(
+          ingredient.category?.defaultShelfLifeDays,
+          ingredient.category?.name,
+          ingredient.name,
+        );
 
     const item = await this.prisma.fridgeItem.create({
       data: {
@@ -149,7 +160,7 @@ export class FridgeService {
         quantity: dto.quantity,
         unit: dto.unit,
         purchasedAt: dto.purchasedAt ? new Date(dto.purchasedAt) : null,
-        expiresAt: dto.expiresAt ? new Date(dto.expiresAt) : null,
+        expiresAt,
         storageLocation: (dto.storageLocation as any) ?? 'fridge',
         addedBy: 'manual',
       },
@@ -381,8 +392,18 @@ export class FridgeService {
     for (const item of dto.items) {
       const ingredient = await this.prisma.ingredient.findFirst({
         where: { id: item.ingredientId, deletedAt: null },
+        include: { category: true }, // join để lấy category name cho expiry estimate
       });
       if (!ingredient) continue;
+
+      // Tự tính ngày hết hạn nếu FE không truyền (ưu tiên DB → category name → keyword → 7 ngày)
+      const expiresAt = item.expiresAt
+        ? new Date(item.expiresAt)
+        : estimateExpiryDate(
+            ingredient.category?.defaultShelfLifeDays,
+            ingredient.category?.name,
+            ingredient.name,
+          );
 
       const fridgeItem = await this.prisma.fridgeItem.create({
         data: {
@@ -391,7 +412,7 @@ export class FridgeService {
           ingredientId: item.ingredientId,
           quantity: item.quantity,
           unit: item.unit,
-          expiresAt: item.expiresAt ? new Date(item.expiresAt) : null,
+          expiresAt,
           storageLocation: (item.storageLocation as any) ?? 'fridge',
           addedBy: addedBy as any,
         },

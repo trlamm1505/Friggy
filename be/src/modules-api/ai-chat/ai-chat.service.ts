@@ -4,7 +4,7 @@
  * Xử lý CRUD chat sessions + messages, publish jobs lên RabbitMQ,
  * và subscribe Redis để stream SSE về FE.
  *
- * Prompt injection guard: sanitizeInput + throwIfInjection được gọi
+ * Prompt injection guard: throwIfInjection() được gọi tại sendMessage()
  * trước khi publish message lên RabbitMQ.
  */
 import {
@@ -17,7 +17,7 @@ import {
 import { PrismaService } from 'src/modules-system/prisma/prisma.service';
 import { RabbitMqPublisherService } from 'src/modules-system/rabbit-mq/rabbit-mq-publisher.service';
 import { RedisService } from 'src/modules-system/redis/redis.service';
-import { AI_CHAT_ROUTING_KEY } from 'src/common/constant/app.constant';
+import { AI_CHAT_ROUTING_KEY } from 'src/common/constants/app.constant';
 import { v4 as uuid } from 'uuid';
 import { Observable } from 'rxjs';
 import type {
@@ -97,13 +97,19 @@ export class AiChatService {
   // GET /sessions/:id — Chi tiết + lịch sử messages
   // ─────────────────────────────────────────────────────────
 
-  async getSessionDetail(userId: string, sessionId: string): Promise<SessionDetailDto> {
+  async getSessionDetail(
+    userId: string,
+    sessionId: string,
+    page = 1,
+    limit = 50,
+  ): Promise<SessionDetailDto> {
     const session = await this.prisma.chatSession.findFirst({
       where: { id: sessionId, userId, deletedAt: null },
       include: {
         messages: {
           orderBy: { createdAt: 'asc' },
-          take: 50,
+          skip: (page - 1) * limit,
+          take: limit,
         },
         _count: { select: { messages: true } },
       },

@@ -1,5 +1,5 @@
-import { createCipheriv, createDecipheriv, randomBytes, scryptSync } from 'crypto';
-import { ENCRYPTION_SECRET } from '../constant/app.constant';
+﻿import { createCipheriv, createDecipheriv, randomBytes, scryptSync } from 'crypto';
+import { ENCRYPTION_SECRET } from '../constants/app.constant';
 
 const ALGORITHM = 'aes-256-cbc';
 const IV_LENGTH = 16; // AES block size

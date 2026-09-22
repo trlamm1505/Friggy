@@ -1,4 +1,4 @@
-import {
+﻿import {
   CanActivate,
   ExecutionContext,
   Injectable,
@@ -7,7 +7,7 @@ import {
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
-import { JWT_ACCESS_SECRET } from '../constant/app.constant';
+import { JWT_ACCESS_SECRET } from '../constants/app.constant';
 import { JwtPayload } from '../interfaces/jwt-payload.interface';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
 

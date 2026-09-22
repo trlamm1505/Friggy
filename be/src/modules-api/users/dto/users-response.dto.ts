@@ -34,7 +34,7 @@ export class AllergyResponseDto {
 export class MeResponseDto {
   @ApiProperty() id!: string;
   @ApiPropertyOptional() name!: string | null;
-  @ApiPropertyOptional() phone!: string | null;
+  @ApiPropertyOptional() email!: string | null;
   @ApiPropertyOptional() googleEmail!: string | null;
   @ApiProperty() status!: string;
   @ApiProperty() role!: string;

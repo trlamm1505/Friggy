@@ -1,4 +1,4 @@
-/**
+﻿/**
  * MealPlanningService — Business logic cho Meal Planning Module
  *
  * Xử lý các nghiệp vụ:
@@ -18,7 +18,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from 'src/modules-system/prisma/prisma.service';
 import { v4 as uuidv4 } from 'uuid';
-import { MEAL_PLAN_ROUTING_KEY, AI_SLOT_REGENERATE_ROUTING_KEY, AI_EXPIRING_MEAL_ROUTING_KEY } from 'src/common/constant/app.constant';
+import { MEAL_PLAN_ROUTING_KEY, AI_SLOT_REGENERATE_ROUTING_KEY, AI_EXPIRING_MEAL_ROUTING_KEY } from 'src/common/constants/app.constant';
 import { RabbitMqPublisherService } from 'src/modules-system/rabbit-mq/rabbit-mq-publisher.service';
 import type {
   GenerateMealPlanDto,
