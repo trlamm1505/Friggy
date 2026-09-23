@@ -35,11 +35,12 @@ export class UserSubscriptionResponseDto {
 // ─── Kết quả đăng ký (QR thanh toán) ────────────────────────────────────────
 
 export class SubscribeResponseDto {
-  @ApiProperty({ example: 'https://qr.mock.vn/abc123', description: 'URL ảnh QR thanh toán (mock)' }) qrCodeUrl!: string;
-  @ApiProperty({ example: 'FRIGGY-2026-001', description: 'Mã tham chiếu dùng để đối soát' }) paymentRef!: string;
+  @ApiProperty({ example: 'https://pay.payos.vn/web/abc123', description: 'URL trang thanh toán PayOS (dùng để mở WebView hoặc browser)' }) checkoutUrl!: string;
+  @ApiProperty({ example: 'data:image/png;base64,...', description: 'Ảnh QR base64 từ PayOS — dùng để hiển thị trực tiếp trong app' }) qrCode!: string;
+  @ApiProperty({ example: 'FRIGGY-1727100000000', description: 'Mã tham chiếu nội bộ dùng để đối soát' }) paymentRef!: string;
   @ApiProperty({ example: 25000, description: 'Số tiền cần thanh toán (VND)' }) amount!: number;
-  @ApiProperty({ example: '2026-09-14T01:00:00Z', description: 'QR hết hạn sau 15 phút' }) expireAt!: string;
-  @ApiProperty({ example: 'pending', description: 'Trạng thái thanh toán: pending | success | failed' }) status!: string;
+  @ApiProperty({ example: '2026-09-24T02:00:00Z', description: 'Link thanh toán hết hạn sau 15 phút' }) expireAt!: string;
+  @ApiProperty({ example: 'pending', description: 'Trạng thái: pending | active | cancelled' }) status!: string;
 }
 
 // ─── Kết quả webhook callback ────────────────────────────────────────────────

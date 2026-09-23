@@ -1,4 +1,4 @@
-﻿import { Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
 
@@ -20,6 +20,7 @@ import { AdminModule } from './modules-api/admin/admin.module';
 import { MealPlanningModule } from './modules-api/meal-planning/meal-planning.module';
 import { AiChatModule } from './modules-api/ai-chat/ai-chat.module';
 import { PublicChatModule } from './modules-api/public-chat/public-chat.module';
+import { PaymentTransactionsModule } from './modules-api/payment-transactions/payment-transactions.module';
 
 // Global guards
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
@@ -57,6 +58,7 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter';
     MealPlanningModule,
     AiChatModule,
     PublicChatModule,
+    PaymentTransactionsModule,
   ],
   controllers: [],
   providers: [

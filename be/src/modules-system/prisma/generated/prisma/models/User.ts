@@ -304,6 +304,7 @@ export type UserWhereInput = {
   profile?: Prisma.XOR<Prisma.UserProfileNullableScalarRelationFilter, Prisma.UserProfileWhereInput> | null
   savedRecipes?: Prisma.UserSavedRecipeListRelationFilter
   subscription?: Prisma.XOR<Prisma.UserSubscriptionNullableScalarRelationFilter, Prisma.UserSubscriptionWhereInput> | null
+  paymentTransactions?: Prisma.PaymentTransactionListRelationFilter
   role?: Prisma.XOR<Prisma.RoleScalarRelationFilter, Prisma.RoleWhereInput>
   weeklyPlans?: Prisma.WeeklyPlanListRelationFilter
 }
@@ -339,6 +340,7 @@ export type UserOrderByWithRelationInput = {
   profile?: Prisma.UserProfileOrderByWithRelationInput
   savedRecipes?: Prisma.UserSavedRecipeOrderByRelationAggregateInput
   subscription?: Prisma.UserSubscriptionOrderByWithRelationInput
+  paymentTransactions?: Prisma.PaymentTransactionOrderByRelationAggregateInput
   role?: Prisma.RoleOrderByWithRelationInput
   weeklyPlans?: Prisma.WeeklyPlanOrderByRelationAggregateInput
   _relevance?: Prisma.UserOrderByRelevanceInput
@@ -378,6 +380,7 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   profile?: Prisma.XOR<Prisma.UserProfileNullableScalarRelationFilter, Prisma.UserProfileWhereInput> | null
   savedRecipes?: Prisma.UserSavedRecipeListRelationFilter
   subscription?: Prisma.XOR<Prisma.UserSubscriptionNullableScalarRelationFilter, Prisma.UserSubscriptionWhereInput> | null
+  paymentTransactions?: Prisma.PaymentTransactionListRelationFilter
   role?: Prisma.XOR<Prisma.RoleScalarRelationFilter, Prisma.RoleWhereInput>
   weeklyPlans?: Prisma.WeeklyPlanListRelationFilter
 }, "id" | "email" | "googleId">
@@ -454,6 +457,7 @@ export type UserCreateInput = {
   profile?: Prisma.UserProfileCreateNestedOneWithoutUserInput
   savedRecipes?: Prisma.UserSavedRecipeCreateNestedManyWithoutUserInput
   subscription?: Prisma.UserSubscriptionCreateNestedOneWithoutUserInput
+  paymentTransactions?: Prisma.PaymentTransactionCreateNestedManyWithoutUserInput
   role: Prisma.RoleCreateNestedOneWithoutUsersInput
   weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutUserInput
 }
@@ -489,6 +493,7 @@ export type UserUncheckedCreateInput = {
   profile?: Prisma.UserProfileUncheckedCreateNestedOneWithoutUserInput
   savedRecipes?: Prisma.UserSavedRecipeUncheckedCreateNestedManyWithoutUserInput
   subscription?: Prisma.UserSubscriptionUncheckedCreateNestedOneWithoutUserInput
+  paymentTransactions?: Prisma.PaymentTransactionUncheckedCreateNestedManyWithoutUserInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutUserInput
 }
 
@@ -522,6 +527,7 @@ export type UserUpdateInput = {
   profile?: Prisma.UserProfileUpdateOneWithoutUserNestedInput
   savedRecipes?: Prisma.UserSavedRecipeUpdateManyWithoutUserNestedInput
   subscription?: Prisma.UserSubscriptionUpdateOneWithoutUserNestedInput
+  paymentTransactions?: Prisma.PaymentTransactionUpdateManyWithoutUserNestedInput
   role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutUserNestedInput
 }
@@ -557,6 +563,7 @@ export type UserUncheckedUpdateInput = {
   profile?: Prisma.UserProfileUncheckedUpdateOneWithoutUserNestedInput
   savedRecipes?: Prisma.UserSavedRecipeUncheckedUpdateManyWithoutUserNestedInput
   subscription?: Prisma.UserSubscriptionUncheckedUpdateOneWithoutUserNestedInput
+  paymentTransactions?: Prisma.PaymentTransactionUncheckedUpdateManyWithoutUserNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutUserNestedInput
 }
 
@@ -997,6 +1004,20 @@ export type UserUpdateOneRequiredWithoutSubscriptionNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutSubscriptionInput, Prisma.UserUpdateWithoutSubscriptionInput>, Prisma.UserUncheckedUpdateWithoutSubscriptionInput>
 }
 
+export type UserCreateNestedOneWithoutPaymentTransactionsInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutPaymentTransactionsInput, Prisma.UserUncheckedCreateWithoutPaymentTransactionsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutPaymentTransactionsInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutPaymentTransactionsNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutPaymentTransactionsInput, Prisma.UserUncheckedCreateWithoutPaymentTransactionsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutPaymentTransactionsInput
+  upsert?: Prisma.UserUpsertWithoutPaymentTransactionsInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutPaymentTransactionsInput, Prisma.UserUpdateWithoutPaymentTransactionsInput>, Prisma.UserUncheckedUpdateWithoutPaymentTransactionsInput>
+}
+
 export type UserCreateWithoutRoleInput = {
   id?: string
   email?: string | null
@@ -1027,6 +1048,7 @@ export type UserCreateWithoutRoleInput = {
   profile?: Prisma.UserProfileCreateNestedOneWithoutUserInput
   savedRecipes?: Prisma.UserSavedRecipeCreateNestedManyWithoutUserInput
   subscription?: Prisma.UserSubscriptionCreateNestedOneWithoutUserInput
+  paymentTransactions?: Prisma.PaymentTransactionCreateNestedManyWithoutUserInput
   weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutUserInput
 }
 
@@ -1060,6 +1082,7 @@ export type UserUncheckedCreateWithoutRoleInput = {
   profile?: Prisma.UserProfileUncheckedCreateNestedOneWithoutUserInput
   savedRecipes?: Prisma.UserSavedRecipeUncheckedCreateNestedManyWithoutUserInput
   subscription?: Prisma.UserSubscriptionUncheckedCreateNestedOneWithoutUserInput
+  paymentTransactions?: Prisma.PaymentTransactionUncheckedCreateNestedManyWithoutUserInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutUserInput
 }
 
@@ -1138,6 +1161,7 @@ export type UserCreateWithoutProfileInput = {
   preferences?: Prisma.UserPreferenceCreateNestedOneWithoutUserInput
   savedRecipes?: Prisma.UserSavedRecipeCreateNestedManyWithoutUserInput
   subscription?: Prisma.UserSubscriptionCreateNestedOneWithoutUserInput
+  paymentTransactions?: Prisma.PaymentTransactionCreateNestedManyWithoutUserInput
   role: Prisma.RoleCreateNestedOneWithoutUsersInput
   weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutUserInput
 }
@@ -1172,6 +1196,7 @@ export type UserUncheckedCreateWithoutProfileInput = {
   preferences?: Prisma.UserPreferenceUncheckedCreateNestedOneWithoutUserInput
   savedRecipes?: Prisma.UserSavedRecipeUncheckedCreateNestedManyWithoutUserInput
   subscription?: Prisma.UserSubscriptionUncheckedCreateNestedOneWithoutUserInput
+  paymentTransactions?: Prisma.PaymentTransactionUncheckedCreateNestedManyWithoutUserInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutUserInput
 }
 
@@ -1220,6 +1245,7 @@ export type UserUpdateWithoutProfileInput = {
   preferences?: Prisma.UserPreferenceUpdateOneWithoutUserNestedInput
   savedRecipes?: Prisma.UserSavedRecipeUpdateManyWithoutUserNestedInput
   subscription?: Prisma.UserSubscriptionUpdateOneWithoutUserNestedInput
+  paymentTransactions?: Prisma.PaymentTransactionUpdateManyWithoutUserNestedInput
   role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutUserNestedInput
 }
@@ -1254,6 +1280,7 @@ export type UserUncheckedUpdateWithoutProfileInput = {
   preferences?: Prisma.UserPreferenceUncheckedUpdateOneWithoutUserNestedInput
   savedRecipes?: Prisma.UserSavedRecipeUncheckedUpdateManyWithoutUserNestedInput
   subscription?: Prisma.UserSubscriptionUncheckedUpdateOneWithoutUserNestedInput
+  paymentTransactions?: Prisma.PaymentTransactionUncheckedUpdateManyWithoutUserNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutUserNestedInput
 }
 
@@ -1286,6 +1313,7 @@ export type UserCreateWithoutPreferencesInput = {
   profile?: Prisma.UserProfileCreateNestedOneWithoutUserInput
   savedRecipes?: Prisma.UserSavedRecipeCreateNestedManyWithoutUserInput
   subscription?: Prisma.UserSubscriptionCreateNestedOneWithoutUserInput
+  paymentTransactions?: Prisma.PaymentTransactionCreateNestedManyWithoutUserInput
   role: Prisma.RoleCreateNestedOneWithoutUsersInput
   weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutUserInput
 }
@@ -1320,6 +1348,7 @@ export type UserUncheckedCreateWithoutPreferencesInput = {
   profile?: Prisma.UserProfileUncheckedCreateNestedOneWithoutUserInput
   savedRecipes?: Prisma.UserSavedRecipeUncheckedCreateNestedManyWithoutUserInput
   subscription?: Prisma.UserSubscriptionUncheckedCreateNestedOneWithoutUserInput
+  paymentTransactions?: Prisma.PaymentTransactionUncheckedCreateNestedManyWithoutUserInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutUserInput
 }
 
@@ -1368,6 +1397,7 @@ export type UserUpdateWithoutPreferencesInput = {
   profile?: Prisma.UserProfileUpdateOneWithoutUserNestedInput
   savedRecipes?: Prisma.UserSavedRecipeUpdateManyWithoutUserNestedInput
   subscription?: Prisma.UserSubscriptionUpdateOneWithoutUserNestedInput
+  paymentTransactions?: Prisma.PaymentTransactionUpdateManyWithoutUserNestedInput
   role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutUserNestedInput
 }
@@ -1402,6 +1432,7 @@ export type UserUncheckedUpdateWithoutPreferencesInput = {
   profile?: Prisma.UserProfileUncheckedUpdateOneWithoutUserNestedInput
   savedRecipes?: Prisma.UserSavedRecipeUncheckedUpdateManyWithoutUserNestedInput
   subscription?: Prisma.UserSubscriptionUncheckedUpdateOneWithoutUserNestedInput
+  paymentTransactions?: Prisma.PaymentTransactionUncheckedUpdateManyWithoutUserNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutUserNestedInput
 }
 
@@ -1434,6 +1465,7 @@ export type UserCreateWithoutRefreshTokensInput = {
   profile?: Prisma.UserProfileCreateNestedOneWithoutUserInput
   savedRecipes?: Prisma.UserSavedRecipeCreateNestedManyWithoutUserInput
   subscription?: Prisma.UserSubscriptionCreateNestedOneWithoutUserInput
+  paymentTransactions?: Prisma.PaymentTransactionCreateNestedManyWithoutUserInput
   role: Prisma.RoleCreateNestedOneWithoutUsersInput
   weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutUserInput
 }
@@ -1468,6 +1500,7 @@ export type UserUncheckedCreateWithoutRefreshTokensInput = {
   profile?: Prisma.UserProfileUncheckedCreateNestedOneWithoutUserInput
   savedRecipes?: Prisma.UserSavedRecipeUncheckedCreateNestedManyWithoutUserInput
   subscription?: Prisma.UserSubscriptionUncheckedCreateNestedOneWithoutUserInput
+  paymentTransactions?: Prisma.PaymentTransactionUncheckedCreateNestedManyWithoutUserInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutUserInput
 }
 
@@ -1516,6 +1549,7 @@ export type UserUpdateWithoutRefreshTokensInput = {
   profile?: Prisma.UserProfileUpdateOneWithoutUserNestedInput
   savedRecipes?: Prisma.UserSavedRecipeUpdateManyWithoutUserNestedInput
   subscription?: Prisma.UserSubscriptionUpdateOneWithoutUserNestedInput
+  paymentTransactions?: Prisma.PaymentTransactionUpdateManyWithoutUserNestedInput
   role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutUserNestedInput
 }
@@ -1550,6 +1584,7 @@ export type UserUncheckedUpdateWithoutRefreshTokensInput = {
   profile?: Prisma.UserProfileUncheckedUpdateOneWithoutUserNestedInput
   savedRecipes?: Prisma.UserSavedRecipeUncheckedUpdateManyWithoutUserNestedInput
   subscription?: Prisma.UserSubscriptionUncheckedUpdateOneWithoutUserNestedInput
+  paymentTransactions?: Prisma.PaymentTransactionUncheckedUpdateManyWithoutUserNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutUserNestedInput
 }
 
@@ -1582,6 +1617,7 @@ export type UserCreateWithoutAuthoredRecipesInput = {
   profile?: Prisma.UserProfileCreateNestedOneWithoutUserInput
   savedRecipes?: Prisma.UserSavedRecipeCreateNestedManyWithoutUserInput
   subscription?: Prisma.UserSubscriptionCreateNestedOneWithoutUserInput
+  paymentTransactions?: Prisma.PaymentTransactionCreateNestedManyWithoutUserInput
   role: Prisma.RoleCreateNestedOneWithoutUsersInput
   weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutUserInput
 }
@@ -1616,6 +1652,7 @@ export type UserUncheckedCreateWithoutAuthoredRecipesInput = {
   profile?: Prisma.UserProfileUncheckedCreateNestedOneWithoutUserInput
   savedRecipes?: Prisma.UserSavedRecipeUncheckedCreateNestedManyWithoutUserInput
   subscription?: Prisma.UserSubscriptionUncheckedCreateNestedOneWithoutUserInput
+  paymentTransactions?: Prisma.PaymentTransactionUncheckedCreateNestedManyWithoutUserInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutUserInput
 }
 
@@ -1664,6 +1701,7 @@ export type UserUpdateWithoutAuthoredRecipesInput = {
   profile?: Prisma.UserProfileUpdateOneWithoutUserNestedInput
   savedRecipes?: Prisma.UserSavedRecipeUpdateManyWithoutUserNestedInput
   subscription?: Prisma.UserSubscriptionUpdateOneWithoutUserNestedInput
+  paymentTransactions?: Prisma.PaymentTransactionUpdateManyWithoutUserNestedInput
   role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutUserNestedInput
 }
@@ -1698,6 +1736,7 @@ export type UserUncheckedUpdateWithoutAuthoredRecipesInput = {
   profile?: Prisma.UserProfileUncheckedUpdateOneWithoutUserNestedInput
   savedRecipes?: Prisma.UserSavedRecipeUncheckedUpdateManyWithoutUserNestedInput
   subscription?: Prisma.UserSubscriptionUncheckedUpdateOneWithoutUserNestedInput
+  paymentTransactions?: Prisma.PaymentTransactionUncheckedUpdateManyWithoutUserNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutUserNestedInput
 }
 
@@ -1730,6 +1769,7 @@ export type UserCreateWithoutSavedRecipesInput = {
   preferences?: Prisma.UserPreferenceCreateNestedOneWithoutUserInput
   profile?: Prisma.UserProfileCreateNestedOneWithoutUserInput
   subscription?: Prisma.UserSubscriptionCreateNestedOneWithoutUserInput
+  paymentTransactions?: Prisma.PaymentTransactionCreateNestedManyWithoutUserInput
   role: Prisma.RoleCreateNestedOneWithoutUsersInput
   weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutUserInput
 }
@@ -1764,6 +1804,7 @@ export type UserUncheckedCreateWithoutSavedRecipesInput = {
   preferences?: Prisma.UserPreferenceUncheckedCreateNestedOneWithoutUserInput
   profile?: Prisma.UserProfileUncheckedCreateNestedOneWithoutUserInput
   subscription?: Prisma.UserSubscriptionUncheckedCreateNestedOneWithoutUserInput
+  paymentTransactions?: Prisma.PaymentTransactionUncheckedCreateNestedManyWithoutUserInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutUserInput
 }
 
@@ -1812,6 +1853,7 @@ export type UserUpdateWithoutSavedRecipesInput = {
   preferences?: Prisma.UserPreferenceUpdateOneWithoutUserNestedInput
   profile?: Prisma.UserProfileUpdateOneWithoutUserNestedInput
   subscription?: Prisma.UserSubscriptionUpdateOneWithoutUserNestedInput
+  paymentTransactions?: Prisma.PaymentTransactionUpdateManyWithoutUserNestedInput
   role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutUserNestedInput
 }
@@ -1846,6 +1888,7 @@ export type UserUncheckedUpdateWithoutSavedRecipesInput = {
   preferences?: Prisma.UserPreferenceUncheckedUpdateOneWithoutUserNestedInput
   profile?: Prisma.UserProfileUncheckedUpdateOneWithoutUserNestedInput
   subscription?: Prisma.UserSubscriptionUncheckedUpdateOneWithoutUserNestedInput
+  paymentTransactions?: Prisma.PaymentTransactionUncheckedUpdateManyWithoutUserNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutUserNestedInput
 }
 
@@ -1878,6 +1921,7 @@ export type UserCreateWithoutFridgeItemsInput = {
   profile?: Prisma.UserProfileCreateNestedOneWithoutUserInput
   savedRecipes?: Prisma.UserSavedRecipeCreateNestedManyWithoutUserInput
   subscription?: Prisma.UserSubscriptionCreateNestedOneWithoutUserInput
+  paymentTransactions?: Prisma.PaymentTransactionCreateNestedManyWithoutUserInput
   role: Prisma.RoleCreateNestedOneWithoutUsersInput
   weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutUserInput
 }
@@ -1912,6 +1956,7 @@ export type UserUncheckedCreateWithoutFridgeItemsInput = {
   profile?: Prisma.UserProfileUncheckedCreateNestedOneWithoutUserInput
   savedRecipes?: Prisma.UserSavedRecipeUncheckedCreateNestedManyWithoutUserInput
   subscription?: Prisma.UserSubscriptionUncheckedCreateNestedOneWithoutUserInput
+  paymentTransactions?: Prisma.PaymentTransactionUncheckedCreateNestedManyWithoutUserInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutUserInput
 }
 
@@ -1960,6 +2005,7 @@ export type UserUpdateWithoutFridgeItemsInput = {
   profile?: Prisma.UserProfileUpdateOneWithoutUserNestedInput
   savedRecipes?: Prisma.UserSavedRecipeUpdateManyWithoutUserNestedInput
   subscription?: Prisma.UserSubscriptionUpdateOneWithoutUserNestedInput
+  paymentTransactions?: Prisma.PaymentTransactionUpdateManyWithoutUserNestedInput
   role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutUserNestedInput
 }
@@ -1994,6 +2040,7 @@ export type UserUncheckedUpdateWithoutFridgeItemsInput = {
   profile?: Prisma.UserProfileUncheckedUpdateOneWithoutUserNestedInput
   savedRecipes?: Prisma.UserSavedRecipeUncheckedUpdateManyWithoutUserNestedInput
   subscription?: Prisma.UserSubscriptionUncheckedUpdateOneWithoutUserNestedInput
+  paymentTransactions?: Prisma.PaymentTransactionUncheckedUpdateManyWithoutUserNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutUserNestedInput
 }
 
@@ -2026,6 +2073,7 @@ export type UserCreateWithoutScanLogsInput = {
   profile?: Prisma.UserProfileCreateNestedOneWithoutUserInput
   savedRecipes?: Prisma.UserSavedRecipeCreateNestedManyWithoutUserInput
   subscription?: Prisma.UserSubscriptionCreateNestedOneWithoutUserInput
+  paymentTransactions?: Prisma.PaymentTransactionCreateNestedManyWithoutUserInput
   role: Prisma.RoleCreateNestedOneWithoutUsersInput
   weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutUserInput
 }
@@ -2060,6 +2108,7 @@ export type UserUncheckedCreateWithoutScanLogsInput = {
   profile?: Prisma.UserProfileUncheckedCreateNestedOneWithoutUserInput
   savedRecipes?: Prisma.UserSavedRecipeUncheckedCreateNestedManyWithoutUserInput
   subscription?: Prisma.UserSubscriptionUncheckedCreateNestedOneWithoutUserInput
+  paymentTransactions?: Prisma.PaymentTransactionUncheckedCreateNestedManyWithoutUserInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutUserInput
 }
 
@@ -2108,6 +2157,7 @@ export type UserUpdateWithoutScanLogsInput = {
   profile?: Prisma.UserProfileUpdateOneWithoutUserNestedInput
   savedRecipes?: Prisma.UserSavedRecipeUpdateManyWithoutUserNestedInput
   subscription?: Prisma.UserSubscriptionUpdateOneWithoutUserNestedInput
+  paymentTransactions?: Prisma.PaymentTransactionUpdateManyWithoutUserNestedInput
   role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutUserNestedInput
 }
@@ -2142,6 +2192,7 @@ export type UserUncheckedUpdateWithoutScanLogsInput = {
   profile?: Prisma.UserProfileUncheckedUpdateOneWithoutUserNestedInput
   savedRecipes?: Prisma.UserSavedRecipeUncheckedUpdateManyWithoutUserNestedInput
   subscription?: Prisma.UserSubscriptionUncheckedUpdateOneWithoutUserNestedInput
+  paymentTransactions?: Prisma.PaymentTransactionUncheckedUpdateManyWithoutUserNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutUserNestedInput
 }
 
@@ -2174,6 +2225,7 @@ export type UserCreateWithoutAllergiesInput = {
   profile?: Prisma.UserProfileCreateNestedOneWithoutUserInput
   savedRecipes?: Prisma.UserSavedRecipeCreateNestedManyWithoutUserInput
   subscription?: Prisma.UserSubscriptionCreateNestedOneWithoutUserInput
+  paymentTransactions?: Prisma.PaymentTransactionCreateNestedManyWithoutUserInput
   role: Prisma.RoleCreateNestedOneWithoutUsersInput
   weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutUserInput
 }
@@ -2208,6 +2260,7 @@ export type UserUncheckedCreateWithoutAllergiesInput = {
   profile?: Prisma.UserProfileUncheckedCreateNestedOneWithoutUserInput
   savedRecipes?: Prisma.UserSavedRecipeUncheckedCreateNestedManyWithoutUserInput
   subscription?: Prisma.UserSubscriptionUncheckedCreateNestedOneWithoutUserInput
+  paymentTransactions?: Prisma.PaymentTransactionUncheckedCreateNestedManyWithoutUserInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutUserInput
 }
 
@@ -2256,6 +2309,7 @@ export type UserUpdateWithoutAllergiesInput = {
   profile?: Prisma.UserProfileUpdateOneWithoutUserNestedInput
   savedRecipes?: Prisma.UserSavedRecipeUpdateManyWithoutUserNestedInput
   subscription?: Prisma.UserSubscriptionUpdateOneWithoutUserNestedInput
+  paymentTransactions?: Prisma.PaymentTransactionUpdateManyWithoutUserNestedInput
   role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutUserNestedInput
 }
@@ -2290,6 +2344,7 @@ export type UserUncheckedUpdateWithoutAllergiesInput = {
   profile?: Prisma.UserProfileUncheckedUpdateOneWithoutUserNestedInput
   savedRecipes?: Prisma.UserSavedRecipeUncheckedUpdateManyWithoutUserNestedInput
   subscription?: Prisma.UserSubscriptionUncheckedUpdateOneWithoutUserNestedInput
+  paymentTransactions?: Prisma.PaymentTransactionUncheckedUpdateManyWithoutUserNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutUserNestedInput
 }
 
@@ -2323,6 +2378,7 @@ export type UserCreateWithoutWeeklyPlansInput = {
   profile?: Prisma.UserProfileCreateNestedOneWithoutUserInput
   savedRecipes?: Prisma.UserSavedRecipeCreateNestedManyWithoutUserInput
   subscription?: Prisma.UserSubscriptionCreateNestedOneWithoutUserInput
+  paymentTransactions?: Prisma.PaymentTransactionCreateNestedManyWithoutUserInput
   role: Prisma.RoleCreateNestedOneWithoutUsersInput
 }
 
@@ -2357,6 +2413,7 @@ export type UserUncheckedCreateWithoutWeeklyPlansInput = {
   profile?: Prisma.UserProfileUncheckedCreateNestedOneWithoutUserInput
   savedRecipes?: Prisma.UserSavedRecipeUncheckedCreateNestedManyWithoutUserInput
   subscription?: Prisma.UserSubscriptionUncheckedCreateNestedOneWithoutUserInput
+  paymentTransactions?: Prisma.PaymentTransactionUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutWeeklyPlansInput = {
@@ -2405,6 +2462,7 @@ export type UserUpdateWithoutWeeklyPlansInput = {
   profile?: Prisma.UserProfileUpdateOneWithoutUserNestedInput
   savedRecipes?: Prisma.UserSavedRecipeUpdateManyWithoutUserNestedInput
   subscription?: Prisma.UserSubscriptionUpdateOneWithoutUserNestedInput
+  paymentTransactions?: Prisma.PaymentTransactionUpdateManyWithoutUserNestedInput
   role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
 }
 
@@ -2439,6 +2497,7 @@ export type UserUncheckedUpdateWithoutWeeklyPlansInput = {
   profile?: Prisma.UserProfileUncheckedUpdateOneWithoutUserNestedInput
   savedRecipes?: Prisma.UserSavedRecipeUncheckedUpdateManyWithoutUserNestedInput
   subscription?: Prisma.UserSubscriptionUncheckedUpdateOneWithoutUserNestedInput
+  paymentTransactions?: Prisma.PaymentTransactionUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutShoppingListsInput = {
@@ -2470,6 +2529,7 @@ export type UserCreateWithoutShoppingListsInput = {
   profile?: Prisma.UserProfileCreateNestedOneWithoutUserInput
   savedRecipes?: Prisma.UserSavedRecipeCreateNestedManyWithoutUserInput
   subscription?: Prisma.UserSubscriptionCreateNestedOneWithoutUserInput
+  paymentTransactions?: Prisma.PaymentTransactionCreateNestedManyWithoutUserInput
   role: Prisma.RoleCreateNestedOneWithoutUsersInput
   weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutUserInput
 }
@@ -2504,6 +2564,7 @@ export type UserUncheckedCreateWithoutShoppingListsInput = {
   profile?: Prisma.UserProfileUncheckedCreateNestedOneWithoutUserInput
   savedRecipes?: Prisma.UserSavedRecipeUncheckedCreateNestedManyWithoutUserInput
   subscription?: Prisma.UserSubscriptionUncheckedCreateNestedOneWithoutUserInput
+  paymentTransactions?: Prisma.PaymentTransactionUncheckedCreateNestedManyWithoutUserInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutUserInput
 }
 
@@ -2552,6 +2613,7 @@ export type UserUpdateWithoutShoppingListsInput = {
   profile?: Prisma.UserProfileUpdateOneWithoutUserNestedInput
   savedRecipes?: Prisma.UserSavedRecipeUpdateManyWithoutUserNestedInput
   subscription?: Prisma.UserSubscriptionUpdateOneWithoutUserNestedInput
+  paymentTransactions?: Prisma.PaymentTransactionUpdateManyWithoutUserNestedInput
   role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutUserNestedInput
 }
@@ -2586,6 +2648,7 @@ export type UserUncheckedUpdateWithoutShoppingListsInput = {
   profile?: Prisma.UserProfileUncheckedUpdateOneWithoutUserNestedInput
   savedRecipes?: Prisma.UserSavedRecipeUncheckedUpdateManyWithoutUserNestedInput
   subscription?: Prisma.UserSubscriptionUncheckedUpdateOneWithoutUserNestedInput
+  paymentTransactions?: Prisma.PaymentTransactionUncheckedUpdateManyWithoutUserNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutUserNestedInput
 }
 
@@ -2618,6 +2681,7 @@ export type UserCreateWithoutActivatedPromptsInput = {
   profile?: Prisma.UserProfileCreateNestedOneWithoutUserInput
   savedRecipes?: Prisma.UserSavedRecipeCreateNestedManyWithoutUserInput
   subscription?: Prisma.UserSubscriptionCreateNestedOneWithoutUserInput
+  paymentTransactions?: Prisma.PaymentTransactionCreateNestedManyWithoutUserInput
   role: Prisma.RoleCreateNestedOneWithoutUsersInput
   weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutUserInput
 }
@@ -2652,6 +2716,7 @@ export type UserUncheckedCreateWithoutActivatedPromptsInput = {
   profile?: Prisma.UserProfileUncheckedCreateNestedOneWithoutUserInput
   savedRecipes?: Prisma.UserSavedRecipeUncheckedCreateNestedManyWithoutUserInput
   subscription?: Prisma.UserSubscriptionUncheckedCreateNestedOneWithoutUserInput
+  paymentTransactions?: Prisma.PaymentTransactionUncheckedCreateNestedManyWithoutUserInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutUserInput
 }
 
@@ -2700,6 +2765,7 @@ export type UserUpdateWithoutActivatedPromptsInput = {
   profile?: Prisma.UserProfileUpdateOneWithoutUserNestedInput
   savedRecipes?: Prisma.UserSavedRecipeUpdateManyWithoutUserNestedInput
   subscription?: Prisma.UserSubscriptionUpdateOneWithoutUserNestedInput
+  paymentTransactions?: Prisma.PaymentTransactionUpdateManyWithoutUserNestedInput
   role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutUserNestedInput
 }
@@ -2734,6 +2800,7 @@ export type UserUncheckedUpdateWithoutActivatedPromptsInput = {
   profile?: Prisma.UserProfileUncheckedUpdateOneWithoutUserNestedInput
   savedRecipes?: Prisma.UserSavedRecipeUncheckedUpdateManyWithoutUserNestedInput
   subscription?: Prisma.UserSubscriptionUncheckedUpdateOneWithoutUserNestedInput
+  paymentTransactions?: Prisma.PaymentTransactionUncheckedUpdateManyWithoutUserNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutUserNestedInput
 }
 
@@ -2766,6 +2833,7 @@ export type UserCreateWithoutChatSessionsInput = {
   profile?: Prisma.UserProfileCreateNestedOneWithoutUserInput
   savedRecipes?: Prisma.UserSavedRecipeCreateNestedManyWithoutUserInput
   subscription?: Prisma.UserSubscriptionCreateNestedOneWithoutUserInput
+  paymentTransactions?: Prisma.PaymentTransactionCreateNestedManyWithoutUserInput
   role: Prisma.RoleCreateNestedOneWithoutUsersInput
   weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutUserInput
 }
@@ -2800,6 +2868,7 @@ export type UserUncheckedCreateWithoutChatSessionsInput = {
   profile?: Prisma.UserProfileUncheckedCreateNestedOneWithoutUserInput
   savedRecipes?: Prisma.UserSavedRecipeUncheckedCreateNestedManyWithoutUserInput
   subscription?: Prisma.UserSubscriptionUncheckedCreateNestedOneWithoutUserInput
+  paymentTransactions?: Prisma.PaymentTransactionUncheckedCreateNestedManyWithoutUserInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutUserInput
 }
 
@@ -2848,6 +2917,7 @@ export type UserUpdateWithoutChatSessionsInput = {
   profile?: Prisma.UserProfileUpdateOneWithoutUserNestedInput
   savedRecipes?: Prisma.UserSavedRecipeUpdateManyWithoutUserNestedInput
   subscription?: Prisma.UserSubscriptionUpdateOneWithoutUserNestedInput
+  paymentTransactions?: Prisma.PaymentTransactionUpdateManyWithoutUserNestedInput
   role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutUserNestedInput
 }
@@ -2882,6 +2952,7 @@ export type UserUncheckedUpdateWithoutChatSessionsInput = {
   profile?: Prisma.UserProfileUncheckedUpdateOneWithoutUserNestedInput
   savedRecipes?: Prisma.UserSavedRecipeUncheckedUpdateManyWithoutUserNestedInput
   subscription?: Prisma.UserSubscriptionUncheckedUpdateOneWithoutUserNestedInput
+  paymentTransactions?: Prisma.PaymentTransactionUncheckedUpdateManyWithoutUserNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutUserNestedInput
 }
 
@@ -2914,6 +2985,7 @@ export type UserCreateWithoutActivatedConfigsInput = {
   profile?: Prisma.UserProfileCreateNestedOneWithoutUserInput
   savedRecipes?: Prisma.UserSavedRecipeCreateNestedManyWithoutUserInput
   subscription?: Prisma.UserSubscriptionCreateNestedOneWithoutUserInput
+  paymentTransactions?: Prisma.PaymentTransactionCreateNestedManyWithoutUserInput
   role: Prisma.RoleCreateNestedOneWithoutUsersInput
   weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutUserInput
 }
@@ -2948,6 +3020,7 @@ export type UserUncheckedCreateWithoutActivatedConfigsInput = {
   profile?: Prisma.UserProfileUncheckedCreateNestedOneWithoutUserInput
   savedRecipes?: Prisma.UserSavedRecipeUncheckedCreateNestedManyWithoutUserInput
   subscription?: Prisma.UserSubscriptionUncheckedCreateNestedOneWithoutUserInput
+  paymentTransactions?: Prisma.PaymentTransactionUncheckedCreateNestedManyWithoutUserInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutUserInput
 }
 
@@ -2996,6 +3069,7 @@ export type UserUpdateWithoutActivatedConfigsInput = {
   profile?: Prisma.UserProfileUpdateOneWithoutUserNestedInput
   savedRecipes?: Prisma.UserSavedRecipeUpdateManyWithoutUserNestedInput
   subscription?: Prisma.UserSubscriptionUpdateOneWithoutUserNestedInput
+  paymentTransactions?: Prisma.PaymentTransactionUpdateManyWithoutUserNestedInput
   role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutUserNestedInput
 }
@@ -3030,6 +3104,7 @@ export type UserUncheckedUpdateWithoutActivatedConfigsInput = {
   profile?: Prisma.UserProfileUncheckedUpdateOneWithoutUserNestedInput
   savedRecipes?: Prisma.UserSavedRecipeUncheckedUpdateManyWithoutUserNestedInput
   subscription?: Prisma.UserSubscriptionUncheckedUpdateOneWithoutUserNestedInput
+  paymentTransactions?: Prisma.PaymentTransactionUncheckedUpdateManyWithoutUserNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutUserNestedInput
 }
 
@@ -3062,6 +3137,7 @@ export type UserCreateWithoutAiUsageLogsInput = {
   profile?: Prisma.UserProfileCreateNestedOneWithoutUserInput
   savedRecipes?: Prisma.UserSavedRecipeCreateNestedManyWithoutUserInput
   subscription?: Prisma.UserSubscriptionCreateNestedOneWithoutUserInput
+  paymentTransactions?: Prisma.PaymentTransactionCreateNestedManyWithoutUserInput
   role: Prisma.RoleCreateNestedOneWithoutUsersInput
   weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutUserInput
 }
@@ -3096,6 +3172,7 @@ export type UserUncheckedCreateWithoutAiUsageLogsInput = {
   profile?: Prisma.UserProfileUncheckedCreateNestedOneWithoutUserInput
   savedRecipes?: Prisma.UserSavedRecipeUncheckedCreateNestedManyWithoutUserInput
   subscription?: Prisma.UserSubscriptionUncheckedCreateNestedOneWithoutUserInput
+  paymentTransactions?: Prisma.PaymentTransactionUncheckedCreateNestedManyWithoutUserInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutUserInput
 }
 
@@ -3144,6 +3221,7 @@ export type UserUpdateWithoutAiUsageLogsInput = {
   profile?: Prisma.UserProfileUpdateOneWithoutUserNestedInput
   savedRecipes?: Prisma.UserSavedRecipeUpdateManyWithoutUserNestedInput
   subscription?: Prisma.UserSubscriptionUpdateOneWithoutUserNestedInput
+  paymentTransactions?: Prisma.PaymentTransactionUpdateManyWithoutUserNestedInput
   role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutUserNestedInput
 }
@@ -3178,6 +3256,7 @@ export type UserUncheckedUpdateWithoutAiUsageLogsInput = {
   profile?: Prisma.UserProfileUncheckedUpdateOneWithoutUserNestedInput
   savedRecipes?: Prisma.UserSavedRecipeUncheckedUpdateManyWithoutUserNestedInput
   subscription?: Prisma.UserSubscriptionUncheckedUpdateOneWithoutUserNestedInput
+  paymentTransactions?: Prisma.PaymentTransactionUncheckedUpdateManyWithoutUserNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutUserNestedInput
 }
 
@@ -3210,6 +3289,7 @@ export type UserCreateWithoutAdminLogsInput = {
   profile?: Prisma.UserProfileCreateNestedOneWithoutUserInput
   savedRecipes?: Prisma.UserSavedRecipeCreateNestedManyWithoutUserInput
   subscription?: Prisma.UserSubscriptionCreateNestedOneWithoutUserInput
+  paymentTransactions?: Prisma.PaymentTransactionCreateNestedManyWithoutUserInput
   role: Prisma.RoleCreateNestedOneWithoutUsersInput
   weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutUserInput
 }
@@ -3244,6 +3324,7 @@ export type UserUncheckedCreateWithoutAdminLogsInput = {
   profile?: Prisma.UserProfileUncheckedCreateNestedOneWithoutUserInput
   savedRecipes?: Prisma.UserSavedRecipeUncheckedCreateNestedManyWithoutUserInput
   subscription?: Prisma.UserSubscriptionUncheckedCreateNestedOneWithoutUserInput
+  paymentTransactions?: Prisma.PaymentTransactionUncheckedCreateNestedManyWithoutUserInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutUserInput
 }
 
@@ -3292,6 +3373,7 @@ export type UserUpdateWithoutAdminLogsInput = {
   profile?: Prisma.UserProfileUpdateOneWithoutUserNestedInput
   savedRecipes?: Prisma.UserSavedRecipeUpdateManyWithoutUserNestedInput
   subscription?: Prisma.UserSubscriptionUpdateOneWithoutUserNestedInput
+  paymentTransactions?: Prisma.PaymentTransactionUpdateManyWithoutUserNestedInput
   role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutUserNestedInput
 }
@@ -3326,6 +3408,7 @@ export type UserUncheckedUpdateWithoutAdminLogsInput = {
   profile?: Prisma.UserProfileUncheckedUpdateOneWithoutUserNestedInput
   savedRecipes?: Prisma.UserSavedRecipeUncheckedUpdateManyWithoutUserNestedInput
   subscription?: Prisma.UserSubscriptionUncheckedUpdateOneWithoutUserNestedInput
+  paymentTransactions?: Prisma.PaymentTransactionUncheckedUpdateManyWithoutUserNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutUserNestedInput
 }
 
@@ -3358,6 +3441,7 @@ export type UserCreateWithoutNotificationsInput = {
   profile?: Prisma.UserProfileCreateNestedOneWithoutUserInput
   savedRecipes?: Prisma.UserSavedRecipeCreateNestedManyWithoutUserInput
   subscription?: Prisma.UserSubscriptionCreateNestedOneWithoutUserInput
+  paymentTransactions?: Prisma.PaymentTransactionCreateNestedManyWithoutUserInput
   role: Prisma.RoleCreateNestedOneWithoutUsersInput
   weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutUserInput
 }
@@ -3392,6 +3476,7 @@ export type UserUncheckedCreateWithoutNotificationsInput = {
   profile?: Prisma.UserProfileUncheckedCreateNestedOneWithoutUserInput
   savedRecipes?: Prisma.UserSavedRecipeUncheckedCreateNestedManyWithoutUserInput
   subscription?: Prisma.UserSubscriptionUncheckedCreateNestedOneWithoutUserInput
+  paymentTransactions?: Prisma.PaymentTransactionUncheckedCreateNestedManyWithoutUserInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutUserInput
 }
 
@@ -3440,6 +3525,7 @@ export type UserUpdateWithoutNotificationsInput = {
   profile?: Prisma.UserProfileUpdateOneWithoutUserNestedInput
   savedRecipes?: Prisma.UserSavedRecipeUpdateManyWithoutUserNestedInput
   subscription?: Prisma.UserSubscriptionUpdateOneWithoutUserNestedInput
+  paymentTransactions?: Prisma.PaymentTransactionUpdateManyWithoutUserNestedInput
   role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutUserNestedInput
 }
@@ -3474,6 +3560,7 @@ export type UserUncheckedUpdateWithoutNotificationsInput = {
   profile?: Prisma.UserProfileUncheckedUpdateOneWithoutUserNestedInput
   savedRecipes?: Prisma.UserSavedRecipeUncheckedUpdateManyWithoutUserNestedInput
   subscription?: Prisma.UserSubscriptionUncheckedUpdateOneWithoutUserNestedInput
+  paymentTransactions?: Prisma.PaymentTransactionUncheckedUpdateManyWithoutUserNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutUserNestedInput
 }
 
@@ -3506,6 +3593,7 @@ export type UserCreateWithoutSubscriptionInput = {
   preferences?: Prisma.UserPreferenceCreateNestedOneWithoutUserInput
   profile?: Prisma.UserProfileCreateNestedOneWithoutUserInput
   savedRecipes?: Prisma.UserSavedRecipeCreateNestedManyWithoutUserInput
+  paymentTransactions?: Prisma.PaymentTransactionCreateNestedManyWithoutUserInput
   role: Prisma.RoleCreateNestedOneWithoutUsersInput
   weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutUserInput
 }
@@ -3540,6 +3628,7 @@ export type UserUncheckedCreateWithoutSubscriptionInput = {
   preferences?: Prisma.UserPreferenceUncheckedCreateNestedOneWithoutUserInput
   profile?: Prisma.UserProfileUncheckedCreateNestedOneWithoutUserInput
   savedRecipes?: Prisma.UserSavedRecipeUncheckedCreateNestedManyWithoutUserInput
+  paymentTransactions?: Prisma.PaymentTransactionUncheckedCreateNestedManyWithoutUserInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutUserInput
 }
 
@@ -3588,6 +3677,7 @@ export type UserUpdateWithoutSubscriptionInput = {
   preferences?: Prisma.UserPreferenceUpdateOneWithoutUserNestedInput
   profile?: Prisma.UserProfileUpdateOneWithoutUserNestedInput
   savedRecipes?: Prisma.UserSavedRecipeUpdateManyWithoutUserNestedInput
+  paymentTransactions?: Prisma.PaymentTransactionUpdateManyWithoutUserNestedInput
   role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutUserNestedInput
 }
@@ -3622,6 +3712,159 @@ export type UserUncheckedUpdateWithoutSubscriptionInput = {
   preferences?: Prisma.UserPreferenceUncheckedUpdateOneWithoutUserNestedInput
   profile?: Prisma.UserProfileUncheckedUpdateOneWithoutUserNestedInput
   savedRecipes?: Prisma.UserSavedRecipeUncheckedUpdateManyWithoutUserNestedInput
+  paymentTransactions?: Prisma.PaymentTransactionUncheckedUpdateManyWithoutUserNestedInput
+  weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutUserNestedInput
+}
+
+export type UserCreateWithoutPaymentTransactionsInput = {
+  id?: string
+  email?: string | null
+  passwordHash?: string | null
+  googleId?: string | null
+  googleEmail?: string | null
+  authProvider: $Enums.AuthProvider
+  status?: $Enums.UserStatus
+  lastLoginAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  isOnboardingCompleted?: boolean
+  name?: string | null
+  adminLogs?: Prisma.AdminActivityLogCreateNestedManyWithoutAdminInput
+  activatedConfigs?: Prisma.AiProviderConfigCreateNestedManyWithoutActivatedByUserInput
+  activatedPrompts?: Prisma.AiSystemPromptCreateNestedManyWithoutActivatedByUserInput
+  aiUsageLogs?: Prisma.AiUsageLogCreateNestedManyWithoutUserInput
+  chatSessions?: Prisma.ChatSessionCreateNestedManyWithoutUserInput
+  fridgeItems?: Prisma.FridgeItemCreateNestedManyWithoutUserInput
+  scanLogs?: Prisma.IngredientScanLogCreateNestedManyWithoutUserInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  authoredRecipes?: Prisma.RecipeCreateNestedManyWithoutAuthorInput
+  refreshTokens?: Prisma.RefreshTokenCreateNestedManyWithoutUserInput
+  shoppingLists?: Prisma.ShoppingListCreateNestedManyWithoutUserInput
+  allergies?: Prisma.UserAllergyCreateNestedManyWithoutUserInput
+  preferences?: Prisma.UserPreferenceCreateNestedOneWithoutUserInput
+  profile?: Prisma.UserProfileCreateNestedOneWithoutUserInput
+  savedRecipes?: Prisma.UserSavedRecipeCreateNestedManyWithoutUserInput
+  subscription?: Prisma.UserSubscriptionCreateNestedOneWithoutUserInput
+  role: Prisma.RoleCreateNestedOneWithoutUsersInput
+  weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutUserInput
+}
+
+export type UserUncheckedCreateWithoutPaymentTransactionsInput = {
+  id?: string
+  email?: string | null
+  passwordHash?: string | null
+  googleId?: string | null
+  googleEmail?: string | null
+  authProvider: $Enums.AuthProvider
+  status?: $Enums.UserStatus
+  roleId: number
+  lastLoginAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  isOnboardingCompleted?: boolean
+  name?: string | null
+  adminLogs?: Prisma.AdminActivityLogUncheckedCreateNestedManyWithoutAdminInput
+  activatedConfigs?: Prisma.AiProviderConfigUncheckedCreateNestedManyWithoutActivatedByUserInput
+  activatedPrompts?: Prisma.AiSystemPromptUncheckedCreateNestedManyWithoutActivatedByUserInput
+  aiUsageLogs?: Prisma.AiUsageLogUncheckedCreateNestedManyWithoutUserInput
+  chatSessions?: Prisma.ChatSessionUncheckedCreateNestedManyWithoutUserInput
+  fridgeItems?: Prisma.FridgeItemUncheckedCreateNestedManyWithoutUserInput
+  scanLogs?: Prisma.IngredientScanLogUncheckedCreateNestedManyWithoutUserInput
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  authoredRecipes?: Prisma.RecipeUncheckedCreateNestedManyWithoutAuthorInput
+  refreshTokens?: Prisma.RefreshTokenUncheckedCreateNestedManyWithoutUserInput
+  shoppingLists?: Prisma.ShoppingListUncheckedCreateNestedManyWithoutUserInput
+  allergies?: Prisma.UserAllergyUncheckedCreateNestedManyWithoutUserInput
+  preferences?: Prisma.UserPreferenceUncheckedCreateNestedOneWithoutUserInput
+  profile?: Prisma.UserProfileUncheckedCreateNestedOneWithoutUserInput
+  savedRecipes?: Prisma.UserSavedRecipeUncheckedCreateNestedManyWithoutUserInput
+  subscription?: Prisma.UserSubscriptionUncheckedCreateNestedOneWithoutUserInput
+  weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutUserInput
+}
+
+export type UserCreateOrConnectWithoutPaymentTransactionsInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutPaymentTransactionsInput, Prisma.UserUncheckedCreateWithoutPaymentTransactionsInput>
+}
+
+export type UserUpsertWithoutPaymentTransactionsInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutPaymentTransactionsInput, Prisma.UserUncheckedUpdateWithoutPaymentTransactionsInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutPaymentTransactionsInput, Prisma.UserUncheckedCreateWithoutPaymentTransactionsInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutPaymentTransactionsInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutPaymentTransactionsInput, Prisma.UserUncheckedUpdateWithoutPaymentTransactionsInput>
+}
+
+export type UserUpdateWithoutPaymentTransactionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  googleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  googleEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
+  status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  adminLogs?: Prisma.AdminActivityLogUpdateManyWithoutAdminNestedInput
+  activatedConfigs?: Prisma.AiProviderConfigUpdateManyWithoutActivatedByUserNestedInput
+  activatedPrompts?: Prisma.AiSystemPromptUpdateManyWithoutActivatedByUserNestedInput
+  aiUsageLogs?: Prisma.AiUsageLogUpdateManyWithoutUserNestedInput
+  chatSessions?: Prisma.ChatSessionUpdateManyWithoutUserNestedInput
+  fridgeItems?: Prisma.FridgeItemUpdateManyWithoutUserNestedInput
+  scanLogs?: Prisma.IngredientScanLogUpdateManyWithoutUserNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  authoredRecipes?: Prisma.RecipeUpdateManyWithoutAuthorNestedInput
+  refreshTokens?: Prisma.RefreshTokenUpdateManyWithoutUserNestedInput
+  shoppingLists?: Prisma.ShoppingListUpdateManyWithoutUserNestedInput
+  allergies?: Prisma.UserAllergyUpdateManyWithoutUserNestedInput
+  preferences?: Prisma.UserPreferenceUpdateOneWithoutUserNestedInput
+  profile?: Prisma.UserProfileUpdateOneWithoutUserNestedInput
+  savedRecipes?: Prisma.UserSavedRecipeUpdateManyWithoutUserNestedInput
+  subscription?: Prisma.UserSubscriptionUpdateOneWithoutUserNestedInput
+  role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
+  weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutUserNestedInput
+}
+
+export type UserUncheckedUpdateWithoutPaymentTransactionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  googleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  googleEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
+  status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+  roleId?: Prisma.IntFieldUpdateOperationsInput | number
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  adminLogs?: Prisma.AdminActivityLogUncheckedUpdateManyWithoutAdminNestedInput
+  activatedConfigs?: Prisma.AiProviderConfigUncheckedUpdateManyWithoutActivatedByUserNestedInput
+  activatedPrompts?: Prisma.AiSystemPromptUncheckedUpdateManyWithoutActivatedByUserNestedInput
+  aiUsageLogs?: Prisma.AiUsageLogUncheckedUpdateManyWithoutUserNestedInput
+  chatSessions?: Prisma.ChatSessionUncheckedUpdateManyWithoutUserNestedInput
+  fridgeItems?: Prisma.FridgeItemUncheckedUpdateManyWithoutUserNestedInput
+  scanLogs?: Prisma.IngredientScanLogUncheckedUpdateManyWithoutUserNestedInput
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  authoredRecipes?: Prisma.RecipeUncheckedUpdateManyWithoutAuthorNestedInput
+  refreshTokens?: Prisma.RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
+  shoppingLists?: Prisma.ShoppingListUncheckedUpdateManyWithoutUserNestedInput
+  allergies?: Prisma.UserAllergyUncheckedUpdateManyWithoutUserNestedInput
+  preferences?: Prisma.UserPreferenceUncheckedUpdateOneWithoutUserNestedInput
+  profile?: Prisma.UserProfileUncheckedUpdateOneWithoutUserNestedInput
+  savedRecipes?: Prisma.UserSavedRecipeUncheckedUpdateManyWithoutUserNestedInput
+  subscription?: Prisma.UserSubscriptionUncheckedUpdateOneWithoutUserNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutUserNestedInput
 }
 
@@ -3671,6 +3914,7 @@ export type UserUpdateWithoutRoleInput = {
   profile?: Prisma.UserProfileUpdateOneWithoutUserNestedInput
   savedRecipes?: Prisma.UserSavedRecipeUpdateManyWithoutUserNestedInput
   subscription?: Prisma.UserSubscriptionUpdateOneWithoutUserNestedInput
+  paymentTransactions?: Prisma.PaymentTransactionUpdateManyWithoutUserNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutUserNestedInput
 }
 
@@ -3704,6 +3948,7 @@ export type UserUncheckedUpdateWithoutRoleInput = {
   profile?: Prisma.UserProfileUncheckedUpdateOneWithoutUserNestedInput
   savedRecipes?: Prisma.UserSavedRecipeUncheckedUpdateManyWithoutUserNestedInput
   subscription?: Prisma.UserSubscriptionUncheckedUpdateOneWithoutUserNestedInput
+  paymentTransactions?: Prisma.PaymentTransactionUncheckedUpdateManyWithoutUserNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutUserNestedInput
 }
 
@@ -3742,6 +3987,7 @@ export type UserCountOutputType = {
   shoppingLists: number
   allergies: number
   savedRecipes: number
+  paymentTransactions: number
   weeklyPlans: number
 }
 
@@ -3759,6 +4005,7 @@ export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.I
   shoppingLists?: boolean | UserCountOutputTypeCountShoppingListsArgs
   allergies?: boolean | UserCountOutputTypeCountAllergiesArgs
   savedRecipes?: boolean | UserCountOutputTypeCountSavedRecipesArgs
+  paymentTransactions?: boolean | UserCountOutputTypeCountPaymentTransactionsArgs
   weeklyPlans?: boolean | UserCountOutputTypeCountWeeklyPlansArgs
 }
 
@@ -3866,6 +4113,13 @@ export type UserCountOutputTypeCountSavedRecipesArgs<ExtArgs extends runtime.Typ
 /**
  * UserCountOutputType without action
  */
+export type UserCountOutputTypeCountPaymentTransactionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.PaymentTransactionWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
 export type UserCountOutputTypeCountWeeklyPlansArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.WeeklyPlanWhereInput
 }
@@ -3902,6 +4156,7 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   profile?: boolean | Prisma.User$profileArgs<ExtArgs>
   savedRecipes?: boolean | Prisma.User$savedRecipesArgs<ExtArgs>
   subscription?: boolean | Prisma.User$subscriptionArgs<ExtArgs>
+  paymentTransactions?: boolean | Prisma.User$paymentTransactionsArgs<ExtArgs>
   role?: boolean | Prisma.RoleDefaultArgs<ExtArgs>
   weeklyPlans?: boolean | Prisma.User$weeklyPlansArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
@@ -3944,6 +4199,7 @@ export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   profile?: boolean | Prisma.User$profileArgs<ExtArgs>
   savedRecipes?: boolean | Prisma.User$savedRecipesArgs<ExtArgs>
   subscription?: boolean | Prisma.User$subscriptionArgs<ExtArgs>
+  paymentTransactions?: boolean | Prisma.User$paymentTransactionsArgs<ExtArgs>
   role?: boolean | Prisma.RoleDefaultArgs<ExtArgs>
   weeklyPlans?: boolean | Prisma.User$weeklyPlansArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
@@ -3968,6 +4224,7 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     profile: Prisma.$UserProfilePayload<ExtArgs> | null
     savedRecipes: Prisma.$UserSavedRecipePayload<ExtArgs>[]
     subscription: Prisma.$UserSubscriptionPayload<ExtArgs> | null
+    paymentTransactions: Prisma.$PaymentTransactionPayload<ExtArgs>[]
     role: Prisma.$RolePayload<ExtArgs>
     weeklyPlans: Prisma.$WeeklyPlanPayload<ExtArgs>[]
   }
@@ -4342,6 +4599,7 @@ export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Typ
   profile<T extends Prisma.User$profileArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$profileArgs<ExtArgs>>): Prisma.Prisma__UserProfileClient<runtime.Types.Result.GetResult<Prisma.$UserProfilePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   savedRecipes<T extends Prisma.User$savedRecipesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$savedRecipesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$UserSavedRecipePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   subscription<T extends Prisma.User$subscriptionArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$subscriptionArgs<ExtArgs>>): Prisma.Prisma__UserSubscriptionClient<runtime.Types.Result.GetResult<Prisma.$UserSubscriptionPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  paymentTransactions<T extends Prisma.User$paymentTransactionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$paymentTransactionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PaymentTransactionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   role<T extends Prisma.RoleDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.RoleDefaultArgs<ExtArgs>>): Prisma.Prisma__RoleClient<runtime.Types.Result.GetResult<Prisma.$RolePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   weeklyPlans<T extends Prisma.User$weeklyPlansArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$weeklyPlansArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$WeeklyPlanPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
@@ -5101,6 +5359,30 @@ export type User$subscriptionArgs<ExtArgs extends runtime.Types.Extensions.Inter
    */
   include?: Prisma.UserSubscriptionInclude<ExtArgs> | null
   where?: Prisma.UserSubscriptionWhereInput
+}
+
+/**
+ * User.paymentTransactions
+ */
+export type User$paymentTransactionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the PaymentTransaction
+   */
+  select?: Prisma.PaymentTransactionSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the PaymentTransaction
+   */
+  omit?: Prisma.PaymentTransactionOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.PaymentTransactionInclude<ExtArgs> | null
+  where?: Prisma.PaymentTransactionWhereInput
+  orderBy?: Prisma.PaymentTransactionOrderByWithRelationInput | Prisma.PaymentTransactionOrderByWithRelationInput[]
+  cursor?: Prisma.PaymentTransactionWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.PaymentTransactionScalarFieldEnum | Prisma.PaymentTransactionScalarFieldEnum[]
 }
 
 /**

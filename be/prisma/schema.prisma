@@ -50,6 +50,7 @@ model User {
   profile               UserProfile?
   savedRecipes          UserSavedRecipe[]
   subscription          UserSubscription?
+  paymentTransactions   PaymentTransaction[]
   role                  Role                @relation(fields: [roleId], references: [id])
   weeklyPlans           WeeklyPlan[]
 
@@ -647,30 +648,59 @@ model SubscriptionPlan {
   isActive       Boolean            @default(true)
   createdAt      DateTime           @default(now())
   deletedAt      DateTime?
-  subscriptions  UserSubscription[]
+  subscriptions       UserSubscription[]
+  paymentTransactions PaymentTransaction[]
 
   @@map("subscription_plans")
 }
 
 model UserSubscription {
-  id          String           @id @default(uuid()) @db.Char(36)
-  userId      String           @unique @db.Char(36)
-  planId      Int
-  startDate   DateTime         @db.Date
-  endDate     DateTime?        @db.Date
-  status      String           @db.VarChar(20)
-  paymentRef  String?          @db.VarChar(255)
-  autoRenew   Boolean          @default(true)  // false = đặt hủy gia hạn cuối kỳ
-  cancelledAt DateTime?                         // thời điểm user yêu cầu hủy gia hạn
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
-  deletedAt   DateTime?
-  plan        SubscriptionPlan @relation(fields: [planId], references: [id])
-  user        User             @relation(fields: [userId], references: [id])
+  id            String           @id @default(uuid()) @db.Char(36)
+  userId        String           @unique @db.Char(36)
+  planId        Int
+  startDate     DateTime         @db.Date
+  endDate       DateTime?        @db.Date
+  status        String           @db.VarChar(20)  // active | pending | cancelled
+  pendingPlanId Int?                               // planId đang chờ thanh toán (chưa activate)
+  autoRenew     Boolean          @default(true)   // false = đặt hủy gia hạn cuối kỳ
+  cancelledAt   DateTime?                          // thời điểm user yêu cầu hủy gia hạn
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  deletedAt     DateTime?
+  plan          SubscriptionPlan @relation(fields: [planId], references: [id])
+  user          User             @relation(fields: [userId], references: [id])
 
   @@index([userId, status])
   @@index([planId], map: "user_subscriptions_planId_fkey")
   @@map("user_subscriptions")
+}
+
+model PaymentTransaction {
+  id                  String   @id @default(uuid()) @db.Char(36)
+  userId              String   @db.Char(36)
+  planId              Int
+  type                String   @db.VarChar(20)    // 'subscribe' | 'renew'
+  amount              Int                          // số tiền VND
+  status              String   @db.VarChar(20)    // pending | paid | failed | cancelled | expired
+  paymentMethod       String   @default("payos") @db.VarChar(30)
+  paymentRef          String?  @unique @db.VarChar(100) // mã nội bộ FRIGGY-xxx
+  payosOrderCode      BigInt?  @unique                  // orderCode PayOS (số nguyên)
+  payosPaymentLinkId  String?  @db.VarChar(100)
+  payosTransactionRef String?  @db.VarChar(100)    // reference từ webhook PayOS
+  description         String?  @db.VarChar(100)    // nội dung CK
+  checkoutUrl         String?  @db.VarChar(500)    // link thanh toán
+  qrCode              String?  @db.Text             // QR code từ PayOS (base64 hoặc URL)
+  expiredAt           DateTime?                     // thời điểm link hết hạn
+  paidAt              DateTime?                     // thời điểm thanh toán thành công
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  plan                SubscriptionPlan @relation(fields: [planId], references: [id])
+  user                User             @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([payosOrderCode])
+  @@index([status, expiredAt])
+  @@map("payment_transactions")
 }
 
 enum RoleName {
@@ -788,6 +818,7 @@ enum ShoppingListStatus {
 
 enum AgentType {
   supervisor
+  public_chat
   chef_agent
   data_agent
   evaluator

@@ -178,6 +178,7 @@ export type ShoppingListStatus = (typeof ShoppingListStatus)[keyof typeof Shoppi
 
 export const AgentType = {
   supervisor: 'supervisor',
+  public_chat: 'public_chat',
   chef_agent: 'chef_agent',
   data_agent: 'data_agent',
   evaluator: 'evaluator',
