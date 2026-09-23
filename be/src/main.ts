@@ -65,10 +65,13 @@ async function bootstrap() {
       .addTag('Fridge', 'Tủ lạnh cá nhân')
       .addTag('Notifications', 'Thông báo & Cài đặt thông báo')
       .addTag('Subscriptions', 'Gói dịch vụ Free & Individual')
+      .addTag('Payment Transactions', 'Lịch sử giao dịch thanh toán & Polling trạng thái')
+      .addTag('Family', 'Gói Gia Đình — Mời thành viên, Chấp nhận, Giải tán')
       .addTag('Meal Planning', 'Thực đơn tuần & Danh sách mua')
       .addTag('AI Chat', 'Đầu bếp AI — Chat có tài khoản & Chatbot công khai')
       .addTag('AI Public Chat', 'API Chat public (Chatbot SEO)')
       .addTag('Admin', 'Quản trị hệ thống')
+      .addTag('Admin — Payment Transactions', 'Quản trị — Lịch sử giao dịch thanh toán')
       .build();
 
     const document = SwaggerModule.createDocument(app, config);

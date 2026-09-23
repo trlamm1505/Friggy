@@ -2,9 +2,14 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  ConflictException,
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from 'src/modules-system/prisma/prisma.service';
+import { PayOsService } from 'src/modules-system/payos/payos.service';
+import { PaymentTransactionsService } from '../payment-transactions/payment-transactions.service';
+import { FamilyService } from '../family/family.service';
+import { InvalidSignatureError } from '@payos/node';
 import { v4 as uuid } from 'uuid';
 import type { SubscribeDto } from './dto/subscriptions.dto';
 import type {
@@ -19,7 +24,12 @@ import type {
 export class SubscriptionsService {
   private readonly logger = new Logger(SubscriptionsService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly payOsService: PayOsService,
+    private readonly paymentTxService: PaymentTransactionsService,
+    private readonly familyService: FamilyService,
+  ) {}
 
   // ─────────────────────────────────────────────────────────
   // GET /plans — Danh sách gói
@@ -39,16 +49,24 @@ export class SubscriptionsService {
   // ─────────────────────────────────────────────────────────
 
   async getMySubscription(userId: string): Promise<UserSubscriptionResponseDto> {
+    // Tìm sub active trước
     let sub = await this.prisma.userSubscription.findFirst({
       where: { userId, deletedAt: null, status: 'active' },
       include: { plan: true },
     });
 
-    // User mới chưa có sub → tự tạo Free plan
-    if (!sub) {
-      sub = await this.assignFreePlan(userId);
-    }
+    if (sub) return this.mapSubscription(sub);
 
+    // Nếu đang pending (đang chờ thanh toán) → KHÔNG tạo free plan
+    // vì sẽ ghi đè row đang pending và làm mất thông tin PayOS
+    const pendingSub = await this.prisma.userSubscription.findFirst({
+      where: { userId, deletedAt: null, status: 'pending' },
+      include: { plan: true },
+    });
+    if (pendingSub) return this.mapSubscription(pendingSub);
+
+    // Không có sub nào → tạo free plan mặc định
+    sub = await this.assignFreePlan(userId);
     return this.mapSubscription(sub);
   }
 
@@ -75,47 +93,83 @@ export class SubscriptionsService {
       throw new BadRequestException('Bạn đang sử dụng gói này — không cần đăng ký lại');
     }
 
-    // Tạo paymentRef & QR mock
-    const paymentRef = `FRIGGY-${Date.now()}-${Math.floor(Math.random() * 9000 + 1000)}`;
-    const expireAt = new Date(Date.now() + 15 * 60 * 1000); // 15 phút
+    // Kiểm tra pending trùng — chặn nếu còn trong cửa sổ 15 phút
+    // Sau 15 phút (link PayOS hết hạn) → cho phép tạo lại
+    const PAYMENT_EXPIRE_MS = 15 * 60 * 1000;
+    const pendingTx = await this.prisma.paymentTransaction.findFirst({
+      where: { userId, status: 'pending' },
+      orderBy: { createdAt: 'desc' },
+    });
+    if (pendingTx) {
+      const elapsed = Date.now() - new Date(pendingTx.createdAt).getTime();
+      if (elapsed < PAYMENT_EXPIRE_MS) {
+        const remainingSec = Math.ceil((PAYMENT_EXPIRE_MS - elapsed) / 1000);
+        throw new ConflictException(
+          `Đã có giao dịch đang chờ thanh toán. Thử lại sau ${remainingSec} giây hoặc hoàn tất thanh toán.`,
+        );
+      }
+      this.logger.log(`[Subscribe] Payment link hết hạn cho userId=${userId} — tạo lại`);
+    }
 
-    // Tạo sub với status pending (chờ webhook confirm)
+    // orderCode: số nguyên unique
+    const orderCode = Date.now() % 9007199254740991;
+    const paymentRef = `FRIGGY-${orderCode}`;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+    const expiredAt = new Date(Date.now() + 15 * 60 * 1000);
 
+    // Tạo payment link PayOS TRƯỚC — nếu lỗi thì sub không bị ảnh hưởng
+    const payosResponse = await this.payOsService.createPaymentLink({
+      orderCode,
+      amount: plan.priceVnd,
+      description: `Friggy ${plan.displayName}`,
+      planName: plan.displayName,
+    });
+
+    // PayOS thành công → mới update subscription + tạo transaction
     await this.prisma.userSubscription.upsert({
       where: { userId },
       create: {
         id: uuid(),
         userId,
         planId: plan.id,
+        pendingPlanId: plan.id,
         startDate: today,
         endDate: null,
         status: 'pending',
-        paymentRef,
       },
       update: {
-        planId: plan.id,
-        startDate: today,
-        endDate: null,
+        pendingPlanId: plan.id,
         status: 'pending',
-        paymentRef,
         deletedAt: null,
       },
     });
 
-    this.logger.log(`[Subscribe] userId=${userId} plan=${plan.name} ref=${paymentRef}`);
+    // Lưu transaction vào bảng payment_transactions
+    await this.paymentTxService.createPending({
+      userId,
+      planId: plan.id,
+      type: 'subscribe',
+      amount: plan.priceVnd,
+      paymentRef,
+      description: `Friggy ${plan.displayName}`,
+      payosOrderCode: BigInt(orderCode),
+      payosPaymentLinkId: payosResponse.paymentLinkId,
+      checkoutUrl: payosResponse.checkoutUrl,
+      qrCode: payosResponse.qrCode,
+      expiredAt,
+    });
 
-    // Mock QR URL — Phase 9 tích hợp VNPay/MoMo thực
-    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(
-      `FRIGGY|${paymentRef}|${plan.priceVnd}|Friggy Individual`,
-    )}`;
+    this.logger.log(
+      `[Subscribe] userId=${userId} plan=${plan.name} orderCode=${orderCode} ref=${paymentRef}`,
+    );
 
     return {
-      qrCodeUrl,
+      checkoutUrl: payosResponse.checkoutUrl,
+      qrCode: payosResponse.qrCode,
       paymentRef,
       amount: plan.priceVnd,
-      expireAt: expireAt.toISOString(),
+      expireAt: expiredAt.toISOString(),
       status: 'pending',
     };
   }
@@ -125,33 +179,84 @@ export class SubscriptionsService {
   // ─────────────────────────────────────────────────────────
 
   async handleWebhook(body: any): Promise<WebhookResponseDto> {
-    const { paymentRef, status } = body ?? {};
-    this.logger.log(`[Webhook] ref=${paymentRef} status=${status}`);
+    // Xác thực signature PayOS — throw nếu bị giả mạo
+    let webhookData: Awaited<ReturnType<typeof this.payOsService.verifyWebhook>>;
+    try {
+      webhookData = await this.payOsService.verifyWebhook(body);
+    } catch (err) {
+      if (err instanceof InvalidSignatureError) {
+        this.logger.warn(`[Webhook] Signature không hợp lệ — bỏ qua`);
+        return { received: false };
+      }
+      throw err;
+    }
 
-    if (!paymentRef) return { received: false };
+    const { orderCode, code } = webhookData;
+    this.logger.log(`[Webhook] orderCode=${orderCode} code=${code}`);
 
+    // Tìm transaction theo payosOrderCode
+    const tx = await this.paymentTxService.findByOrderCode(BigInt(orderCode));
+    if (!tx) {
+      this.logger.warn(`[Webhook] Không tìm thấy transaction với orderCode=${orderCode}`);
+      return { received: false };
+    }
+
+    // Tìm subscription của user
     const sub = await this.prisma.userSubscription.findFirst({
-      where: { paymentRef, deletedAt: null },
+      where: { userId: tx.userId, deletedAt: null },
     });
-    if (!sub) return { received: false };
+    if (!sub) {
+      this.logger.warn(`[Webhook] Không tìm thấy subscription cho userId=${tx.userId}`);
+      return { received: false };
+    }
 
-    if (status === 'success') {
+    if (code === '00') {
+      // Thanh toán thành công
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      const endDate = new Date(today);
+
+      // endDate cộng dồn: không mất ngày còn lại nếu gia hạn sớm
+      const baseDate =
+        sub.endDate && sub.endDate > today
+          ? new Date(sub.endDate)
+          : today;
+      const endDate = new Date(baseDate);
       endDate.setMonth(endDate.getMonth() + 1);
 
+      const newPlanId = sub.pendingPlanId ?? tx.planId;
       await this.prisma.userSubscription.update({
         where: { id: sub.id },
-        data: { status: 'active', startDate: today, endDate },
+        data: {
+          planId: newPlanId,
+          pendingPlanId: null,
+          status: 'active',
+          startDate: today,
+          endDate,
+        },
       });
 
-      this.logger.log(`[Webhook] Sub ${sub.id} activated for user ${sub.userId}`);
-    } else if (status === 'failed') {
+      // Đánh dấu transaction paid
+      await this.paymentTxService.markPaid(tx.id, (webhookData as any).reference);
+
+      // Nếu là gói Family → tự động tạo FamilyGroup cho owner
+      const activatedPlan = await this.prisma.subscriptionPlan.findUnique({ where: { id: newPlanId } });
+      if (activatedPlan?.name === 'family') {
+        await this.familyService.createGroupForOwner(tx.userId).catch((err) => {
+          this.logger.warn(`[Webhook] Failed to create FamilyGroup for ${tx.userId}: ${err}`);
+        });
+      }
+
+      this.logger.log(
+        `[Webhook] Sub activated planId=${newPlanId} endDate=${endDate.toISOString().split('T')[0]} user=${tx.userId}`,
+      );
+    } else {
+      // Thanh toán thất bại / huỷ
       await this.prisma.userSubscription.update({
         where: { id: sub.id },
-        data: { status: 'cancelled' },
+        data: { status: 'cancelled', pendingPlanId: null },
       });
+      await this.paymentTxService.markCancelled(tx.id);
+      this.logger.log(`[Webhook] Transaction ${tx.id} cancelled (code=${code})`);
     }
 
     return { received: true };
@@ -205,29 +310,69 @@ export class SubscriptionsService {
       throw new BadRequestException('Không thể gia hạn gói Free');
     }
 
-    const paymentRef = `FRIGGY-RENEW-${Date.now()}-${Math.floor(Math.random() * 9000 + 1000)}`;
-    const expireAt = new Date(Date.now() + 15 * 60 * 1000);
+    // Kiểm tra pending trùng — chặn nếu còn trong cửa sổ 15 phút (giống subscribe)
+    const PAYMENT_EXPIRE_MS = 15 * 60 * 1000;
+    const pendingTx = await this.prisma.paymentTransaction.findFirst({
+      where: { userId, status: 'pending' },
+      orderBy: { createdAt: 'desc' },
+    });
+    if (pendingTx) {
+      const elapsed = Date.now() - new Date(pendingTx.createdAt).getTime();
+      if (elapsed < PAYMENT_EXPIRE_MS) {
+        const remainingSec = Math.ceil((PAYMENT_EXPIRE_MS - elapsed) / 1000);
+        throw new ConflictException(
+          `Đã có giao dịch đang chờ thanh toán. Thử lại sau ${remainingSec} giây hoặc hoàn tất thanh toán.`,
+        );
+      }
+      this.logger.log(`[Renew] Payment link hết hạn cho userId=${userId} — tạo lại`);
+    }
 
-    // Chỉ cập nhật paymentRef + status pending — đợi webhook confirm mới thiết lập endDate
+    const orderCode = Date.now() % 9007199254740991;
+    const paymentRef = `FRIGGY-RENEW-${orderCode}`;
+    const expiredAt = new Date(Date.now() + 15 * 60 * 1000);
+
+    // Tạo payment link PayOS TRƯỚC — nếu lỗi thì sub không bị ảnh hưởng
+    const payosResponse = await this.payOsService.createPaymentLink({
+      orderCode,
+      amount: sub.plan.priceVnd,
+      description: `GH Friggy ${sub.plan.displayName}`,
+      planName: `Gia hạn ${sub.plan.displayName}`,
+    });
+
+    // PayOS thành công → mới cập nhật subscription + tạo transaction
     await this.prisma.userSubscription.update({
       where: { id: sub.id },
       data: {
-        paymentRef,
+        pendingPlanId: sub.plan.id,
         status: 'pending',
       },
     });
 
-    this.logger.log(`[Renew] userId=${userId} | ref=${paymentRef} — chờ webhook confirm`);
+    // Lưu transaction
+    await this.paymentTxService.createPending({
+      userId,
+      planId: sub.plan.id,
+      type: 'renew',
+      amount: sub.plan.priceVnd,
+      paymentRef,
+      description: `Gia hạn Friggy ${sub.plan.displayName}`,
+      payosOrderCode: BigInt(orderCode),
+      payosPaymentLinkId: payosResponse.paymentLinkId,
+      checkoutUrl: payosResponse.checkoutUrl,
+      qrCode: payosResponse.qrCode,
+      expiredAt,
+    });
 
-    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(
-      `FRIGGY|${paymentRef}|${sub.plan.priceVnd}|Gia hạn ${sub.plan.displayName}`,
-    )}`;
+    this.logger.log(
+      `[Renew] userId=${userId} orderCode=${orderCode} ref=${paymentRef}`,
+    );
 
     return {
-      qrCodeUrl,
+      checkoutUrl: payosResponse.checkoutUrl,
+      qrCode: payosResponse.qrCode,
       paymentRef,
       amount: sub.plan.priceVnd,
-      expireAt: expireAt.toISOString(),
+      expireAt: expiredAt.toISOString(),
       status: 'pending',
     };
   }

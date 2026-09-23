@@ -27,4 +27,4 @@ export const transporter = nodemailer.createTransport({
 });
 
 export const MAIL_FROM = `"Friggy 🥬" <${EMAIL_FROM}>`;
-export const APP_URL = FRONTEND_URL ?? 'https://friggy.app';
+export const APP_URL = FRONTEND_URL ?? 'https://friggy.vn';

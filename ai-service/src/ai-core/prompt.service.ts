@@ -143,10 +143,6 @@ export class PromptService {
    * @returns Nội dung system prompt dạng string
    */
   async getActivePrompt(agentType: AgentTypeKey): Promise<string> {
-    if (agentType === 'public_chat') {
-      return FALLBACK_PROMPTS.public_chat;
-    }
-
     try {
       // Tìm prompt đang active trong DB cho loại agent này
       const prompt = await this.prisma.aiSystemPrompt.findFirst({
@@ -171,9 +167,9 @@ export class PromptService {
       );
     }
 
-    // Fallback về prompt mặc định hardcoded
-    this.logger.debug(
-      `📝 Dùng system prompt mặc định (fallback) cho agentType=${agentType}`,
+    // Fallback về prompt mặc định hardcoded (khi DB chưa có seed hoặc lỗi kết nối)
+    this.logger.warn(
+      `📝 Dùng system prompt fallback cho agentType=${agentType} — kiểm tra lại DB seed`,
     );
     return FALLBACK_PROMPTS[agentType] ?? FALLBACK_PROMPTS.supervisor;
   }

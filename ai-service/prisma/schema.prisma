@@ -127,6 +127,7 @@ enum ShoppingListStatus {
 
 enum AgentType {
   supervisor
+  public_chat
   chef_agent
   data_agent
   evaluator

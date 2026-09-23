@@ -22,10 +22,15 @@ import { AdminSponsorsService } from './admin-sponsors.service';
 import { AdminPlansController } from './admin-plans.controller';
 import { AdminPlansService } from './admin-plans.service';
 
+// ── Payment Transactions ──────────────────────────────────
+import { AdminPaymentTransactionsController } from './admin-payment-transactions.controller';
+import { PaymentTransactionsModule } from 'src/modules-api/payment-transactions/payment-transactions.module';
+
 @Module({
   imports: [
     PrismaModule,
     NotificationsModule,
+    PaymentTransactionsModule,
   ],
   controllers: [
     AdminAiController,
@@ -34,6 +39,7 @@ import { AdminPlansService } from './admin-plans.service';
     AdminStatsController,
     AdminSponsorsController,
     AdminPlansController,
+    AdminPaymentTransactionsController,
   ],
   providers: [
     AdminAiService,

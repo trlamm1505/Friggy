@@ -87,7 +87,10 @@ export const ModelName = {
   Notification: 'Notification',
   CronJobConfig: 'CronJobConfig',
   SubscriptionPlan: 'SubscriptionPlan',
-  UserSubscription: 'UserSubscription'
+  UserSubscription: 'UserSubscription',
+  PaymentTransaction: 'PaymentTransaction',
+  FamilyGroup: 'FamilyGroup',
+  FamilyMember: 'FamilyMember'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -662,7 +665,7 @@ export const UserSubscriptionScalarFieldEnum = {
   startDate: 'startDate',
   endDate: 'endDate',
   status: 'status',
-  paymentRef: 'paymentRef',
+  pendingPlanId: 'pendingPlanId',
   autoRenew: 'autoRenew',
   cancelledAt: 'cancelledAt',
   createdAt: 'createdAt',
@@ -671,6 +674,58 @@ export const UserSubscriptionScalarFieldEnum = {
 } as const
 
 export type UserSubscriptionScalarFieldEnum = (typeof UserSubscriptionScalarFieldEnum)[keyof typeof UserSubscriptionScalarFieldEnum]
+
+
+export const PaymentTransactionScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  planId: 'planId',
+  type: 'type',
+  amount: 'amount',
+  status: 'status',
+  paymentMethod: 'paymentMethod',
+  paymentRef: 'paymentRef',
+  payosOrderCode: 'payosOrderCode',
+  payosPaymentLinkId: 'payosPaymentLinkId',
+  payosTransactionRef: 'payosTransactionRef',
+  description: 'description',
+  checkoutUrl: 'checkoutUrl',
+  qrCode: 'qrCode',
+  expiredAt: 'expiredAt',
+  paidAt: 'paidAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type PaymentTransactionScalarFieldEnum = (typeof PaymentTransactionScalarFieldEnum)[keyof typeof PaymentTransactionScalarFieldEnum]
+
+
+export const FamilyGroupScalarFieldEnum = {
+  id: 'id',
+  ownerId: 'ownerId',
+  status: 'status',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  deletedAt: 'deletedAt'
+} as const
+
+export type FamilyGroupScalarFieldEnum = (typeof FamilyGroupScalarFieldEnum)[keyof typeof FamilyGroupScalarFieldEnum]
+
+
+export const FamilyMemberScalarFieldEnum = {
+  id: 'id',
+  familyGroupId: 'familyGroupId',
+  userId: 'userId',
+  invitedEmail: 'invitedEmail',
+  status: 'status',
+  inviteToken: 'inviteToken',
+  invitedAt: 'invitedAt',
+  joinedAt: 'joinedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type FamilyMemberScalarFieldEnum = (typeof FamilyMemberScalarFieldEnum)[keyof typeof FamilyMemberScalarFieldEnum]
 
 
 export const SortOrder = {
@@ -1062,9 +1117,46 @@ export type SubscriptionPlanOrderByRelevanceFieldEnum = (typeof SubscriptionPlan
 export const UserSubscriptionOrderByRelevanceFieldEnum = {
   id: 'id',
   userId: 'userId',
-  status: 'status',
-  paymentRef: 'paymentRef'
+  status: 'status'
 } as const
 
 export type UserSubscriptionOrderByRelevanceFieldEnum = (typeof UserSubscriptionOrderByRelevanceFieldEnum)[keyof typeof UserSubscriptionOrderByRelevanceFieldEnum]
+
+
+export const PaymentTransactionOrderByRelevanceFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  type: 'type',
+  status: 'status',
+  paymentMethod: 'paymentMethod',
+  paymentRef: 'paymentRef',
+  payosPaymentLinkId: 'payosPaymentLinkId',
+  payosTransactionRef: 'payosTransactionRef',
+  description: 'description',
+  checkoutUrl: 'checkoutUrl',
+  qrCode: 'qrCode'
+} as const
+
+export type PaymentTransactionOrderByRelevanceFieldEnum = (typeof PaymentTransactionOrderByRelevanceFieldEnum)[keyof typeof PaymentTransactionOrderByRelevanceFieldEnum]
+
+
+export const FamilyGroupOrderByRelevanceFieldEnum = {
+  id: 'id',
+  ownerId: 'ownerId',
+  status: 'status'
+} as const
+
+export type FamilyGroupOrderByRelevanceFieldEnum = (typeof FamilyGroupOrderByRelevanceFieldEnum)[keyof typeof FamilyGroupOrderByRelevanceFieldEnum]
+
+
+export const FamilyMemberOrderByRelevanceFieldEnum = {
+  id: 'id',
+  familyGroupId: 'familyGroupId',
+  userId: 'userId',
+  invitedEmail: 'invitedEmail',
+  status: 'status',
+  inviteToken: 'inviteToken'
+} as const
+
+export type FamilyMemberOrderByRelevanceFieldEnum = (typeof FamilyMemberOrderByRelevanceFieldEnum)[keyof typeof FamilyMemberOrderByRelevanceFieldEnum]
 

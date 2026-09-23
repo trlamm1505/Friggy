@@ -61,9 +61,16 @@ export class SubscriptionsController {
 
   @Post('subscribe')
   @ApiBearerAuth('access-token')
-  @ApiOperation({ summary: 'Đăng ký gói Individual/Family → nhận QR thanh toán (mock)' })
+  @ApiOperation({
+    summary: 'Đăng ký gói Individual/Family — nhận link thanh toán PayOS (QR thật)',
+    description:
+      'Tạo đơn thanh toán qua PayOS. Response trả về `checkoutUrl` (để mở WebView) ' +
+      'và `qrCode` (base64 PNG hiển thị trực tiếp). ' +
+      'Sau khi user quét QR thanh toán, PayOS gọi webhook `/subscriptions/webhook` để xác nhận.',
+  })
   @ApiResponse({ status: 201, type: SubscribeResponseDto })
-  @ApiResponse({ status: 400, description: 'Gói không hợp lệ hoặc đã đăng ký rồi' })
+  @ApiResponse({ status: 400, description: 'Gói không hợp lệ / đã đăng ký gói này rồi / gói Free không cần thanh toán' })
+  @ApiResponse({ status: 409, description: 'Đã có giao dịch đang chờ thanh toán — đợi hoàn tất hoặc hết hạn' })
   subscribe(
     @CurrentUser() user: JwtPayload,
     @Body() dto: SubscribeDto,
@@ -78,9 +85,15 @@ export class SubscriptionsController {
   @Post('renew')
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth('access-token')
-  @ApiOperation({ summary: 'Gia hạn gói thêm 1 tháng (mock — chưa gắn thanh toán)' })
+  @ApiOperation({
+    summary: 'Gia hạn gói thêm 1 tháng — nhận link thanh toán PayOS (QR thật)',
+    description:
+      'Tương tự `/subscribe` nhưng dùng cho user đã có gói trả phí muốn gia hạn. ' +
+      'Sub chuyển sang `pending` cho đến khi PayOS webhook xác nhận thanh toán.',
+  })
   @ApiResponse({ status: 200, type: SubscribeResponseDto })
   @ApiResponse({ status: 400, description: 'Không thể gia hạn gói Free' })
+  @ApiResponse({ status: 404, description: 'Không có gói đang hoạt động' })
   renew(@CurrentUser() user: JwtPayload): Promise<SubscribeResponseDto> {
     return this.subscriptionsService.renew(user.sub);
   }
@@ -108,7 +121,13 @@ export class SubscriptionsController {
   @Post('webhook')
   @Public()
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: '[Public] Webhook nhận callback từ cổng QR (VNPay/MoMo)' })
+  @ApiOperation({
+    summary: '[Public] Webhook nhận callback từ PayOS sau khi user thanh toán',
+    description:
+      'PayOS gọi endpoint này sau khi giao dịch hoàn tất. ' +
+      'Bức vậy signature HMAC-SHA256 tự động bằng PayOS SDK — từ chối request nếu bị giả mạo. ' +
+      'Khi `code=\'00\'` (thanh toán thành công): sub chuyển sang `active`, `endDate` = ngày hôm nay + 1 tháng.',
+  })
   @ApiResponse({ status: 200, type: WebhookResponseDto })
   handleWebhook(@Body() body: any): Promise<WebhookResponseDto> {
     return this.subscriptionsService.handleWebhook(body);

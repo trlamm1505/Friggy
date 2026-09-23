@@ -325,4 +325,102 @@ export class MailService implements OnModuleInit {
         Nếu không phải bạn yêu cầu, hãy bỏ qua email này.
       </p>`;
   }
+
+  // ─── Family Invite ────────────────────────────────────
+
+  async sendFamilyInvite(
+    to: string,
+    ownerName: string,
+    inviteToken: string,
+    memberName?: string | null,
+  ): Promise<void> {
+    const appUrl = APP_URL;  // FRONTEND_URL env → mailer.ts → APP_URL constant
+    const acceptUrl = `${appUrl}/family/accept?token=${inviteToken}`;
+    const rejectUrl = `${appUrl}/family/reject?token=${inviteToken}`;
+    const greeting = memberName ? `Chào ${memberName}!` : 'Chào bạn!';
+
+    const content = `
+      <h2 class="title" style="margin:0 0 8px;color:#1b4332;font-size:22px;font-weight:700;">
+        🏠 Lời mời tham gia Gia đình Friggy
+      </h2>
+      <p class="text-muted" style="margin:0 0 24px;color:#52b788;font-size:14px;">
+        ${greeting}
+      </p>
+      <p class="text-body" style="margin:0 0 20px;color:#374151;font-size:15px;line-height:1.8;">
+        <strong style="color:#2d6a4f;">${ownerName}</strong> đã mời bạn tham gia
+        nhóm <strong>Gia đình Friggy</strong>. Khi tham gia, bạn sẽ được hưởng toàn bộ tính năng
+        của gói Family — bao gồm AI của bếp, tủ lạnh chia sẻ và thực đơn tuần.
+      </p>
+      <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="margin:28px 0 16px;">
+        <tr><td align="center">
+          <a href="${acceptUrl}"
+             style="display:inline-block;padding:14px 36px;background:#2d6a4f;color:#ffffff;
+                    text-decoration:none;border-radius:10px;font-size:15px;font-weight:700;
+                    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;"
+             class="btn-primary">
+            ✅ Chấp nhận lời mời
+          </a>
+        </td></tr>
+      </table>
+      <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="margin:0 0 24px;">
+        <tr><td align="center">
+          <a href="${rejectUrl}"
+             style="display:inline-block;padding:10px 28px;background:transparent;color:#6b7280;
+                    text-decoration:none;border-radius:8px;font-size:13px;border:1px solid #d1d5db;"
+          >
+            Từ chối
+          </a>
+        </td></tr>
+      </table>
+      <p class="text-muted" style="margin:0 0 8px;color:#9ca3af;font-size:12px;text-align:center;">
+        Liên kết này sẽ hết hạn sau <strong>48 giờ</strong>.
+      </p>
+      <p class="text-muted" style="margin:0;color:#9ca3af;font-size:12px;text-align:center;">
+        Nếu bạn không biết về lời mời này, hãy bỏ qua email này.
+      </p>`;
+
+    await this.send({
+      to,
+      subject: `[Friggy] ${ownerName} mời bạn tham gia Gia đình`,
+      html: layout(content),
+    });
+    this.logger.log(`✅ FamilyInvite → ${to}`);
+  }
+
+  // ─── Family Removed ─────────────────────────────────
+
+  async sendFamilyRemoved(to: string): Promise<void> {
+    const content = `
+      <h2 class="title" style="margin:0 0 8px;color:#1b4332;font-size:22px;font-weight:700;">
+        👋 Bạn đã bị xóa khỏi Gia đình Friggy
+      </h2>
+      <p class="text-body" style="margin:0 0 20px;color:#374151;font-size:15px;line-height:1.8;">
+        Chủ gia đình đã xóa bạn khỏi nhóm. Bạn vẫn giữ gói dịch vụ cá nhân của mình.
+      </p>
+      <p class="text-muted" style="margin:0;color:#9ca3af;font-size:13px;">
+        Nếu có thắc mắc, vui lòng liên hệ support@friggy.vn.
+      </p>`;
+
+    await this.send({ to, subject: '[Friggy] Bạn đã bị xóa khỏi gia đình', html: layout(content) });
+    this.logger.log(`✅ FamilyRemoved → ${to}`);
+  }
+
+  // ─── Family Dissolved ────────────────────────────────
+
+  async sendFamilyDissolved(to: string): Promise<void> {
+    const content = `
+      <h2 class="title" style="margin:0 0 8px;color:#1b4332;font-size:22px;font-weight:700;">
+        🏚️ Gia đình Friggy đã giải tán
+      </h2>
+      <p class="text-body" style="margin:0 0 20px;color:#374151;font-size:15px;line-height:1.8;">
+        Chủ gia đình đã giải tán nhóm hoặc gói Family đã hết hạn.
+        Bạn vẫn giữ toàn bộ gói dịch vụ cá nhân của mình.
+      </p>
+      <p class="text-muted" style="margin:0;color:#9ca3af;font-size:13px;">
+        Cảm ơn bạn đã sử dụng Friggy!
+      </p>`;
+
+    await this.send({ to, subject: '[Friggy] Gia đình đã giải tán', html: layout(content) });
+    this.logger.log(`✅ FamilyDissolved → ${to}`);
+  }
 }

@@ -224,3 +224,18 @@ export type SubscriptionPlan = Prisma.SubscriptionPlanModel
  * 
  */
 export type UserSubscription = Prisma.UserSubscriptionModel
+/**
+ * Model PaymentTransaction
+ * 
+ */
+export type PaymentTransaction = Prisma.PaymentTransactionModel
+/**
+ * Model FamilyGroup
+ * 
+ */
+export type FamilyGroup = Prisma.FamilyGroupModel
+/**
+ * Model FamilyMember
+ * 
+ */
+export type FamilyMember = Prisma.FamilyMemberModel
