@@ -33,6 +33,18 @@ export interface MealSlot {
   cookingTime?: number;    // Thời gian nấu (phút) — bắt buộc điền khi recipeId=null
   estimatedCost: number;   // Chi phí ước tính (VND)
   servings: number;
+  // Khi recipeId=null: AI cung cấp để lưu vào DB
+  ingredients?: Array<{
+    ingredientName: string;
+    quantity: number;
+    unit: string;
+    isOptional?: boolean;
+  }>;
+  steps?: Array<{
+    stepNumber: number;
+    instruction: string;
+    durationMinutes?: number;
+  }>;
 }
 
 // ─────────────────────────────────────────────────────────
@@ -112,7 +124,7 @@ Hãy tạo thực đơn 7 ngày (Thứ 2 đến Chủ nhật) với 3 bữa/ngà
 
 **Hướng dẫn chọn món (quan trọng):**
 - ƯU TIÊN: Dùng recipeId có sẵn từ danh sách: ${[budgetReport.affordableRecipeIds].flat().slice(0, 15).join(', ')}
-- DỰ PHÒNG: Nếu không tìm được món phù hợp trong danh sách trên (ví dụ thiếu đa dạng, không đủ món cho bữa), hãy tự nghĩ món mới bằng cách đặt recipeId: null và điền đầy đủ recipeName, description, cookingTime.
+- DỰ PHÒNG: Nếu không tìm được món phù hợp, tự nghĩ món mới: đặt recipeId: null và điền đầy đủ recipeName, description, cookingTime, ingredients, steps.
 - Mỗi ngày nên có tối thiểu 1 món tự nghĩ để thực đơn đa dạng hơn.
 
 Bắt buộc trả về JSON object với cấu trúc CHÍNH XÁC như sau (không thay đổi tên field):
@@ -126,11 +138,21 @@ Bắt buộc trả về JSON object với cấu trúc CHÍNH XÁC như sau (khô
       "description": "Mô tả ngắn (bắt buộc khi recipeId=null)",
       "cookingTime": 20,
       "estimatedCost": 30000,
-      "servings": 2
+      "servings": 2,
+      "ingredients": [
+        { "ingredientName": "Thịt bò", "quantity": 200, "unit": "g", "isOptional": false },
+        { "ingredientName": "Hành tây", "quantity": 1, "unit": "củ", "isOptional": false }
+      ],
+      "steps": [
+        { "stepNumber": 1, "instruction": "Ướp thịt với gia vị 15 phút", "durationMinutes": 15 },
+        { "stepNumber": 2, "instruction": "Xào thịt với hành trên lửa lớn", "durationMinutes": 10 }
+      ]
     }
   ]
 }
 Ghi chú: dayOfWeek: 1=Thứ Hai, 2=Thứ Ba, ..., 7=Chủ Nhật. mealType chỉ dùng: breakfast/lunch/dinner.
+Khi recipeId không null (dùng từ kho): ingredients và steps CÓ THỂ để rỗng ([]).
+Khi recipeId=null (tự nghĩ): BẮT BUỘC điền ingredients và steps đầy đủ.
     `.trim();
 
     const messages: ChatCompletionMessageParam[] = [
@@ -248,6 +270,9 @@ Ghi chú: dayOfWeek: 1=Thứ Hai, 2=Thứ Ba, ..., 7=Chủ Nhật. mealType ch�
             servings: slot.servings ?? householdSize,
             difficulty: 'medium',
             estimatedCost: slot.estimatedCost ?? budgetReport.perMealBudget,
+            // Truyền ingredients và steps nếu AI cung cấp
+            ingredients: slot.ingredients ?? [],
+            steps: slot.steps ?? [],
           });
           slot.recipeId = recipeId;
         } catch (err) {

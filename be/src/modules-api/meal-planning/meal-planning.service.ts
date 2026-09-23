@@ -1,4 +1,4 @@
-﻿/**
+/**
  * MealPlanningService — Business logic cho Meal Planning Module
  *
  * Xử lý các nghiệp vụ:
@@ -20,6 +20,7 @@ import { PrismaService } from 'src/modules-system/prisma/prisma.service';
 import { v4 as uuidv4 } from 'uuid';
 import { MEAL_PLAN_ROUTING_KEY, AI_SLOT_REGENERATE_ROUTING_KEY, AI_EXPIRING_MEAL_ROUTING_KEY } from 'src/common/constants/app.constant';
 import { RabbitMqPublisherService } from 'src/modules-system/rabbit-mq/rabbit-mq-publisher.service';
+import { normalizeToBaseUnit, canCompare } from 'src/common/utils/unit.util';
 import type {
   GenerateMealPlanDto,
   UpdateMealPlanDto,
@@ -207,7 +208,7 @@ export class MealPlanningService {
       data.completedAt = dto.completed ? new Date() : null;
     }
 
-    return this.prisma.mealSlot.update({
+    const updated = await this.prisma.mealSlot.update({
       where: { id: slotId },
       data,
       select: {
@@ -219,6 +220,14 @@ export class MealPlanningService {
         completedAt: true,
       },
     });
+
+    // Idempotent guard: chỉ trừ nguyên liệu lần đầu tiên đánh dấu hoàn thành
+    // slot.completedAt === null = chưa nấu, dto.completed === true = mới tick xong
+    if (dto.completed === true && !slot.completedAt && slot.recipeId) {
+      await this.consumeIngredientsForSlot(userId, slotId, slot.recipeId, slot.servings);
+    }
+
+    return updated;
   }
 
   // ─────────────────────────────────────────────────────────
@@ -308,21 +317,45 @@ export class MealPlanningService {
       }
     }
 
+    // Smart filter: chỉ giữ nguyên liệu thực sự thiếu (không đủ trong tủ lạnh)
+    const fridgeMap = await this.buildFridgeMap(userId);
+    const filteredMap = new Map<number, { quantity: number; unit: string; price: number | null }>();
+
+    for (const [ingredientId, needed] of ingredientMap) {
+      const { quantity: neededNorm, baseUnit: neededUnit } = normalizeToBaseUnit(needed.quantity, needed.unit);
+      const inFridge = fridgeMap.get(ingredientId);
+
+      let missingNorm = neededNorm;
+      if (inFridge && canCompare(inFridge.baseUnit, neededUnit)) {
+        missingNorm = Math.max(0, neededNorm - inFridge.quantity);
+      }
+
+      if (missingNorm > 0) {
+        const factor = normalizeToBaseUnit(1, needed.unit).quantity || 1;
+        filteredMap.set(ingredientId, {
+          quantity: Math.round((missingNorm / factor) * 10) / 10,
+          unit: needed.unit,
+          price: needed.price,
+        });
+      }
+    }
+
+    const isSmartFiltered = filteredMap.size < ingredientMap.size;
     const weekNum = Math.ceil((plan.weekStartDate.getDate()) / 7);
     const title = dto.title ?? `Danh sách mua tuần ${weekNum}`;
 
-    // Tạo shopping list và items trong 1 transaction
+    // Tạo shopping list với chỉ các nguyên liệu còn thiếu
     const shoppingList = await this.prisma.shoppingList.create({
       data: {
         userId,
         weeklyPlanId: dto.weeklyPlanId,
         title,
         status: 'draft',
-        totalEstimatedCost: Array.from(ingredientMap.entries()).reduce((sum, [id, val]) => {
+        totalEstimatedCost: Array.from(filteredMap.entries()).reduce((sum, [_id, val]) => {
           return sum + Math.round((val.price ?? 0) * val.quantity / 100);
         }, 0),
         items: {
-          create: Array.from(ingredientMap.entries()).map(([ingredientId, val]) => ({
+          create: Array.from(filteredMap.entries()).map(([ingredientId, val]) => ({
             ingredientId,
             quantity: Math.round(val.quantity * 10) / 10,
             unit: val.unit,
@@ -338,7 +371,7 @@ export class MealPlanningService {
     });
 
     this.logger.log(
-      `🛒 [MealPlanning] Tạo shopping list: id=${shoppingList.id} | ${shoppingList.items.length} nguyên liệu`,
+      `🛒 [MealPlanning] Tạo smart shopping list: id=${shoppingList.id} | ${shoppingList.items.length} ng.liệu (filter: ${isSmartFiltered})`,
     );
 
     return {
@@ -348,6 +381,7 @@ export class MealPlanningService {
       totalEstimatedCost: shoppingList.totalEstimatedCost,
       weeklyPlanId: shoppingList.weeklyPlanId,
       createdAt: shoppingList.createdAt.toISOString(),
+      isSmartFiltered,
       items: shoppingList.items.map((item) => ({
         id: item.id,
         ingredientName: item.ingredient.name,
@@ -378,6 +412,26 @@ export class MealPlanningService {
     if (!item) throw new NotFoundException('Không tìm thấy mặt hàng');
 
     const newPurchased = !item.isPurchased;
+
+    // Khi tick ĐÃ MUA → tự động thêm vào tủ lạnh
+    // Khi bỏ tick (undo) → KHÔNG rollback FridgeItem (an toàn hơn)
+    if (newPurchased) {
+      await this.prisma.fridgeItem.create({
+        data: {
+          id: uuidv4(),
+          userId,
+          ingredientId: item.ingredientId,
+          quantity: item.quantity,
+          unit: item.unit,
+          addedBy: 'manual',
+          storageLocation: 'fridge',
+        },
+      });
+      this.logger.log(
+        `🛒→🧤 [MealPlanning] Auto-add fridge: ingredientId=${item.ingredientId} qty=${item.quantity}${item.unit}`,
+      );
+    }
+
     return this.prisma.shoppingListItem.update({
       where: { id: itemId },
       data: {
@@ -469,5 +523,229 @@ export class MealPlanningService {
       streamUrl: `/api/v1/meal-planning/plans/generate-from-expiring/${jobId}/stream`,
       message: `AI đang phân tích ${withinDays} ngày tới lập thực đơn ${days} ngày...`,
     };
+  }
+
+  // ─────────────────────────────────────────────────────────
+  // GET /slots/:id — Chi tiết slot: công thức + fridge analysis
+  // ─────────────────────────────────────────────────────────
+  async getSlotDetail(userId: string, slotId: string) {
+    const HAVE_THRESHOLD = 0.9; // 90%: tủ có >= 90% lượng cần → coi là 'have'
+
+    const slot = await this.prisma.mealSlot.findFirst({
+      where: {
+        id: slotId,
+        deletedAt: null,
+        dailyPlan: { weeklyPlan: { userId, deletedAt: null } },
+      },
+      include: {
+        recipe: {
+          include: {
+            steps: { where: { deletedAt: null }, orderBy: { stepNumber: 'asc' } },
+            ingredients: {
+              where: { deletedAt: null },
+              include: { ingredient: { select: { id: true, name: true } } },
+            },
+          },
+        },
+      },
+    });
+
+    if (!slot) throw new NotFoundException('Không tìm thấy meal slot');
+
+    const emptySummary = {
+      totalIngredients: 0, haveCount: 0, partialCount: 0,
+      missingCount: 0, fridgeReadyPercent: 0, missingItems: [] as any[],
+    };
+
+    if (!slot.recipe) {
+      return {
+        id: slot.id,
+        mealType: slot.mealType,
+        servings: slot.servings,
+        completedAt: slot.completedAt?.toISOString() ?? null,
+        recipe: null,
+        summary: emptySummary,
+      };
+    }
+
+    const fridgeMap = await this.buildFridgeMap(userId);
+    const scale = slot.servings / (slot.recipe.servings || 1);
+    const ingredients: any[] = [];
+
+    for (const ri of slot.recipe.ingredients) {
+      const scaledQty = ri.quantity * scale;
+      const { quantity: neededNorm, baseUnit: neededUnit } = normalizeToBaseUnit(scaledQty, ri.unit);
+      const inFridge = fridgeMap.get(ri.ingredientId);
+
+      let fridgeStatus: 'have' | 'partial' | 'missing';
+      let fridgeQuantity = 0;
+      let missingQuantity = neededNorm;
+
+      if (inFridge && canCompare(inFridge.baseUnit, neededUnit)) {
+        fridgeQuantity = inFridge.quantity;
+        if (fridgeQuantity >= neededNorm * HAVE_THRESHOLD) {
+          fridgeStatus = 'have';
+          missingQuantity = 0;
+        } else if (fridgeQuantity > 0) {
+          fridgeStatus = 'partial';
+          missingQuantity = Math.max(0, neededNorm - fridgeQuantity);
+        } else {
+          fridgeStatus = 'missing';
+        }
+      } else {
+        fridgeStatus = 'missing';
+      }
+
+      ingredients.push({
+        ingredientId: ri.ingredientId,
+        name: ri.ingredient.name,
+        quantityNeeded: Math.round(neededNorm * 100) / 100,
+        baseUnit: neededUnit,
+        originalQuantity: Math.round(scaledQty * 100) / 100,
+        originalUnit: ri.unit,
+        isOptional: ri.isOptional,
+        fridgeStatus,
+        fridgeQuantity: Math.round(fridgeQuantity * 100) / 100,
+        missingQuantity: Math.round(missingQuantity * 100) / 100,
+      });
+    }
+
+    const haveCount = ingredients.filter((i) => i.fridgeStatus === 'have').length;
+    const partialCount = ingredients.filter((i) => i.fridgeStatus === 'partial').length;
+    const missingCount = ingredients.filter((i) => i.fridgeStatus === 'missing').length;
+    const total = ingredients.length;
+
+    return {
+      id: slot.id,
+      mealType: slot.mealType,
+      servings: slot.servings,
+      completedAt: slot.completedAt?.toISOString() ?? null,
+      recipe: {
+        id: slot.recipe.id,
+        title: slot.recipe.title,
+        description: slot.recipe.description,
+        thumbnailPath: slot.recipe.thumbnailPath,
+        cookTimeMinutes: slot.recipe.cookTimeMinutes,
+        difficultyLevel: slot.recipe.difficultyLevel,
+        estimatedCost: slot.recipe.estimatedCost,
+        steps: slot.recipe.steps.map((s) => ({
+          stepNumber: s.stepNumber,
+          instruction: s.instruction,
+          durationMinutes: s.durationMinutes,
+          imagePath: s.imagePath,
+        })),
+        ingredients,
+      },
+      summary: {
+        totalIngredients: total,
+        haveCount,
+        partialCount,
+        missingCount,
+        fridgeReadyPercent: total > 0 ? Math.round((haveCount / total) * 100) : 0,
+        missingItems: ingredients.filter((i) => i.fridgeStatus !== 'have'),
+      },
+    };
+  }
+
+  // ─────────────────────────────────────────────────────────
+  // Private: Build Map<ingredientId, { quantity, baseUnit }>
+  // Tổng hợp FridgeItem còn hạn và chưa tiêu thụ
+  // ─────────────────────────────────────────────────────────
+  private async buildFridgeMap(
+    userId: string,
+  ): Promise<Map<number, { quantity: number; baseUnit: string }>> {
+    const items = await this.prisma.fridgeItem.findMany({
+      where: {
+        userId,
+        deletedAt: null,
+        consumedAt: null,
+        OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+      },
+      select: { ingredientId: true, quantity: true, unit: true },
+    });
+
+    const map = new Map<number, { quantity: number; baseUnit: string }>();
+    for (const item of items) {
+      const { quantity: normQty, baseUnit } = normalizeToBaseUnit(item.quantity, item.unit);
+      const existing = map.get(item.ingredientId);
+      if (!existing) {
+        map.set(item.ingredientId, { quantity: normQty, baseUnit });
+      } else if (canCompare(existing.baseUnit, baseUnit)) {
+        existing.quantity += normQty;
+      }
+    }
+    return map;
+  }
+
+  // ─────────────────────────────────────────────────────────
+  // Private: FIFO consume nguyên liệu khi nấu xong
+  // ─────────────────────────────────────────────────────────
+  private async consumeIngredientsForSlot(
+    userId: string,
+    slotId: string,
+    recipeId: string,
+    servings: number,
+  ): Promise<void> {
+    const recipe = await this.prisma.recipe.findUnique({
+      where: { id: recipeId },
+      include: {
+        ingredients: { where: { deletedAt: null, isOptional: false } },
+      },
+    });
+    if (!recipe) return;
+
+    const scale = servings / (recipe.servings || 1);
+
+    for (const ri of recipe.ingredients) {
+      const scaledQty = ri.quantity * scale;
+      const { quantity: neededNorm, baseUnit: neededUnit } = normalizeToBaseUnit(scaledQty, ri.unit);
+
+      const fridgeItems = await this.prisma.fridgeItem.findMany({
+        where: {
+          userId,
+          ingredientId: ri.ingredientId,
+          deletedAt: null,
+          consumedAt: null,
+          OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+        },
+        orderBy: [{ expiresAt: 'asc' }, { createdAt: 'asc' }],
+      });
+
+      let remaining = neededNorm;
+
+      for (const fridgeItem of fridgeItems) {
+        if (remaining <= 0) break;
+
+        const { quantity: availNorm, baseUnit: availUnit } = normalizeToBaseUnit(
+          fridgeItem.quantity, fridgeItem.unit,
+        );
+        if (!canCompare(availUnit, neededUnit)) continue;
+
+        if (availNorm <= remaining) {
+          await this.prisma.fridgeItem.update({
+            where: { id: fridgeItem.id },
+            data: { consumedAt: new Date() },
+          });
+          remaining -= availNorm;
+        } else {
+          const leftNorm = availNorm - remaining;
+          const { quantity: factor } = normalizeToBaseUnit(1, fridgeItem.unit);
+          const leftOriginal = factor > 0 ? leftNorm / factor : leftNorm;
+          await this.prisma.fridgeItem.update({
+            where: { id: fridgeItem.id },
+            data: { quantity: Math.max(0, Math.round(leftOriginal * 100) / 100) },
+          });
+          remaining = 0;
+        }
+      }
+
+      if (remaining > 0) {
+        this.logger.warn(
+          `[MealPlanning] Tủ lạnh thiếu ${remaining.toFixed(1)}${neededUnit} ingredientId=${ri.ingredientId} khi nấu slotId=${slotId}`,
+        );
+      }
+    }
+
+    this.logger.log(`[MealPlanning] Đã trừ ng.liệu (FIFO) cho slotId=${slotId}`);
   }
 }
