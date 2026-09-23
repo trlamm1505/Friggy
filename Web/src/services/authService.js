@@ -1,6 +1,15 @@
 import axiosClient from '../utils/axios';
 
 /**
+ * Đăng nhập bằng Email + Mật khẩu
+ * POST /api/v1/auth/email/login
+ * Body: { email: string, password: string }
+ */
+export const emailLoginApi = async (email, password) => {
+  return await axiosClient.post('/auth/email/login', { email, password });
+};
+
+/**
  * Đăng nhập bằng Google ID Token
  * POST /api/v1/auth/google
  * Body: { idToken: string }

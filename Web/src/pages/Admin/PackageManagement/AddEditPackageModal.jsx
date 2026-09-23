@@ -3,30 +3,20 @@ import { X, Package, Check, Plus, Trash2, Save } from 'lucide-react';
 
 export const AddEditPackageModal = ({ packageItem, onClose, onSave }) => {
   const [formData, setFormData] = useState({
-    name: '',
-    code: '',
-    price: 0,
-    billingCycle: 'Tháng',
-    description: '',
-    badgeText: '',
-    popular: false,
-    color: 'emerald',
-    status: 'Active',
+    displayName: '',
+    priceVnd: 0,
+    aiUsagePerWeek: -1,
+    isActive: true,
     features: [''],
   });
 
   useEffect(() => {
     if (packageItem) {
       setFormData({
-        name: packageItem.name || '',
-        code: packageItem.code || '',
-        price: packageItem.price || 0,
-        billingCycle: packageItem.billingCycle || 'Tháng',
-        description: packageItem.description || '',
-        badgeText: packageItem.badgeText || '',
-        popular: packageItem.popular || false,
-        color: packageItem.color || 'emerald',
-        status: packageItem.status || 'Active',
+        displayName: packageItem.displayName || packageItem.name || '',
+        priceVnd: packageItem.priceVnd !== undefined ? packageItem.priceVnd : (packageItem.price || 0),
+        aiUsagePerWeek: packageItem.aiUsagePerWeek !== undefined ? packageItem.aiUsagePerWeek : -1,
+        isActive: packageItem.isActive !== undefined ? packageItem.isActive : (packageItem.status === 'Active'),
         features: packageItem.features && packageItem.features.length > 0 ? packageItem.features : [''],
       });
     }
@@ -60,22 +50,25 @@ export const AddEditPackageModal = ({ packageItem, onClose, onSave }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!formData.name.trim()) return alert('Vui lòng nhập tên gói dịch vụ');
+    if (!formData.displayName.trim()) return alert('Vui lòng nhập tên hiển thị của gói');
 
     onSave({
-      id: packageItem ? packageItem.id : Date.now().toString(),
-      subscribersCount: packageItem ? packageItem.subscribersCount : 0,
-      ...formData,
-      price: Number(formData.price),
+      id: packageItem ? packageItem.id : null,
+      backendId: packageItem ? (packageItem.backendId || packageItem.id) : null,
+      name: formData.displayName,
+      displayName: formData.displayName,
+      price: Number(formData.priceVnd),
+      priceVnd: Number(formData.priceVnd),
+      aiUsagePerWeek: Number(formData.aiUsagePerWeek),
+      isActive: formData.isActive,
+      status: formData.isActive ? 'Active' : 'Inactive',
       features: formData.features.filter((f) => f.trim() !== ''),
     });
   };
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto animate__animated animate__fadeIn animate__faster">
-      <div
-        className="w-full max-w-xl bg-white rounded-[36px] shadow-2xl border border-slate-100 overflow-hidden relative max-h-[90vh] flex flex-col animate__animated animate__zoomIn animate__faster"
-      >
+      <div className="w-full max-w-lg bg-white rounded-[36px] shadow-2xl border border-slate-100 overflow-hidden relative max-h-[90vh] flex flex-col animate__animated animate__zoomIn animate__faster">
         {/* Modal Header */}
         <div className="p-6 border-b border-slate-100 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
@@ -84,10 +77,10 @@ export const AddEditPackageModal = ({ packageItem, onClose, onSave }) => {
             </div>
             <div>
               <h3 className="text-lg font-black text-slate-900">
-                {packageItem ? 'Chỉnh Sửa Gói Dịch Vụ' : 'Thêm Gói Dịch Vụ Mới'}
+                Chỉnh Sửa Gói Dịch Vụ
               </h3>
               <p className="text-xs text-slate-500 font-medium">
-                Cấu hình quyền lợi, giá cả và chu kỳ thanh toán
+                Cấu hình tên gói, giá bán, hạn mức AI và các tính năng đi kèm
               </p>
             </div>
           </div>
@@ -101,6 +94,7 @@ export const AddEditPackageModal = ({ packageItem, onClose, onSave }) => {
 
         {/* Modal Body Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto flex-1">
+          {/* Tên Gói & Giá Bán */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1">
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
@@ -108,40 +102,23 @@ export const AddEditPackageModal = ({ packageItem, onClose, onSave }) => {
               </label>
               <input
                 type="text"
-                name="name"
-                value={formData.name}
+                name="displayName"
+                value={formData.displayName}
                 onChange={handleChange}
                 required
-                placeholder="VD: Gói Premium Cá Nhân"
+                placeholder="VD: Friggy Pro"
                 className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/10 transition-all"
               />
             </div>
 
-            <div className="space-y-1">
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
-                Mã Code Gói
-              </label>
-              <input
-                type="text"
-                name="code"
-                value={formData.code}
-                onChange={handleChange}
-                required
-                placeholder="VD: PREMIUM_IND"
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/10 transition-all"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1">
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
                 Giá Bán (VNĐ)
               </label>
               <input
                 type="number"
-                name="price"
-                value={formData.price}
+                name="priceVnd"
+                value={formData.priceVnd}
                 onChange={handleChange}
                 required
                 min="0"
@@ -149,65 +126,38 @@ export const AddEditPackageModal = ({ packageItem, onClose, onSave }) => {
                 className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/10 transition-all"
               />
             </div>
-
-            <div className="space-y-1">
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
-                Chu Kỳ Thanh Toán
-              </label>
-              <select
-                name="billingCycle"
-                value={formData.billingCycle}
-                onChange={handleChange}
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-emerald-500 focus:bg-white transition-all cursor-pointer"
-              >
-                <option value="Tháng">Hàng Tháng (Tháng)</option>
-                <option value="Năm">Hàng Năm (Năm)</option>
-                <option value="Vĩnh viễn">Vĩnh viễn (Free)</option>
-              </select>
-            </div>
           </div>
 
-          <div className="space-y-1">
-            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
-              Mô Tả Gói Cước
-            </label>
-            <input
-              type="text"
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-              placeholder="Nhập mô tả ngắn gọn về lợi ích..."
-              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-emerald-500 focus:bg-white transition-all"
-            />
-          </div>
-
+          {/* Giới hạn Lượt Gọi AI & Trạng Thái */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1">
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
-                Badge Nhãn Nổi Bật (Nếu có)
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center justify-between">
+                <span>Hạn Mức AI / Tuần</span>
+                <span className="text-[10px] text-teal-600 font-normal">(-1 = Vô hạn)</span>
               </label>
               <input
-                type="text"
-                name="badgeText"
-                value={formData.badgeText}
+                type="number"
+                name="aiUsagePerWeek"
+                value={formData.aiUsagePerWeek}
                 onChange={handleChange}
-                placeholder="VD: 🔥 Phổ biến nhất"
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-emerald-500 focus:bg-white transition-all"
+                required
+                min="-1"
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/10 transition-all"
               />
             </div>
 
             <div className="space-y-1">
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
-                Trạng Thái Kích Hoạt
+                Trạng Thái Hiển Thị
               </label>
               <select
-                name="status"
-                value={formData.status}
-                onChange={handleChange}
+                name="isActive"
+                value={formData.isActive ? 'true' : 'false'}
+                onChange={(e) => setFormData((prev) => ({ ...prev, isActive: e.target.value === 'true' }))}
                 className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-emerald-500 focus:bg-white transition-all cursor-pointer"
               >
-                <option value="Active">Đang hiển thị (Active)</option>
-                <option value="Inactive">Tạm ẩn (Inactive)</option>
+                <option value="true">Đang hiển thị (Active)</option>
+                <option value="false">Tạm ẩn (Inactive)</option>
               </select>
             </div>
           </div>
@@ -220,7 +170,7 @@ export const AddEditPackageModal = ({ packageItem, onClose, onSave }) => {
               </label>
               <button
                 type="button"
-                onClick={addFeature}
+                onClick={handleAddFeatureField}
                 className="text-xs font-bold text-emerald-600 hover:text-emerald-800 flex items-center gap-1 cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5" />
@@ -244,7 +194,7 @@ export const AddEditPackageModal = ({ packageItem, onClose, onSave }) => {
                   {formData.features.length > 1 && (
                     <button
                       type="button"
-                      onClick={() => removeFeature(idx)}
+                      onClick={() => handleRemoveFeatureField(idx)}
                       className="p-2 text-slate-400 hover:text-rose-600 rounded-xl transition-colors cursor-pointer"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -269,7 +219,7 @@ export const AddEditPackageModal = ({ packageItem, onClose, onSave }) => {
               className="px-5 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs shadow-lg shadow-emerald-600/20 flex items-center gap-1.5 transition-all cursor-pointer"
             >
               <Save className="w-4 h-4" />
-              <span>{packageItem ? 'Lưu Thay Đổi' : 'Tạo Gói Mới'}</span>
+              <span>Lưu Thay Đổi</span>
             </button>
           </div>
         </form>
@@ -279,3 +229,4 @@ export const AddEditPackageModal = ({ packageItem, onClose, onSave }) => {
 };
 
 export default AddEditPackageModal;
+

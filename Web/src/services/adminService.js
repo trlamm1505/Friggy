@@ -211,3 +211,25 @@ export const createSponsorCampaignApi = async (sponsorId, data) => {
 export const updateSponsorCampaignApi = async (campaignId, data) => {
   return await axiosClient.patch(`/admin/sponsors/campaigns/${campaignId}`, data);
 };
+
+// ─────────────────────────────────────────────────────────────
+// SUBSCRIPTION PLANS MANAGEMENT
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Lấy danh sách tất cả gói dịch vụ (Admin)
+ * GET /api/v1/admin/plans
+ */
+export const getAdminPlansApi = async () => {
+  return await axiosClient.get('/admin/plans');
+};
+
+/**
+ * Cập nhật thông tin gói dịch vụ (Admin)
+ * PATCH /api/v1/admin/plans/:id
+ * Body: { priceVnd?, aiUsagePerWeek?, displayName?, features?, isActive? }
+ */
+export const updateAdminPlanApi = async (id, data) => {
+  return await axiosClient.patch(`/admin/plans/${id}`, data);
+};
+
