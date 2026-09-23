@@ -144,12 +144,20 @@ export class FamilyService {
       },
     });
 
-    // Gắn userId nếu email đã có account
+    // Gắn userId + kiểm tra user đã trong gia đình khác chưa
     const invitedUser = await this.prisma.user.findFirst({
       where: { email: dto.email },
       select: { id: true, name: true },
     });
     if (invitedUser) {
+      // Edge case: user đã active trong gia đình khác
+      const alreadyInFamily = await this.prisma.familyMember.findFirst({
+        where: { userId: invitedUser.id, status: 'active' },
+      });
+      if (alreadyInFamily) {
+        throw new ConflictException('Người dùng này đã là thành viên của một gia đình khác');
+      }
+
       await this.prisma.familyMember.update({ where: { id: member.id }, data: { userId: invitedUser.id } });
       await this.createNotification(
         invitedUser.id,
@@ -197,16 +205,18 @@ export class FamilyService {
       }
     }
 
-    const activeCount = await this.prisma.familyMember.count({
-      where: { familyGroupId: member.familyGroupId, status: 'active' },
-    });
-    if (activeCount >= MAX_MEMBERS) {
-      throw new BadRequestException('Gia đình đã đầy (tối đa 5 thành viên)');
-    }
-
-    await this.prisma.familyMember.update({
-      where: { id: member.id },
-      data: { status: 'active', joinedAt: new Date(), userId: userId ?? member.userId },
+    // Atomic: count + update trong transaction → tránh race condition
+    await this.prisma.$transaction(async (tx) => {
+      const activeCount = await tx.familyMember.count({
+        where: { familyGroupId: member.familyGroupId, status: 'active' },
+      });
+      if (activeCount >= MAX_MEMBERS) {
+        throw new BadRequestException('Gia đình đã đầy (tối đa 5 thành viên)');
+      }
+      await tx.familyMember.update({
+        where: { id: member.id },
+        data: { status: 'active', joinedAt: new Date(), userId: userId ?? member.userId },
+      });
     });
 
     await this.createNotification(
