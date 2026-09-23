@@ -25,7 +25,7 @@ const TTL_SECONDS = 86400;
 export class WebChatRateLimitGuard implements CanActivate {
   private readonly logger = new Logger(WebChatRateLimitGuard.name);
 
-  constructor(private readonly redis: RedisService) {}
+  constructor(private readonly redis: RedisService) { }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();

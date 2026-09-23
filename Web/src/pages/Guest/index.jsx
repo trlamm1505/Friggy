@@ -9,7 +9,7 @@ import { FaqSection } from './Faq/FaqSection';
 import { DownloadCtaBanner } from './DownloadCta/DownloadCtaBanner';
 import { GuestFooter } from './Footer/GuestFooter';
 import { BackToTop } from '../../components/common/BackToTop';
-import { AiChatWidget } from '../../components/common/AiChatWidget';
+import { AiChat } from '../../components/common/AiChat';
 
 export const GuestPage = () => {
   return (
@@ -26,7 +26,7 @@ export const GuestPage = () => {
       </main>
       <GuestFooter />
       <BackToTop />
-      <AiChatWidget />
+      <AiChat />
     </div>
   );
 };
