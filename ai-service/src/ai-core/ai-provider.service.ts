@@ -64,6 +64,7 @@ export class AiProviderService implements OnModuleInit {
    * Giúp request AI đầu tiên không bị chậm do phải tạo client
    */
   async onModuleInit() {
+    this.invalidateCache();
     try {
       await this.getActiveClient();
       this.logger.log('✅ Đã khởi tạo AI provider client thành công');
@@ -117,7 +118,7 @@ export class AiProviderService implements OnModuleInit {
       client,
       modelName: config.modelName,
       temperature: config.temperature,
-      maxTokens: config.maxTokens,
+      maxTokens: Math.max(config.maxTokens || 2048, 2048),
     };
 
     // Lưu vào cache để tái sử dụng

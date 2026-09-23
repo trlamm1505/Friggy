@@ -13,22 +13,30 @@ import {
   Minimize2
 } from 'lucide-react';
 import mascotImg from '../../assets/images/mascot.png';
+import {
+  getPublicChatHistoryApi,
+  sendPublicChatMessageApi,
+  subscribePublicChatStream,
+} from '../../services/publicChatService';
 
-export const AiChatWidget = () => {
+const SESSION_STORAGE_KEY = 'friggy_public_chat_session_id';
+const DEFAULT_WELCOME_MSG = {
+  id: 'welcome',
+  sender: 'ai',
+  text: 'Xin chào! Mình là Friggy AI 🥑. Hôm nay tủ lạnh nhà bạn có những nguyên liệu gì? Để mình gợi ý món ăn ngon & mẹo bảo quản nhé!',
+  time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+};
+
+export const AiChat = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [inputMessage, setInputMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [sessionId, setSessionId] = useState(() => localStorage.getItem(SESSION_STORAGE_KEY));
   const messagesEndRef = useRef(null);
+  const activeEventSourceRef = useRef(null);
 
-  const [messages, setMessages] = useState([
-    {
-      id: 1,
-      sender: 'ai',
-      text: 'Xin chào! Mình là Friggy AI 🥑. Hôm nay tủ lạnh nhà bạn có những nguyên liệu gì? Để mình gợi ý món ăn ngon & mẹo bảo quản nhé!',
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    },
-  ]);
+  const [messages, setMessages] = useState([DEFAULT_WELCOME_MSG]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -40,9 +48,49 @@ export const AiChatWidget = () => {
     }
   }, [messages, isOpen, isTyping]);
 
-  const handleSendMessage = (textToSend) => {
+  // Tải lịch sử chat từ Server khi mở Widget
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const loadHistory = async () => {
+      const savedSessionId = localStorage.getItem(SESSION_STORAGE_KEY);
+      if (!savedSessionId) return;
+
+      try {
+        const res = await getPublicChatHistoryApi(savedSessionId);
+        const data = res?.data || res;
+        if (data?.expired) {
+          localStorage.removeItem(SESSION_STORAGE_KEY);
+          setSessionId(null);
+        } else if (Array.isArray(data?.messages) && data.messages.length > 0) {
+          const loadedMsgs = data.messages.map((m, idx) => ({
+            id: `history-${idx}`,
+            sender: m.role === 'assistant' ? 'ai' : 'user',
+            text: m.content,
+            time: '',
+          }));
+          setMessages([DEFAULT_WELCOME_MSG, ...loadedMsgs]);
+        }
+      } catch {
+        // Silent catch
+      }
+    };
+
+    loadHistory();
+  }, [isOpen]);
+
+  // Clean up SSE EventSource khi unmount
+  useEffect(() => {
+    return () => {
+      if (activeEventSourceRef.current) {
+        activeEventSourceRef.current.close();
+      }
+    };
+  }, []);
+
+  const handleSendMessage = async (textToSend) => {
     const text = textToSend || inputMessage;
-    if (!text.trim()) return;
+    if (!text.trim() || isTyping) return;
 
     const userMsg = {
       id: Date.now(),
@@ -55,31 +103,121 @@ export const AiChatWidget = () => {
     if (!textToSend) setInputMessage('');
     setIsTyping(true);
 
-    // Simulate AI intelligent response
-    setTimeout(() => {
-      let aiText = 'Cảm ơn bạn đã hỏi! Friggy AI gợi ý bạn nên tận dụng các nguyên liệu sẵn có trong tủ lạnh. Bạn có thể kiểm tra mục "Gợi ý món ăn" trong ứng dụng Friggy để xem công thức chi tiết nhé! 🥗';
-      
-      const lower = text.toLowerCase();
-      if (lower.includes('trứng') || lower.includes('cà chua')) {
-        aiText = 'Với trứng và cà chua, bạn có thể chế biến ngay: \n1. Trứng sốt cà chua đậm đà 🍳\n2. Canh trứng cà chua thanh mát 🍲\n3. Trứng chiên cà chua hành tây 🥘\n\n💡 *Mẹo:* Bạn nhớ để cà chua ở ngăn mát 10-12°C để giữ được độ mọng nước nhé!';
-      } else if (lower.includes('bảo quản') || lower.includes('rau')) {
-        aiText = '🥦 *Mẹo bảo quản rau xanh tươi lâu đến 2 tuần:*\n- Rửa sạch, để thật ráo nước trước khi cất.\n- Bọc rau bằng khăn giấy khô rồi cho vào túi zip đựng thực phẩm.\n- Đặt ở ngăn mát chuyên dụng (3-5°C).';
-      } else if (lower.includes('thực đơn') || lower.includes('tối')) {
-        aiText = '🍲 *Thực đơn dinh dưỡng 4 người tối nay:*\n1. Thịt kho tàu trứng cút 🥩\n2. Canh bí đao nấu tôm 🥣\n3. Rau muống xào tỏi 🥗\n4. Tráng miệng: Dưa hấu 🍉';
-      } else if (lower.includes('rã đông') || lower.includes('thịt')) {
-        aiText = '🥩 *3 Cách rã đông chuẩn chef:*\n1. Chuyển thịt từ ngăn đá sang ngăn mát từ tối hôm trước (An toàn nhất).\n2. Ngâm trong nước lạnh có thêm chút muối và giấm (Nhanh & giữ vị).\n3. Dùng chế độ Rã đông của lò vi sóng (Dùng ngay).';
+    const currentSessionId = localStorage.getItem(SESSION_STORAGE_KEY);
+
+    try {
+      // 1. Gọi API POST /public-chat/messages lấy streamKey và sessionId
+      const response = await sendPublicChatMessageApi(text, currentSessionId);
+      const { sessionId: newSessionId, streamKey } = response?.data || response;
+
+      if (newSessionId) {
+        localStorage.setItem(SESSION_STORAGE_KEY, newSessionId);
+        setSessionId(newSessionId);
       }
 
-      const aiMsg = {
-        id: Date.now() + 1,
-        sender: 'ai',
-        text: aiText,
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      };
+      // 2. Chuẩn bị ID cho tin nhắn AI
+      const aiMsgId = Date.now() + 1;
+      let hasReceivedToken = false;
+      const activeSessionId = newSessionId || currentSessionId;
 
-      setMessages((prev) => [...prev, aiMsg]);
+      // 3. Mở kết nối SSE Stream nhận từng token
+      if (activeEventSourceRef.current) {
+        activeEventSourceRef.current.close();
+      }
+
+      activeEventSourceRef.current = subscribePublicChatStream(streamKey, {
+        onToken: (token) => {
+          hasReceivedToken = true;
+          setIsTyping(false);
+          setMessages((prev) => {
+            const existingIndex = prev.findIndex((m) => m.id === aiMsgId);
+            if (existingIndex === -1) {
+              return [
+                ...prev,
+                {
+                  id: aiMsgId,
+                  sender: 'ai',
+                  text: token,
+                  time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                },
+              ];
+            } else {
+              const updated = [...prev];
+              updated[existingIndex] = {
+                ...updated[existingIndex],
+                text: updated[existingIndex].text + token,
+              };
+              return updated;
+            }
+          });
+        },
+        onDone: () => {
+          setIsTyping(false);
+        },
+        onError: async (err) => {
+          setIsTyping(false);
+          if (hasReceivedToken) return;
+
+          // Nếu SSE gián đoạn trước khi nhận token, thử tự động tải lại từ Lịch sử Redis (do AI Service ở background đã hoàn thành & lưu)
+          try {
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+            const historyRes = await getPublicChatHistoryApi(activeSessionId);
+            const historyData = historyRes?.data || historyRes;
+            if (Array.isArray(historyData?.messages) && historyData.messages.length > 0) {
+              const lastMsg = historyData.messages[historyData.messages.length - 1];
+              if (lastMsg?.role === 'assistant' && lastMsg?.content) {
+                setMessages((prev) => {
+                  const existingIndex = prev.findIndex((m) => m.id === aiMsgId);
+                  if (existingIndex === -1) {
+                    return [
+                      ...prev,
+                      {
+                        id: aiMsgId,
+                        sender: 'ai',
+                        text: lastMsg.content,
+                        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                      },
+                    ];
+                  }
+                  return prev;
+                });
+                return;
+              }
+            }
+          } catch {
+            // ignore
+          }
+
+          const displayMsg = (typeof err === 'string' ? err : err?.message) || 'Xin lỗi bạn, kết nối với Friggy AI tạm thời gián đoạn. Vui lòng thử lại sau nhé! 🥗';
+          setMessages((prev) => {
+            const existingIndex = prev.findIndex((m) => m.id === aiMsgId);
+            if (existingIndex === -1) {
+              return [
+                ...prev,
+                {
+                  id: aiMsgId,
+                  sender: 'ai',
+                  text: displayMsg,
+                  time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                },
+              ];
+            }
+            return prev;
+          });
+        },
+      });
+    } catch (err) {
       setIsTyping(false);
-    }, 1200);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now() + 2,
+          sender: 'ai',
+          text: err.message || 'Có lỗi xảy ra khi kết nối tới Friggy AI. Bạn vui lòng thử lại nhé!',
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        },
+      ]);
+    }
   };
 
   const handleKeyPress = (e) => {
@@ -146,7 +284,7 @@ export const AiChatWidget = () => {
                     <div className="flex items-center gap-1.5">
                       <h3 className="font-black text-lg tracking-tight text-white">Friggy AI Chat</h3>
                       <span className="bg-emerald-400/30 text-emerald-100 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-300/30">
-                        PRO
+                        PUBLIC
                       </span>
                     </div>
                     <p className="text-xs text-emerald-100/90 font-medium flex items-center gap-1">
@@ -209,9 +347,11 @@ export const AiChatWidget = () => {
                     >
                       {msg.text}
                     </div>
-                    <span className={`block text-[10px] text-emerald-700/60 font-semibold px-1 ${msg.sender === 'user' ? 'text-right' : 'text-left'}`}>
-                      {msg.time}
-                    </span>
+                    {msg.time && (
+                      <span className={`block text-[10px] text-emerald-700/60 font-semibold px-1 ${msg.sender === 'user' ? 'text-right' : 'text-left'}`}>
+                        {msg.time}
+                      </span>
+                    )}
                   </div>
                 </motion.div>
               ))}
@@ -222,7 +362,7 @@ export const AiChatWidget = () => {
                   <div className="w-10 h-10 rounded-full bg-emerald-100/90 flex items-center justify-center overflow-hidden">
                     <img src={mascotImg} alt="AI" className="w-full h-full object-cover scale-[1.65] animate-bounce" />
                   </div>
-                  <span className="italic text-emerald-700/80">Friggy AI đang suy nghĩ...</span>
+                  <span className="italic text-emerald-700/80">Friggy AI đang phản hồi...</span>
                 </motion.div>
               )}
 
@@ -243,9 +383,9 @@ export const AiChatWidget = () => {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => handleSendMessage()}
-                disabled={!inputMessage.trim()}
+                disabled={!inputMessage.trim() || isTyping}
                 className={`p-2.5 rounded-2xl font-bold transition-all ${
-                  inputMessage.trim()
+                  inputMessage.trim() && !isTyping
                     ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30 cursor-pointer'
                     : 'bg-emerald-100 text-emerald-400 cursor-not-allowed'
                 }`}
@@ -260,4 +400,4 @@ export const AiChatWidget = () => {
   );
 };
 
-export default AiChatWidget;
+export default AiChat;

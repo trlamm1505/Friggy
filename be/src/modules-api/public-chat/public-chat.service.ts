@@ -1,4 +1,4 @@
-﻿/**
+/**
  * PublicChatService — Orchestrator cho SEO Public Chatbot
  *
  * be/ chịu trách nhiệm:
@@ -139,6 +139,12 @@ export class PublicChatService {
     return new Observable((observer) => {
       this.logger.log(`[PublicChat] SSE open: streamKey=${streamKey}`);
 
+      // Dùng Redis connection riêng cho XREAD BLOCK để không lock main Redis client
+      const subClient = this.redis.createSubscriber();
+
+      // Gửi ping ngay lập tức để flush HTTP 200 OK header về Browser EventSource
+      observer.next({ data: JSON.stringify({ event: 'ping', data: '' }) } as MessageEvent);
+
       let lastId = '0';
       let done = false;
       const startedAt = Date.now();
@@ -153,12 +159,16 @@ export class PublicChatService {
           }
 
           try {
-            const result = await this.redis.getClient().xread(
+            const result = await subClient.xread(
               'BLOCK', XREAD_BLOCK_MS,
               'STREAMS', redisStreamKey, lastId,
             ) as Array<[string, Array<[string, string[]]>]> | null;
 
-            if (!result) continue;
+            if (!result) {
+              // Bắn keep-alive ping giữ kết nối SSE luôn sống khi AI đang suy nghĩ
+              observer.next({ data: JSON.stringify({ event: 'ping', data: '' }) } as MessageEvent);
+              continue;
+            }
 
             for (const [, entries] of result) {
               for (const [id, fields] of entries) {
@@ -192,6 +202,7 @@ export class PublicChatService {
       return () => {
         this.logger.log(`[PublicChat] SSE closed: streamKey=${streamKey}`);
         done = true;
+        subClient.quit().catch(() => {});
       };
     });
   }

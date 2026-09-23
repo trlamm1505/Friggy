@@ -1,11 +1,50 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { pricingPlans } from '../../../data';
 import { PackageCard } from '../../../components/common/PackageCard';
 import { showToast } from '../../../components/common/Toast';
+import { getPublicPlansApi } from '../../../services/subscriptionService';
 
 export const PricingSection = () => {
-  const [billingCycle, setBillingCycle] = useState('monthly'); // 'monthly' | 'yearly'
+  const [plans, setPlans] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchPlans = async () => {
+      try {
+        setLoading(true);
+        const res = await getPublicPlansApi();
+        const apiPlans = res?.data || res;
+        if (Array.isArray(apiPlans)) {
+          const mapped = apiPlans.map((p) => {
+            const isPopular = p.name === 'individual' || p.name === 'pro';
+            return {
+              id: p.id,
+              name: p.displayName || p.name,
+              code: p.name,
+              priceVnd: p.priceVnd,
+              features: p.features || [],
+              aiUsagePerWeek: p.aiUsagePerWeek,
+              isPopular,
+              tag: isPopular ? 'Khuyên Dùng' : p.priceVnd === 0 ? 'Miễn Phí' : 'Gia Đình',
+              description:
+                p.name === 'free'
+                  ? 'Trải nghiệm theo dõi thực phẩm cá nhân đơn giản.'
+                  : isPopular
+                  ? 'Tối ưu hoàn hảo cho gia đình nhỏ, mở khóa trọn bộ tính năng AI thông minh.'
+                  : 'Dành cho gia đình nhiều thế hệ hoặc nhà đông người cần quản lý chung.',
+            };
+          });
+          setPlans(mapped);
+        }
+      } catch (err) {
+        console.error('Lỗi khi tải danh sách gói cước từ API:', err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPlans();
+  }, []);
 
   return (
     <section id="pricing" className="py-24 bg-gradient-to-b from-white via-emerald-50/20 to-emerald-50/50 relative overflow-hidden">
@@ -37,63 +76,32 @@ export const PricingSection = () => {
           >
             Tiết kiệm hàng triệu đồng mỗi năm nhờ giảm thiểu 100% thức ăn bị hỏng lãng phí trong tủ lạnh.
           </motion.p>
-
-          {/* Interactive Toggle Monthly / Yearly */}
-          <div className="pt-6 flex items-center justify-center">
-            <div className="bg-emerald-100/90 p-1.5 rounded-full flex items-center gap-1 border border-emerald-200 shadow-inner">
-              <button
-                onClick={() => setBillingCycle('monthly')}
-                className={`px-6 py-2.5 rounded-full text-xs sm:text-sm font-bold transition-all duration-300 ${
-                  billingCycle === 'monthly'
-                    ? 'bg-white text-emerald-950 shadow-md scale-105'
-                    : 'text-emerald-800 hover:text-emerald-950'
-                }`}
-              >
-                Theo Tháng
-              </button>
-              <button
-                onClick={() => setBillingCycle('yearly')}
-                className={`px-6 py-2.5 rounded-full text-xs sm:text-sm font-bold transition-all duration-300 flex items-center gap-2 ${
-                  billingCycle === 'yearly'
-                    ? 'bg-gradient-to-r from-emerald-600 to-green-600 text-white shadow-md scale-105'
-                    : 'text-emerald-800 hover:text-emerald-950'
-                }`}
-              >
-                <span>Theo Năm</span>
-                <span className="bg-amber-300 text-amber-950 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase shadow-xs">
-                  Tiết kiệm 20%
-                </span>
-              </button>
-            </div>
-          </div>
         </div>
 
-        {/* Pricing Cards Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
-          {pricingPlans.map((plan, index) => {
-            const currentPlan = {
-              ...plan,
-              price: billingCycle === 'monthly' ? plan.priceMonthly : plan.priceYearly,
-            };
-
-            return (
+        {/* Loading State */}
+        {loading ? (
+          <div className="flex justify-center items-center py-12">
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-emerald-600"></div>
+          </div>
+        ) : (
+          /* Pricing Cards Grid */
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
+            {plans.map((plan, index) => (
               <PackageCard
-                key={plan.id}
-                plan={currentPlan}
+                key={plan.id || index}
+                plan={plan}
                 mode="guest"
                 index={index}
                 onSelect={(selectedPlan) => {
                   showToast.info(`Bạn đã chọn đăng ký gói: ${selectedPlan.name}`);
                 }}
               />
-            );
-          })}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );
 };
 
 export default PricingSection;
-
-

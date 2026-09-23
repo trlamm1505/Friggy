@@ -82,7 +82,7 @@ export class PublicChatConsumer {
         model: llm.modelName,
         messages,
         temperature: llm.temperature,
-        max_tokens: 256,
+        max_tokens: 2048,
         stream: true,
       });
 
