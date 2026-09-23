@@ -7,7 +7,7 @@ import qrMascotImg from '../../../assets/images/QR.png';
 import mascotImg from '../../../assets/images/mascot.png';
 import suggestImg from '../../../assets/images/suggest.png';
 import { adminAccount, initialUsers } from '../../../data/adminMockData';
-import { googleAuthApi } from '../../../services/authService';
+import { emailLoginApi, googleAuthApi } from '../../../services/authService';
 import { showToast } from '../../../components/common/Toast';
 
 export const Login = ({ onBack, onLoginSuccess }) => {
@@ -37,24 +37,57 @@ export const Login = ({ onBack, onLoginSuccess }) => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
-    const inputUser = formData.username.trim();
+    const inputEmail = formData.username.trim();
     const inputPass = formData.password.trim();
 
-    if (!inputUser || !inputPass) {
-      setError('Vui lòng nhập đầy đủ Tên đăng nhập và Mật khẩu.');
+    if (!inputEmail || !inputPass) {
+      setError('Vui lòng nhập đầy đủ Email và Mật khẩu.');
       return;
     }
 
     setLoading(true);
 
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      // Gọi API POST /api/v1/auth/email/login
+      const res = await emailLoginApi(inputEmail, inputPass);
+      const authData = res.data || res;
 
-      // List of all valid accounts in the system
+      // Lưu accessToken & refreshToken vào localStorage với tiền tố friggy_
+      if (authData.accessToken) {
+        localStorage.setItem('friggy_access_token', authData.accessToken);
+        localStorage.setItem('accessToken', authData.accessToken);
+      }
+      if (authData.refreshToken) {
+        localStorage.setItem('friggy_refresh_token', authData.refreshToken);
+        localStorage.setItem('refreshToken', authData.refreshToken);
+      }
+      if (authData.user) {
+        localStorage.setItem('friggy_user', JSON.stringify(authData.user));
+        localStorage.setItem('user', JSON.stringify(authData.user));
+      }
+
+      showToast.success(`Đăng nhập thành công! Chào mừng ${authData.user?.name || authData.user?.email || inputEmail}`);
+
+      const userRole = String(
+        authData.user?.role?.name || authData.user?.role || ''
+      ).toLowerCase();
+      const isAdmin = userRole === 'admin' || userRole.includes('admin');
+
+      if (isAdmin) {
+        navigate('/admin/dashboard', { replace: true });
+        if (onLoginSuccess) onLoginSuccess(authData.user);
+      } else {
+        navigate('/', { replace: true });
+        if (onLoginSuccess) onLoginSuccess(authData.user);
+      }
+    } catch (err) {
+      console.error('Email Login Error:', err);
+
+      // Fallback kiểm tra tài khoản Mock nếu backend offline hoặc dùng account admin mock
       const validAccounts = [
         adminAccount,
         ...initialUsers.map((u) => ({
@@ -63,38 +96,36 @@ export const Login = ({ onBack, onLoginSuccess }) => {
         })),
       ];
 
-      // 1. Check if username & password are correct
       const matchedAccount = validAccounts.find((acc) => {
         const matchesUser =
-          acc.username === inputUser ||
-          acc.phone === inputUser ||
-          acc.email === inputUser;
+          acc.username === inputEmail ||
+          acc.phone === inputEmail ||
+          acc.email === inputEmail;
         const matchesPass = acc.password === inputPass;
         return matchesUser && matchesPass;
       });
 
-      if (!matchedAccount) {
-        setError('Tên đăng nhập hoặc mật khẩu không chính xác!');
+      if (matchedAccount) {
+        const roleLower = String(matchedAccount.role || '').toLowerCase();
+        const isAdmin = roleLower === 'admin' || roleLower.includes('admin');
+
+        showToast.success(`Đăng nhập thành công! Chào mừng ${matchedAccount.name || matchedAccount.username}`);
+        if (isAdmin) {
+          navigate('/admin/dashboard', { replace: true });
+          if (onLoginSuccess) onLoginSuccess(matchedAccount);
+        } else {
+          navigate('/', { replace: true });
+          if (onLoginSuccess) onLoginSuccess(matchedAccount);
+        }
         return;
       }
 
-      // 2. Check role: if role is admin -> redirect to admin page
-      const roleLower = String(matchedAccount.role || '').toLowerCase();
-      const isAdmin = roleLower === 'admin' || roleLower.includes('admin');
-
-      if (isAdmin) {
-        navigate('/admin/dashboard', { replace: true });
-        if (onLoginSuccess) {
-          onLoginSuccess(matchedAccount);
-        }
-      } else {
-        showToast.success(`Đăng nhập thành công! Chào mừng ${matchedAccount.name || matchedAccount.username}`);
-        navigate('/', { replace: true });
-        if (onLoginSuccess) {
-          onLoginSuccess(matchedAccount);
-        }
-      }
-    }, 1000);
+      const errMsg = err.message || 'Tên đăng nhập hoặc mật khẩu không chính xác!';
+      setError(errMsg);
+      showToast.error(errMsg);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleGoogleSignIn = async () => {
@@ -372,7 +403,7 @@ export const Login = ({ onBack, onLoginSuccess }) => {
               </div>
             </div>
 
-            {/* Remember Me Checkbox & Forgot Password */}
+            {/* Remember Me Checkbox */}
             <div className="flex items-center justify-between pt-1">
               <label className="flex items-center gap-2 cursor-pointer group select-none">
                 <input
@@ -386,14 +417,6 @@ export const Login = ({ onBack, onLoginSuccess }) => {
                   Ghi nhớ đăng nhập
                 </span>
               </label>
-
-              <button
-                type="button"
-                onClick={() => showToast.info('Vui lòng liên hệ hỗ trợ hoặc nhập lại mật khẩu!')}
-                className="text-xs font-bold text-emerald-600 hover:text-emerald-800 hover:underline transition-colors"
-              >
-                Quên mật khẩu?
-              </button>
             </div>
 
             {/* Main Submit Button */}

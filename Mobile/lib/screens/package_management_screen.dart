@@ -148,7 +148,6 @@ class _PackageManagementScreenState extends State<PackageManagementScreen> {
                 ...displayedPlans.map((plan) {
                   final isCurrentPlan = _userSub?.plan.id == plan.id ||
                       (_userSub?.plan.name.toLowerCase() == plan.name.toLowerCase());
-                  final isIndividual = plan.name.toLowerCase() == 'individual';
 
                   String buttonText;
                   Color buttonColor;
@@ -197,11 +196,9 @@ class _PackageManagementScreenState extends State<PackageManagementScreen> {
                       title: plan.displayName,
                       price: _formatPrice(plan.priceVnd),
                       period: plan.billingCycle == 'monthly' ? (isEn ? '/ month' : '/ tháng') : (isEn ? 'Forever' : 'Mãi mãi'),
-                      description: plan.name.toLowerCase() == 'family'
-                          ? (isEn ? 'Unlimited AI features for up to 5 family members' : 'Đầy đủ tính năng AI không giới hạn cho 5 người dùng')
-                          : (isIndividual
-                              ? (isEn ? 'Unlimited AI features for 1 user' : 'Đầy đủ tính năng AI không giới hạn cho 1 người dùng')
-                              : (isEn ? 'For basic user experience' : 'Dành cho người dùng trải nghiệm cơ bản')),
+                      description: plan.aiUsagePerWeek == -1
+                          ? (isEn ? 'Unlimited AI features enabled' : 'Đầy đủ tính năng AI không giới hạn')
+                          : (isEn ? 'Up to ${plan.aiUsagePerWeek} AI calls per week' : 'Giới hạn ${plan.aiUsagePerWeek} lượt AI / tuần'),
                       isCurrentPlan: isCurrentPlan,
                       badgeText: isCurrentPlan ? (isEn ? 'Currently Active' : 'Đang sử dụng') : null,
                       features: plan.features,

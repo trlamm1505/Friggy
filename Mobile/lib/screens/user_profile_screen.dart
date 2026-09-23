@@ -231,9 +231,29 @@ class UserProfileScreenState extends State<UserProfileScreen> {
     final defaultIconBg = isDark ? const Color(0xFF233629) : const Color(0xFFE8F5E9);
     final defaultIconColor = isDark ? const Color(0xFF81C784) : const Color(0xFF006428);
 
-    final aiUsageText = _aiUsage != null
-        ? (isEn ? 'AI Used: ${_aiUsage!.used}/${_aiUsage!.limit} this week' : 'Đã dùng ${_aiUsage!.used}/${_aiUsage!.limit} lượt AI tuần này')
-        : (isEn ? 'Personal Plan' : 'Gói Cá Nhân');
+    final String aiUsageText;
+    final String remainingText;
+
+    if (_aiUsage != null) {
+      if (_aiUsage!.limit == -1) {
+        aiUsageText = isEn
+            ? 'Unlimited AI'
+            : 'Không giới hạn AI';
+        remainingText = isEn
+            ? 'Unlimited AI features enabled'
+            : 'Không giới hạn lượt AI tuần này';
+      } else {
+        aiUsageText = isEn
+            ? 'AI Used: ${_aiUsage!.used}/${_aiUsage!.limit} this week'
+            : 'Đã dùng ${_aiUsage!.used}/${_aiUsage!.limit} lượt AI tuần này';
+        remainingText = isEn
+            ? 'Remaining ${_aiUsage!.remaining} AI calls this week'
+            : 'Còn lại ${_aiUsage!.remaining} lượt AI tuần này';
+      }
+    } else {
+      aiUsageText = isEn ? 'Personal Plan' : 'Gói Cá Nhân';
+      remainingText = isEn ? 'Manage Plan' : 'Quản lý gói dịch vụ';
+    }
 
     final fullAvatar = _getFullAvatarUrl(_avatarUrl);
 
@@ -356,7 +376,7 @@ class UserProfileScreenState extends State<UserProfileScreen> {
                 MaterialPageRoute(
                   builder: (context) => const PackageManagementScreen(),
                 ),
-              );
+              ).then((_) => reload());
             },
             child: Container(
               width: double.infinity,
@@ -429,19 +449,48 @@ class UserProfileScreenState extends State<UserProfileScreen> {
                         ),
                         const SizedBox(height: 8),
 
-                        Text(
-                          aiUsageText,
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w900,
-                            color: Colors.white,
-                            height: 1.15,
+                        if (_aiUsage != null && _aiUsage!.limit == -1) ...[
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Text(
+                                isEn ? 'Unlimited AI ' : 'Không giới hạn AI ',
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w900,
+                                  color: Colors.white,
+                                  height: 1.1,
+                                ),
+                              ),
+                              Transform.translate(
+                                offset: const Offset(0, -4),
+                                child: Text(
+                                  '∞',
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 60,
+                                    fontWeight: FontWeight.w900,
+                                    color: Colors.white,
+                                    height: 0.8,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
+                        ] else ...[
+                          Text(
+                            aiUsageText,
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w900,
+                              color: Colors.white,
+                              height: 1.15,
+                            ),
+                          ),
+                        ],
                         const SizedBox(height: 4),
 
                         Text(
-                          _aiUsage != null ? 'Còn lại ${_aiUsage!.remaining} lượt AI tuần này' : (isEn ? 'Manage Plan' : 'Quản lý gói dịch vụ'),
+                          remainingText,
                           style: GoogleFonts.plusJakartaSans(
                             fontSize: 13.5,
                             fontWeight: FontWeight.w600,

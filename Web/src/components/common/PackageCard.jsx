@@ -1,24 +1,23 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Check, Star, Zap, Edit, Trash2, Users } from 'lucide-react';
+import { Check, Star, Zap, Edit, Sparkles } from 'lucide-react';
 
 export const PackageCard = ({
   plan,
   mode = 'guest', // 'guest' | 'admin'
   onSelect,
   onEdit,
-  onDelete,
   index = 0,
 }) => {
   if (!plan) return null;
 
   const isPopular = plan.popular || plan.isPopular;
-  const name = plan.name || 'Gói Dịch Vụ';
+  const name = plan.displayName || plan.name || 'Gói Dịch Vụ';
   const description = plan.description || '';
   const features = plan.features || [];
   
   // Format Price
-  const rawPrice = plan.price !== undefined ? plan.price : (plan.priceMonthly || 0);
+  const rawPrice = plan.price !== undefined ? plan.price : (plan.priceVnd !== undefined ? plan.priceVnd : 0);
   const formattedPrice =
     typeof rawPrice === 'number'
       ? rawPrice === 0
@@ -72,13 +71,15 @@ export const PackageCard = ({
           )}
         </div>
 
-        {/* Short Description */}
-        <p className="text-xs text-emerald-900/65 font-medium leading-relaxed mb-5 min-h-[36px]">
-          {description}
-        </p>
+        {/* Short Description if present */}
+        {description && (
+          <p className="text-xs text-emerald-900/65 font-medium leading-relaxed mb-4">
+            {description}
+          </p>
+        )}
 
         {/* Price Tag */}
-        <div className="mb-6 flex items-baseline gap-1.5">
+        <div className="mb-4 flex items-baseline gap-1.5">
           <span className="text-4xl sm:text-5xl font-black text-emerald-950 tracking-tight">
             {formattedPrice}
           </span>
@@ -87,15 +88,12 @@ export const PackageCard = ({
           </span>
         </div>
 
-        {/* Admin extra stats if in Admin mode */}
-        {mode === 'admin' && plan.subscribersCount !== undefined && (
-          <div className="p-2.5 rounded-2xl bg-emerald-50/80 border border-emerald-200/70 flex items-center justify-between text-xs mb-5">
-            <span className="text-[11px] font-bold text-emerald-800 flex items-center gap-1.5">
-              <Users className="w-3.5 h-3.5 text-emerald-600" />
-              Thành viên đăng ký:
-            </span>
-            <span className="font-extrabold text-emerald-700">
-              {plan.subscribersCount.toLocaleString('vi-VN')} user
+        {/* AI Usage Limit Badge */}
+        {plan.aiUsagePerWeek !== undefined && (
+          <div className="mb-5 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-teal-50 border border-teal-200/80 text-[11px] font-bold text-teal-800">
+            <Sparkles className="w-3.5 h-3.5 text-teal-600 flex-shrink-0" />
+            <span>
+              Hạn mức AI: {plan.aiUsagePerWeek === -1 ? 'Không giới hạn' : `${plan.aiUsagePerWeek} lượt/tuần`}
             </span>
           </div>
         )}
@@ -121,20 +119,13 @@ export const PackageCard = ({
 
       {/* Action Footer: Guest vs Admin Mode */}
       {mode === 'admin' ? (
-        <div className="pt-4 border-t border-emerald-100/80 flex items-center gap-2">
+        <div className="pt-4 border-t border-emerald-100/80">
           <button
             onClick={() => onEdit && onEdit(plan)}
-            className="flex-1 py-3 px-4 rounded-full bg-emerald-50 hover:bg-emerald-100 text-emerald-900 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer border border-emerald-200"
+            className="w-full py-3 px-4 rounded-full bg-emerald-50 hover:bg-emerald-100 text-emerald-950 font-extrabold text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer border border-emerald-200 shadow-xs"
           >
             <Edit className="w-4 h-4 text-emerald-600" />
             <span>Sửa Gói</span>
-          </button>
-          <button
-            onClick={() => onDelete && onDelete(plan.id)}
-            className="p-3 rounded-full bg-rose-50 hover:bg-rose-100 text-rose-600 transition-colors cursor-pointer border border-rose-200"
-            title="Xóa gói"
-          >
-            <Trash2 className="w-4 h-4" />
           </button>
         </div>
       ) : (
@@ -154,3 +145,4 @@ export const PackageCard = ({
 };
 
 export default PackageCard;
+
