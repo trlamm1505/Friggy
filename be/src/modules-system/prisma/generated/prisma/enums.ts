@@ -292,7 +292,12 @@ export const NotificationType = {
   plan_ready: 'plan_ready',
   system: 'system',
   promo: 'promo',
-  subscription_reminder: 'subscription_reminder'
+  subscription_reminder: 'subscription_reminder',
+  family_invite: 'family_invite',
+  family_joined: 'family_joined',
+  family_rejected: 'family_rejected',
+  family_removed: 'family_removed',
+  family_dissolved: 'family_dissolved'
 } as const
 
 export type NotificationType = (typeof NotificationType)[keyof typeof NotificationType]

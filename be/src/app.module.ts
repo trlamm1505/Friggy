@@ -21,6 +21,8 @@ import { MealPlanningModule } from './modules-api/meal-planning/meal-planning.mo
 import { AiChatModule } from './modules-api/ai-chat/ai-chat.module';
 import { PublicChatModule } from './modules-api/public-chat/public-chat.module';
 import { PaymentTransactionsModule } from './modules-api/payment-transactions/payment-transactions.module';
+import { FamilyModule } from './modules-api/family/family.module';
+import { EmailClientModule } from './modules-system/email-client/email-client.module';
 
 // Global guards
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
@@ -59,6 +61,8 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter';
     AiChatModule,
     PublicChatModule,
     PaymentTransactionsModule,
+    FamilyModule,
+    EmailClientModule,
   ],
   controllers: [],
   providers: [

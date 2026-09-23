@@ -8,6 +8,7 @@ import {
 import { PrismaService } from 'src/modules-system/prisma/prisma.service';
 import { PayOsService } from 'src/modules-system/payos/payos.service';
 import { PaymentTransactionsService } from '../payment-transactions/payment-transactions.service';
+import { FamilyService } from '../family/family.service';
 import { InvalidSignatureError } from '@payos/node';
 import { v4 as uuid } from 'uuid';
 import type { SubscribeDto } from './dto/subscriptions.dto';
@@ -27,6 +28,7 @@ export class SubscriptionsService {
     private readonly prisma: PrismaService,
     private readonly payOsService: PayOsService,
     private readonly paymentTxService: PaymentTransactionsService,
+    private readonly familyService: FamilyService,
   ) {}
 
   // ─────────────────────────────────────────────────────────
@@ -235,6 +237,14 @@ export class SubscriptionsService {
 
       // Đánh dấu transaction paid
       await this.paymentTxService.markPaid(tx.id, (webhookData as any).reference);
+
+      // Nếu là gói Family → tự động tạo FamilyGroup cho owner
+      const activatedPlan = await this.prisma.subscriptionPlan.findUnique({ where: { id: newPlanId } });
+      if (activatedPlan?.name === 'family') {
+        await this.familyService.createGroupForOwner(tx.userId).catch((err) => {
+          this.logger.warn(`[Webhook] Failed to create FamilyGroup for ${tx.userId}: ${err}`);
+        });
+      }
 
       this.logger.log(
         `[Webhook] Sub activated planId=${newPlanId} endDate=${endDate.toISOString().split('T')[0]} user=${tx.userId}`,

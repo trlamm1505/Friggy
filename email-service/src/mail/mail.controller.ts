@@ -3,7 +3,8 @@ import { MessagePattern, Payload } from '@nestjs/microservices';
 import { MailService } from './mail.service';
 
 interface EmailMessage {
-  type: 'otp' | 'welcome' | 'subscription_reminder' | 'password_changed';
+  type: 'otp' | 'welcome' | 'subscription_reminder' | 'password_changed'
+      | 'family_invite' | 'family_removed' | 'family_dissolved';
   to: string;
   data: any;
 }
@@ -35,6 +36,20 @@ export class MailController {
           break;
         case 'password_changed':
           await this.mailService.sendPasswordChanged(message.to, message.data.name);
+          break;
+        case 'family_invite':
+          await this.mailService.sendFamilyInvite(
+            message.to,
+            message.data.ownerName,
+            message.data.inviteToken,
+            message.data.memberName,
+          );
+          break;
+        case 'family_removed':
+          await this.mailService.sendFamilyRemoved(message.to);
+          break;
+        case 'family_dissolved':
+          await this.mailService.sendFamilyDissolved(message.to);
           break;
         default:
           this.logger.warn(`⚠️ Email type không xác định: ${(message as any).type}`);

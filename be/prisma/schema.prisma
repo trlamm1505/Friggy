@@ -42,6 +42,8 @@ model User {
   fridgeItems           FridgeItem[]
   scanLogs              IngredientScanLog[]
   notifications         Notification[]
+  familyOwned          FamilyGroup?   @relation("FamilyOwner")
+  familyMemberships    FamilyMember[]  @relation("FamilyMember")
   authoredRecipes       Recipe[]
   refreshTokens         RefreshToken[]
   shoppingLists         ShoppingList[]
@@ -900,4 +902,49 @@ enum NotificationType {
   system
   promo
   subscription_reminder
+  family_invite
+  family_joined
+  family_rejected
+  family_removed
+  family_dissolved
+}
+
+// ─────────────────────────────────────────────────────────
+// Family Group Models
+// ─────────────────────────────────────────────────────────
+
+model FamilyGroup {
+  id        String         @id @default(uuid()) @db.Char(36)
+  ownerId   String         @unique @db.Char(36)  // 1 user chỉ sở hữu 1 gia đình
+  status    String         @db.VarChar(20)        // active | dissolved
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  deletedAt DateTime?
+
+  owner     User           @relation("FamilyOwner", fields: [ownerId], references: [id])
+  members   FamilyMember[]
+
+  @@index([status])
+  @@map("family_groups")
+}
+
+model FamilyMember {
+  id            String       @id @default(uuid()) @db.Char(36)
+  familyGroupId String       @db.Char(36)
+  userId        String?      @db.Char(36)        // null nếu user chưa có tài khoản
+  invitedEmail  String       @db.VarChar(255)    // email được mời
+  status        String       @db.VarChar(20)     // pending | active | rejected | removed
+  inviteToken   String       @unique @db.VarChar(100) // token xác nhận qua email (48h)
+  invitedAt     DateTime     @default(now())
+  joinedAt      DateTime?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  familyGroup   FamilyGroup  @relation(fields: [familyGroupId], references: [id])
+  user          User?        @relation("FamilyMember", fields: [userId], references: [id])
+
+  @@unique([familyGroupId, invitedEmail])   // không mời trùng email trong cùng nhóm
+  @@index([familyGroupId, status])
+  @@index([inviteToken])
+  @@map("family_members")
 }
