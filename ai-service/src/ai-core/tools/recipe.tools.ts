@@ -384,14 +384,8 @@ export class RecipeTools {
    *
    * Gọi khi: ChefAgent trả về slot có recipeId=null (AI muốn tự nghĩ món mới).
    *
-   * @param params.title         - Tên món ăn
-   * @param params.description   - Mô tả ngắn về món
-   * @param params.mealType      - Loại bữa (breakfast/lunch/dinner)
-   * @param params.cookingTime   - Thời gian nấu (phút)
-   * @param params.servings      - Số khẩu phần
-   * @param params.difficulty    - Độ khó (easy/medium/hard)
-   * @param params.estimatedCost - Chi phí ước tính (VND)
-   * @returns recipeId của công thức vừa tạo
+   * @param params.ingredients - Danh sách nguyên liệu (AI dùng tên, hệ thống resolve sang ID)
+   * @param params.steps       - Các bước nấu theo thứ tự
    */
   async createRecipe(params: {
     title: string;
@@ -401,24 +395,90 @@ export class RecipeTools {
     servings: number;
     difficulty: 'easy' | 'medium' | 'hard';
     estimatedCost: number;
+    ingredients?: Array<{
+      ingredientName: string;
+      quantity: number;
+      unit: string;
+      isOptional?: boolean;
+      note?: string;
+    }>;
+    steps?: Array<{
+      stepNumber: number;
+      instruction: string;
+      durationMinutes?: number;
+    }>;
   }): Promise<{ recipeId: string }> {
+    // 1. Resolve ingredientName → ingredientId (skip nếu không tìm thấy trong DB)
+    const validIngredients: Array<{
+      ingredientId: number;
+      quantity: number;
+      unit: string;
+      isOptional: boolean;
+      note: string | null;
+    }> = [];
+
+    for (const ing of params.ingredients ?? []) {
+      const found = await this.prisma.ingredient.findFirst({
+        where: { name: { contains: ing.ingredientName }, deletedAt: null },
+        select: { id: true },
+      });
+      if (found) {
+        validIngredients.push({
+          ingredientId: found.id,
+          quantity: ing.quantity,
+          unit: ing.unit,
+          isOptional: ing.isOptional ?? false,
+          note: ing.note ?? null,
+        });
+      } else {
+        this.logger.warn(
+          `[RecipeTools] Không tìm thấy nguyên liệu: "${ing.ingredientName}" — bỏ qua`,
+        );
+      }
+    }
+
+    // 2. Tạo Recipe + Steps + Ingredients trong 1 nested create
     const recipe = await this.prisma.recipe.create({
       data: {
         id: uuid(),
         title: params.title,
         description: params.description,
         mealType: params.mealType as any,
-        cookTimeMinutes: params.cookingTime,   // Schema: cookTimeMinutes (không phải cookingTime)
+        cookTimeMinutes: params.cookingTime,
         servings: params.servings,
-        difficultyLevel: params.difficulty as any, // Schema: difficultyLevel (không phải difficulty)
+        difficultyLevel: params.difficulty as any,
         estimatedCost: params.estimatedCost,
         isAiGenerated: true,
-        status: 'published' as any, // Published ngay để ChefAgent dùng được trong cùng pipeline
+        status: 'published' as any,
+        ...(params.steps?.length
+          ? {
+              steps: {
+                create: params.steps.map((s) => ({
+                  stepNumber: s.stepNumber,
+                  instruction: s.instruction,
+                  durationMinutes: s.durationMinutes ?? null,
+                })),
+              },
+            }
+          : {}),
+        ...(validIngredients.length
+          ? {
+              ingredients: {
+                create: validIngredients.map((ing) => ({
+                  ingredientId: ing.ingredientId,
+                  quantity: ing.quantity,
+                  unit: ing.unit,
+                  isOptional: ing.isOptional,
+                  note: ing.note,
+                })),
+              },
+            }
+          : {}),
       },
     });
 
     this.logger.log(
-      `🤖 [RecipeTools] Tạo công thức AI mới: "${recipe.title}" (id=${recipe.id}, mealType=${recipe.mealType}, cost=${recipe.estimatedCost?.toLocaleString('vi-VN')}đ)`,
+      `🤖 [RecipeTools] Tạo AI recipe: "${recipe.title}" | ${validIngredients.length} ingredients | ${params.steps?.length ?? 0} steps (id=${recipe.id})`,
     );
 
     return { recipeId: recipe.id };

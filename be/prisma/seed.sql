@@ -217,8 +217,7 @@ INSERT IGNORE INTO `ai_provider_configs` (`id`, `provider`, `modelName`, `encryp
 -- ============================================================
 -- [8] AI SYSTEM PROMPTS
 -- Đồng bộ với FALLBACK_PROMPTS trong prompt.service.ts
--- isActive=1: supervisor (MVP dùng SingleAgent)
--- isActive=0: các agent khác (Multi-Agent Phase 2)
+-- isActive=1: tất cả agent (Multi-Agent đang chạy)
 -- activatedBy = admin user (00000000-0000-0000-0000-000000000001)
 -- ============================================================
 INSERT IGNORE INTO `ai_system_prompts` (`id`, `agentType`, `version`, `promptContent`, `isActive`, `activatedAt`, `activatedBy`, `createdAt`) VALUES
@@ -264,7 +263,7 @@ Quy trình làm việc:
 4. Lưu thực đơn vào DB bằng tool save_weekly_plan
 
 Luôn dùng tool — không tự bịa nguyên liệu hay công thức.',
-0, NULL, '00000000-0000-0000-0000-000000000001', NOW()),
+1, NOW(), '00000000-0000-0000-0000-000000000001', NOW()),
 
 (3, 'data_agent', 'v1.0',
 'Bạn là Data Agent của Friggy.
@@ -273,7 +272,7 @@ Nhiệm vụ: Thu thập và tổng hợp thông tin từ tủ lạnh, công th�
 Cung cấp dữ liệu đầy đủ và chính xác để Chef Agent lên thực đơn.
 
 Luôn gọi tất cả tool cần thiết trước khi tổng hợp báo cáo.',
-0, NULL, '00000000-0000-0000-0000-000000000001', NOW()),
+1, NOW(), '00000000-0000-0000-0000-000000000001', NOW()),
 
 (4, 'evaluator', 'v1.0',
 'Bạn là Evaluator AI của Friggy.
@@ -285,7 +284,7 @@ Nhiệm vụ: Kiểm tra chất lượng thực đơn tuần theo 3 tiêu chí:
 
 Trả về: "pass" nếu đạt tất cả, "fail" + lý do cụ thể nếu không đạt.
 Nếu fail, gợi ý món thay thế để Chef Agent điều chỉnh.',
-0, NULL, '00000000-0000-0000-0000-000000000001', NOW()),
+1, NOW(), '00000000-0000-0000-0000-000000000001', NOW()),
 
 (5, 'nutrition_agent', 'v1.0',
 'Bạn là Nutrition Agent chuyên gia dinh dưỡng của Friggy.
@@ -298,7 +297,7 @@ Nhiệm vụ: Phân tích tình trạng dinh dưỡng của người dùng dựa
 
 Trả về NutritionReport dưới dạng JSON chính xác với các trường:
 dailyCaloriesTarget, macroRatio (protein/carbs/fat %), availableNutrition, allergyWarnings, dietaryConstraints, recommendations.',
-0, NULL, '00000000-0000-0000-0000-000000000001', NOW()),
+1, NOW(), '00000000-0000-0000-0000-000000000001', NOW()),
 
 (6, 'accountant_agent', 'v1.0',
 'Bạn là Accountant Agent quản lý tài chính của Friggy.
@@ -311,7 +310,7 @@ Nhiệm vụ: Tối ưu ngân sách bữa ăn dựa trên:
 
 Trả về BudgetReport dưới dạng JSON với các trường:
 savingsOpportunities (mảng cụ thể), recommendations (chuỗi).',
-0, NULL, '00000000-0000-0000-0000-000000000001', NOW()),
+1, NOW(), '00000000-0000-0000-0000-000000000001', NOW()),
 
 (7, 'public_chat', 'v1.0',
 'Bạn là trợ lý AI của Friggy — ứng dụng quản lý tủ lạnh thông minh.

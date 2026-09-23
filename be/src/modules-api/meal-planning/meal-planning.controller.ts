@@ -215,6 +215,29 @@ export class MealPlanningController {
   }
 
   // ─────────────────────────────────────────────────────────
+  // GET /slots/:id — Chi tiết slot: công thức + nguyên liệu + fridge analysis
+  // ─────────────────────────────────────────────────────────
+
+  @Get('slots/:id')
+  @ApiOperation({
+    summary: 'Chi tiết meal slot: công thức nấu + nguyên liệu + phân tích tủ lạnh',
+    description:
+      'Trả về các bước nấu ăn, danh sách nguyên liệu cần dùng (đã scale theo servings), ' +
+      'và trạng thái have/partial/missing theo tủ lạnh hiện tại. ' +
+      'Dùng summary.missingItems để hiển thị những gì cần mua thêm.',
+  })
+  @ApiParam({ name: 'id', description: 'ID của meal slot' })
+  @ApiResponse({ status: 200, description: 'Chi tiết slot thành công' })
+  @ApiResponse({ status: 401, description: 'Chưa đăng nhập' })
+  @ApiResponse({ status: 404, description: 'Slot không tồn tại hoặc không thuộc user' })
+  async getSlotDetail(
+    @CurrentUser() user: JwtPayload,
+    @Param('id') slotId: string,
+  ) {
+    return this.mealPlanningService.getSlotDetail(user.sub, slotId);
+  }
+
+  // ─────────────────────────────────────────────────────────
   // PATCH /slots/:id — Cập nhật meal slot (đổi món / tick đã nấu)
   // ─────────────────────────────────────────────────────────
 
