@@ -248,9 +248,9 @@ export type ShoppingListWhereInput = {
   createdAt?: Prisma.DateTimeFilter<"ShoppingList"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"ShoppingList"> | Date | string
   deletedAt?: Prisma.DateTimeNullableFilter<"ShoppingList"> | Date | string | null
+  items?: Prisma.ShoppingListItemListRelationFilter
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
   weeklyPlan?: Prisma.XOR<Prisma.WeeklyPlanNullableScalarRelationFilter, Prisma.WeeklyPlanWhereInput> | null
-  items?: Prisma.ShoppingListItemListRelationFilter
 }
 
 export type ShoppingListOrderByWithRelationInput = {
@@ -263,9 +263,9 @@ export type ShoppingListOrderByWithRelationInput = {
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  items?: Prisma.ShoppingListItemOrderByRelationAggregateInput
   user?: Prisma.UserOrderByWithRelationInput
   weeklyPlan?: Prisma.WeeklyPlanOrderByWithRelationInput
-  items?: Prisma.ShoppingListItemOrderByRelationAggregateInput
   _relevance?: Prisma.ShoppingListOrderByRelevanceInput
 }
 
@@ -282,9 +282,9 @@ export type ShoppingListWhereUniqueInput = Prisma.AtLeast<{
   createdAt?: Prisma.DateTimeFilter<"ShoppingList"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"ShoppingList"> | Date | string
   deletedAt?: Prisma.DateTimeNullableFilter<"ShoppingList"> | Date | string | null
+  items?: Prisma.ShoppingListItemListRelationFilter
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
   weeklyPlan?: Prisma.XOR<Prisma.WeeklyPlanNullableScalarRelationFilter, Prisma.WeeklyPlanWhereInput> | null
-  items?: Prisma.ShoppingListItemListRelationFilter
 }, "id">
 
 export type ShoppingListOrderByWithAggregationInput = {
@@ -327,9 +327,9 @@ export type ShoppingListCreateInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
+  items?: Prisma.ShoppingListItemCreateNestedManyWithoutShoppingListInput
   user: Prisma.UserCreateNestedOneWithoutShoppingListsInput
   weeklyPlan?: Prisma.WeeklyPlanCreateNestedOneWithoutShoppingListsInput
-  items?: Prisma.ShoppingListItemCreateNestedManyWithoutShoppingListInput
 }
 
 export type ShoppingListUncheckedCreateInput = {
@@ -353,9 +353,9 @@ export type ShoppingListUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  items?: Prisma.ShoppingListItemUpdateManyWithoutShoppingListNestedInput
   user?: Prisma.UserUpdateOneRequiredWithoutShoppingListsNestedInput
   weeklyPlan?: Prisma.WeeklyPlanUpdateOneWithoutShoppingListsNestedInput
-  items?: Prisma.ShoppingListItemUpdateManyWithoutShoppingListNestedInput
 }
 
 export type ShoppingListUncheckedUpdateInput = {
@@ -580,8 +580,8 @@ export type ShoppingListCreateWithoutUserInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
-  weeklyPlan?: Prisma.WeeklyPlanCreateNestedOneWithoutShoppingListsInput
   items?: Prisma.ShoppingListItemCreateNestedManyWithoutShoppingListInput
+  weeklyPlan?: Prisma.WeeklyPlanCreateNestedOneWithoutShoppingListsInput
 }
 
 export type ShoppingListUncheckedCreateWithoutUserInput = {
@@ -645,8 +645,8 @@ export type ShoppingListCreateWithoutWeeklyPlanInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
-  user: Prisma.UserCreateNestedOneWithoutShoppingListsInput
   items?: Prisma.ShoppingListItemCreateNestedManyWithoutShoppingListInput
+  user: Prisma.UserCreateNestedOneWithoutShoppingListsInput
 }
 
 export type ShoppingListUncheckedCreateWithoutWeeklyPlanInput = {
@@ -770,8 +770,8 @@ export type ShoppingListUpdateWithoutUserInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  weeklyPlan?: Prisma.WeeklyPlanUpdateOneWithoutShoppingListsNestedInput
   items?: Prisma.ShoppingListItemUpdateManyWithoutShoppingListNestedInput
+  weeklyPlan?: Prisma.WeeklyPlanUpdateOneWithoutShoppingListsNestedInput
 }
 
 export type ShoppingListUncheckedUpdateWithoutUserInput = {
@@ -816,8 +816,8 @@ export type ShoppingListUpdateWithoutWeeklyPlanInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  user?: Prisma.UserUpdateOneRequiredWithoutShoppingListsNestedInput
   items?: Prisma.ShoppingListItemUpdateManyWithoutShoppingListNestedInput
+  user?: Prisma.UserUpdateOneRequiredWithoutShoppingListsNestedInput
 }
 
 export type ShoppingListUncheckedUpdateWithoutWeeklyPlanInput = {
@@ -884,9 +884,9 @@ export type ShoppingListSelect<ExtArgs extends runtime.Types.Extensions.Internal
   createdAt?: boolean
   updatedAt?: boolean
   deletedAt?: boolean
+  items?: boolean | Prisma.ShoppingList$itemsArgs<ExtArgs>
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   weeklyPlan?: boolean | Prisma.ShoppingList$weeklyPlanArgs<ExtArgs>
-  items?: boolean | Prisma.ShoppingList$itemsArgs<ExtArgs>
   _count?: boolean | Prisma.ShoppingListCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["shoppingList"]>
 
@@ -906,18 +906,18 @@ export type ShoppingListSelectScalar = {
 
 export type ShoppingListOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "weeklyPlanId" | "title" | "status" | "totalEstimatedCost" | "createdAt" | "updatedAt" | "deletedAt", ExtArgs["result"]["shoppingList"]>
 export type ShoppingListInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  items?: boolean | Prisma.ShoppingList$itemsArgs<ExtArgs>
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   weeklyPlan?: boolean | Prisma.ShoppingList$weeklyPlanArgs<ExtArgs>
-  items?: boolean | Prisma.ShoppingList$itemsArgs<ExtArgs>
   _count?: boolean | Prisma.ShoppingListCountOutputTypeDefaultArgs<ExtArgs>
 }
 
 export type $ShoppingListPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "ShoppingList"
   objects: {
+    items: Prisma.$ShoppingListItemPayload<ExtArgs>[]
     user: Prisma.$UserPayload<ExtArgs>
     weeklyPlan: Prisma.$WeeklyPlanPayload<ExtArgs> | null
-    items: Prisma.$ShoppingListItemPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1269,9 +1269,9 @@ readonly fields: ShoppingListFieldRefs;
  */
 export interface Prisma__ShoppingListClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
+  items<T extends Prisma.ShoppingList$itemsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ShoppingList$itemsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ShoppingListItemPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   user<T extends Prisma.UserDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserDefaultArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   weeklyPlan<T extends Prisma.ShoppingList$weeklyPlanArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ShoppingList$weeklyPlanArgs<ExtArgs>>): Prisma.Prisma__WeeklyPlanClient<runtime.Types.Result.GetResult<Prisma.$WeeklyPlanPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
-  items<T extends Prisma.ShoppingList$itemsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ShoppingList$itemsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ShoppingListItemPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1658,25 +1658,6 @@ export type ShoppingListDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.
 }
 
 /**
- * ShoppingList.weeklyPlan
- */
-export type ShoppingList$weeklyPlanArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the WeeklyPlan
-   */
-  select?: Prisma.WeeklyPlanSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the WeeklyPlan
-   */
-  omit?: Prisma.WeeklyPlanOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.WeeklyPlanInclude<ExtArgs> | null
-  where?: Prisma.WeeklyPlanWhereInput
-}
-
-/**
  * ShoppingList.items
  */
 export type ShoppingList$itemsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1698,6 +1679,25 @@ export type ShoppingList$itemsArgs<ExtArgs extends runtime.Types.Extensions.Inte
   take?: number
   skip?: number
   distinct?: Prisma.ShoppingListItemScalarFieldEnum | Prisma.ShoppingListItemScalarFieldEnum[]
+}
+
+/**
+ * ShoppingList.weeklyPlan
+ */
+export type ShoppingList$weeklyPlanArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the WeeklyPlan
+   */
+  select?: Prisma.WeeklyPlanSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the WeeklyPlan
+   */
+  omit?: Prisma.WeeklyPlanOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.WeeklyPlanInclude<ExtArgs> | null
+  where?: Prisma.WeeklyPlanWhereInput
 }
 
 /**

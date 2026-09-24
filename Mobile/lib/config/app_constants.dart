@@ -72,4 +72,13 @@ class AppConstants {
   static const String epNotifications = '/notifications';
   static const String epNotificationsUnreadCount = '/notifications/unread-count';
   static const String epNotificationsReadAll = '/notifications/read-all';
+
+  // Family APIs
+  static const String epFamilyMe = '/family/me';
+  static const String epFamilyInvite = '/family/invite';
+  static const String epFamilyAccept = '/family/accept';
+  static const String epFamilyReject = '/family/reject';
+  static const String epFamilyMembers = '/family/members';
+  static const String epFamilyGroups = '/family/groups';
 }
+

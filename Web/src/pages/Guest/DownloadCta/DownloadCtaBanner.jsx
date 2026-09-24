@@ -26,8 +26,16 @@ export const DownloadCtaBanner = () => {
     };
   }, []);
 
-  const downloadUrl = settings.downloadUrl || '#download';
-  const qrImageSrc = !qrError && settings.qrImageUrl ? settings.qrImageUrl : qrCodeImg;
+  const rawDownloadUrl = settings.downloadUrl || '/friggy-app.apk';
+  const fullDownloadUrl = typeof window !== 'undefined'
+    ? (rawDownloadUrl.startsWith('http') ? rawDownloadUrl : `${window.location.origin}${rawDownloadUrl.startsWith('/') ? '' : '/'}${rawDownloadUrl}`)
+    : rawDownloadUrl;
+
+  // Dynamic QR Code pointing to full APK download URL
+  const dynamicQrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&color=008435&data=${encodeURIComponent(fullDownloadUrl)}`;
+
+  const qrImageSrc = !qrError && settings.qrImageUrl ? settings.qrImageUrl : dynamicQrUrl;
+  const downloadUrl = rawDownloadUrl;
 
   return (
     <section id="download" className="py-20 bg-gradient-to-b from-white via-emerald-50/40 to-emerald-100/30">
@@ -63,9 +71,8 @@ export const DownloadCtaBanner = () => {
               <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 pt-2">
                 <a
                   href={downloadUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-3 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3.5 rounded-2xl font-bold text-sm shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-0.5 group"
+                  download="friggy-app.apk"
+                  className="flex items-center gap-3 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3.5 rounded-2xl font-bold text-sm shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-0.5 group cursor-pointer"
                 >
                   <Apple className="w-7 h-7 text-white group-hover:scale-110 transition-transform" />
                   <div className="text-left">
@@ -76,9 +83,8 @@ export const DownloadCtaBanner = () => {
 
                 <a
                   href={downloadUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-3 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3.5 rounded-2xl font-bold text-sm shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-0.5 group"
+                  download="friggy-app.apk"
+                  className="flex items-center gap-3 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3.5 rounded-2xl font-bold text-sm shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-0.5 group cursor-pointer"
                 >
                   <div className="w-7 h-7 flex items-center justify-center text-white group-hover:scale-110 transition-transform">
                     <GooglePlayIcon />

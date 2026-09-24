@@ -129,6 +129,7 @@ class MeModel {
   final String id;
   final String? name;
   final String? phone;
+  final String? email;
   final String? googleEmail;
   final String status;
   final String role;
@@ -140,6 +141,7 @@ class MeModel {
     required this.id,
     this.name,
     this.phone,
+    this.email,
     this.googleEmail,
     required this.status,
     required this.role,
@@ -153,6 +155,7 @@ class MeModel {
       id: json['id'] as String,
       name: json['name'] as String?,
       phone: json['phone'] as String?,
+      email: json['email'] as String?,
       googleEmail: json['googleEmail'] as String?,
       status: json['status'] as String? ?? 'active',
       role: json['role'] as String? ?? 'user',
@@ -291,6 +294,7 @@ class UserSubscriptionModel {
 
 class SubscribeResponseModel {
   final String qrCodeUrl;
+  final String? checkoutUrl;
   final String paymentRef;
   final int amount;
   final String expireAt;
@@ -298,6 +302,7 @@ class SubscribeResponseModel {
 
   SubscribeResponseModel({
     required this.qrCodeUrl,
+    this.checkoutUrl,
     required this.paymentRef,
     required this.amount,
     required this.expireAt,
@@ -306,10 +311,11 @@ class SubscribeResponseModel {
 
   factory SubscribeResponseModel.fromJson(Map<String, dynamic> json) {
     return SubscribeResponseModel(
-      qrCodeUrl: json['qrCodeUrl'] as String? ?? '',
+      qrCodeUrl: json['qrCode'] as String? ?? json['qrCodeUrl'] as String? ?? '',
+      checkoutUrl: json['checkoutUrl'] as String?,
       paymentRef: json['paymentRef'] as String? ?? '',
       amount: json['amount'] as int? ?? 0,
-      expireAt: json['expireAt'] as String? ?? '',
+      expireAt: json['expireAt'] as String? ?? json['expiredAt'] as String? ?? '',
       status: json['status'] as String? ?? 'pending',
     );
   }
@@ -349,3 +355,110 @@ class NotificationModel {
     );
   }
 }
+
+class FamilyMemberModel {
+  final String id;
+  final String invitedEmail;
+  final String? memberName;
+  final String? memberAvatar;
+  final String status;
+  final String invitedAt;
+  final String? joinedAt;
+
+  FamilyMemberModel({
+    required this.id,
+    required this.invitedEmail,
+    this.memberName,
+    this.memberAvatar,
+    required this.status,
+    required this.invitedAt,
+    this.joinedAt,
+  });
+
+  factory FamilyMemberModel.fromJson(Map<String, dynamic> json) {
+    return FamilyMemberModel(
+      id: json['id'] as String? ?? '',
+      invitedEmail: json['invitedEmail'] as String? ?? '',
+      memberName: json['memberName'] as String?,
+      memberAvatar: json['memberAvatar'] as String?,
+      status: json['status'] as String? ?? 'pending',
+      invitedAt: json['invitedAt'] as String? ?? '',
+      joinedAt: json['joinedAt'] as String?,
+    );
+  }
+}
+
+class FamilyOwnerModel {
+  final String id;
+  final String? name;
+  final String? avatar;
+
+  FamilyOwnerModel({
+    required this.id,
+    this.name,
+    this.avatar,
+  });
+
+  factory FamilyOwnerModel.fromJson(Map<String, dynamic> json) {
+    return FamilyOwnerModel(
+      id: json['id'] as String? ?? '',
+      name: json['name'] as String?,
+      avatar: json['avatar'] as String?,
+    );
+  }
+}
+
+class FamilyGroupModel {
+  final String id;
+  final String status;
+  final FamilyOwnerModel owner;
+  final List<FamilyMemberModel> members;
+  final int activeCount;
+  final int maxMembers;
+  final String createdAt;
+
+  FamilyGroupModel({
+    required this.id,
+    required this.status,
+    required this.owner,
+    required this.members,
+    required this.activeCount,
+    required this.maxMembers,
+    required this.createdAt,
+  });
+
+  factory FamilyGroupModel.fromJson(Map<String, dynamic> json) {
+    return FamilyGroupModel(
+      id: json['id'] as String? ?? '',
+      status: json['status'] as String? ?? 'active',
+      owner: FamilyOwnerModel.fromJson(json['owner'] as Map<String, dynamic>? ?? {}),
+      members: (json['members'] as List<dynamic>?)
+              ?.map((e) => FamilyMemberModel.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
+      activeCount: json['activeCount'] as int? ?? 1,
+      maxMembers: json['maxMembers'] as int? ?? 5,
+      createdAt: json['createdAt'] as String? ?? '',
+    );
+  }
+}
+
+class FamilyRoleModel {
+  final String role; // 'owner' | 'member' | 'none'
+  final FamilyGroupModel? group;
+
+  FamilyRoleModel({
+    required this.role,
+    this.group,
+  });
+
+  factory FamilyRoleModel.fromJson(Map<String, dynamic> json) {
+    return FamilyRoleModel(
+      role: json['role'] as String? ?? 'none',
+      group: json['group'] != null
+          ? FamilyGroupModel.fromJson(json['group'] as Map<String, dynamic>)
+          : null,
+    );
+  }
+}
+

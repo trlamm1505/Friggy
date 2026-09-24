@@ -28,7 +28,7 @@ export class AiUsageLimitGuard implements CanActivate {
   constructor(
     private readonly reflector: Reflector,
     private readonly prisma: PrismaService,
-  ) {}
+  ) { }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     // Lấy featureType từ decorator — nếu không có thì bỏ qua guard
@@ -45,19 +45,22 @@ export class AiUsageLimitGuard implements CanActivate {
     if (!userId) return true; // JwtAuthGuard sẽ xử lý nếu không có userId
 
     // ── Lấy giới hạn từ subscription plan & thông tin gói nâng cấp ──
-    const [subscription, individualPlan] = await Promise.all([
-      this.prisma.userSubscription.findUnique({
-        where: { userId },
+    const [subscription, individualPlan, freePlan] = await Promise.all([
+      this.prisma.userSubscription.findFirst({
+        where: { userId, status: 'active', deletedAt: null },
         include: { plan: { select: { aiUsagePerWeek: true, name: true } } },
       }),
       this.prisma.subscriptionPlan.findFirst({
         where: { name: 'individual', isActive: true, deletedAt: null },
         select: { priceVnd: true, displayName: true },
       }),
+      this.prisma.subscriptionPlan.findFirst({
+        where: { OR: [{ name: 'free' }, { priceVnd: 0 }], isActive: true, deletedAt: null },
+        select: { aiUsagePerWeek: true },
+      }),
     ]);
 
-    // Nếu không có subscription (free) → dùng default limit = 2
-    const limit = subscription?.plan?.aiUsagePerWeek ?? 2;
+    const limit = subscription?.plan?.aiUsagePerWeek ?? freePlan?.aiUsagePerWeek ?? 0;
     const priceText = individualPlan?.priceVnd
       ? `${Math.round(individualPlan.priceVnd / 1000)}k/tháng`
       : '25k/tháng';

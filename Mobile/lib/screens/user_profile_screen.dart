@@ -13,6 +13,7 @@ import 'change_password_screen.dart';
 import 'app_settings_screen.dart';
 import 'user_preferences_screen.dart';
 import 'user_allergies_screen.dart';
+import 'family_management_screen.dart';
 import 'package:friggy/screens/package_management_screen.dart';
 
 class UserProfileScreen extends StatefulWidget {
@@ -24,8 +25,8 @@ class UserProfileScreen extends StatefulWidget {
 
 class UserProfileScreenState extends State<UserProfileScreen> {
   final ApiService _apiService = ApiService();
-  String _userName = 'Trần Quốc Lâm';
-  String _userContact = 'lam.tran@friggy.app';
+  String _userName = 'Người dùng Friggy';
+  String _userContact = '';
   String? _bio;
   String? _avatarUrl;
   AiUsageModel? _aiUsage;
@@ -54,7 +55,9 @@ class UserProfileScreenState extends State<UserProfileScreen> {
           if (me.name != null && me.name!.isNotEmpty) {
             _userName = me.name!;
           }
-          if (me.googleEmail != null && me.googleEmail!.isNotEmpty) {
+          if (me.email != null && me.email!.isNotEmpty) {
+            _userContact = me.email!;
+          } else if (me.googleEmail != null && me.googleEmail!.isNotEmpty) {
             _userContact = me.googleEmail!;
           } else if (me.phone != null && me.phone!.isNotEmpty) {
             _userContact = me.phone!;
@@ -77,10 +80,10 @@ class UserProfileScreenState extends State<UserProfileScreen> {
         final String? email = userMap['googleEmail'] ?? userMap['email'];
         final String? phone = userMap['phone'] ?? userMap['emailOrPhone'];
 
-        String parsedName = 'Trần Quốc Lâm';
+        String parsedName = 'Người dùng Friggy';
         if (name != null && name.trim().isNotEmpty) parsedName = name.trim();
 
-        String parsedContact = 'lam.tran@friggy.app';
+        String parsedContact = '';
         if (email != null && email.trim().isNotEmpty) {
           parsedContact = email.trim();
         } else if (phone != null && phone.trim().isNotEmpty) {
@@ -579,6 +582,24 @@ class UserProfileScreenState extends State<UserProfileScreen> {
                         builder: (context) => const PersonalInfoScreen(),
                       ),
                     ).then((_) => _loadUserData());
+                  },
+                ),
+                _buildDivider(isDark),
+
+                // 2. Family Group Management
+                _buildMenuItem(
+                  icon: Icons.family_restroom_rounded,
+                  title: isEn ? 'Family Group' : 'Nhóm gia đình',
+                  titleColor: defaultTitleColor,
+                  iconColor: defaultIconColor,
+                  iconBgColor: defaultIconBg,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const FamilyManagementScreen(),
+                      ),
+                    );
                   },
                 ),
                 _buildDivider(isDark),

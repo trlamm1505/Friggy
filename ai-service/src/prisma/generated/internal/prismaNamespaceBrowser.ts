@@ -53,7 +53,7 @@ export const AnyNull = runtime.AnyNull
 export const ModelName = {
   Role: 'Role',
   User: 'User',
-  OtpVerification: 'OtpVerification',
+  EmailOtp: 'EmailOtp',
   UserProfile: 'UserProfile',
   UserPreference: 'UserPreference',
   RefreshToken: 'RefreshToken',
@@ -85,8 +85,12 @@ export const ModelName = {
   IngredientPurchaseLink: 'IngredientPurchaseLink',
   AdminActivityLog: 'AdminActivityLog',
   Notification: 'Notification',
+  CronJobConfig: 'CronJobConfig',
   SubscriptionPlan: 'SubscriptionPlan',
-  UserSubscription: 'UserSubscription'
+  UserSubscription: 'UserSubscription',
+  PaymentTransaction: 'PaymentTransaction',
+  FamilyGroup: 'FamilyGroup',
+  FamilyMember: 'FamilyMember'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -118,35 +122,35 @@ export type RoleScalarFieldEnum = (typeof RoleScalarFieldEnum)[keyof typeof Role
 
 export const UserScalarFieldEnum = {
   id: 'id',
-  phone: 'phone',
+  email: 'email',
+  passwordHash: 'passwordHash',
   googleId: 'googleId',
   googleEmail: 'googleEmail',
-  name: 'name',
   authProvider: 'authProvider',
   status: 'status',
   roleId: 'roleId',
-  isOnboardingCompleted: 'isOnboardingCompleted',
   lastLoginAt: 'lastLoginAt',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
-  deletedAt: 'deletedAt'
+  deletedAt: 'deletedAt',
+  isOnboardingCompleted: 'isOnboardingCompleted',
+  name: 'name'
 } as const
 
 export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
 
 
-export const OtpVerificationScalarFieldEnum = {
+export const EmailOtpScalarFieldEnum = {
   id: 'id',
-  phone: 'phone',
+  email: 'email',
   otpHash: 'otpHash',
   purpose: 'purpose',
   attempts: 'attempts',
   expiresAt: 'expiresAt',
-  verifiedAt: 'verifiedAt',
   createdAt: 'createdAt'
 } as const
 
-export type OtpVerificationScalarFieldEnum = (typeof OtpVerificationScalarFieldEnum)[keyof typeof OtpVerificationScalarFieldEnum]
+export type EmailOtpScalarFieldEnum = (typeof EmailOtpScalarFieldEnum)[keyof typeof EmailOtpScalarFieldEnum]
 
 
 export const UserProfileScalarFieldEnum = {
@@ -175,16 +179,16 @@ export const UserPreferenceScalarFieldEnum = {
   skillLevel: 'skillLevel',
   householdSize: 'householdSize',
   aiPersonalityMode: 'aiPersonalityMode',
-  primaryGoal: 'primaryGoal',
+  updatedAt: 'updatedAt',
+  deletedAt: 'deletedAt',
+  activityLevel: 'activityLevel',
   cookingFrequency: 'cookingFrequency',
   height: 'height',
+  primaryGoal: 'primaryGoal',
   weight: 'weight',
-  activityLevel: 'activityLevel',
-  pushNotifications: 'pushNotifications',
   expiryAlert: 'expiryAlert',
-  shoppingReminder: 'shoppingReminder',
-  updatedAt: 'updatedAt',
-  deletedAt: 'deletedAt'
+  pushNotifications: 'pushNotifications',
+  shoppingReminder: 'shoppingReminder'
 } as const
 
 export type UserPreferenceScalarFieldEnum = (typeof UserPreferenceScalarFieldEnum)[keyof typeof UserPreferenceScalarFieldEnum]
@@ -210,6 +214,7 @@ export const IngredientCategoryScalarFieldEnum = {
   name: 'name',
   iconPath: 'iconPath',
   parentId: 'parentId',
+  defaultShelfLifeDays: 'defaultShelfLifeDays',
   createdAt: 'createdAt',
   deletedAt: 'deletedAt'
 } as const
@@ -321,10 +326,10 @@ export const FridgeItemScalarFieldEnum = {
   expiresAt: 'expiresAt',
   storageLocation: 'storageLocation',
   addedBy: 'addedBy',
-  consumedAt: 'consumedAt',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
-  deletedAt: 'deletedAt'
+  deletedAt: 'deletedAt',
+  consumedAt: 'consumedAt'
 } as const
 
 export type FridgeItemScalarFieldEnum = (typeof FridgeItemScalarFieldEnum)[keyof typeof FridgeItemScalarFieldEnum]
@@ -334,9 +339,6 @@ export const IngredientScanLogScalarFieldEnum = {
   id: 'id',
   userId: 'userId',
   imagePath: 'imagePath',
-  scanType: 'scanType',
-  rawText: 'rawText',
-  barcode: 'barcode',
   aiRawResponse: 'aiRawResponse',
   detectedItems: 'detectedItems',
   confirmedItems: 'confirmedItems',
@@ -344,7 +346,10 @@ export const IngredientScanLogScalarFieldEnum = {
   errorMessage: 'errorMessage',
   processedAt: 'processedAt',
   createdAt: 'createdAt',
-  deletedAt: 'deletedAt'
+  deletedAt: 'deletedAt',
+  barcode: 'barcode',
+  rawText: 'rawText',
+  scanType: 'scanType'
 } as const
 
 export type IngredientScanLogScalarFieldEnum = (typeof IngredientScanLogScalarFieldEnum)[keyof typeof IngredientScanLogScalarFieldEnum]
@@ -623,6 +628,20 @@ export const NotificationScalarFieldEnum = {
 export type NotificationScalarFieldEnum = (typeof NotificationScalarFieldEnum)[keyof typeof NotificationScalarFieldEnum]
 
 
+export const CronJobConfigScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  cronExpression: 'cronExpression',
+  isEnabled: 'isEnabled',
+  description: 'description',
+  lastRunAt: 'lastRunAt',
+  lastRunStatus: 'lastRunStatus',
+  updatedAt: 'updatedAt'
+} as const
+
+export type CronJobConfigScalarFieldEnum = (typeof CronJobConfigScalarFieldEnum)[keyof typeof CronJobConfigScalarFieldEnum]
+
+
 export const SubscriptionPlanScalarFieldEnum = {
   id: 'id',
   name: 'name',
@@ -646,13 +665,67 @@ export const UserSubscriptionScalarFieldEnum = {
   startDate: 'startDate',
   endDate: 'endDate',
   status: 'status',
-  paymentRef: 'paymentRef',
+  pendingPlanId: 'pendingPlanId',
+  autoRenew: 'autoRenew',
+  cancelledAt: 'cancelledAt',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
   deletedAt: 'deletedAt'
 } as const
 
 export type UserSubscriptionScalarFieldEnum = (typeof UserSubscriptionScalarFieldEnum)[keyof typeof UserSubscriptionScalarFieldEnum]
+
+
+export const PaymentTransactionScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  planId: 'planId',
+  type: 'type',
+  amount: 'amount',
+  status: 'status',
+  paymentMethod: 'paymentMethod',
+  paymentRef: 'paymentRef',
+  payosOrderCode: 'payosOrderCode',
+  payosPaymentLinkId: 'payosPaymentLinkId',
+  payosTransactionRef: 'payosTransactionRef',
+  description: 'description',
+  checkoutUrl: 'checkoutUrl',
+  qrCode: 'qrCode',
+  expiredAt: 'expiredAt',
+  paidAt: 'paidAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type PaymentTransactionScalarFieldEnum = (typeof PaymentTransactionScalarFieldEnum)[keyof typeof PaymentTransactionScalarFieldEnum]
+
+
+export const FamilyGroupScalarFieldEnum = {
+  id: 'id',
+  ownerId: 'ownerId',
+  status: 'status',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  deletedAt: 'deletedAt'
+} as const
+
+export type FamilyGroupScalarFieldEnum = (typeof FamilyGroupScalarFieldEnum)[keyof typeof FamilyGroupScalarFieldEnum]
+
+
+export const FamilyMemberScalarFieldEnum = {
+  id: 'id',
+  familyGroupId: 'familyGroupId',
+  userId: 'userId',
+  invitedEmail: 'invitedEmail',
+  status: 'status',
+  inviteToken: 'inviteToken',
+  invitedAt: 'invitedAt',
+  joinedAt: 'joinedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type FamilyMemberScalarFieldEnum = (typeof FamilyMemberScalarFieldEnum)[keyof typeof FamilyMemberScalarFieldEnum]
 
 
 export const SortOrder = {
@@ -695,7 +768,8 @@ export type RoleOrderByRelevanceFieldEnum = (typeof RoleOrderByRelevanceFieldEnu
 
 export const UserOrderByRelevanceFieldEnum = {
   id: 'id',
-  phone: 'phone',
+  email: 'email',
+  passwordHash: 'passwordHash',
   googleId: 'googleId',
   googleEmail: 'googleEmail',
   name: 'name'
@@ -704,13 +778,13 @@ export const UserOrderByRelevanceFieldEnum = {
 export type UserOrderByRelevanceFieldEnum = (typeof UserOrderByRelevanceFieldEnum)[keyof typeof UserOrderByRelevanceFieldEnum]
 
 
-export const OtpVerificationOrderByRelevanceFieldEnum = {
+export const EmailOtpOrderByRelevanceFieldEnum = {
   id: 'id',
-  phone: 'phone',
+  email: 'email',
   otpHash: 'otpHash'
 } as const
 
-export type OtpVerificationOrderByRelevanceFieldEnum = (typeof OtpVerificationOrderByRelevanceFieldEnum)[keyof typeof OtpVerificationOrderByRelevanceFieldEnum]
+export type EmailOtpOrderByRelevanceFieldEnum = (typeof EmailOtpOrderByRelevanceFieldEnum)[keyof typeof EmailOtpOrderByRelevanceFieldEnum]
 
 
 export const UserProfileOrderByRelevanceFieldEnum = {
@@ -727,9 +801,9 @@ export type UserProfileOrderByRelevanceFieldEnum = (typeof UserProfileOrderByRel
 export const UserPreferenceOrderByRelevanceFieldEnum = {
   id: 'id',
   userId: 'userId',
-  primaryGoal: 'primaryGoal',
+  activityLevel: 'activityLevel',
   cookingFrequency: 'cookingFrequency',
-  activityLevel: 'activityLevel'
+  primaryGoal: 'primaryGoal'
 } as const
 
 export type UserPreferenceOrderByRelevanceFieldEnum = (typeof UserPreferenceOrderByRelevanceFieldEnum)[keyof typeof UserPreferenceOrderByRelevanceFieldEnum]
@@ -844,10 +918,10 @@ export const IngredientScanLogOrderByRelevanceFieldEnum = {
   id: 'id',
   userId: 'userId',
   imagePath: 'imagePath',
-  scanType: 'scanType',
-  rawText: 'rawText',
+  errorMessage: 'errorMessage',
   barcode: 'barcode',
-  errorMessage: 'errorMessage'
+  rawText: 'rawText',
+  scanType: 'scanType'
 } as const
 
 export type IngredientScanLogOrderByRelevanceFieldEnum = (typeof IngredientScanLogOrderByRelevanceFieldEnum)[keyof typeof IngredientScanLogOrderByRelevanceFieldEnum]
@@ -1021,6 +1095,16 @@ export const NotificationOrderByRelevanceFieldEnum = {
 export type NotificationOrderByRelevanceFieldEnum = (typeof NotificationOrderByRelevanceFieldEnum)[keyof typeof NotificationOrderByRelevanceFieldEnum]
 
 
+export const CronJobConfigOrderByRelevanceFieldEnum = {
+  name: 'name',
+  cronExpression: 'cronExpression',
+  description: 'description',
+  lastRunStatus: 'lastRunStatus'
+} as const
+
+export type CronJobConfigOrderByRelevanceFieldEnum = (typeof CronJobConfigOrderByRelevanceFieldEnum)[keyof typeof CronJobConfigOrderByRelevanceFieldEnum]
+
+
 export const SubscriptionPlanOrderByRelevanceFieldEnum = {
   name: 'name',
   displayName: 'displayName',
@@ -1033,9 +1117,46 @@ export type SubscriptionPlanOrderByRelevanceFieldEnum = (typeof SubscriptionPlan
 export const UserSubscriptionOrderByRelevanceFieldEnum = {
   id: 'id',
   userId: 'userId',
-  status: 'status',
-  paymentRef: 'paymentRef'
+  status: 'status'
 } as const
 
 export type UserSubscriptionOrderByRelevanceFieldEnum = (typeof UserSubscriptionOrderByRelevanceFieldEnum)[keyof typeof UserSubscriptionOrderByRelevanceFieldEnum]
+
+
+export const PaymentTransactionOrderByRelevanceFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  type: 'type',
+  status: 'status',
+  paymentMethod: 'paymentMethod',
+  paymentRef: 'paymentRef',
+  payosPaymentLinkId: 'payosPaymentLinkId',
+  payosTransactionRef: 'payosTransactionRef',
+  description: 'description',
+  checkoutUrl: 'checkoutUrl',
+  qrCode: 'qrCode'
+} as const
+
+export type PaymentTransactionOrderByRelevanceFieldEnum = (typeof PaymentTransactionOrderByRelevanceFieldEnum)[keyof typeof PaymentTransactionOrderByRelevanceFieldEnum]
+
+
+export const FamilyGroupOrderByRelevanceFieldEnum = {
+  id: 'id',
+  ownerId: 'ownerId',
+  status: 'status'
+} as const
+
+export type FamilyGroupOrderByRelevanceFieldEnum = (typeof FamilyGroupOrderByRelevanceFieldEnum)[keyof typeof FamilyGroupOrderByRelevanceFieldEnum]
+
+
+export const FamilyMemberOrderByRelevanceFieldEnum = {
+  id: 'id',
+  familyGroupId: 'familyGroupId',
+  userId: 'userId',
+  invitedEmail: 'invitedEmail',
+  status: 'status',
+  inviteToken: 'inviteToken'
+} as const
+
+export type FamilyMemberOrderByRelevanceFieldEnum = (typeof FamilyMemberOrderByRelevanceFieldEnum)[keyof typeof FamilyMemberOrderByRelevanceFieldEnum]
 

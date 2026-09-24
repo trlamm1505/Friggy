@@ -248,8 +248,8 @@ export type SponsorWhereInput = {
   createdAt?: Prisma.DateTimeFilter<"Sponsor"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Sponsor"> | Date | string
   deletedAt?: Prisma.DateTimeNullableFilter<"Sponsor"> | Date | string | null
-  campaigns?: Prisma.SponsorCampaignListRelationFilter
   purchaseLinks?: Prisma.IngredientPurchaseLinkListRelationFilter
+  campaigns?: Prisma.SponsorCampaignListRelationFilter
 }
 
 export type SponsorOrderByWithRelationInput = {
@@ -262,8 +262,8 @@ export type SponsorOrderByWithRelationInput = {
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrderInput | Prisma.SortOrder
-  campaigns?: Prisma.SponsorCampaignOrderByRelationAggregateInput
   purchaseLinks?: Prisma.IngredientPurchaseLinkOrderByRelationAggregateInput
+  campaigns?: Prisma.SponsorCampaignOrderByRelationAggregateInput
   _relevance?: Prisma.SponsorOrderByRelevanceInput
 }
 
@@ -280,8 +280,8 @@ export type SponsorWhereUniqueInput = Prisma.AtLeast<{
   createdAt?: Prisma.DateTimeFilter<"Sponsor"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Sponsor"> | Date | string
   deletedAt?: Prisma.DateTimeNullableFilter<"Sponsor"> | Date | string | null
-  campaigns?: Prisma.SponsorCampaignListRelationFilter
   purchaseLinks?: Prisma.IngredientPurchaseLinkListRelationFilter
+  campaigns?: Prisma.SponsorCampaignListRelationFilter
 }, "id">
 
 export type SponsorOrderByWithAggregationInput = {
@@ -325,8 +325,8 @@ export type SponsorCreateInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
-  campaigns?: Prisma.SponsorCampaignCreateNestedManyWithoutSponsorInput
   purchaseLinks?: Prisma.IngredientPurchaseLinkCreateNestedManyWithoutSponsorInput
+  campaigns?: Prisma.SponsorCampaignCreateNestedManyWithoutSponsorInput
 }
 
 export type SponsorUncheckedCreateInput = {
@@ -339,8 +339,8 @@ export type SponsorUncheckedCreateInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
-  campaigns?: Prisma.SponsorCampaignUncheckedCreateNestedManyWithoutSponsorInput
   purchaseLinks?: Prisma.IngredientPurchaseLinkUncheckedCreateNestedManyWithoutSponsorInput
+  campaigns?: Prisma.SponsorCampaignUncheckedCreateNestedManyWithoutSponsorInput
 }
 
 export type SponsorUpdateInput = {
@@ -352,8 +352,8 @@ export type SponsorUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  campaigns?: Prisma.SponsorCampaignUpdateManyWithoutSponsorNestedInput
   purchaseLinks?: Prisma.IngredientPurchaseLinkUpdateManyWithoutSponsorNestedInput
+  campaigns?: Prisma.SponsorCampaignUpdateManyWithoutSponsorNestedInput
 }
 
 export type SponsorUncheckedUpdateInput = {
@@ -366,8 +366,8 @@ export type SponsorUncheckedUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  campaigns?: Prisma.SponsorCampaignUncheckedUpdateManyWithoutSponsorNestedInput
   purchaseLinks?: Prisma.IngredientPurchaseLinkUncheckedUpdateManyWithoutSponsorNestedInput
+  campaigns?: Prisma.SponsorCampaignUncheckedUpdateManyWithoutSponsorNestedInput
 }
 
 export type SponsorCreateManyInput = {
@@ -637,13 +637,13 @@ export type SponsorUncheckedUpdateWithoutPurchaseLinksInput = {
  */
 
 export type SponsorCountOutputType = {
-  campaigns: number
   purchaseLinks: number
+  campaigns: number
 }
 
 export type SponsorCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  campaigns?: boolean | SponsorCountOutputTypeCountCampaignsArgs
   purchaseLinks?: boolean | SponsorCountOutputTypeCountPurchaseLinksArgs
+  campaigns?: boolean | SponsorCountOutputTypeCountCampaignsArgs
 }
 
 /**
@@ -659,15 +659,15 @@ export type SponsorCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Exte
 /**
  * SponsorCountOutputType without action
  */
-export type SponsorCountOutputTypeCountCampaignsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.SponsorCampaignWhereInput
+export type SponsorCountOutputTypeCountPurchaseLinksArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.IngredientPurchaseLinkWhereInput
 }
 
 /**
  * SponsorCountOutputType without action
  */
-export type SponsorCountOutputTypeCountPurchaseLinksArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.IngredientPurchaseLinkWhereInput
+export type SponsorCountOutputTypeCountCampaignsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.SponsorCampaignWhereInput
 }
 
 
@@ -681,8 +681,8 @@ export type SponsorSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   createdAt?: boolean
   updatedAt?: boolean
   deletedAt?: boolean
-  campaigns?: boolean | Prisma.Sponsor$campaignsArgs<ExtArgs>
   purchaseLinks?: boolean | Prisma.Sponsor$purchaseLinksArgs<ExtArgs>
+  campaigns?: boolean | Prisma.Sponsor$campaignsArgs<ExtArgs>
   _count?: boolean | Prisma.SponsorCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["sponsor"]>
 
@@ -702,16 +702,16 @@ export type SponsorSelectScalar = {
 
 export type SponsorOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "logoPath" | "websiteUrl" | "contactEmail" | "status" | "createdAt" | "updatedAt" | "deletedAt", ExtArgs["result"]["sponsor"]>
 export type SponsorInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  campaigns?: boolean | Prisma.Sponsor$campaignsArgs<ExtArgs>
   purchaseLinks?: boolean | Prisma.Sponsor$purchaseLinksArgs<ExtArgs>
+  campaigns?: boolean | Prisma.Sponsor$campaignsArgs<ExtArgs>
   _count?: boolean | Prisma.SponsorCountOutputTypeDefaultArgs<ExtArgs>
 }
 
 export type $SponsorPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "Sponsor"
   objects: {
-    campaigns: Prisma.$SponsorCampaignPayload<ExtArgs>[]
     purchaseLinks: Prisma.$IngredientPurchaseLinkPayload<ExtArgs>[]
+    campaigns: Prisma.$SponsorCampaignPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: number
@@ -1063,8 +1063,8 @@ readonly fields: SponsorFieldRefs;
  */
 export interface Prisma__SponsorClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
-  campaigns<T extends Prisma.Sponsor$campaignsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Sponsor$campaignsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$SponsorCampaignPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   purchaseLinks<T extends Prisma.Sponsor$purchaseLinksArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Sponsor$purchaseLinksArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$IngredientPurchaseLinkPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  campaigns<T extends Prisma.Sponsor$campaignsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Sponsor$campaignsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$SponsorCampaignPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1451,30 +1451,6 @@ export type SponsorDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.Inter
 }
 
 /**
- * Sponsor.campaigns
- */
-export type Sponsor$campaignsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the SponsorCampaign
-   */
-  select?: Prisma.SponsorCampaignSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the SponsorCampaign
-   */
-  omit?: Prisma.SponsorCampaignOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.SponsorCampaignInclude<ExtArgs> | null
-  where?: Prisma.SponsorCampaignWhereInput
-  orderBy?: Prisma.SponsorCampaignOrderByWithRelationInput | Prisma.SponsorCampaignOrderByWithRelationInput[]
-  cursor?: Prisma.SponsorCampaignWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.SponsorCampaignScalarFieldEnum | Prisma.SponsorCampaignScalarFieldEnum[]
-}
-
-/**
  * Sponsor.purchaseLinks
  */
 export type Sponsor$purchaseLinksArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1496,6 +1472,30 @@ export type Sponsor$purchaseLinksArgs<ExtArgs extends runtime.Types.Extensions.I
   take?: number
   skip?: number
   distinct?: Prisma.IngredientPurchaseLinkScalarFieldEnum | Prisma.IngredientPurchaseLinkScalarFieldEnum[]
+}
+
+/**
+ * Sponsor.campaigns
+ */
+export type Sponsor$campaignsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the SponsorCampaign
+   */
+  select?: Prisma.SponsorCampaignSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the SponsorCampaign
+   */
+  omit?: Prisma.SponsorCampaignOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.SponsorCampaignInclude<ExtArgs> | null
+  where?: Prisma.SponsorCampaignWhereInput
+  orderBy?: Prisma.SponsorCampaignOrderByWithRelationInput | Prisma.SponsorCampaignOrderByWithRelationInput[]
+  cursor?: Prisma.SponsorCampaignWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.SponsorCampaignScalarFieldEnum | Prisma.SponsorCampaignScalarFieldEnum[]
 }
 
 /**

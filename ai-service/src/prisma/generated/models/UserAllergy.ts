@@ -236,8 +236,8 @@ export type UserAllergyWhereInput = {
   note?: Prisma.StringNullableFilter<"UserAllergy"> | string | null
   createdAt?: Prisma.DateTimeFilter<"UserAllergy"> | Date | string
   deletedAt?: Prisma.DateTimeNullableFilter<"UserAllergy"> | Date | string | null
-  user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
   ingredient?: Prisma.XOR<Prisma.IngredientScalarRelationFilter, Prisma.IngredientWhereInput>
+  user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
 }
 
 export type UserAllergyOrderByWithRelationInput = {
@@ -248,8 +248,8 @@ export type UserAllergyOrderByWithRelationInput = {
   note?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrderInput | Prisma.SortOrder
-  user?: Prisma.UserOrderByWithRelationInput
   ingredient?: Prisma.IngredientOrderByWithRelationInput
+  user?: Prisma.UserOrderByWithRelationInput
   _relevance?: Prisma.UserAllergyOrderByRelevanceInput
 }
 
@@ -265,8 +265,8 @@ export type UserAllergyWhereUniqueInput = Prisma.AtLeast<{
   note?: Prisma.StringNullableFilter<"UserAllergy"> | string | null
   createdAt?: Prisma.DateTimeFilter<"UserAllergy"> | Date | string
   deletedAt?: Prisma.DateTimeNullableFilter<"UserAllergy"> | Date | string | null
-  user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
   ingredient?: Prisma.XOR<Prisma.IngredientScalarRelationFilter, Prisma.IngredientWhereInput>
+  user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
 }, "id" | "userId_ingredientId">
 
 export type UserAllergyOrderByWithAggregationInput = {
@@ -302,8 +302,8 @@ export type UserAllergyCreateInput = {
   note?: string | null
   createdAt?: Date | string
   deletedAt?: Date | string | null
-  user: Prisma.UserCreateNestedOneWithoutAllergiesInput
   ingredient: Prisma.IngredientCreateNestedOneWithoutAllergiesInput
+  user: Prisma.UserCreateNestedOneWithoutAllergiesInput
 }
 
 export type UserAllergyUncheckedCreateInput = {
@@ -321,8 +321,8 @@ export type UserAllergyUpdateInput = {
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  user?: Prisma.UserUpdateOneRequiredWithoutAllergiesNestedInput
   ingredient?: Prisma.IngredientUpdateOneRequiredWithoutAllergiesNestedInput
+  user?: Prisma.UserUpdateOneRequiredWithoutAllergiesNestedInput
 }
 
 export type UserAllergyUncheckedUpdateInput = {
@@ -690,8 +690,8 @@ export type UserAllergySelect<ExtArgs extends runtime.Types.Extensions.InternalA
   note?: boolean
   createdAt?: boolean
   deletedAt?: boolean
-  user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   ingredient?: boolean | Prisma.IngredientDefaultArgs<ExtArgs>
+  user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["userAllergy"]>
 
 
@@ -708,15 +708,15 @@ export type UserAllergySelectScalar = {
 
 export type UserAllergyOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "ingredientId" | "severityLevel" | "note" | "createdAt" | "deletedAt", ExtArgs["result"]["userAllergy"]>
 export type UserAllergyInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   ingredient?: boolean | Prisma.IngredientDefaultArgs<ExtArgs>
+  user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
 }
 
 export type $UserAllergyPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "UserAllergy"
   objects: {
-    user: Prisma.$UserPayload<ExtArgs>
     ingredient: Prisma.$IngredientPayload<ExtArgs>
+    user: Prisma.$UserPayload<ExtArgs>
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: number
@@ -1066,8 +1066,8 @@ readonly fields: UserAllergyFieldRefs;
  */
 export interface Prisma__UserAllergyClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
-  user<T extends Prisma.UserDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserDefaultArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   ingredient<T extends Prisma.IngredientDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.IngredientDefaultArgs<ExtArgs>>): Prisma.Prisma__IngredientClient<runtime.Types.Result.GetResult<Prisma.$IngredientPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  user<T extends Prisma.UserDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserDefaultArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../data/services/api_service.dart';
@@ -27,8 +28,107 @@ class _OnboardingSurveyScreenState extends State<OnboardingSurveyScreen> {
   final TextEditingController _heightController = TextEditingController(text: '170');
   final TextEditingController _weightController = TextEditingController(text: '65');
 
+  // Allergy Data
+  List<dynamic> _availableIngredients = [];
+  List<dynamic> _searchedIngredients = [];
+  final List<Map<String, dynamic>> _selectedAllergies = [];
+  bool _isLoadingIngredients = false;
+  final TextEditingController _allergySearchController = TextEditingController();
+  Timer? _allergySearchDebounce;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchIngredients();
+  }
+
+  Future<void> _fetchIngredients({String search = ''}) async {
+    if (!mounted) return;
+    setState(() => _isLoadingIngredients = true);
+    try {
+      final list = await _apiService.getIngredients(search: search.isEmpty ? null : search, limit: 60);
+      if (mounted) {
+        setState(() {
+          _searchedIngredients = list;
+          if (search.isEmpty) {
+            _availableIngredients = list;
+          }
+        });
+      }
+    } catch (e) {
+      debugPrint('[OnboardingSurveyScreen] Error fetching ingredients: $e');
+    } finally {
+      if (mounted) setState(() => _isLoadingIngredients = false);
+    }
+  }
+
+  void _onAllergySearchChanged(String query) {
+    _allergySearchDebounce?.cancel();
+    final q = query.trim();
+    if (q.isEmpty) {
+      setState(() => _searchedIngredients = _availableIngredients);
+      return;
+    }
+    _allergySearchDebounce = Timer(const Duration(milliseconds: 300), () {
+      _fetchIngredients(search: q);
+    });
+  }
+
+  void _toggleAllergyIngredient(int id, String name) {
+    setState(() {
+      final idx = _selectedAllergies.indexWhere((a) => a['id'] == id);
+      if (idx >= 0) {
+        _selectedAllergies.removeAt(idx);
+      } else {
+        _selectedAllergies.add({
+          'id': id,
+          'name': name,
+          'note': null,
+        });
+      }
+    });
+  }
+
+  Future<void> _toggleQuickTag(String keyword) async {
+    final existingIdx = _selectedAllergies.indexWhere(
+      (a) => (a['name'] as String).toLowerCase().contains(keyword.toLowerCase()),
+    );
+
+    if (existingIdx >= 0) {
+      setState(() {
+        _selectedAllergies.removeAt(existingIdx);
+      });
+      return;
+    }
+
+    dynamic match;
+    for (final item in _availableIngredients) {
+      final String itemName = (item['name'] as String? ?? '').toLowerCase();
+      if (itemName.contains(keyword.toLowerCase())) {
+        match = item;
+        break;
+      }
+    }
+
+    if (match != null) {
+      _toggleAllergyIngredient(match['id'] as int, match['name'] as String? ?? keyword);
+    } else {
+      try {
+        final results = await _apiService.getIngredients(search: keyword, limit: 5);
+        if (results.isNotEmpty && mounted) {
+          final first = results.first;
+          _toggleAllergyIngredient(first['id'] as int, first['name'] as String? ?? keyword);
+        }
+      } catch (e) {
+        debugPrint('[OnboardingSurveyScreen] Error searching quick tag ingredient: $e');
+      }
+    }
+  }
+
   @override
   void dispose() {
+    _allergySearchDebounce?.cancel();
+    _allergySearchController.dispose();
     _pageController.dispose();
     _heightController.dispose();
     _weightController.dispose();
@@ -36,7 +136,7 @@ class _OnboardingSurveyScreenState extends State<OnboardingSurveyScreen> {
   }
 
   void _nextPage() {
-    if (_currentStep < 3) {
+    if (_currentStep < 4) {
       _pageController.nextPage(
         duration: const Duration(milliseconds: 350),
         curve: Curves.easeInOutCubic,
@@ -72,7 +172,17 @@ class _OnboardingSurveyScreenState extends State<OnboardingSurveyScreen> {
         'weight': weightVal,
       };
 
+      // 1. Submit onboarding survey preferences
       await _apiService.completeOnboarding(onboardingData);
+
+      // 2. Save food allergies if selected
+      for (final allergy in _selectedAllergies) {
+        try {
+          await _apiService.addAllergy(allergy['id'] as int, allergy['note'] as String?);
+        } catch (e) {
+          debugPrint('[OnboardingSurveyScreen] Failed to add allergy ${allergy['name']}: $e');
+        }
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -183,7 +293,7 @@ class _OnboardingSurveyScreenState extends State<OnboardingSurveyScreen> {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'Bước ${_currentStep + 1} / 4',
+                            'Bước ${_currentStep + 1} / 5',
                             style: GoogleFonts.plusJakartaSans(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
@@ -205,7 +315,7 @@ class _OnboardingSurveyScreenState extends State<OnboardingSurveyScreen> {
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(10),
                   child: LinearProgressIndicator(
-                    value: (_currentStep + 1) / 4,
+                    value: (_currentStep + 1) / 5,
                     minHeight: 6,
                     backgroundColor: isDark ? const Color(0xFF233629) : const Color(0xFFE0E0E0),
                     color: const Color(0xFF4CAF50),
@@ -227,7 +337,8 @@ class _OnboardingSurveyScreenState extends State<OnboardingSurveyScreen> {
                     _buildStep1Goal(isDark, isEn),
                     _buildStep2Cooking(isDark, isEn),
                     _buildStep3Diet(isDark, isEn),
-                    _buildStep4Health(isDark, isEn),
+                    _buildStep4Allergies(isDark, isEn),
+                    _buildStep5Health(isDark, isEn),
                   ],
                 ),
               ),
@@ -258,7 +369,7 @@ class _OnboardingSurveyScreenState extends State<OnboardingSurveyScreen> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Text(
-                                _currentStep == 3
+                                _currentStep == 4
                                     ? (isEn ? 'Complete Survey' : 'Hoàn tất & Khám phá Friggy')
                                     : (isEn ? 'Continue' : 'Tiếp tục'),
                                 style: GoogleFonts.outfit(
@@ -268,7 +379,7 @@ class _OnboardingSurveyScreenState extends State<OnboardingSurveyScreen> {
                               ),
                               const SizedBox(width: 8),
                               Icon(
-                                _currentStep == 3
+                                _currentStep == 4
                                     ? Icons.rocket_launch_rounded
                                     : Icons.arrow_forward_rounded,
                                 size: 20,
@@ -681,9 +792,314 @@ class _OnboardingSurveyScreenState extends State<OnboardingSurveyScreen> {
   }
 
   // --------------------------------------------------------------------------
-  // STEP 4: Body Metrics (Optional)
+  // STEP 4: Food & Ingredient Allergies
   // --------------------------------------------------------------------------
-  Widget _buildStep4Health(bool isDark, bool isEn) {
+  Widget _buildStep4Allergies(bool isDark, bool isEn) {
+    final commonAllergens = [
+      {'name': 'Tôm', 'icon': '🦐'},
+      {'name': 'Cua', 'icon': '🦀'},
+      {'name': 'Trứng', 'icon': '🥚'},
+      {'name': 'Sữa', 'icon': '🥛'},
+      {'name': 'Đậu phụng', 'icon': '🥜'},
+      {'name': 'Cá', 'icon': '🐟'},
+      {'name': 'Thịt bò', 'icon': '🥩'},
+      {'name': 'Đậu nành', 'icon': '🫘'},
+    ];
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  isEn ? 'Food & Ingredient Allergies' : 'Dị ứng món ăn & nguyên liệu',
+                  style: GoogleFonts.outfit(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? Colors.white : const Color(0xFF006428),
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF233629) : const Color(0xFFE8F5E9),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFF4CAF50).withValues(alpha: 0.5)),
+                ),
+                child: Text(
+                  isEn ? 'Optional' : 'Tùy chọn',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFF4CAF50),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            isEn
+                ? 'Select ingredients you are allergic to so Friggy AI can exclude them from your recipe recommendations.'
+                : 'Chọn các nguyên liệu gây dị ứng để Friggy tự động loại trừ khỏi thực đơn và cảnh báo cho bạn.',
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 13.5,
+              color: isDark ? Colors.white70 : Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 18),
+
+          // Selected Allergies Chip List
+          if (_selectedAllergies.isNotEmpty) ...[
+            Text(
+              isEn ? 'Selected Allergies (${_selectedAllergies.length}):' : 'Danh sách đã chọn (${_selectedAllergies.length}):',
+              style: GoogleFonts.outfit(
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
+                color: isDark ? const Color(0xFF81C784) : const Color(0xFF006428),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: _selectedAllergies.map((allergy) {
+                final int id = allergy['id'] as int;
+                final String name = allergy['name'] as String;
+                return Chip(
+                  avatar: const Icon(Icons.warning_amber_rounded, color: Colors.white, size: 18),
+                  label: Text(
+                    name,
+                    style: GoogleFonts.plusJakartaSans(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      fontSize: 13,
+                    ),
+                  ),
+                  backgroundColor: const Color(0xFFD32F2F),
+                  deleteIcon: const Icon(Icons.cancel_rounded, color: Colors.white70, size: 18),
+                  onDeleted: () => _toggleAllergyIngredient(id, name),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 18),
+          ] else ...[
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF19271E) : const Color(0xFFF5FCF4),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: isDark ? const Color(0xFF2E4D36) : const Color(0xFFA5E69C)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.check_circle_outline_rounded, color: Color(0xFF4CAF50), size: 20),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      isEn
+                          ? 'No allergies selected (You can skip this if you have none).'
+                          : 'Chưa chọn dị ứng nào (Bỏ qua nếu bạn không có dị ứng thực phẩm).',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 12.5,
+                        color: isDark ? Colors.white70 : const Color(0xFF2E7D32),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 18),
+          ],
+
+          // Quick Popular Allergen Badges
+          Text(
+            isEn ? 'Common Allergens:' : 'Nguyên liệu dị ứng phổ biến:',
+            style: GoogleFonts.outfit(
+              fontSize: 15,
+              fontWeight: FontWeight.bold,
+              color: isDark ? const Color(0xFF81C784) : const Color(0xFF006428),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: commonAllergens.map((item) {
+              final String name = item['name']!;
+              final String icon = item['icon']!;
+              final bool isSelected = _selectedAllergies.any(
+                (a) => (a['name'] as String).toLowerCase().contains(name.toLowerCase()),
+              );
+
+              return InkWell(
+                onTap: () => _toggleQuickTag(name),
+                borderRadius: BorderRadius.circular(20),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? const Color(0xFFD32F2F)
+                        : (isDark ? const Color(0xFF19271E) : Colors.white),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: isSelected
+                          ? const Color(0xFFD32F2F)
+                          : (isDark ? const Color(0xFF2E4D36) : const Color(0xFFE0E0E0)),
+                      width: isSelected ? 1.5 : 1,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(icon, style: const TextStyle(fontSize: 16)),
+                      const SizedBox(width: 6),
+                      Text(
+                        name,
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: isSelected ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
+                        ),
+                      ),
+                      if (isSelected) ...[
+                        const SizedBox(width: 4),
+                        const Icon(Icons.check_rounded, color: Colors.white, size: 16),
+                      ],
+                    ],
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+
+          const SizedBox(height: 20),
+
+          // Search Field for Any Ingredient
+          Text(
+            isEn ? 'Search Other Ingredients:' : 'Tìm nguyên liệu khác:',
+            style: GoogleFonts.outfit(
+              fontSize: 15,
+              fontWeight: FontWeight.bold,
+              color: isDark ? const Color(0xFF81C784) : const Color(0xFF006428),
+            ),
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _allergySearchController,
+            onChanged: _onAllergySearchChanged,
+            style: TextStyle(color: isDark ? Colors.white : Colors.black87),
+            decoration: InputDecoration(
+              hintText: isEn ? 'Type ingredient name (e.g. Peanut, Shrimp...)' : 'Gõ tên nguyên liệu (VD: Nấm, Mực, Đậu...)',
+              hintStyle: TextStyle(color: isDark ? Colors.white38 : Colors.black38, fontSize: 13),
+              prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF4CAF50)),
+              suffixIcon: _allergySearchController.text.isNotEmpty
+                  ? IconButton(
+                      icon: const Icon(Icons.clear_rounded, size: 18),
+                      onPressed: () {
+                        _allergySearchController.clear();
+                        _onAllergySearchChanged('');
+                      },
+                    )
+                  : null,
+              filled: true,
+              fillColor: isDark ? const Color(0xFF19271E) : Colors.white,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide(color: isDark ? const Color(0xFF2E4D36) : const Color(0xFFE0E0E0)),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide(color: isDark ? const Color(0xFF2E4D36) : const Color(0xFFE0E0E0)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: const BorderSide(color: Color(0xFF4CAF50), width: 1.8),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          // Ingredient Search Results List
+          if (_isLoadingIngredients)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 20),
+              child: Center(child: CircularProgressIndicator(color: Color(0xFF4CAF50))),
+            )
+          else if (_searchedIngredients.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              child: Center(
+                child: Text(
+                  isEn ? 'No ingredients found' : 'Không tìm thấy nguyên liệu phù hợp',
+                  style: TextStyle(color: isDark ? Colors.white60 : Colors.black54, fontSize: 13),
+                ),
+              ),
+            )
+          else
+            ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: _searchedIngredients.length > 15 ? 15 : _searchedIngredients.length,
+              itemBuilder: (context, index) {
+                final item = _searchedIngredients[index];
+                final int id = item['id'] as int;
+                final String name = item['name'] as String? ?? 'Nguyên liệu';
+                final isSelected = _selectedAllergies.any((a) => a['id'] == id);
+
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 6),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? (isDark ? const Color(0xFF2D1B1B) : const Color(0xFFFFEBEE))
+                        : (isDark ? const Color(0xFF19271E) : Colors.white),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isSelected
+                          ? const Color(0xFFE53935)
+                          : (isDark ? const Color(0xFF2E4D36) : const Color(0xFFE0E0E0)),
+                    ),
+                  ),
+                  child: ListTile(
+                    dense: true,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+                    title: Text(
+                      name,
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: isSelected
+                            ? const Color(0xFFE53935)
+                            : (isDark ? Colors.white : const Color(0xFF19221C)),
+                      ),
+                    ),
+                    trailing: isSelected
+                        ? const Icon(Icons.check_circle_rounded, color: Color(0xFFE53935), size: 22)
+                        : const Icon(Icons.add_circle_outline_rounded, color: Color(0xFF4CAF50), size: 22),
+                    onTap: () => _toggleAllergyIngredient(id, name),
+                  ),
+                );
+              },
+            ),
+        ],
+      ),
+    );
+  }
+
+  // --------------------------------------------------------------------------
+  // STEP 5: Body Metrics (Optional)
+  // --------------------------------------------------------------------------
+  Widget _buildStep5Health(bool isDark, bool isEn) {
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       child: Column(

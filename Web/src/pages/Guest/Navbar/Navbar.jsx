@@ -106,16 +106,18 @@ export const Navbar = ({ onOpenAuthModal, onOpenAdmin }) => {
 
         {/* Actions */}
         <div className="hidden md:flex items-center gap-4">
-          <button
-            onClick={() => navigate('/login')}
-            className="flex items-center gap-1.5 text-sm font-bold text-emerald-900 hover:text-emerald-600 px-3 py-2 transition-colors cursor-pointer"
-          >
-            <LogIn className="w-4 h-4" />
-            Đăng nhập
-          </button>
+          {(import.meta.env.VITE_ENABLE_ADMIN_LOGIN === 'true' || import.meta.env.VITE_ENABLE_ADMIN_LOGIN === true) && (
+            <button
+              onClick={() => navigate('/login')}
+              className="flex items-center gap-1.5 text-sm font-bold text-emerald-900 hover:text-emerald-600 px-3 py-2 transition-colors cursor-pointer"
+            >
+              <LogIn className="w-4 h-4" />
+              Đăng nhập
+            </button>
+          )}
           <a
-            href="#download"
-            onClick={(e) => handleNavClick(e, 'download')}
+            href="/friggy-app.apk"
+            download="friggy-app.apk"
             className="flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white text-sm font-bold px-5 py-2.5 rounded-full shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 hover:-translate-y-0.5 transition-all cursor-pointer"
           >
             <Download className="w-4 h-4" />
@@ -171,19 +173,22 @@ export const Navbar = ({ onOpenAuthModal, onOpenAdmin }) => {
             FAQ
           </a>
           <div className="pt-2 border-t border-emerald-100 flex flex-col gap-2">
-            <button
-              onClick={() => {
-                setMobileMenuOpen(false);
-                navigate('/login');
-              }}
-              className="w-full flex justify-center items-center gap-1.5 text-base font-bold text-emerald-900 py-2 cursor-pointer"
-            >
-              <LogIn className="w-4 h-4" />
-              Đăng nhập
-            </button>
+            {(import.meta.env.VITE_ENABLE_ADMIN_LOGIN === 'true' || import.meta.env.VITE_ENABLE_ADMIN_LOGIN === true) && (
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  navigate('/login');
+                }}
+                className="w-full flex justify-center items-center gap-1.5 text-base font-bold text-emerald-900 py-2 cursor-pointer"
+              >
+                <LogIn className="w-4 h-4" />
+                Đăng nhập
+              </button>
+            )}
             <a
-              href="#download"
-              onClick={(e) => handleNavClick(e, 'download')}
+              href="/friggy-app.apk"
+              download="friggy-app.apk"
+              onClick={() => setMobileMenuOpen(false)}
               className="w-full flex justify-center items-center gap-2 bg-emerald-600 text-white font-bold py-2.5 rounded-full cursor-pointer"
             >
               <Download className="w-4 h-4" />

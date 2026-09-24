@@ -7,6 +7,8 @@ import 'recipe_suggestions_screen.dart';
 import '../data/services/api_service.dart';
 import '../data/models/fridge_models.dart';
 
+import '../data/models/ingredient_model.dart';
+
 class IngredientStatisticsScreen extends StatefulWidget {
   final int initialTabIndex; // 0 for Tuần, 1 for Tháng
 
@@ -26,6 +28,8 @@ class _IngredientStatisticsScreenState
   final ApiService _apiService = ApiService();
   FridgeStatsModel? _stats;
   FridgeStatsChartModel? _chartData;
+  List<IngredientModel> _expiringItems = [];
+  List<IngredientModel> _allFridgeItems = [];
   bool _isLoading = true;
 
   @override
@@ -41,10 +45,23 @@ class _IngredientStatisticsScreenState
       final period = _selectedTab == 0 ? 'week' : 'month';
       final statsRes = await _apiService.getFridgeStats();
       final chartRes = await _apiService.getFridgeStatsChart(period: period);
+      final expiringRes = await _apiService.getExpiringFridgeItems(days: 7);
+      final allItemsRes = await _apiService.getFridgeItems();
+
+      final List<IngredientModel> loadedExpiring = expiringRes.map((json) {
+        return IngredientModel.fromFridgeApi(json as Map<String, dynamic>);
+      }).toList();
+
+      final List<IngredientModel> loadedAll = allItemsRes.map((json) {
+        return IngredientModel.fromFridgeApi(json as Map<String, dynamic>);
+      }).toList();
+
       if (mounted) {
         setState(() {
           _stats = FridgeStatsModel.fromJson(statsRes);
           _chartData = FridgeStatsChartModel.fromJson(chartRes);
+          _expiringItems = loadedExpiring;
+          _allFridgeItems = loadedAll;
           _isLoading = false;
         });
       }
@@ -259,7 +276,7 @@ class _IngredientStatisticsScreenState
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    isEn ? 'Used' : 'Đã sử dụng',
+                    isEn ? 'Meals Cooked' : 'Bữa đã nấu',
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
@@ -268,7 +285,7 @@ class _IngredientStatisticsScreenState
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    isEn ? '${_stats?.totalItems ?? 0} items' : '${_stats?.totalItems ?? 0} món',
+                    isEn ? '${_stats?.mealsCooked ?? 0} meals' : '${_stats?.mealsCooked ?? 0} bữa',
                     style: GoogleFonts.outfit(
                       fontSize: 22,
                       fontWeight: FontWeight.w900,
@@ -542,7 +559,7 @@ class _IngredientStatisticsScreenState
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      isEn ? 'Used' : 'Đã sử dụng',
+                      isEn ? 'Meals Cooked' : 'Bữa đã nấu',
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 13.5,
                         fontWeight: FontWeight.w700,
@@ -551,7 +568,7 @@ class _IngredientStatisticsScreenState
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      isEn ? '${_stats?.totalItems ?? 0} items' : '${_stats?.totalItems ?? 0} món',
+                      isEn ? '${_stats?.mealsCooked ?? 0} meals' : '${_stats?.mealsCooked ?? 0} bữa',
                       style: GoogleFonts.outfit(
                         fontSize: 22,
                         fontWeight: FontWeight.w900,
@@ -989,6 +1006,9 @@ class _IngredientStatisticsScreenState
 
   // Insight từ Friggy Box (High-contrast, crisp readable styling)
   Widget _buildFriggyInsightCard(bool isDark, bool isEn) {
+    final String item1 = _expiringItems.isNotEmpty ? _expiringItems[0].displayName(isEn) : '';
+    final String item2 = _expiringItems.length > 1 ? _expiringItems[1].displayName(isEn) : '';
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -1048,73 +1068,129 @@ class _IngredientStatisticsScreenState
                 height: 1.5,
                 fontWeight: FontWeight.w500,
               ),
-              children: isEn
-                  ? [
-                      TextSpan(
-                        text: 'Friggy gentle reminder!\nThis week ',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          color: isDark ? Colors.white : const Color(0xFF19221C),
-                        ),
-                      ),
-                      TextSpan(
-                        text: 'eggs',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w900,
-                          color: isDark ? const Color(0xFF81C784) : const Color(0xFF008435),
-                        ),
-                      ),
-                      const TextSpan(text: ' and '),
-                      TextSpan(
-                        text: 'tomatoes',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w900,
-                          color: isDark ? const Color(0xFF81C784) : const Color(0xFF008435),
-                        ),
-                      ),
-                      const TextSpan(text: ' appeared quite often 👀\nLet\'s '),
-                      TextSpan(
-                        text: 'switch up your menu with a diverse and balanced diet',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w900,
-                          color: isDark ? const Color(0xFF81C784) : const Color(0xFF006428),
-                        ),
-                      ),
-                      const TextSpan(text: ' for next week!'),
-                    ]
-                  : [
-                      TextSpan(
-                        text: 'Friggy nhắc nhẹ nè!\nTuần này ',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          color: isDark ? Colors.white : const Color(0xFF19221C),
-                        ),
-                      ),
-                      TextSpan(
-                        text: 'trứng',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w900,
-                          color: isDark ? const Color(0xFF81C784) : const Color(0xFF008435),
-                        ),
-                      ),
-                      const TextSpan(text: ' và '),
-                      TextSpan(
-                        text: 'cà chua',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w900,
-                          color: isDark ? const Color(0xFF81C784) : const Color(0xFF008435),
-                        ),
-                      ),
-                      const TextSpan(text: ' xuất hiện hơi nhiều đó 👀\nCùng '),
-                      TextSpan(
-                        text: 'đổi vị với thực đơn đa dạng và cân bằng hơn',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w900,
-                          color: isDark ? const Color(0xFF81C784) : const Color(0xFF006428),
-                        ),
-                      ),
-                      const TextSpan(text: ' cho tuần tới nhé!'),
-                    ],
+              children: item1.isNotEmpty
+                  ? (isEn
+                      ? [
+                          TextSpan(
+                            text: 'Friggy gentle reminder!\nThis week ',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: isDark ? Colors.white : const Color(0xFF19221C),
+                            ),
+                          ),
+                          TextSpan(
+                            text: item1,
+                            style: TextStyle(
+                              fontWeight: FontWeight.w900,
+                              color: isDark ? const Color(0xFF81C784) : const Color(0xFF008435),
+                            ),
+                          ),
+                          if (item2.isNotEmpty) ...[
+                            const TextSpan(text: ' and '),
+                            TextSpan(
+                              text: item2,
+                              style: TextStyle(
+                                fontWeight: FontWeight.w900,
+                                color: isDark ? const Color(0xFF81C784) : const Color(0xFF008435),
+                              ),
+                            ),
+                          ],
+                          const TextSpan(text: ' need attention soon 👀\nLet\'s '),
+                          TextSpan(
+                            text: 'cook them with diverse recipes',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w900,
+                              color: isDark ? const Color(0xFF81C784) : const Color(0xFF006428),
+                            ),
+                          ),
+                          const TextSpan(text: ' for next week!'),
+                        ]
+                      : [
+                          TextSpan(
+                            text: 'Friggy nhắc nhẹ nè!\nTuần này ',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: isDark ? Colors.white : const Color(0xFF19221C),
+                            ),
+                          ),
+                          TextSpan(
+                            text: item1,
+                            style: TextStyle(
+                              fontWeight: FontWeight.w900,
+                              color: isDark ? const Color(0xFF81C784) : const Color(0xFF008435),
+                            ),
+                          ),
+                          if (item2.isNotEmpty) ...[
+                            const TextSpan(text: ' và '),
+                            TextSpan(
+                              text: item2,
+                              style: TextStyle(
+                                fontWeight: FontWeight.w900,
+                                color: isDark ? const Color(0xFF81C784) : const Color(0xFF008435),
+                              ),
+                            ),
+                          ],
+                          const TextSpan(text: ' cần chú ý dùng sớm nhé 👀\nCùng '),
+                          TextSpan(
+                            text: 'chế biến món ngon để tránh lãng phí',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w900,
+                              color: isDark ? const Color(0xFF81C784) : const Color(0xFF006428),
+                            ),
+                          ),
+                          const TextSpan(text: ' cho tuần tới nhé!'),
+                        ])
+                  : (isEn
+                      ? [
+                          TextSpan(
+                            text: 'Friggy status report!\nYour fridge is in ',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: isDark ? Colors.white : const Color(0xFF19221C),
+                            ),
+                          ),
+                          TextSpan(
+                            text: 'great shape',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w900,
+                              color: isDark ? const Color(0xFF81C784) : const Color(0xFF008435),
+                            ),
+                          ),
+                          const TextSpan(text: '! 🎉\nNo items are neglected. Let\'s '),
+                          TextSpan(
+                            text: 'keep maintaining a balanced diet',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w900,
+                              color: isDark ? const Color(0xFF81C784) : const Color(0xFF006428),
+                            ),
+                          ),
+                          const TextSpan(text: ' for your family!'),
+                        ]
+                      : [
+                          TextSpan(
+                            text: 'Friggy báo cáo nè!\nTủ lạnh của bạn đang trong trạng thái ',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: isDark ? Colors.white : const Color(0xFF19221C),
+                            ),
+                          ),
+                          TextSpan(
+                            text: 'tuyệt vời',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w900,
+                              color: isDark ? const Color(0xFF81C784) : const Color(0xFF008435),
+                            ),
+                          ),
+                          const TextSpan(text: '! 🎉\nKhông có nguyên liệu nào bị bỏ quên. Cùng '),
+                          TextSpan(
+                            text: 'duy trì thực đơn phong phú và tiết kiệm',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w900,
+                              color: isDark ? const Color(0xFF81C784) : const Color(0xFF008435),
+                            ),
+                          ),
+                          const TextSpan(text: ' nhé!'),
+                        ]),
             ),
           ),
 
@@ -1172,7 +1248,10 @@ class _IngredientStatisticsScreenState
 
   // Top Used Section
   Widget _buildTopUsedSection(bool isDark, bool isEn) {
+    final displayItems = _allFridgeItems.take(4).toList();
+
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1185,14 +1264,15 @@ class _IngredientStatisticsScreenState
                 color: isDark ? Colors.white : const Color(0xFF006428),
               ),
             ),
-            Text(
-              'Top 4',
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-                color: isDark ? const Color(0xFF81C784) : const Color(0xFF2E7D32),
+            if (displayItems.isNotEmpty)
+              Text(
+                'Top ${displayItems.length}',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: isDark ? const Color(0xFF81C784) : const Color(0xFF2E7D32),
+                ),
               ),
-            ),
           ],
         ),
         const SizedBox(height: 12),
@@ -1212,37 +1292,37 @@ class _IngredientStatisticsScreenState
               ),
             ],
           ),
-          child: Column(
-            children: [
-              _buildUsageProgressItem(
-                isEn ? 'Eggs' : 'Trứng',
-                isEn ? '8 units' : '8 đơn vị',
-                0.85,
-                isDark,
-              ),
-              const SizedBox(height: 14),
-              _buildUsageProgressItem(
-                isEn ? 'Tomatoes' : 'Cà chua',
-                isEn ? '6 units' : '6 đơn vị',
-                0.65,
-                isDark,
-              ),
-              const SizedBox(height: 14),
-              _buildUsageProgressItem(
-                isEn ? 'Green Onion' : 'Hành lá',
-                isEn ? '5 units' : '5 đơn vị',
-                0.55,
-                isDark,
-              ),
-              const SizedBox(height: 14),
-              _buildUsageProgressItem(
-                isEn ? 'Fresh Milk' : 'Sữa tươi',
-                isEn ? '4 units' : '4 đơn vị',
-                0.45,
-                isDark,
-              ),
-            ],
-          ),
+          child: displayItems.isEmpty
+              ? Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  child: Center(
+                    child: Text(
+                      isEn
+                          ? 'No ingredient usage data available yet'
+                          : 'Chưa có dữ liệu nguyên liệu trong tủ lạnh',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: isDark ? const Color(0xFF9DA8A0) : const Color(0xFF666666),
+                      ),
+                    ),
+                  ),
+                )
+              : Column(
+                  children: List.generate(displayItems.length, (index) {
+                    final item = displayItems[index];
+                    final progress = (0.9 - (index * 0.15)).clamp(0.2, 1.0);
+                    return Padding(
+                      padding: EdgeInsets.only(bottom: index == displayItems.length - 1 ? 0 : 14.0),
+                      child: _buildUsageProgressItem(
+                        item.displayName(isEn),
+                        item.quantity,
+                        progress,
+                        isDark,
+                      ),
+                    );
+                  }),
+                ),
         ),
       ],
     );
@@ -1251,6 +1331,7 @@ class _IngredientStatisticsScreenState
   // Neglected Section
   Widget _buildNeglectedSection(bool isDark, bool isEn) {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1274,27 +1355,111 @@ class _IngredientStatisticsScreenState
           ],
         ),
         const SizedBox(height: 12),
-        _buildNeglectedCard(
-          name: isEn ? 'Tomatoes' : 'cà chua',
-          subtitle: isEn ? '7 days in fridge' : 'Để trong tủ 7 ngày',
-          tagText: isEn ? 'Expiring soon' : 'Sắp hỏng',
-          tagBgColor: isDark ? const Color(0xFF2D1C1C) : const Color(0xFFFFEBEE),
-          tagTextColor: isDark ? const Color(0xFFFF8A80) : const Color(0xFFD32F2F),
-          imagePath: 'assets/images/recipe_tomato_egg.png',
-          fallbackIcon: Icons.circle_outlined,
-          isDark: isDark,
-        ),
-        const SizedBox(height: 12),
-        _buildNeglectedCard(
-          name: isEn ? 'Lettuce' : 'Xà lách',
-          subtitle: isEn ? '5 days in fridge' : 'Để trong tủ 5 ngày',
-          tagText: isEn ? 'Neglected' : 'Bỏ quên',
-          tagBgColor: isDark ? const Color(0xFF381F1F) : const Color(0xFFEF9A9A),
-          tagTextColor: isDark ? const Color(0xFFFF8A80) : const Color(0xFFB71C1C),
-          imagePath: 'assets/images/recipe_salad.png',
-          fallbackIcon: Icons.eco_outlined,
-          isDark: isDark,
-        ),
+        if (_expiringItems.isEmpty)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF19271E) : Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              border: isDark
+                  ? Border.all(color: const Color(0xFF2E4D36), width: 1)
+                  : null,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF233629) : const Color(0xFFE8F5E9),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.check_circle_outline_rounded,
+                    color: isDark ? const Color(0xFF81C784) : const Color(0xFF2E7D32),
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        isEn ? 'No Neglected Items' : 'Không có nguyên liệu bị bỏ quên',
+                        style: GoogleFonts.outfit(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                          color: isDark ? Colors.white : const Color(0xFF19221C),
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        isEn
+                            ? 'All ingredients in your fridge are fresh!'
+                            : 'Tất cả thực phẩm trong tủ của bạn đều còn hạn dùng tốt.',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? const Color(0xFF9DA8A0) : const Color(0xFF666666),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          )
+        else
+          Column(
+            children: List.generate(_expiringItems.length, (index) {
+              final item = _expiringItems[index];
+              final isExpired = item.daysUntilExpiry < 0;
+              final isExpiringSoon = item.daysUntilExpiry <= 2;
+
+              final tagText = isExpired
+                  ? (isEn ? 'Expired' : 'Đã quá hạn')
+                  : isExpiringSoon
+                      ? (isEn ? 'Expiring soon' : 'Sắp hỏng')
+                      : (isEn ? 'Neglected' : 'Bỏ quên');
+
+              final tagBgColor = isExpired
+                  ? (isDark ? const Color(0xFF381F1F) : const Color(0xFFFFCDD2))
+                  : isExpiringSoon
+                      ? (isDark ? const Color(0xFF2D1C1C) : const Color(0xFFFFEBEE))
+                      : (isDark ? const Color(0xFF382E1C) : const Color(0xFFFFF8E1));
+
+              final tagTextColor = isExpired
+                  ? (isDark ? const Color(0xFFFF8A80) : const Color(0xFFB71C1C))
+                  : isExpiringSoon
+                      ? (isDark ? const Color(0xFFFF8A80) : const Color(0xFFD32F2F))
+                      : (isDark ? const Color(0xFFFFB74D) : const Color(0xFFE65100));
+
+              final subtitle = item.expiryStatusText(isEn);
+
+              return Padding(
+                padding: EdgeInsets.only(bottom: index == _expiringItems.length - 1 ? 0 : 12.0),
+                child: _buildNeglectedCard(
+                  name: item.displayName(isEn),
+                  subtitle: subtitle,
+                  tagText: tagText,
+                  tagBgColor: tagBgColor,
+                  tagTextColor: tagTextColor,
+                  imagePath: item.imagePath,
+                  fallbackIcon: Icons.restaurant_rounded,
+                  isDark: isDark,
+                ),
+              );
+            }),
+          ),
       ],
     );
   }
@@ -1352,6 +1517,9 @@ class _IngredientStatisticsScreenState
     required IconData fallbackIcon,
     required bool isDark,
   }) {
+    final bool hasValidImage = imagePath.isNotEmpty &&
+        (imagePath.startsWith('http') || imagePath.startsWith('assets/'));
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
@@ -1372,21 +1540,25 @@ class _IngredientStatisticsScreenState
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(14),
-            child: Image.asset(
-              imagePath,
-              width: 48,
-              height: 48,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return Container(
-                  width: 48,
-                  height: 48,
-                  color: isDark ? const Color(0xFF233629) : const Color(0xFFF1F8E9),
-                  child: Icon(fallbackIcon,
-                      color: isDark ? const Color(0xFF81C784) : const Color(0xFF2E7D32)),
-                );
-              },
-            ),
+            child: hasValidImage
+                ? (imagePath.startsWith('http')
+                    ? Image.network(
+                        imagePath,
+                        width: 48,
+                        height: 48,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) =>
+                            _buildFallbackIcon(fallbackIcon, isDark),
+                      )
+                    : Image.asset(
+                        imagePath,
+                        width: 48,
+                        height: 48,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) =>
+                            _buildFallbackIcon(fallbackIcon, isDark),
+                      ))
+                : _buildFallbackIcon(fallbackIcon, isDark),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -1429,6 +1601,19 @@ class _IngredientStatisticsScreenState
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildFallbackIcon(IconData fallbackIcon, bool isDark) {
+    return Container(
+      width: 48,
+      height: 48,
+      color: isDark ? const Color(0xFF233629) : const Color(0xFFF1F8E9),
+      child: Icon(
+        fallbackIcon,
+        color: isDark ? const Color(0xFF81C784) : const Color(0xFF2E7D32),
+        size: 24,
       ),
     );
   }

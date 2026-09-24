@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'splash_screen.dart';
+import 'login_success_video_screen.dart';
+import '../data/services/auth_service.dart';
 
 class InitialLoadingScreen extends StatefulWidget {
   const InitialLoadingScreen({super.key});
@@ -22,6 +24,8 @@ class _InitialLoadingScreenState extends State<InitialLoadingScreen>
   late Animation<double> _progressFadeAnimation;
   late Animation<double> _progressValueAnimation;
 
+  bool? _isAutoLoginValid;
+
   @override
   void initState() {
     super.initState();
@@ -40,6 +44,9 @@ class _InitialLoadingScreenState extends State<InitialLoadingScreen>
       vsync: this,
       duration: const Duration(milliseconds: 3600),
     );
+
+    // Start background auto-login check (calls POST /api/v1/auth/refresh if refresh token exists)
+    _startAutoLoginCheck();
 
     // ================= STEP 1: Wait 0.5s, then 3D Mascot Scales Up (0.5s - 1.5s) =================
     _imageFadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
@@ -92,16 +99,58 @@ class _InitialLoadingScreenState extends State<InitialLoadingScreen>
 
     _controller.forward();
 
-    // Trigger smooth fade transition when complete
-    _controller.addStatusListener((status) {
+    // Trigger smooth transition when progress animation is complete
+    _controller.addStatusListener((status) async {
       if (status == AnimationStatus.completed) {
-        Future.delayed(const Duration(milliseconds: 300), () {
-          if (mounted) {
+        // Wait up to 1.5s if token refresh check is still processing over slow network
+        int retryCount = 0;
+        while (_isAutoLoginValid == null && retryCount < 15) {
+          await Future.delayed(const Duration(milliseconds: 100));
+          retryCount++;
+        }
+
+        if (mounted) {
+          if (_isAutoLoginValid == true) {
+            _navigateToVideoLoadingScreen();
+          } else {
             _navigateToSplashScreen();
           }
-        });
+        }
       }
     });
+  }
+
+  Future<void> _startAutoLoginCheck() async {
+    try {
+      final isValid = await AuthService().checkAndRefreshToken();
+      if (mounted) {
+        setState(() {
+          _isAutoLoginValid = isValid;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isAutoLoginValid = false;
+        });
+      }
+    }
+  }
+
+  void _navigateToVideoLoadingScreen() {
+    Navigator.of(context).pushReplacement(
+      PageRouteBuilder(
+        transitionDuration: const Duration(milliseconds: 550),
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            const LoginSuccessVideoScreen(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return FadeTransition(
+            opacity: animation,
+            child: child,
+          );
+        },
+      ),
+    );
   }
 
   void _navigateToSplashScreen() {

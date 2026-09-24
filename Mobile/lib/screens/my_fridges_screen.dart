@@ -6,6 +6,8 @@ import '../widgets/fridge_members_modal.dart';
 import '../data/services/api_service.dart';
 import '../data/models/fridge_models.dart';
 
+import '../data/models/user_models.dart';
+
 class FridgeModel {
   String id;
   String name;
@@ -15,30 +17,7 @@ class FridgeModel {
   Color themeColor;
   List<FridgeMemberModel>? _membersList;
 
-  List<FridgeMemberModel> get members => _membersList ??= [
-        FridgeMemberModel(
-          id: 'm1',
-          name: 'Trần Quốc Lâm',
-          emailOrPhone: 'lam.tran@friggy.app',
-          role: 'Chủ tủ',
-          isOwner: true,
-          avatarBgColor: const Color(0xFF006428),
-        ),
-        FridgeMemberModel(
-          id: 'm2',
-          name: 'Trần Ngọc Thy',
-          emailOrPhone: 'thy.tran@friggy.app',
-          role: 'Thành viên',
-          avatarBgColor: const Color(0xFF8E24AA),
-        ),
-        FridgeMemberModel(
-          id: 'm3',
-          name: 'Trần Thị Mỹ Linh',
-          emailOrPhone: 'linh.tran@friggy.app',
-          role: 'Thành viên',
-          avatarBgColor: const Color(0xFF1976D2),
-        ),
-      ];
+  List<FridgeMemberModel> get members => _membersList ??= [];
 
   set members(List<FridgeMemberModel> val) => _membersList = val;
 
@@ -62,6 +41,7 @@ class MyFridgesScreen extends StatefulWidget {
 
 class _MyFridgesScreenState extends State<MyFridgesScreen> {
   final ApiService _apiService = ApiService();
+  FamilyRoleModel? _familyRole;
 
   @override
   void initState() {
@@ -73,10 +53,19 @@ class _MyFridgesScreenState extends State<MyFridgesScreen> {
     try {
       final res = await _apiService.getFridgeStats();
       final stats = FridgeStatsModel.fromJson(res);
+      FamilyRoleModel? familyRole;
+      try {
+        final familyRes = await _apiService.getMyFamily();
+        familyRole = FamilyRoleModel.fromJson(familyRes);
+      } catch (e) {
+        debugPrint('Error fetching family in MyFridgesScreen: $e');
+      }
+
       if (mounted) {
         setState(() {
           _fridges[0].totalItems = stats.totalItems;
           _fridges[0].expiringItems = stats.expiringSoonCount;
+          _familyRole = familyRole;
         });
       }
     } catch (e) {
@@ -92,30 +81,6 @@ class _MyFridgesScreenState extends State<MyFridgesScreen> {
       totalItems: 3,
       expiringItems: 1,
       themeColor: const Color(0xFF008435),
-      members: [
-        FridgeMemberModel(
-          id: 'm1',
-          name: 'Trần Quốc Lâm',
-          emailOrPhone: 'lam.tran@friggy.app',
-          role: 'Chủ tủ',
-          isOwner: true,
-          avatarBgColor: const Color(0xFF006428),
-        ),
-        FridgeMemberModel(
-          id: 'm2',
-          name: 'Trần Ngọc Thy',
-          emailOrPhone: 'thy.tran@friggy.app',
-          role: 'Thành viên',
-          avatarBgColor: const Color(0xFF8E24AA),
-        ),
-        FridgeMemberModel(
-          id: 'm3',
-          name: 'Trần Thị Mỹ Linh',
-          emailOrPhone: 'linh.tran@friggy.app',
-          role: 'Thành viên',
-          avatarBgColor: const Color(0xFF1976D2),
-        ),
-      ],
     ),
     FridgeModel(
       id: 'roommates',
@@ -124,23 +89,6 @@ class _MyFridgesScreenState extends State<MyFridgesScreen> {
       totalItems: 2,
       expiringItems: 1,
       themeColor: const Color(0xFF2E7D32),
-      members: [
-        FridgeMemberModel(
-          id: 'm1',
-          name: 'Trần Quốc Lâm',
-          emailOrPhone: 'lam.tran@friggy.app',
-          role: 'Chủ tủ',
-          isOwner: true,
-          avatarBgColor: const Color(0xFF006428),
-        ),
-        FridgeMemberModel(
-          id: 'm4',
-          name: 'Hoàng Anh Tuấn',
-          emailOrPhone: '0933 111 222',
-          role: 'Thành viên',
-          avatarBgColor: const Color(0xFF8E24AA),
-        ),
-      ],
     ),
     FridgeModel(
       id: 'personal',
@@ -149,16 +97,6 @@ class _MyFridgesScreenState extends State<MyFridgesScreen> {
       totalItems: 2,
       expiringItems: 0,
       themeColor: const Color(0xFF52B756),
-      members: [
-        FridgeMemberModel(
-          id: 'm1',
-          name: 'Trần Quốc Lâm',
-          emailOrPhone: 'lam.tran@friggy.app',
-          role: 'Chủ tủ',
-          isOwner: true,
-          avatarBgColor: const Color(0xFF006428),
-        ),
-      ],
     ),
   ];
 
@@ -996,7 +934,8 @@ class _MyFridgesScreenState extends State<MyFridgesScreen> {
                       ),
 
                       // Top Right Circular Member Icon Button (👥)
-                      Positioned(
+                      if (_familyRole?.group != null && (_familyRole?.role == 'owner' || _familyRole?.role == 'member'))
+                        Positioned(
                         top: 8,
                         right: 8,
                         child: GestureDetector(

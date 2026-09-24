@@ -15,8 +15,8 @@ import {
   Camera,
   Loader2,
   FileText,
+  UserCheck,
 } from 'lucide-react';
-import { adminAccount } from '../../../data/adminMockData';
 import cuteMascotImg from '../../../assets/images/cute_mascot.png';
 import { getMeApi, updateProfileApi, uploadAvatarApi } from '../../../services/userService';
 import { showToast } from '../../../components/common/Toast';
@@ -30,14 +30,15 @@ export const AdminProfile = () => {
   const [avatarUrl, setAvatarUrl] = useState(cuteMascotImg);
   const fileInputRef = useRef(null);
 
-  // State for Personal Info
+  // Dynamic State for Personal Info
   const [profileData, setProfileData] = useState({
-    name: 'Admin Friggy',
-    username: '0854340045',
-    email: 'tqlam150504@gmail.com',
-    dob: '2004-05-15',
+    name: '',
+    phone: '',
+    email: '',
+    gender: 'male',
+    dob: '',
     bio: '',
-    role: 'Super Admin',
+    role: '',
   });
 
   // State for Changing Password
@@ -60,18 +61,23 @@ export const AdminProfile = () => {
       const res = await getMeApi();
       const me = res?.data || res;
       if (me) {
-        let dobStr = me.profile?.dateOfBirth || '2004-05-15';
+        let dobStr = me.profile?.dateOfBirth ? String(me.profile.dateOfBirth) : '';
         if (dobStr.includes('T')) {
           dobStr = dobStr.split('T')[0];
         }
 
+        const roleText = typeof me.role === 'string'
+          ? (me.role.toLowerCase() === 'admin' ? 'Admin' : me.role)
+          : (me.role?.name || me.role?.displayName || '');
+
         setProfileData({
-          name: me.name || me.profile?.name || 'Admin Friggy',
-          username: me.phone || '0854340045',
-          email: me.googleEmail || 'tqlam150504@gmail.com',
+          name: me.name || me.profile?.displayName || me.email || '',
+          phone: me.phone || me.profile?.phone || '',
+          email: me.email || me.googleEmail || me.profile?.email || '',
+          gender: me.profile?.gender || 'male',
           dob: dobStr,
-          bio: me.profile?.bio || '',
-          role: me.roleId === 1 ? 'Super Admin' : 'Admin',
+          bio: me.profile?.bio || me.bio || '',
+          role: roleText,
         });
 
         if (me.profile?.avatarUrl) {
@@ -80,7 +86,6 @@ export const AdminProfile = () => {
       }
     } catch (err) {
       console.error('Lỗi khi lấy thông tin /users/me:', err);
-      // Fallback sang thông tin sẵn có nếu chưa đăng nhập token
     } finally {
       setLoading(false);
     }
@@ -103,7 +108,6 @@ export const AdminProfile = () => {
       setAvatarUrl(newAvatarUrl);
       showToast.success('Đã tải lên và cập nhật ảnh đại diện thành công!');
 
-      // Phát event hoặc lưu localStorage để Header cập nhật
       const cached = localStorage.getItem('friggy_user') || localStorage.getItem('user') || '{}';
       const currentUser = JSON.parse(cached);
       currentUser.avatarUrl = newAvatarUrl;
@@ -133,6 +137,7 @@ export const AdminProfile = () => {
     try {
       const payload = {
         name: profileData.name,
+        gender: profileData.gender,
         dateOfBirth: profileData.dob ? `${profileData.dob}T00:00:00.000Z` : undefined,
         bio: profileData.bio,
       };
@@ -140,13 +145,11 @@ export const AdminProfile = () => {
       await updateProfileApi(payload);
       showToast.success('Đã cập nhật thông tin cá nhân thành công!');
 
-      // Cập nhật localStorage & dispatch event cho Header
       const cached = localStorage.getItem('friggy_user') || localStorage.getItem('user') || '{}';
       const currentUser = JSON.parse(cached);
       currentUser.name = profileData.name;
       localStorage.setItem('friggy_user', JSON.stringify(currentUser));
       localStorage.setItem('user', JSON.stringify(currentUser));
-      window.dispatchEvent(new Event('user_profile_updated'));
       window.dispatchEvent(new Event('user_profile_updated'));
     } catch (err) {
       console.error('Lỗi cập nhật profile:', err);
@@ -156,8 +159,8 @@ export const AdminProfile = () => {
     }
   };
 
-  // Handle Change Password
-  const handleChangePassword = (e) => {
+  // Handle Password Change
+  const handleChangePassword = async (e) => {
     e.preventDefault();
     setPasswordError('');
     setPasswordSuccess(false);
@@ -175,7 +178,7 @@ export const AdminProfile = () => {
       return;
     }
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      setPasswordError('Mật khẩu xác nhận không trùng khớp!');
+      setPasswordError('Mật khẩu xác nhận không trùng khớp.');
       return;
     }
 
@@ -212,7 +215,7 @@ export const AdminProfile = () => {
       {/* Top Banner Header with Avatar Upload */}
       <div className="animate__animated animate__fadeInDown p-6 sm:p-8 rounded-[32px] bg-gradient-to-r from-white via-emerald-50/40 to-white border border-emerald-100 shadow-sm flex flex-col sm:flex-row items-center sm:items-center justify-between gap-6 relative overflow-hidden">
         <div className="flex flex-col sm:flex-row items-center gap-5 text-center sm:text-left z-10">
-          {/* Avatar Picture Container with Camera Overlay Icon */}
+          {/* Avatar Picture Container */}
           <div className="relative group cursor-pointer" onClick={handleCameraClick}>
             <div className="animate__animated animate__zoomIn w-24 h-24 sm:w-28 sm:h-28 rounded-3xl bg-gradient-to-tr from-emerald-500 via-green-400 to-teal-400 p-1 shadow-lg shadow-emerald-600/20 transition-transform duration-300 group-hover:scale-105">
               <img
@@ -222,7 +225,6 @@ export const AdminProfile = () => {
               />
             </div>
 
-            {/* Camera Overlay Icon Badge */}
             <button
               type="button"
               disabled={uploadingAvatar}
@@ -239,13 +241,15 @@ export const AdminProfile = () => {
 
           <div>
             <h3 className="text-2xl sm:text-3xl font-black text-emerald-950 tracking-tight flex items-center justify-center sm:justify-start gap-2">
-              <span>{profileData.name}</span>
+              <span>{profileData.name || 'Tài khoản Friggy'}</span>
               <Sparkles className="w-6 h-6 text-emerald-500" />
             </h3>
             <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mt-1.5">
-              <span className="px-3 py-1 rounded-full bg-emerald-600 text-white font-black text-xs shadow-xs">
-                {profileData.role}
-              </span>
+              {profileData.role && (
+                <span className="px-3 py-1 rounded-full bg-emerald-600 text-white font-black text-xs shadow-xs">
+                  {profileData.role}
+                </span>
+              )}
               <span className="text-xs text-emerald-900/70 font-semibold bg-emerald-100/60 px-3 py-1 rounded-full border border-emerald-200/50">
                 Quản trị viên hệ thống Friggy AI
               </span>
@@ -256,7 +260,7 @@ export const AdminProfile = () => {
 
       {/* Main Grid: Left = Personal Info, Right = Change Password */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column: Update Personal Info (2 Cols wide) */}
+        {/* Left Column: Update Personal Info */}
         <div className="lg:col-span-2 space-y-6">
           <form
             onSubmit={handleSaveProfile}
@@ -277,8 +281,8 @@ export const AdminProfile = () => {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Name */}
-              <div className="space-y-1.5">
+              {/* Họ và Tên */}
+              <div className="space-y-1.5 sm:col-span-1">
                 <label className="block text-xs font-bold text-emerald-950 flex items-center gap-1.5">
                   <User className="w-3.5 h-3.5 text-emerald-600" />
                   <span>Họ và Tên</span>
@@ -287,28 +291,14 @@ export const AdminProfile = () => {
                   type="text"
                   value={profileData.name}
                   onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
+                  placeholder="Nhập họ và tên"
                   className="w-full px-4 py-3 bg-emerald-50/40 hover:bg-emerald-50/70 focus:bg-white border border-emerald-200 rounded-2xl text-xs font-semibold text-emerald-950 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all"
                   required
                 />
               </div>
 
-              {/* Phone / Username */}
-              <div className="space-y-1.5">
-                <label className="block text-xs font-bold text-emerald-950 flex items-center gap-1.5">
-                  <Phone className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>Số Điện Thoại (Tên đăng nhập)</span>
-                </label>
-                <input
-                  type="text"
-                  value={profileData.username}
-                  onChange={(e) => setProfileData({ ...profileData, username: e.target.value })}
-                  className="w-full px-4 py-3 bg-slate-100 border border-slate-200 rounded-2xl text-xs font-semibold text-slate-600 cursor-not-allowed"
-                  disabled
-                />
-              </div>
-
-              {/* Email */}
-              <div className="space-y-1.5">
+              {/* Địa Chỉ Email */}
+              <div className="space-y-1.5 sm:col-span-1">
                 <label className="block text-xs font-bold text-emerald-950 flex items-center gap-1.5">
                   <Mail className="w-3.5 h-3.5 text-emerald-600" />
                   <span>Địa Chỉ Email</span>
@@ -316,13 +306,48 @@ export const AdminProfile = () => {
                 <input
                   type="email"
                   value={profileData.email}
-                  disabled
+                  disabled={Boolean(profileData.email)}
+                  onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
+                  placeholder="Nhập địa chỉ email"
                   className="w-full px-4 py-3 bg-slate-100 border border-slate-200 rounded-2xl text-xs font-semibold text-slate-600 cursor-not-allowed"
                 />
               </div>
 
-              {/* Date of Birth */}
-              <div className="space-y-1.5">
+              {/* Số Điện Thoại */}
+              {Boolean(profileData.phone && profileData.phone.trim()) && (
+                <div className="space-y-1.5 sm:col-span-1">
+                  <label className="block text-xs font-bold text-emerald-950 flex items-center gap-1.5">
+                    <Phone className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>Số Điện Thoại (Tên đăng nhập)</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={profileData.phone}
+                    disabled
+                    className="w-full px-4 py-3 bg-slate-100 border border-slate-200 rounded-2xl text-xs font-semibold text-slate-600 cursor-not-allowed"
+                  />
+                </div>
+              )}
+
+              {/* Giới Tính */}
+              <div className="space-y-1.5 sm:col-span-1">
+                <label className="block text-xs font-bold text-emerald-950 flex items-center gap-1.5">
+                  <UserCheck className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Giới Tính</span>
+                </label>
+                <select
+                  value={profileData.gender}
+                  onChange={(e) => setProfileData({ ...profileData, gender: e.target.value })}
+                  className="w-full px-4 py-3 bg-emerald-50/40 hover:bg-emerald-50/70 focus:bg-white border border-emerald-200 rounded-2xl text-xs font-semibold text-emerald-950 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all cursor-pointer"
+                >
+                  <option value="male">Nam</option>
+                  <option value="female">Nữ</option>
+                  <option value="other">Khác</option>
+                </select>
+              </div>
+
+              {/* Ngày Sinh */}
+              <div className="space-y-1.5 sm:col-span-1">
                 <label className="block text-xs font-bold text-emerald-950 flex items-center gap-1.5">
                   <Calendar className="w-3.5 h-3.5 text-emerald-600" />
                   <span>Ngày Sinh</span>
@@ -335,7 +360,23 @@ export const AdminProfile = () => {
                 />
               </div>
 
-              {/* Bio */}
+              {/* Vai Trò Phân Quyền */}
+              {Boolean(profileData.role && profileData.role.trim()) && (
+                <div className="space-y-1.5 sm:col-span-1">
+                  <label className="block text-xs font-bold text-emerald-950 flex items-center gap-1.5">
+                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>Vai Trò Phân Quyền</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={profileData.role}
+                    disabled
+                    className="w-full px-4 py-3 bg-slate-100 border border-slate-200 rounded-2xl text-xs font-semibold text-slate-600 cursor-not-allowed"
+                  />
+                </div>
+              )}
+
+              {/* Giới Thiệu (Bio) */}
               <div className="space-y-1.5 sm:col-span-2">
                 <label className="block text-xs font-bold text-emerald-950 flex items-center gap-1.5">
                   <FileText className="w-3.5 h-3.5 text-emerald-600" />
@@ -347,20 +388,6 @@ export const AdminProfile = () => {
                   onChange={(e) => setProfileData({ ...profileData, bio: e.target.value })}
                   placeholder="Mô tả ngắn về bản thân..."
                   className="w-full px-4 py-3 bg-emerald-50/40 hover:bg-emerald-50/70 focus:bg-white border border-emerald-200 rounded-2xl text-xs font-semibold text-emerald-950 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all"
-                />
-              </div>
-
-              {/* Role (Disabled / Readonly) */}
-              <div className="space-y-1.5 sm:col-span-2">
-                <label className="block text-xs font-bold text-emerald-950 flex items-center gap-1.5">
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>Vai Trò Phân Quyền</span>
-                </label>
-                <input
-                  type="text"
-                  value={profileData.role}
-                  disabled
-                  className="w-full px-4 py-3 bg-slate-100 border border-slate-200 rounded-2xl text-xs font-bold text-slate-600 cursor-not-allowed"
                 />
               </div>
             </div>

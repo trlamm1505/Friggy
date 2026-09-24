@@ -236,7 +236,7 @@ class ApiService {
   // ------------------------------------------------------------------
 
   /// Get list of ingredients
-  Future<List<dynamic>> getIngredients({int? categoryId, String? search, int limit = 500}) async {
+  Future<List<dynamic>> getIngredients({int? categoryId, String? search, int limit = 100}) async {
     final queryParams = <String, dynamic>{'limit': limit};
     if (categoryId != null) queryParams['categoryId'] = categoryId;
     if (search != null && search.isNotEmpty) queryParams['search'] = search;
@@ -523,6 +523,12 @@ class ApiService {
     return response as Map<String, dynamic>;
   }
 
+  /// GET /meal-planning/slots/:id - Get meal slot detail (recipe, ingredients, steps, fridge analysis)
+  Future<Map<String, dynamic>> getSlotDetail(String slotId) async {
+    final response = await _dioClient.get('/meal-planning/slots/$slotId');
+    return response as Map<String, dynamic>;
+  }
+
   // ------------------------------------------------------------------
   // Shopping Lists (/meal-planning/shopping-lists/*)
   // ------------------------------------------------------------------
@@ -574,6 +580,21 @@ class ApiService {
   /// GET /subscriptions/me - Get current user active subscription
   Future<Map<String, dynamic>> getMySubscription() async {
     final response = await _dioClient.get(AppConstants.epSubscriptionsMe);
+    return response as Map<String, dynamic>;
+  }
+
+  /// GET /payment-transactions/me - Lịch sử giao dịch thanh toán của user (paginated)
+  Future<Map<String, dynamic>> getMyPaymentTransactions({int page = 1, int limit = 10}) async {
+    final response = await _dioClient.get(
+      '/payment-transactions/me',
+      queryParameters: {'page': page, 'limit': limit},
+    );
+    return response as Map<String, dynamic>;
+  }
+
+  /// GET /payment-transactions/me/:paymentRef - Tra cứu trạng thái giao dịch theo paymentRef
+  Future<Map<String, dynamic>> checkPaymentTransaction(String paymentRef) async {
+    final response = await _dioClient.get('/payment-transactions/me/$paymentRef');
     return response as Map<String, dynamic>;
   }
 
@@ -673,4 +694,54 @@ class ApiService {
   Future<void> deleteNotification(String id) async {
     await _dioClient.delete('${AppConstants.epNotifications}/$id');
   }
+
+  // ------------------------------------------------------------------
+  // Family APIs (/family/*)
+  // ------------------------------------------------------------------
+
+  /// GET /family/me - Get my family role and group info
+  Future<Map<String, dynamic>> getMyFamily() async {
+    final response = await _dioClient.get(AppConstants.epFamilyMe);
+    return response as Map<String, dynamic>;
+  }
+
+  /// POST /family/invite - Invite member by email (Owner only)
+  Future<Map<String, dynamic>> inviteFamilyMember(String email) async {
+    final response = await _dioClient.post(
+      AppConstants.epFamilyInvite,
+      data: {'email': email},
+    );
+    return response as Map<String, dynamic>;
+  }
+
+  /// POST /family/accept - Accept invitation with token
+  Future<Map<String, dynamic>> acceptFamilyInvite(String token) async {
+    final response = await _dioClient.post(
+      AppConstants.epFamilyAccept,
+      data: {'token': token},
+    );
+    return response as Map<String, dynamic>;
+  }
+
+  /// POST /family/reject - Reject invitation with token
+  Future<Map<String, dynamic>> rejectFamilyInvite(String token) async {
+    final response = await _dioClient.post(
+      AppConstants.epFamilyReject,
+      data: {'token': token},
+    );
+    return response as Map<String, dynamic>;
+  }
+
+  /// DELETE /family/members/:memberId - Remove member from family (Owner only)
+  Future<Map<String, dynamic>> removeFamilyMember(String memberId) async {
+    final response = await _dioClient.delete('${AppConstants.epFamilyMembers}/$memberId');
+    return response as Map<String, dynamic>;
+  }
+
+  /// DELETE /family/groups - Dissolve family group (Owner only)
+  Future<Map<String, dynamic>> dissolveFamilyGroup() async {
+    final response = await _dioClient.delete(AppConstants.epFamilyGroups);
+    return response as Map<String, dynamic>;
+  }
 }
+

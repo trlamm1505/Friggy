@@ -40,6 +40,8 @@ class _HomeScreenState extends State<HomeScreen>
     with SingleTickerProviderStateMixin {
   int _selectedIndex = 0;
   final TextEditingController _searchController = TextEditingController();
+  final GlobalKey<WeeklyStatisticsSectionState> _statsKey =
+      GlobalKey<WeeklyStatisticsSectionState>();
   final GlobalKey<CookingSuggestionsSectionState> _cookingSuggestionsKey =
       GlobalKey<CookingSuggestionsSectionState>();
   final GlobalKey<UserProfileScreenState> _userProfileKey =
@@ -303,6 +305,7 @@ class _HomeScreenState extends State<HomeScreen>
                               ),
                               const SizedBox(height: 18),
                               WeeklyStatisticsSection(
+                                key: _statsKey,
                                 onDetailTap: () {
                                   Navigator.push(
                                     context,
@@ -321,6 +324,7 @@ class _HomeScreenState extends State<HomeScreen>
                                     ),
                                   );
                                   _cookingSuggestionsKey.currentState?.reload();
+                                  _statsKey.currentState?.reload();
                                 },
                                 onShoppingReminderTap: () {
                                   Navigator.push(
@@ -335,6 +339,9 @@ class _HomeScreenState extends State<HomeScreen>
                               const SizedBox(height: 24),
                               CookingSuggestionsSection(
                                 key: _cookingSuggestionsKey,
+                                onMealToggled: () {
+                                  _statsKey.currentState?.reload();
+                                },
                                 onUpgradeTap: () {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(

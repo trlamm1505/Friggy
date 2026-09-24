@@ -399,7 +399,7 @@ type FieldRefInputType<Model, FieldType> = Model extends never ? never : FieldRe
 export const ModelName = {
   Role: 'Role',
   User: 'User',
-  OtpVerification: 'OtpVerification',
+  EmailOtp: 'EmailOtp',
   UserProfile: 'UserProfile',
   UserPreference: 'UserPreference',
   RefreshToken: 'RefreshToken',
@@ -431,8 +431,12 @@ export const ModelName = {
   IngredientPurchaseLink: 'IngredientPurchaseLink',
   AdminActivityLog: 'AdminActivityLog',
   Notification: 'Notification',
+  CronJobConfig: 'CronJobConfig',
   SubscriptionPlan: 'SubscriptionPlan',
-  UserSubscription: 'UserSubscription'
+  UserSubscription: 'UserSubscription',
+  PaymentTransaction: 'PaymentTransaction',
+  FamilyGroup: 'FamilyGroup',
+  FamilyMember: 'FamilyMember'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -448,7 +452,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "role" | "user" | "otpVerification" | "userProfile" | "userPreference" | "refreshToken" | "ingredientCategory" | "ingredient" | "tag" | "recipe" | "recipeIngredient" | "recipeStep" | "recipeTag" | "userSavedRecipe" | "fridgeItem" | "ingredientScanLog" | "userAllergy" | "weeklyPlan" | "dailyPlan" | "mealSlot" | "shoppingList" | "shoppingListItem" | "aiSystemPrompt" | "chatSession" | "chatMessage" | "aiEvaluationLog" | "aiProviderConfig" | "aiUsageLog" | "sponsor" | "sponsorCampaign" | "campaignRecipe" | "ingredientPurchaseLink" | "adminActivityLog" | "notification" | "subscriptionPlan" | "userSubscription"
+    modelProps: "role" | "user" | "emailOtp" | "userProfile" | "userPreference" | "refreshToken" | "ingredientCategory" | "ingredient" | "tag" | "recipe" | "recipeIngredient" | "recipeStep" | "recipeTag" | "userSavedRecipe" | "fridgeItem" | "ingredientScanLog" | "userAllergy" | "weeklyPlan" | "dailyPlan" | "mealSlot" | "shoppingList" | "shoppingListItem" | "aiSystemPrompt" | "chatSession" | "chatMessage" | "aiEvaluationLog" | "aiProviderConfig" | "aiUsageLog" | "sponsor" | "sponsorCampaign" | "campaignRecipe" | "ingredientPurchaseLink" | "adminActivityLog" | "notification" | "cronJobConfig" | "subscriptionPlan" | "userSubscription" | "paymentTransaction" | "familyGroup" | "familyMember"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -584,69 +588,69 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
-    OtpVerification: {
-      payload: Prisma.$OtpVerificationPayload<ExtArgs>
-      fields: Prisma.OtpVerificationFieldRefs
+    EmailOtp: {
+      payload: Prisma.$EmailOtpPayload<ExtArgs>
+      fields: Prisma.EmailOtpFieldRefs
       operations: {
         findUnique: {
-          args: Prisma.OtpVerificationFindUniqueArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$OtpVerificationPayload> | null
+          args: Prisma.EmailOtpFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EmailOtpPayload> | null
         }
         findUniqueOrThrow: {
-          args: Prisma.OtpVerificationFindUniqueOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$OtpVerificationPayload>
+          args: Prisma.EmailOtpFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EmailOtpPayload>
         }
         findFirst: {
-          args: Prisma.OtpVerificationFindFirstArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$OtpVerificationPayload> | null
+          args: Prisma.EmailOtpFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EmailOtpPayload> | null
         }
         findFirstOrThrow: {
-          args: Prisma.OtpVerificationFindFirstOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$OtpVerificationPayload>
+          args: Prisma.EmailOtpFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EmailOtpPayload>
         }
         findMany: {
-          args: Prisma.OtpVerificationFindManyArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$OtpVerificationPayload>[]
+          args: Prisma.EmailOtpFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EmailOtpPayload>[]
         }
         create: {
-          args: Prisma.OtpVerificationCreateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$OtpVerificationPayload>
+          args: Prisma.EmailOtpCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EmailOtpPayload>
         }
         createMany: {
-          args: Prisma.OtpVerificationCreateManyArgs<ExtArgs>
+          args: Prisma.EmailOtpCreateManyArgs<ExtArgs>
           result: BatchPayload
         }
         delete: {
-          args: Prisma.OtpVerificationDeleteArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$OtpVerificationPayload>
+          args: Prisma.EmailOtpDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EmailOtpPayload>
         }
         update: {
-          args: Prisma.OtpVerificationUpdateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$OtpVerificationPayload>
+          args: Prisma.EmailOtpUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EmailOtpPayload>
         }
         deleteMany: {
-          args: Prisma.OtpVerificationDeleteManyArgs<ExtArgs>
+          args: Prisma.EmailOtpDeleteManyArgs<ExtArgs>
           result: BatchPayload
         }
         updateMany: {
-          args: Prisma.OtpVerificationUpdateManyArgs<ExtArgs>
+          args: Prisma.EmailOtpUpdateManyArgs<ExtArgs>
           result: BatchPayload
         }
         upsert: {
-          args: Prisma.OtpVerificationUpsertArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$OtpVerificationPayload>
+          args: Prisma.EmailOtpUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EmailOtpPayload>
         }
         aggregate: {
-          args: Prisma.OtpVerificationAggregateArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.AggregateOtpVerification>
+          args: Prisma.EmailOtpAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateEmailOtp>
         }
         groupBy: {
-          args: Prisma.OtpVerificationGroupByArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.OtpVerificationGroupByOutputType>[]
+          args: Prisma.EmailOtpGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.EmailOtpGroupByOutputType>[]
         }
         count: {
-          args: Prisma.OtpVerificationCountArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.OtpVerificationCountAggregateOutputType> | number
+          args: Prisma.EmailOtpCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.EmailOtpCountAggregateOutputType> | number
         }
       }
     }
@@ -2696,6 +2700,72 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    CronJobConfig: {
+      payload: Prisma.$CronJobConfigPayload<ExtArgs>
+      fields: Prisma.CronJobConfigFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.CronJobConfigFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CronJobConfigPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.CronJobConfigFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CronJobConfigPayload>
+        }
+        findFirst: {
+          args: Prisma.CronJobConfigFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CronJobConfigPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.CronJobConfigFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CronJobConfigPayload>
+        }
+        findMany: {
+          args: Prisma.CronJobConfigFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CronJobConfigPayload>[]
+        }
+        create: {
+          args: Prisma.CronJobConfigCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CronJobConfigPayload>
+        }
+        createMany: {
+          args: Prisma.CronJobConfigCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        delete: {
+          args: Prisma.CronJobConfigDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CronJobConfigPayload>
+        }
+        update: {
+          args: Prisma.CronJobConfigUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CronJobConfigPayload>
+        }
+        deleteMany: {
+          args: Prisma.CronJobConfigDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.CronJobConfigUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        upsert: {
+          args: Prisma.CronJobConfigUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CronJobConfigPayload>
+        }
+        aggregate: {
+          args: Prisma.CronJobConfigAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateCronJobConfig>
+        }
+        groupBy: {
+          args: Prisma.CronJobConfigGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.CronJobConfigGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.CronJobConfigCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.CronJobConfigCountAggregateOutputType> | number
+        }
+      }
+    }
     SubscriptionPlan: {
       payload: Prisma.$SubscriptionPlanPayload<ExtArgs>
       fields: Prisma.SubscriptionPlanFieldRefs
@@ -2828,6 +2898,204 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    PaymentTransaction: {
+      payload: Prisma.$PaymentTransactionPayload<ExtArgs>
+      fields: Prisma.PaymentTransactionFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.PaymentTransactionFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PaymentTransactionPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.PaymentTransactionFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PaymentTransactionPayload>
+        }
+        findFirst: {
+          args: Prisma.PaymentTransactionFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PaymentTransactionPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.PaymentTransactionFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PaymentTransactionPayload>
+        }
+        findMany: {
+          args: Prisma.PaymentTransactionFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PaymentTransactionPayload>[]
+        }
+        create: {
+          args: Prisma.PaymentTransactionCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PaymentTransactionPayload>
+        }
+        createMany: {
+          args: Prisma.PaymentTransactionCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        delete: {
+          args: Prisma.PaymentTransactionDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PaymentTransactionPayload>
+        }
+        update: {
+          args: Prisma.PaymentTransactionUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PaymentTransactionPayload>
+        }
+        deleteMany: {
+          args: Prisma.PaymentTransactionDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.PaymentTransactionUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        upsert: {
+          args: Prisma.PaymentTransactionUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PaymentTransactionPayload>
+        }
+        aggregate: {
+          args: Prisma.PaymentTransactionAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregatePaymentTransaction>
+        }
+        groupBy: {
+          args: Prisma.PaymentTransactionGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PaymentTransactionGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.PaymentTransactionCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PaymentTransactionCountAggregateOutputType> | number
+        }
+      }
+    }
+    FamilyGroup: {
+      payload: Prisma.$FamilyGroupPayload<ExtArgs>
+      fields: Prisma.FamilyGroupFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.FamilyGroupFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FamilyGroupPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.FamilyGroupFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FamilyGroupPayload>
+        }
+        findFirst: {
+          args: Prisma.FamilyGroupFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FamilyGroupPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.FamilyGroupFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FamilyGroupPayload>
+        }
+        findMany: {
+          args: Prisma.FamilyGroupFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FamilyGroupPayload>[]
+        }
+        create: {
+          args: Prisma.FamilyGroupCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FamilyGroupPayload>
+        }
+        createMany: {
+          args: Prisma.FamilyGroupCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        delete: {
+          args: Prisma.FamilyGroupDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FamilyGroupPayload>
+        }
+        update: {
+          args: Prisma.FamilyGroupUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FamilyGroupPayload>
+        }
+        deleteMany: {
+          args: Prisma.FamilyGroupDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.FamilyGroupUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        upsert: {
+          args: Prisma.FamilyGroupUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FamilyGroupPayload>
+        }
+        aggregate: {
+          args: Prisma.FamilyGroupAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateFamilyGroup>
+        }
+        groupBy: {
+          args: Prisma.FamilyGroupGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.FamilyGroupGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.FamilyGroupCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.FamilyGroupCountAggregateOutputType> | number
+        }
+      }
+    }
+    FamilyMember: {
+      payload: Prisma.$FamilyMemberPayload<ExtArgs>
+      fields: Prisma.FamilyMemberFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.FamilyMemberFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FamilyMemberPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.FamilyMemberFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FamilyMemberPayload>
+        }
+        findFirst: {
+          args: Prisma.FamilyMemberFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FamilyMemberPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.FamilyMemberFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FamilyMemberPayload>
+        }
+        findMany: {
+          args: Prisma.FamilyMemberFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FamilyMemberPayload>[]
+        }
+        create: {
+          args: Prisma.FamilyMemberCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FamilyMemberPayload>
+        }
+        createMany: {
+          args: Prisma.FamilyMemberCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        delete: {
+          args: Prisma.FamilyMemberDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FamilyMemberPayload>
+        }
+        update: {
+          args: Prisma.FamilyMemberUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FamilyMemberPayload>
+        }
+        deleteMany: {
+          args: Prisma.FamilyMemberDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.FamilyMemberUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        upsert: {
+          args: Prisma.FamilyMemberUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FamilyMemberPayload>
+        }
+        aggregate: {
+          args: Prisma.FamilyMemberAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateFamilyMember>
+        }
+        groupBy: {
+          args: Prisma.FamilyMemberGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.FamilyMemberGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.FamilyMemberCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.FamilyMemberCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -2880,35 +3148,35 @@ export type RoleScalarFieldEnum = (typeof RoleScalarFieldEnum)[keyof typeof Role
 
 export const UserScalarFieldEnum = {
   id: 'id',
-  phone: 'phone',
+  email: 'email',
+  passwordHash: 'passwordHash',
   googleId: 'googleId',
   googleEmail: 'googleEmail',
-  name: 'name',
   authProvider: 'authProvider',
   status: 'status',
   roleId: 'roleId',
-  isOnboardingCompleted: 'isOnboardingCompleted',
   lastLoginAt: 'lastLoginAt',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
-  deletedAt: 'deletedAt'
+  deletedAt: 'deletedAt',
+  isOnboardingCompleted: 'isOnboardingCompleted',
+  name: 'name'
 } as const
 
 export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
 
 
-export const OtpVerificationScalarFieldEnum = {
+export const EmailOtpScalarFieldEnum = {
   id: 'id',
-  phone: 'phone',
+  email: 'email',
   otpHash: 'otpHash',
   purpose: 'purpose',
   attempts: 'attempts',
   expiresAt: 'expiresAt',
-  verifiedAt: 'verifiedAt',
   createdAt: 'createdAt'
 } as const
 
-export type OtpVerificationScalarFieldEnum = (typeof OtpVerificationScalarFieldEnum)[keyof typeof OtpVerificationScalarFieldEnum]
+export type EmailOtpScalarFieldEnum = (typeof EmailOtpScalarFieldEnum)[keyof typeof EmailOtpScalarFieldEnum]
 
 
 export const UserProfileScalarFieldEnum = {
@@ -2937,16 +3205,16 @@ export const UserPreferenceScalarFieldEnum = {
   skillLevel: 'skillLevel',
   householdSize: 'householdSize',
   aiPersonalityMode: 'aiPersonalityMode',
-  primaryGoal: 'primaryGoal',
+  updatedAt: 'updatedAt',
+  deletedAt: 'deletedAt',
+  activityLevel: 'activityLevel',
   cookingFrequency: 'cookingFrequency',
   height: 'height',
+  primaryGoal: 'primaryGoal',
   weight: 'weight',
-  activityLevel: 'activityLevel',
-  pushNotifications: 'pushNotifications',
   expiryAlert: 'expiryAlert',
-  shoppingReminder: 'shoppingReminder',
-  updatedAt: 'updatedAt',
-  deletedAt: 'deletedAt'
+  pushNotifications: 'pushNotifications',
+  shoppingReminder: 'shoppingReminder'
 } as const
 
 export type UserPreferenceScalarFieldEnum = (typeof UserPreferenceScalarFieldEnum)[keyof typeof UserPreferenceScalarFieldEnum]
@@ -2972,6 +3240,7 @@ export const IngredientCategoryScalarFieldEnum = {
   name: 'name',
   iconPath: 'iconPath',
   parentId: 'parentId',
+  defaultShelfLifeDays: 'defaultShelfLifeDays',
   createdAt: 'createdAt',
   deletedAt: 'deletedAt'
 } as const
@@ -3083,10 +3352,10 @@ export const FridgeItemScalarFieldEnum = {
   expiresAt: 'expiresAt',
   storageLocation: 'storageLocation',
   addedBy: 'addedBy',
-  consumedAt: 'consumedAt',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
-  deletedAt: 'deletedAt'
+  deletedAt: 'deletedAt',
+  consumedAt: 'consumedAt'
 } as const
 
 export type FridgeItemScalarFieldEnum = (typeof FridgeItemScalarFieldEnum)[keyof typeof FridgeItemScalarFieldEnum]
@@ -3096,9 +3365,6 @@ export const IngredientScanLogScalarFieldEnum = {
   id: 'id',
   userId: 'userId',
   imagePath: 'imagePath',
-  scanType: 'scanType',
-  rawText: 'rawText',
-  barcode: 'barcode',
   aiRawResponse: 'aiRawResponse',
   detectedItems: 'detectedItems',
   confirmedItems: 'confirmedItems',
@@ -3106,7 +3372,10 @@ export const IngredientScanLogScalarFieldEnum = {
   errorMessage: 'errorMessage',
   processedAt: 'processedAt',
   createdAt: 'createdAt',
-  deletedAt: 'deletedAt'
+  deletedAt: 'deletedAt',
+  barcode: 'barcode',
+  rawText: 'rawText',
+  scanType: 'scanType'
 } as const
 
 export type IngredientScanLogScalarFieldEnum = (typeof IngredientScanLogScalarFieldEnum)[keyof typeof IngredientScanLogScalarFieldEnum]
@@ -3385,6 +3654,20 @@ export const NotificationScalarFieldEnum = {
 export type NotificationScalarFieldEnum = (typeof NotificationScalarFieldEnum)[keyof typeof NotificationScalarFieldEnum]
 
 
+export const CronJobConfigScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  cronExpression: 'cronExpression',
+  isEnabled: 'isEnabled',
+  description: 'description',
+  lastRunAt: 'lastRunAt',
+  lastRunStatus: 'lastRunStatus',
+  updatedAt: 'updatedAt'
+} as const
+
+export type CronJobConfigScalarFieldEnum = (typeof CronJobConfigScalarFieldEnum)[keyof typeof CronJobConfigScalarFieldEnum]
+
+
 export const SubscriptionPlanScalarFieldEnum = {
   id: 'id',
   name: 'name',
@@ -3408,13 +3691,67 @@ export const UserSubscriptionScalarFieldEnum = {
   startDate: 'startDate',
   endDate: 'endDate',
   status: 'status',
-  paymentRef: 'paymentRef',
+  pendingPlanId: 'pendingPlanId',
+  autoRenew: 'autoRenew',
+  cancelledAt: 'cancelledAt',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
   deletedAt: 'deletedAt'
 } as const
 
 export type UserSubscriptionScalarFieldEnum = (typeof UserSubscriptionScalarFieldEnum)[keyof typeof UserSubscriptionScalarFieldEnum]
+
+
+export const PaymentTransactionScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  planId: 'planId',
+  type: 'type',
+  amount: 'amount',
+  status: 'status',
+  paymentMethod: 'paymentMethod',
+  paymentRef: 'paymentRef',
+  payosOrderCode: 'payosOrderCode',
+  payosPaymentLinkId: 'payosPaymentLinkId',
+  payosTransactionRef: 'payosTransactionRef',
+  description: 'description',
+  checkoutUrl: 'checkoutUrl',
+  qrCode: 'qrCode',
+  expiredAt: 'expiredAt',
+  paidAt: 'paidAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type PaymentTransactionScalarFieldEnum = (typeof PaymentTransactionScalarFieldEnum)[keyof typeof PaymentTransactionScalarFieldEnum]
+
+
+export const FamilyGroupScalarFieldEnum = {
+  id: 'id',
+  ownerId: 'ownerId',
+  status: 'status',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  deletedAt: 'deletedAt'
+} as const
+
+export type FamilyGroupScalarFieldEnum = (typeof FamilyGroupScalarFieldEnum)[keyof typeof FamilyGroupScalarFieldEnum]
+
+
+export const FamilyMemberScalarFieldEnum = {
+  id: 'id',
+  familyGroupId: 'familyGroupId',
+  userId: 'userId',
+  invitedEmail: 'invitedEmail',
+  status: 'status',
+  inviteToken: 'inviteToken',
+  invitedAt: 'invitedAt',
+  joinedAt: 'joinedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type FamilyMemberScalarFieldEnum = (typeof FamilyMemberScalarFieldEnum)[keyof typeof FamilyMemberScalarFieldEnum]
 
 
 export const SortOrder = {
@@ -3457,7 +3794,8 @@ export type RoleOrderByRelevanceFieldEnum = (typeof RoleOrderByRelevanceFieldEnu
 
 export const UserOrderByRelevanceFieldEnum = {
   id: 'id',
-  phone: 'phone',
+  email: 'email',
+  passwordHash: 'passwordHash',
   googleId: 'googleId',
   googleEmail: 'googleEmail',
   name: 'name'
@@ -3466,13 +3804,13 @@ export const UserOrderByRelevanceFieldEnum = {
 export type UserOrderByRelevanceFieldEnum = (typeof UserOrderByRelevanceFieldEnum)[keyof typeof UserOrderByRelevanceFieldEnum]
 
 
-export const OtpVerificationOrderByRelevanceFieldEnum = {
+export const EmailOtpOrderByRelevanceFieldEnum = {
   id: 'id',
-  phone: 'phone',
+  email: 'email',
   otpHash: 'otpHash'
 } as const
 
-export type OtpVerificationOrderByRelevanceFieldEnum = (typeof OtpVerificationOrderByRelevanceFieldEnum)[keyof typeof OtpVerificationOrderByRelevanceFieldEnum]
+export type EmailOtpOrderByRelevanceFieldEnum = (typeof EmailOtpOrderByRelevanceFieldEnum)[keyof typeof EmailOtpOrderByRelevanceFieldEnum]
 
 
 export const UserProfileOrderByRelevanceFieldEnum = {
@@ -3489,9 +3827,9 @@ export type UserProfileOrderByRelevanceFieldEnum = (typeof UserProfileOrderByRel
 export const UserPreferenceOrderByRelevanceFieldEnum = {
   id: 'id',
   userId: 'userId',
-  primaryGoal: 'primaryGoal',
+  activityLevel: 'activityLevel',
   cookingFrequency: 'cookingFrequency',
-  activityLevel: 'activityLevel'
+  primaryGoal: 'primaryGoal'
 } as const
 
 export type UserPreferenceOrderByRelevanceFieldEnum = (typeof UserPreferenceOrderByRelevanceFieldEnum)[keyof typeof UserPreferenceOrderByRelevanceFieldEnum]
@@ -3606,10 +3944,10 @@ export const IngredientScanLogOrderByRelevanceFieldEnum = {
   id: 'id',
   userId: 'userId',
   imagePath: 'imagePath',
-  scanType: 'scanType',
-  rawText: 'rawText',
+  errorMessage: 'errorMessage',
   barcode: 'barcode',
-  errorMessage: 'errorMessage'
+  rawText: 'rawText',
+  scanType: 'scanType'
 } as const
 
 export type IngredientScanLogOrderByRelevanceFieldEnum = (typeof IngredientScanLogOrderByRelevanceFieldEnum)[keyof typeof IngredientScanLogOrderByRelevanceFieldEnum]
@@ -3783,6 +4121,16 @@ export const NotificationOrderByRelevanceFieldEnum = {
 export type NotificationOrderByRelevanceFieldEnum = (typeof NotificationOrderByRelevanceFieldEnum)[keyof typeof NotificationOrderByRelevanceFieldEnum]
 
 
+export const CronJobConfigOrderByRelevanceFieldEnum = {
+  name: 'name',
+  cronExpression: 'cronExpression',
+  description: 'description',
+  lastRunStatus: 'lastRunStatus'
+} as const
+
+export type CronJobConfigOrderByRelevanceFieldEnum = (typeof CronJobConfigOrderByRelevanceFieldEnum)[keyof typeof CronJobConfigOrderByRelevanceFieldEnum]
+
+
 export const SubscriptionPlanOrderByRelevanceFieldEnum = {
   name: 'name',
   displayName: 'displayName',
@@ -3795,11 +4143,48 @@ export type SubscriptionPlanOrderByRelevanceFieldEnum = (typeof SubscriptionPlan
 export const UserSubscriptionOrderByRelevanceFieldEnum = {
   id: 'id',
   userId: 'userId',
-  status: 'status',
-  paymentRef: 'paymentRef'
+  status: 'status'
 } as const
 
 export type UserSubscriptionOrderByRelevanceFieldEnum = (typeof UserSubscriptionOrderByRelevanceFieldEnum)[keyof typeof UserSubscriptionOrderByRelevanceFieldEnum]
+
+
+export const PaymentTransactionOrderByRelevanceFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  type: 'type',
+  status: 'status',
+  paymentMethod: 'paymentMethod',
+  paymentRef: 'paymentRef',
+  payosPaymentLinkId: 'payosPaymentLinkId',
+  payosTransactionRef: 'payosTransactionRef',
+  description: 'description',
+  checkoutUrl: 'checkoutUrl',
+  qrCode: 'qrCode'
+} as const
+
+export type PaymentTransactionOrderByRelevanceFieldEnum = (typeof PaymentTransactionOrderByRelevanceFieldEnum)[keyof typeof PaymentTransactionOrderByRelevanceFieldEnum]
+
+
+export const FamilyGroupOrderByRelevanceFieldEnum = {
+  id: 'id',
+  ownerId: 'ownerId',
+  status: 'status'
+} as const
+
+export type FamilyGroupOrderByRelevanceFieldEnum = (typeof FamilyGroupOrderByRelevanceFieldEnum)[keyof typeof FamilyGroupOrderByRelevanceFieldEnum]
+
+
+export const FamilyMemberOrderByRelevanceFieldEnum = {
+  id: 'id',
+  familyGroupId: 'familyGroupId',
+  userId: 'userId',
+  invitedEmail: 'invitedEmail',
+  status: 'status',
+  inviteToken: 'inviteToken'
+} as const
+
+export type FamilyMemberOrderByRelevanceFieldEnum = (typeof FamilyMemberOrderByRelevanceFieldEnum)[keyof typeof FamilyMemberOrderByRelevanceFieldEnum]
 
 
 
@@ -3858,9 +4243,9 @@ export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel,
 
 
 /**
- * Reference to a field of type 'OtpPurpose'
+ * Reference to a field of type 'EmailOtpPurpose'
  */
-export type EnumOtpPurposeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'OtpPurpose'>
+export type EnumEmailOtpPurposeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'EmailOtpPurpose'>
     
 
 
@@ -4066,6 +4451,13 @@ export type EnumEcommercePlatformFieldRefInput<$PrismaModel> = FieldRefInputType
 export type EnumNotificationTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'NotificationType'>
     
 
+
+/**
+ * Reference to a field of type 'BigInt'
+ */
+export type BigIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BigInt'>
+    
+
 /**
  * Batch Payload for updateMany & deleteMany & createMany
  */
@@ -4219,7 +4611,7 @@ export type PrismaClientOptions = PrismaClientOptionsWithAccelerateUrl | PrismaC
 export type GlobalOmitConfig = {
   role?: Prisma.RoleOmit
   user?: Prisma.UserOmit
-  otpVerification?: Prisma.OtpVerificationOmit
+  emailOtp?: Prisma.EmailOtpOmit
   userProfile?: Prisma.UserProfileOmit
   userPreference?: Prisma.UserPreferenceOmit
   refreshToken?: Prisma.RefreshTokenOmit
@@ -4251,8 +4643,12 @@ export type GlobalOmitConfig = {
   ingredientPurchaseLink?: Prisma.IngredientPurchaseLinkOmit
   adminActivityLog?: Prisma.AdminActivityLogOmit
   notification?: Prisma.NotificationOmit
+  cronJobConfig?: Prisma.CronJobConfigOmit
   subscriptionPlan?: Prisma.SubscriptionPlanOmit
   userSubscription?: Prisma.UserSubscriptionOmit
+  paymentTransaction?: Prisma.PaymentTransactionOmit
+  familyGroup?: Prisma.FamilyGroupOmit
+  familyMember?: Prisma.FamilyMemberOmit
 }
 
 /* Types for Logging */

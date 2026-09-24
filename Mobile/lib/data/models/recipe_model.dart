@@ -31,6 +31,8 @@ class RecipeModel {
   final String? friggyTip;
   final List<RecipeIngredientDetail>? detailedIngredients;
   final List<String>? steps;
+  final String? slotId;
+  final String? mealType;
 
   const RecipeModel({
     required this.id,
@@ -48,20 +50,27 @@ class RecipeModel {
     this.friggyTip,
     this.detailedIngredients,
     this.steps,
+    this.slotId,
+    this.mealType,
   });
 
   factory RecipeModel.fromJson(Map<String, dynamic> json) => RecipeModel.fromApi(json);
 
   factory RecipeModel.fromApi(Map<String, dynamic> json) {
-    final id = json['id']?.toString() ?? '';
-    final title = json['title']?.toString() ?? 'Công thức món ăn';
-    final matchScore = (json['matchScore'] as num?)?.toInt();
+    final Map<String, dynamic> r = (json['recipe'] is Map)
+        ? (json['recipe'] as Map<String, dynamic>)
+        : json;
+
+    final id = r['id']?.toString() ?? json['id']?.toString() ?? '';
+    final title = r['title']?.toString() ?? json['title']?.toString() ?? 'Công thức món ăn';
+    final matchScore = (r['matchScore'] as num?)?.toInt() ??
+        (json['summary']?['fridgeReadyPercent'] as num?)?.toInt();
     final matchTextStr = matchScore != null ? '$matchScore% phù hợp' : null;
-    final cookTime = json['cookTimeMinutes']?.toString() ?? '15';
-    final servings = json['servings']?.toString() ?? '2';
+    final cookTime = r['cookTimeMinutes']?.toString() ?? '15';
+    final servings = r['servings']?.toString() ?? json['servings']?.toString() ?? '2';
 
     String diffText = 'Dễ';
-    final diffLevel = json['difficultyLevel']?.toString().toLowerCase() ?? '';
+    final diffLevel = r['difficultyLevel']?.toString().toLowerCase() ?? '';
     if (diffLevel == 'very_easy' || diffLevel == 'very easy' || diffLevel == 'rất dễ') {
       diffText = 'Rất dễ';
     } else if (diffLevel == 'medium' || diffLevel == 'vừa') {
@@ -73,8 +82,8 @@ class RecipeModel {
     }
 
     final List<String> tagList = [];
-    if (json['tags'] is List) {
-      for (var t in (json['tags'] as List)) {
+    if (r['tags'] is List) {
+      for (var t in (r['tags'] as List)) {
         if (t is Map && t['name'] != null) {
           tagList.add('# ${t['name']}');
         } else if (t is Map && t['tag'] is Map && t['tag']['name'] != null) {
@@ -85,28 +94,39 @@ class RecipeModel {
       }
     }
     if (tagList.isEmpty) {
-      tagList.add('# Đồ sắp hết hạn');
       if (title.isNotEmpty) {
         tagList.add('# $title');
       }
     }
 
-    String imagePath = json['thumbnailPath']?.toString() ?? json['imagePath']?.toString() ?? '';
+    String imagePath = r['thumbnailPath']?.toString() ??
+        r['imagePath']?.toString() ??
+        json['thumbnailPath']?.toString() ??
+        '';
     if (imagePath == 'null') {
       imagePath = '';
     }
 
     List<RecipeIngredientDetail>? detailedIngredients;
-    if (json['ingredients'] is List) {
-      detailedIngredients = (json['ingredients'] as List).map((ing) {
+    final rawIngredients = r['ingredients'] ?? json['ingredients'];
+    if (rawIngredients is List) {
+      detailedIngredients = rawIngredients.map((ing) {
         final name = ing['ingredientName']?.toString() ??
             ing['ingredient']?['name']?.toString() ??
             ing['name']?.toString() ??
             '';
-        final qtyNum = ing['quantity']?.toString() ?? '';
-        final unit = ing['unit']?.toString() ?? '';
+        final qtyNum = ing['originalQuantity']?.toString() ??
+            ing['quantityNeeded']?.toString() ??
+            ing['quantity']?.toString() ??
+            '';
+        final unit = ing['originalUnit']?.toString() ??
+            ing['baseUnit']?.toString() ??
+            ing['unit']?.toString() ??
+            '';
         final qtyStr = '$qtyNum $unit'.trim();
-        final inFridge = ing['inFridge'] == true || ing['isAvailable'] == true;
+        final inFridge = ing['inFridge'] == true ||
+            ing['isAvailable'] == true ||
+            ing['fridgeStatus'] == 'have';
         return RecipeIngredientDetail(
           name: name,
           quantity: qtyStr.isNotEmpty ? qtyStr : 'Vừa đủ',
@@ -116,8 +136,9 @@ class RecipeModel {
     }
 
     List<String>? steps;
-    if (json['steps'] is List) {
-      steps = (json['steps'] as List).map((s) {
+    final rawSteps = r['steps'] ?? json['steps'];
+    if (rawSteps is List) {
+      steps = rawSteps.map((s) {
         if (s is Map) {
           return s['instruction']?.toString() ?? '';
         }
@@ -136,7 +157,7 @@ class RecipeModel {
       difficultyText: diffText,
       servingsText: '$servings người',
       tags: tagList,
-      friggyTip: json['description']?.toString(),
+      friggyTip: r['description']?.toString() ?? json['description']?.toString(),
       detailedIngredients: detailedIngredients,
       steps: steps,
     );
@@ -263,81 +284,118 @@ class RecipeRepository {
 
     // Helper to extract today's 3 recipes from meal plan detail JSON
     List<RecipeModel> extractTodayRecipes(Map<String, dynamic> detail) {
-      final dailyPlans = detail['dailyPlans'] as List<dynamic>? ?? [];
-      Map<String, dynamic>? todayPlan;
+      if (detail.isEmpty || detail['dailyPlans'] == null) return [];
+      final rawDailyPlans = detail['dailyPlans'];
+      if (rawDailyPlans is! List || rawDailyPlans.isEmpty) return [];
 
+      final dailyPlans = rawDailyPlans
+          .map((e) => e is Map ? Map<String, dynamic>.from(e) : <String, dynamic>{})
+          .where((m) => m.isNotEmpty)
+          .toList();
+      if (dailyPlans.isEmpty) return [];
+
+      Map<String, dynamic>? targetDailyPlan;
+
+      // 1. Try finding dailyPlan for todayWeekday with non-empty mealSlots
       for (final d in dailyPlans) {
-        final map = d as Map<String, dynamic>;
-        final rawDay = map['dayOfWeek'];
+        final rawDay = d['dayOfWeek'];
         final dOfWeek = rawDay is int
             ? rawDay
             : (int.tryParse(rawDay?.toString() ?? '') ?? 1);
-        if (dOfWeek == todayWeekday) {
-          todayPlan = map;
+        final slots = d['mealSlots'];
+        if (dOfWeek == todayWeekday && slots is List && slots.isNotEmpty) {
+          targetDailyPlan = d;
           break;
         }
       }
-      if (todayPlan == null && dailyPlans.isNotEmpty) {
-        todayPlan = dailyPlans.first as Map<String, dynamic>;
+
+      // 2. If no match for today, find ANY dailyPlan with non-empty mealSlots
+      if (targetDailyPlan == null) {
+        for (final d in dailyPlans) {
+          final slots = d['mealSlots'];
+          if (slots is List && slots.isNotEmpty) {
+            targetDailyPlan = d;
+            break;
+          }
+        }
       }
 
+      if (targetDailyPlan == null) return [];
+
+      final rawSlots = targetDailyPlan['mealSlots'];
+      if (rawSlots is! List || rawSlots.isEmpty) return [];
+
+      final sortedSlots = rawSlots
+          .map((e) => e is Map ? Map<String, dynamic>.from(e) : <String, dynamic>{})
+          .where((m) => m.isNotEmpty)
+          .toList();
+
+      sortedSlots.sort((a, b) {
+        final order = {'breakfast': 0, 'lunch': 1, 'dinner': 2, 'snack': 3};
+        final mA = a['mealType']?.toString().toLowerCase() ?? '';
+        final mB = b['mealType']?.toString().toLowerCase() ?? '';
+        return (order[mA] ?? 99).compareTo(order[mB] ?? 99);
+      });
+
       final List<RecipeModel> result = [];
-      if (todayPlan != null) {
-        final mealSlots = todayPlan['mealSlots'] as List<dynamic>? ?? [];
-        // Ensure breakfast, lunch, dinner order
-        final sortedSlots = List<Map<String, dynamic>>.from(
-          mealSlots.map((e) => Map<String, dynamic>.from(e as Map)),
-        );
-        sortedSlots.sort((a, b) {
-          final order = {'breakfast': 0, 'lunch': 1, 'dinner': 2, 'snack': 3};
-          final mA = a['mealType']?.toString().toLowerCase() ?? '';
-          final mB = b['mealType']?.toString().toLowerCase() ?? '';
-          return (order[mA] ?? 99).compareTo(order[mB] ?? 99);
-        });
+      for (final slotMap in sortedSlots) {
+        final recipeId = slotMap['recipeId']?.toString() ?? 'rec_default';
+        final recipeName = slotMap['recipeName']?.toString() ??
+            (slotMap['recipe'] is Map ? slotMap['recipe']['title']?.toString() : null) ??
+            'Món ngon AI';
+        final slotId = slotMap['id']?.toString();
+        final mealType = slotMap['mealType']?.toString().toLowerCase() ?? 'lunch';
 
-        for (final slotMap in sortedSlots) {
-          final recipeId = slotMap['recipeId']?.toString() ?? 'rec_default';
-          final recipeName = slotMap['recipeName']?.toString() ??
-              slotMap['recipe']?['title']?.toString() ??
-              'Món ngon AI';
-
-          result.add(RecipeModel(
-            id: recipeId,
-            title: recipeName,
-            englishTitle: recipeName,
-            imagePath: slotMap['recipe']?['thumbnailPath']?.toString() ?? '',
-            matchPercent: null,
-            matchText: null,
-            timeText: '20 phút',
-            difficultyText: 'Dễ',
-            servingsText: '${slotMap['servings'] ?? 1} người',
-            tags: ['# Thực đơn hôm nay', '# AI gợi ý'],
-            friggyTip: 'Gợi ý từ AI ưu tiên giải cứu thực phẩm trong tủ lạnh.',
-          ));
-        }
+        result.add(RecipeModel(
+          id: recipeId,
+          title: recipeName,
+          englishTitle: recipeName,
+          imagePath: (slotMap['recipe'] is Map ? slotMap['recipe']['thumbnailPath']?.toString() : null) ?? '',
+          matchPercent: null,
+          matchText: null,
+          timeText: '20 phút',
+          difficultyText: 'Dễ',
+          servingsText: '${slotMap['servings'] ?? 1} người',
+          tags: ['# Thực đơn hôm nay', '# AI gợi ý'],
+          friggyTip: 'Gợi ý từ AI ưu tiên giải cứu thực phẩm trong tủ lạnh.',
+          slotId: slotId,
+          mealType: mealType,
+        ));
       }
       return result;
     }
 
-    // 1. If not forceRegenerate, return today's existing 3 meals immediately if available
+    // 1. If not forceRegenerate, check if today's existing 3 meals are available in DB
     if (!forceRegenerate) {
       try {
         onProgress?.call('🔍 Đang kiểm tra thực đơn hôm nay...');
-        final existingPlans = await ApiService().getMealPlans();
-        if (existingPlans.isNotEmpty) {
-          existingPlans.sort((a, b) {
-            final dateA = DateTime.tryParse((a as Map)['createdAt']?.toString() ?? '') ?? DateTime(1970);
-            final dateB = DateTime.tryParse((b as Map)['createdAt']?.toString() ?? '') ?? DateTime(1970);
+        final rawPlans = await ApiService().getMealPlans();
+        if (rawPlans.isNotEmpty) {
+          final plansList = rawPlans
+              .map((e) => e is Map ? Map<String, dynamic>.from(e) : <String, dynamic>{})
+              .where((m) => m.isNotEmpty)
+              .toList();
+
+          // Sort plans descending by createdAt to check newest plans first
+          plansList.sort((a, b) {
+            final dateA = DateTime.tryParse(a['createdAt']?.toString() ?? '') ?? DateTime(1970);
+            final dateB = DateTime.tryParse(b['createdAt']?.toString() ?? '') ?? DateTime(1970);
             return dateB.compareTo(dateA);
           });
 
-          final planId = existingPlans.first['id']?.toString();
-          if (planId != null) {
-            final detail = await ApiService().getMealPlanDetail(planId);
-            final todayList = extractTodayRecipes(detail);
-            if (todayList.isNotEmpty) {
-              onProgress?.call('✨ Đã tải 3 bữa ăn hôm nay!');
-              return todayList;
+          for (final plan in plansList) {
+            final planId = plan['id']?.toString();
+            if (planId != null && planId.isNotEmpty) {
+              try {
+                final detail = await ApiService().getMealPlanDetail(planId);
+                final todayList = extractTodayRecipes(detail);
+                if (todayList.isNotEmpty) {
+                  onProgress?.call('✨ Đã tải 3 bữa ăn hôm nay!');
+                  return todayList;
+                }
+              } catch (err) {
+                debugPrint('[RecipeRepository] Error fetching plan detail for $planId: $err');
+              }
             }
           }
         }
@@ -346,7 +404,8 @@ class RecipeRepository {
       }
     }
 
-    // 2. Trigger AI generate-from-expiring (within 3 days, 1 day plan)
+    // 2. Today does NOT have a plan yet (or forceRegenerate = true):
+    //    Trigger AI generate-from-expiring (within 3 days, 1 day plan)
     String initialSlotKey = '';
     try {
       onProgress?.call('🤖 AI Friggy đang kết nối hệ thống...');
@@ -368,13 +427,13 @@ class RecipeRepository {
     }
 
     try {
-      onProgress?.call('🥬 AI đang quét nguyên liệu sắp hết hạn trong 3 ngày...');
+      onProgress?.call('🥬 AI đang quét nguyên liệu sắp hết hạn để lập thực đơn 1 ngày...');
       final res = await ApiService().generateFromExpiring(withinDays: 3, days: 1);
       final jobId = res['jobId'] as String?;
       debugPrint('[RecipeRepository] Triggered generateFromExpiring jobId: $jobId');
 
       Map<String, dynamic>? updatedPlanDetail;
-      const int maxAttempts = 30; // max ~45 seconds with 1.5s interval
+      const int maxAttempts = 15; // max ~22 seconds with 1.5s interval
 
       for (int i = 0; i < maxAttempts; i++) {
         await Future.delayed(const Duration(milliseconds: 1500));
@@ -383,36 +442,30 @@ class RecipeRepository {
           onProgress?.call('🍲 AI đang kết hợp công thức từ đồ sắp hết hạn...');
         } else if (i == 5) {
           onProgress?.call('🍳 AI đang chọn bữa ăn dinh dưỡng và tiết kiệm nhất...');
-        } else if (i == 10) {
-          onProgress?.call('🔍 AI đang tìm và lập thực đơn mới...');
-        } else if (i == 16) {
+        } else if (i == 9) {
           onProgress?.call('💾 AI đang lưu thực đơn gợi ý vào hệ thống...');
         }
 
         try {
-          if (targetPlanId == null) {
-            final currentPlans = await ApiService().getMealPlans();
-            if (currentPlans.isNotEmpty) {
-              currentPlans.sort((a, b) {
-                final dateA = DateTime.tryParse((a as Map)['createdAt']?.toString() ?? '') ?? DateTime(1970);
-                final dateB = DateTime.tryParse((b as Map)['createdAt']?.toString() ?? '') ?? DateTime(1970);
-                return dateB.compareTo(dateA);
-              });
-              targetPlanId = currentPlans.first['id']?.toString();
-            }
+          final currentPlans = await ApiService().getMealPlans();
+          if (currentPlans.isNotEmpty) {
+            currentPlans.sort((a, b) {
+              final dateA = DateTime.tryParse((a as Map)['createdAt']?.toString() ?? '') ?? DateTime(1970);
+              final dateB = DateTime.tryParse((b as Map)['createdAt']?.toString() ?? '') ?? DateTime(1970);
+              return dateB.compareTo(dateA);
+            });
+            targetPlanId = currentPlans.first['id']?.toString();
           }
 
           if (targetPlanId != null) {
             final detail = await ApiService().getMealPlanDetail(targetPlanId);
             final currentSlotKey = extractTodayRecipes(detail).map((r) => '${r.id}:${r.title}').join('|');
 
-            // If initialSlotKey was empty and now we have slots, OR slot IDs / recipes changed, OR after 6s polling:
             final bool hasChanged = currentSlotKey.isNotEmpty && (initialSlotKey.isEmpty || currentSlotKey != initialSlotKey);
-            final bool isMinTimePassed = i >= 4 && currentSlotKey.isNotEmpty;
+            final bool isMinTimePassed = i >= 3 && currentSlotKey.isNotEmpty;
 
             if (hasChanged || isMinTimePassed) {
-              onProgress?.call('✅ AI đã lập thực đơn hôm nay mới thành công!');
-              debugPrint('[RecipeRepository] AI completed! Updated today slots in plan $targetPlanId');
+              onProgress?.call('✅ AI đã lập thực đơn hôm nay thành công!');
               updatedPlanDetail = detail;
               break;
             }
@@ -441,16 +494,110 @@ class RecipeRepository {
       if (resultList.isNotEmpty) return resultList;
     } catch (e) {
       debugPrint('[RecipeRepository] Error fetching meal plan details: $e');
+      if (forceRegenerate) {
+        rethrow;
+      }
     }
 
-    return [];
+    // 3. Fallback to system recipes or default 3 recipes if AI generation fails or hits rate limit
+    try {
+      final recipes = await ApiService().getRecipes();
+      if (recipes.isNotEmpty) {
+        final List<RecipeModel> fallbackList = [];
+        for (final r in recipes.take(3)) {
+          final map = Map<String, dynamic>.from(r as Map);
+          fallbackList.add(RecipeModel(
+            id: map['id']?.toString() ?? '',
+            title: map['title']?.toString() ?? 'Món ngon',
+            englishTitle: map['title']?.toString() ?? 'Món ngon',
+            imagePath: map['thumbnailPath']?.toString() ?? '',
+            timeText: '${map['cookTimeMinutes'] ?? 20} phút',
+            difficultyText: map['difficultyLevel']?.toString() ?? 'Dễ',
+            servingsText: '${map['servings'] ?? 1} người',
+            tags: ['# Thực đơn hôm nay', '# AI gợi ý'],
+            friggyTip: 'Công thức gợi ý từ thực đơn Friggy.',
+          ));
+        }
+        if (fallbackList.isNotEmpty) return fallbackList;
+      }
+    } catch (_) {}
+
+    return const [
+      RecipeModel(
+        id: 'rec_phobo',
+        title: 'Phở bò Hà Nội',
+        englishTitle: 'Hanoi Beef Pho',
+        imagePath: 'assets/images/recipe_pho.png',
+        timeText: '30 phút',
+        difficultyText: 'Trung bình',
+        servingsText: '2 người',
+        tags: ['# Thực đơn hôm nay', '# Món Việt'],
+        friggyTip: 'Món ăn truyền thống thơm ngon đậm vị.',
+        mealType: 'breakfast',
+      ),
+      RecipeModel(
+        id: 'rec_comrang',
+        title: 'Cơm rang dưa bò',
+        englishTitle: 'Fried Rice with Beef and Pickles',
+        imagePath: 'assets/images/recipe_fried_rice.png',
+        timeText: '20 phút',
+        difficultyText: 'Dễ',
+        servingsText: '2 người',
+        tags: ['# Thực đơn hôm nay', '# Bữa trưa'],
+        friggyTip: 'Dưa chua giòn kết hợp thịt bò mềm mọng.',
+        mealType: 'lunch',
+      ),
+      RecipeModel(
+        id: 'rec_lauthai',
+        title: 'Lẩu thái hải sản',
+        englishTitle: 'Thai Seafood Hotpot',
+        imagePath: 'assets/images/recipe_tomato_egg.png',
+        timeText: '25 phút',
+        difficultyText: 'Dễ',
+        servingsText: '3 người',
+        tags: ['# Thực đơn hôm nay', '# Bữa tối'],
+        friggyTip: 'Nước dùng chua cay đậm đà ấm áp.',
+        mealType: 'dinner',
+      ),
+      ];
   }
 
-  /// Fetch full detail of a recipe
-  static Future<RecipeModel?> fetchRecipeDetail(String id) async {
+  /// Fetch full detail of a recipe (either by recipeId or slotId)
+  static Future<RecipeModel?> fetchRecipeDetail(String id, {String? slotId}) async {
     try {
-      final json = await ApiService().getRecipeDetail(id);
-      return RecipeModel.fromJson(json);
+      // 1. Try slot detail endpoint first if slotId is available
+      if (slotId != null && slotId.isNotEmpty && !slotId.startsWith('rec_')) {
+        try {
+          final slotJson = await ApiService().getSlotDetail(slotId);
+          if (slotJson['recipe'] != null) {
+            return RecipeModel.fromApi(slotJson);
+          }
+        } catch (e) {
+          debugPrint('[RecipeRepository] Notice getSlotDetail($slotId) failed: $e');
+        }
+      }
+
+      // 2. Try getRecipeDetail if id is valid recipe ID
+      if (id.isNotEmpty && !id.startsWith('rec_')) {
+        try {
+          final json = await ApiService().getRecipeDetail(id);
+          return RecipeModel.fromApi(json);
+        } catch (e) {
+          debugPrint('[RecipeRepository] Notice getRecipeDetail($id) failed: $e');
+        }
+      }
+
+      // 3. Fallback: try id as slotId
+      if (id.isNotEmpty && !id.startsWith('rec_')) {
+        try {
+          final slotJson = await ApiService().getSlotDetail(id);
+          if (slotJson['recipe'] != null) {
+            return RecipeModel.fromApi(slotJson);
+          }
+        } catch (_) {}
+      }
+
+      return null;
     } catch (e) {
       debugPrint('[RecipeRepository] Error fetching recipe detail: $e');
       return null;

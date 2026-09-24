@@ -277,6 +277,16 @@ class _AiChatScreenState extends State<AiChatScreen> {
             _pollTimer?.cancel();
           } else if (eventType == 'error') {
             debugPrint('[AiChatScreen] SSE stream error event: $data');
+            setState(() {
+              final errMsg = data?.toString().trim();
+              assistantMsg.content = (errMsg != null && errMsg.isNotEmpty)
+                  ? errMsg
+                  : 'Có lỗi xảy ra trong quá trình xử lý của AI.';
+              assistantMsg.isStreaming = false;
+              _isGenerating = false;
+            });
+            _streamSubscription?.cancel();
+            _pollTimer?.cancel();
           }
         },
         onError: (err) {

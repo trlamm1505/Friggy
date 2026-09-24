@@ -45,7 +45,9 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
           if (me.name != null && me.name!.isNotEmpty) {
             _nameController.text = me.name!;
           }
-          if (me.googleEmail != null && me.googleEmail!.isNotEmpty) {
+          if (me.email != null && me.email!.isNotEmpty) {
+            _emailController.text = me.email!;
+          } else if (me.googleEmail != null && me.googleEmail!.isNotEmpty) {
             _emailController.text = me.googleEmail!;
           } else if (me.phone != null && me.phone!.isNotEmpty) {
             _emailController.text = me.phone!;
