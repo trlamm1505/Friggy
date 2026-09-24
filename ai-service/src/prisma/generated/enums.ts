@@ -28,19 +28,19 @@ export type UserStatus = (typeof UserStatus)[keyof typeof UserStatus]
 
 export const AuthProvider = {
   google: 'google',
-  phone: 'phone'
+  email: 'email'
 } as const
 
 export type AuthProvider = (typeof AuthProvider)[keyof typeof AuthProvider]
 
 
-export const OtpPurpose = {
-  login: 'login',
+export const EmailOtpPurpose = {
   register: 'register',
-  change_phone: 'change_phone'
+  reset_password: 'reset_password',
+  change_email: 'change_email'
 } as const
 
-export type OtpPurpose = (typeof OtpPurpose)[keyof typeof OtpPurpose]
+export type EmailOtpPurpose = (typeof EmailOtpPurpose)[keyof typeof EmailOtpPurpose]
 
 
 export const Gender = {
@@ -291,7 +291,13 @@ export const NotificationType = {
   budget_alert: 'budget_alert',
   plan_ready: 'plan_ready',
   system: 'system',
-  promo: 'promo'
+  promo: 'promo',
+  subscription_reminder: 'subscription_reminder',
+  family_invite: 'family_invite',
+  family_joined: 'family_joined',
+  family_rejected: 'family_rejected',
+  family_removed: 'family_removed',
+  family_dissolved: 'family_dissolved'
 } as const
 
 export type NotificationType = (typeof NotificationType)[keyof typeof NotificationType]

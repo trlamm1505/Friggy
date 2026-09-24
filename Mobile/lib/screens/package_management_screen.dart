@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../data/models/user_models.dart';
@@ -24,6 +26,33 @@ class _PackageManagementScreenState extends State<PackageManagementScreen> {
   void initState() {
     super.initState();
     _fetchSubscriptionData();
+  }
+
+  Future<SubscribeResponseModel?> _checkPendingPaymentTransaction() async {
+    try {
+      final historyRes = await _apiService.getMyPaymentTransactions(page: 1, limit: 1);
+      final dataList = historyRes['data'] as List<dynamic>? ?? [];
+
+      if (dataList.isNotEmpty) {
+        final item = dataList.first;
+        if (item is Map<String, dynamic> && item['status'] == 'pending') {
+          final paymentRef = item['paymentRef'] as String?;
+          if (paymentRef != null && paymentRef.isNotEmpty) {
+            final detail = await _apiService.checkPaymentTransaction(paymentRef);
+            final status = detail['status'] as String?;
+            if (status == 'pending') {
+              final model = SubscribeResponseModel.fromJson(detail);
+              if (model.qrCodeUrl.isNotEmpty) {
+                return model;
+              }
+            }
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('[PackageManagementScreen] Error checking pending transaction: $e');
+    }
+    return null;
   }
 
   Future<void> _fetchSubscriptionData() async {
@@ -221,6 +250,24 @@ class _PackageManagementScreenState extends State<PackageManagementScreen> {
   Future<void> _handleSubscribe(int planId) async {
     setState(() => _isLoading = true);
     try {
+      // 1. Kiểm tra xem có giao dịch đang chờ thanh toán nào không
+      final pending = await _checkPendingPaymentTransaction();
+      if (pending != null) {
+        if (mounted) {
+          setState(() => _isLoading = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('⚡ Đã khôi phục mã QR thanh toán đang chờ xử lý...'),
+              backgroundColor: Color(0xFF2E7D32),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+          _showQrPaymentModal(pending);
+        }
+        return;
+      }
+
+      // 2. Tạo giao dịch thanh toán mới nếu không có giao dịch pending
       final res = await _apiService.subscribePlan(planId);
       final subscribeData = SubscribeResponseModel.fromJson(res);
       if (mounted) {
@@ -229,6 +276,22 @@ class _PackageManagementScreenState extends State<PackageManagementScreen> {
       }
     } catch (e) {
       debugPrint('[PackageManagementScreen] Error subscribing plan: $e');
+
+      // 3. Nếu gặp lỗi do đã có giao dịch, tự động tra cứu và hiển thị mã QR
+      final pending = await _checkPendingPaymentTransaction();
+      if (pending != null && mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('⚡ Đã khôi phục mã QR thanh toán đang chờ xử lý...'),
+            backgroundColor: Color(0xFF2E7D32),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        _showQrPaymentModal(pending);
+        return;
+      }
+
       if (mounted) {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
@@ -246,241 +309,302 @@ class _PackageManagementScreenState extends State<PackageManagementScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final loc = AppLocalizations.of(context);
     final isEn = loc?.locale.languageCode == 'en';
-    bool isSimulating = false;
+    bool isChecking = false;
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) {
+        Timer? pollTimer;
+
+        // Auto-poll status every 3s via transaction status & subscription
+        pollTimer = Timer.periodic(const Duration(seconds: 3), (timer) async {
+          try {
+            final tx = await _apiService.checkPaymentTransaction(data.paymentRef);
+            final txStatus = tx['status'] as String?;
+
+            if (txStatus == 'paid') {
+              timer.cancel();
+              if (context.mounted) {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('🎉 Kích hoạt thành công gói dịch vụ!'),
+                    backgroundColor: Color(0xFF2E7D32),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+                _fetchSubscriptionData();
+              }
+              return;
+            }
+
+            final subJson = await _apiService.getMySubscription();
+            final sub = UserSubscriptionModel.fromJson(subJson);
+            if (sub.status == 'active') {
+              timer.cancel();
+              if (context.mounted) {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('🎉 Kích hoạt thành công ${sub.plan.displayName}!'),
+                    backgroundColor: const Color(0xFF2E7D32),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+                _fetchSubscriptionData();
+              }
+            }
+          } catch (_) {}
+        });
+
         return StatefulBuilder(
           builder: (context, setModalState) {
-            return Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF19271E) : Colors.white,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-              ),
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 40,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF2E4D36) : const Color(0xFFE2E8E4),
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                    const SizedBox(height: 18),
-
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.qr_code_2_rounded, color: Color(0xFF4CAF50), size: 28),
-                        const SizedBox(width: 8),
-                        Text(
-                          isEn ? 'Payment QR Code' : 'Mã QR Thanh Toán',
-                          style: GoogleFonts.outfit(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                            color: isDark ? Colors.white : const Color(0xFF006428),
-                          ),
+            return PopScope(
+              onPopInvokedWithResult: (didPop, result) {
+                if (didPop) {
+                  pollTimer?.cancel();
+                }
+              },
+              child: Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF19271E) : Colors.white,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+                ),
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: isDark ? const Color(0xFF2E4D36) : const Color(0xFFE2E8E4),
+                          borderRadius: BorderRadius.circular(2),
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-
-                    Text(
-                      isEn
-                          ? 'Scan the QR code below via Banking / MoMo / VNPay to subscribe Individual plan'
-                          : 'Quét mã QR bên dưới bằng Ngân hàng / MoMo / VNPay để đăng ký gói Individual',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 13.5,
-                        color: isDark ? const Color(0xFFD0D7D1) : const Color(0xFF6B786F),
                       ),
-                    ),
-                    const SizedBox(height: 16),
+                      const SizedBox(height: 18),
 
-                    // QR Code Image Container
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.1),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.qr_code_2_rounded, color: Color(0xFF4CAF50), size: 28),
+                          const SizedBox(width: 8),
+                          Text(
+                            isEn ? 'Payment QR Code' : 'Mã QR Thanh Toán PayOS',
+                            style: GoogleFonts.outfit(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                              color: isDark ? Colors.white : const Color(0xFF006428),
+                            ),
                           ),
                         ],
                       ),
-                      child: Image.network(
-                        data.qrCodeUrl,
-                        width: 200,
-                        height: 200,
-                        fit: BoxFit.contain,
-                        loadingBuilder: (context, child, loadingProgress) {
-                          if (loadingProgress == null) return child;
-                          return const SizedBox(
-                            width: 200,
-                            height: 200,
-                            child: Center(child: CircularProgressIndicator()),
-                          );
-                        },
-                        errorBuilder: (context, error, stackTrace) => const Icon(
-                          Icons.qr_code_rounded,
-                          size: 140,
-                          color: Colors.grey,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 18),
+                      const SizedBox(height: 12),
 
-                    // Info Rows: Amount & Payment Ref
-                    Container(
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF233629) : const Color(0xFFF1F8E9),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: isDark ? const Color(0xFF2E4D36) : const Color(0xFFA5E69C),
+                      Text(
+                        isEn
+                            ? 'Scan the VietQR code below via Banking / MoMo / VNPay to complete payment'
+                            : 'Quét mã QR bên dưới bằng Ngân hàng / MoMo / VNPay để hoàn tất thanh toán',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 13.5,
+                          color: isDark ? const Color(0xFFD0D7D1) : const Color(0xFF6B786F),
                         ),
                       ),
-                      child: Column(
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                isEn ? 'Amount:' : 'Số tiền thanh toán:',
-                                style: GoogleFonts.plusJakartaSans(
-                                  fontSize: 13.5,
-                                  fontWeight: FontWeight.w600,
-                                  color: isDark ? const Color(0xFFD0D7D1) : const Color(0xFF616161),
-                                ),
-                              ),
-                              Text(
-                                _formatPrice(data.amount),
-                                style: GoogleFonts.outfit(
-                                  fontSize: 17,
-                                  fontWeight: FontWeight.w900,
-                                  color: isDark ? const Color(0xFF81C784) : const Color(0xFF006428),
-                                ),
-                              ),
-                            ],
+                      const SizedBox(height: 16),
+
+                      // QR Code Image Container
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.1),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: _buildQrCodeWidget(data.qrCodeUrl),
+                      ),
+                      const SizedBox(height: 18),
+
+                      // Info Rows: Amount & Payment Ref
+                      Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: isDark ? const Color(0xFF233629) : const Color(0xFFF1F8E9),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: isDark ? const Color(0xFF2E4D36) : const Color(0xFFA5E69C),
                           ),
-                          const SizedBox(height: 6),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                isEn ? 'Payment Ref:' : 'Mã tham chiếu:',
-                                style: GoogleFonts.plusJakartaSans(
-                                  fontSize: 13.5,
-                                  fontWeight: FontWeight.w600,
-                                  color: isDark ? const Color(0xFFD0D7D1) : const Color(0xFF616161),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Flexible(
-                                child: Text(
-                                  data.paymentRef,
-                                  overflow: TextOverflow.ellipsis,
+                        ),
+                        child: Column(
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  isEn ? 'Amount:' : 'Số tiền thanh toán:',
                                   style: GoogleFonts.plusJakartaSans(
                                     fontSize: 13.5,
-                                    fontWeight: FontWeight.w800,
-                                    color: isDark ? Colors.white : const Color(0xFF19221C),
+                                    fontWeight: FontWeight.w600,
+                                    color: isDark ? const Color(0xFFD0D7D1) : const Color(0xFF616161),
                                   ),
                                 ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-
-                    // Mock Webhook Simulation Button
-                    SizedBox(
-                      width: double.infinity,
-                      height: 50,
-                      child: ElevatedButton(
-                        onPressed: isSimulating
-                            ? null
-                            : () async {
-                                setModalState(() => isSimulating = true);
-                                try {
-                                  await _apiService.simulatePaymentWebhook(
+                                Text(
+                                  _formatPrice(data.amount),
+                                  style: GoogleFonts.outfit(
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.w900,
+                                    color: isDark ? const Color(0xFF81C784) : const Color(0xFF006428),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 6),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  isEn ? 'Payment Ref:' : 'Mã tham chiếu:',
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 13.5,
+                                    fontWeight: FontWeight.w600,
+                                    color: isDark ? const Color(0xFFD0D7D1) : const Color(0xFF616161),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Flexible(
+                                  child: Text(
                                     data.paymentRef,
-                                    isSuccess: true,
-                                  );
-
-                                  if (context.mounted) {
-                                    setModalState(() => isSimulating = false);
-                                    Navigator.pop(context); // Close modal
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text('Kích hoạt thành công gói Individual!'),
-                                        backgroundColor: Color(0xFF2E7D32),
-                                        behavior: SnackBarBehavior.floating,
-                                      ),
-                                    );
-                                    _fetchSubscriptionData(); // Refresh UI
-                                  }
-                                } catch (e) {
-                                  if (context.mounted) {
-                                    setModalState(() => isSimulating = false);
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text('Xác nhận thanh toán thất bại: $e'),
-                                        backgroundColor: const Color(0xFFE53935),
-                                        behavior: SnackBarBehavior.floating,
-                                      ),
-                                    );
-                                  }
-                                }
-                              },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF008435),
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(24),
-                          ),
-                        ),
-                        child: isSimulating
-                            ? const SizedBox(
-                                width: 22,
-                                height: 22,
-                                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                              )
-                            : Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  const Icon(Icons.check_circle_rounded, size: 20),
-                                  const SizedBox(width: 6),
-                                  Flexible(
-                                    child: Text(
-                                      isEn
-                                          ? 'Simulate Payment (Webhook)'
-                                          : 'Giả lập Thanh toán (Webhook)',
-                                      overflow: TextOverflow.ellipsis,
-                                      maxLines: 1,
-                                      style: GoogleFonts.plusJakartaSans(
-                                        fontSize: 13.5,
-                                        fontWeight: FontWeight.w800,
-                                      ),
+                                    overflow: TextOverflow.ellipsis,
+                                    style: GoogleFonts.plusJakartaSans(
+                                      fontSize: 13.5,
+                                      fontWeight: FontWeight.w800,
+                                      color: isDark ? Colors.white : const Color(0xFF19221C),
                                     ),
                                   ),
-                                ],
-                              ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 12),
-                  ],
+                      const SizedBox(height: 20),
+
+                      // Real Payment Check Button
+                      SizedBox(
+                        width: double.infinity,
+                        height: 50,
+                        child: ElevatedButton(
+                          onPressed: isChecking
+                              ? null
+                              : () async {
+                                  setModalState(() => isChecking = true);
+                                  try {
+                                    final tx = await _apiService.checkPaymentTransaction(data.paymentRef);
+                                    final txStatus = tx['status'] as String?;
+
+                                    if (txStatus == 'paid') {
+                                      pollTimer?.cancel();
+                                      if (context.mounted) {
+                                        setModalState(() => isChecking = false);
+                                        Navigator.pop(context);
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(
+                                            content: Text('🎉 Kích hoạt thành công gói dịch vụ!'),
+                                            backgroundColor: Color(0xFF2E7D32),
+                                            behavior: SnackBarBehavior.floating,
+                                          ),
+                                        );
+                                        _fetchSubscriptionData();
+                                      }
+                                      return;
+                                    }
+
+                                    final subJson = await _apiService.getMySubscription();
+                                    final sub = UserSubscriptionModel.fromJson(subJson);
+
+                                    if (context.mounted) {
+                                      setModalState(() => isChecking = false);
+                                      if (sub.status == 'active') {
+                                        pollTimer?.cancel();
+                                        Navigator.pop(context);
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            content: Text('🎉 Kích hoạt thành công ${sub.plan.displayName}!'),
+                                            backgroundColor: const Color(0xFF2E7D32),
+                                            behavior: SnackBarBehavior.floating,
+                                          ),
+                                        );
+                                        _fetchSubscriptionData();
+                                      } else {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(
+                                            content: Text('Hệ thống chưa nhận được thanh toán. Vui lòng quét mã QR bằng App Ngân hàng và thử lại!'),
+                                            backgroundColor: Color(0xFFE65100),
+                                            behavior: SnackBarBehavior.floating,
+                                          ),
+                                        );
+                                      }
+                                    }
+                                  } catch (e) {
+                                    if (context.mounted) {
+                                      setModalState(() => isChecking = false);
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text('Không thể kiểm tra: $e'),
+                                          backgroundColor: const Color(0xFFE53935),
+                                          behavior: SnackBarBehavior.floating,
+                                        ),
+                                      );
+                                    }
+                                  }
+                                },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF008435),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(24),
+                            ),
+                          ),
+                          child: isChecking
+                              ? const SizedBox(
+                                  width: 22,
+                                  height: 22,
+                                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                )
+                              : Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const Icon(Icons.published_with_changes_rounded, size: 20),
+                                    const SizedBox(width: 6),
+                                    Flexible(
+                                      child: Text(
+                                        isEn
+                                            ? 'I Have Paid (Check Status)'
+                                            : 'Tôi đã thanh toán (Kiểm tra ngay)',
+                                        overflow: TextOverflow.ellipsis,
+                                        maxLines: 1,
+                                        style: GoogleFonts.plusJakartaSans(
+                                          fontSize: 13.5,
+                                          fontWeight: FontWeight.w800,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                  ),
                 ),
               ),
             );
@@ -493,6 +617,22 @@ class _PackageManagementScreenState extends State<PackageManagementScreen> {
   Future<void> _handleRenew() async {
     setState(() => _isLoading = true);
     try {
+      final pending = await _checkPendingPaymentTransaction();
+      if (pending != null) {
+        if (mounted) {
+          setState(() => _isLoading = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('⚡ Đã khôi phục mã QR gia hạn đang chờ xử lý...'),
+              backgroundColor: Color(0xFF2E7D32),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+          _showQrPaymentModal(pending);
+        }
+        return;
+      }
+
       final res = await _apiService.renewSubscription();
       final subscribeData = SubscribeResponseModel.fromJson(res);
       if (mounted) {
@@ -501,6 +641,21 @@ class _PackageManagementScreenState extends State<PackageManagementScreen> {
       }
     } catch (e) {
       debugPrint('[PackageManagementScreen] Error renewing plan: $e');
+
+      final pending = await _checkPendingPaymentTransaction();
+      if (pending != null && mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('⚡ Đã khôi phục mã QR gia hạn đang chờ xử lý...'),
+            backgroundColor: Color(0xFF2E7D32),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        _showQrPaymentModal(pending);
+        return;
+      }
+
       if (mounted) {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
@@ -572,6 +727,82 @@ class _PackageManagementScreenState extends State<PackageManagementScreen> {
               child: Text(isEn ? 'Confirm Cancel' : 'Xác nhận hủy gia hạn'),
             ),
           ],
+        );
+      },
+    );
+  }
+
+  Widget _buildQrCodeWidget(String qrCodeStr) {
+    final cleanStr = qrCodeStr.trim();
+    if (cleanStr.isEmpty) {
+      return const Icon(
+        Icons.qr_code_rounded,
+        size: 140,
+        color: Colors.grey,
+      );
+    }
+
+    if (cleanStr.startsWith('data:image') || cleanStr.contains('base64,')) {
+      try {
+        final base64Clean = cleanStr.contains('base64,')
+            ? cleanStr.split('base64,').last
+            : cleanStr;
+        final bytes = base64Decode(base64Clean);
+        return Image.memory(
+          bytes,
+          width: 200,
+          height: 200,
+          fit: BoxFit.contain,
+          errorBuilder: (context, error, stackTrace) => const Icon(
+            Icons.qr_code_rounded,
+            size: 140,
+            color: Colors.grey,
+          ),
+        );
+      } catch (e) {
+        debugPrint('Base64 QR Decode error: $e');
+      }
+    }
+
+    final String imageUrl =
+        (cleanStr.startsWith('http://') || cleanStr.startsWith('https://'))
+            ? cleanStr
+            : 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${Uri.encodeComponent(cleanStr)}';
+
+    return Image.network(
+      imageUrl,
+      width: 200,
+      height: 200,
+      fit: BoxFit.contain,
+      loadingBuilder: (context, child, loadingProgress) {
+        if (loadingProgress == null) return child;
+        return const SizedBox(
+          width: 200,
+          height: 200,
+          child: Center(child: CircularProgressIndicator()),
+        );
+      },
+      errorBuilder: (context, error, stackTrace) {
+        if (!cleanStr.startsWith('http://') &&
+            !cleanStr.startsWith('https://')) {
+          final fallbackUrl =
+              'https://quickchart.io/qr?text=${Uri.encodeComponent(cleanStr)}&size=300';
+          return Image.network(
+            fallbackUrl,
+            width: 200,
+            height: 200,
+            fit: BoxFit.contain,
+            errorBuilder: (context, error, stackTrace) => const Icon(
+              Icons.qr_code_rounded,
+              size: 140,
+              color: Colors.grey,
+            ),
+          );
+        }
+        return const Icon(
+          Icons.qr_code_rounded,
+          size: 140,
+          color: Colors.grey,
         );
       },
     );
@@ -745,9 +976,9 @@ class _PackageManagementScreenState extends State<PackageManagementScreen> {
     final isEn = loc?.locale.languageCode == 'en';
 
     final currentPlan = _userSub?.plan;
-    final planNameDisplay = currentPlan?.displayName ?? (isEn ? 'Individual Plan' : 'Gói Individual');
-    final isIndividual = currentPlan?.name.toLowerCase() == 'individual';
-    final priceDisplay = currentPlan != null ? _formatPrice(currentPlan.priceVnd) : '25.000 VNĐ';
+    final planNameDisplay = currentPlan?.displayName ?? (isEn ? 'Free Plan' : 'Gói Miễn Phí');
+    final isPaidPlan = currentPlan != null && currentPlan.priceVnd > 0;
+    final priceDisplay = currentPlan != null ? _formatPrice(currentPlan.priceVnd) : '0 VNĐ';
 
     final startDateDisplay = _formatDateString(_userSub?.startDate);
     final endDateDisplay = _formatDateString(_userSub?.endDate);
@@ -926,7 +1157,7 @@ class _PackageManagementScreenState extends State<PackageManagementScreen> {
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    isIndividual
+                                    isPaidPlan
                                         ? (isEn ? 'Expires on $endDateDisplay' : 'Hết hạn vào $endDateDisplay')
                                         : (isEn ? 'Free Plan (Forever)' : 'Gói Miễn Phí (Mãi mãi)'),
                                     style: GoogleFonts.plusJakartaSans(
@@ -1050,7 +1281,7 @@ class _PackageManagementScreenState extends State<PackageManagementScreen> {
                                   ),
                                 ],
                               ),
-                              if (isIndividual || (currentPlan != null && currentPlan.priceVnd > 0)) ...[
+                              if (isPaidPlan) ...[
                                 Divider(
                                     height: 22,
                                     color: isDark
@@ -1103,14 +1334,13 @@ class _PackageManagementScreenState extends State<PackageManagementScreen> {
                                           ),
                                         ),
                                       ),
-                                     ],
-                                   ],
-                                 ),
-                               ],
-                             ],
-                           ),
-                         ),
-
+                                    ],
+                                  ],
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
                         const SizedBox(height: 24),
 
                         // 3. Feature Perks Cards Grid

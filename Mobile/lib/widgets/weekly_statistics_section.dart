@@ -18,16 +18,20 @@ class WeeklyStatisticsSection extends StatefulWidget {
 
   @override
   State<WeeklyStatisticsSection> createState() =>
-      _WeeklyStatisticsSectionState();
+      WeeklyStatisticsSectionState();
 }
 
-class _WeeklyStatisticsSectionState extends State<WeeklyStatisticsSection> {
+class WeeklyStatisticsSectionState extends State<WeeklyStatisticsSection> {
   final ApiService _apiService = ApiService();
   FridgeStatsModel? _stats;
 
   @override
   void initState() {
     super.initState();
+    _loadStats();
+  }
+
+  void reload() {
     _loadStats();
   }
 

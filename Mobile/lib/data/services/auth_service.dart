@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -425,6 +426,66 @@ class AuthService {
       }
       return false;
     }
+  }
+
+  /// Checks if stored session/refreshToken is valid by attempting token refresh
+  Future<bool> checkAndRefreshToken() async {
+    try {
+      final storage = await StorageService.getInstance();
+      final refreshToken = storage.getRefreshToken();
+      if (refreshToken == null || refreshToken.isEmpty) {
+        debugPrint('[AuthService] No refreshToken stored.');
+        return false;
+      }
+
+      final dio = Dio(BaseOptions(
+        baseUrl: AppConstants.baseUrl,
+        connectTimeout: AppConstants.connectTimeout,
+        receiveTimeout: AppConstants.receiveTimeout,
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+      ));
+
+      final response = await dio.post(
+        AppConstants.epAuthRefreshToken,
+        data: {'refreshToken': refreshToken},
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final data = response.data;
+        Map<String, dynamic>? payload;
+        if (data is Map<String, dynamic>) {
+          if (data.containsKey('data') && data['data'] is Map<String, dynamic>) {
+            payload = data['data'] as Map<String, dynamic>;
+          } else {
+            payload = data;
+          }
+        }
+
+        if (payload != null) {
+          final newAccessToken = payload['accessToken'] as String?;
+          final newRefreshToken = payload['refreshToken'] as String?;
+          final user = payload['user'] as Map<String, dynamic>?;
+
+          if (newAccessToken != null && newAccessToken.isNotEmpty) {
+            await storage.saveAccessToken(newAccessToken);
+            if (newRefreshToken != null && newRefreshToken.isNotEmpty) {
+              await storage.saveRefreshToken(newRefreshToken);
+            }
+            if (user != null) {
+              await storage.saveUserData(jsonEncode(user));
+            }
+            debugPrint('[AuthService] Auto-login refresh token succeeded!');
+            return true;
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('[AuthService] Auto-login checkAndRefreshToken error: $e');
+    }
+    return false;
   }
 
   /// Handles full Logout workflow:

@@ -35,7 +35,7 @@ const DEFAULT_WEEKLY_LIMIT = 2;
 export class RateLimitService {
   private readonly logger = new Logger(RateLimitService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   // ─────────────────────────────────────────────────────────
   // Kiểm tra hạn mức trước khi cho phép dùng AI
@@ -54,7 +54,7 @@ export class RateLimitService {
 
     // Giá trị -1 nghĩa là không giới hạn (gói Individual)
     if (weeklyLimit === -1) {
-      this.logger.debug(`✅ Người dùng ${userId} dùng gói Individual — không giới hạn AI`);
+      this.logger.log(`✅ Người dùng ${userId} dùng gói Individual — không giới hạn AI`);
       return;
     }
 
@@ -67,7 +67,7 @@ export class RateLimitService {
       },
     });
 
-    this.logger.debug(
+    this.logger.log(
       `📊 Kiểm tra hạn mức: userId=${userId} | tính năng=${featureType} | đã dùng=${usedCount}/${weeklyLimit}`,
     );
 
@@ -117,7 +117,7 @@ export class RateLimitService {
           tokensUsed,
         },
       });
-      this.logger.debug(
+      this.logger.log(
         `📝 Đã ghi nhận lượt dùng AI: userId=${userId} | tính năng=${featureType} | token=${tokensUsed}`,
       );
     } catch (err) {
@@ -182,10 +182,16 @@ export class RateLimitService {
         include: { plan: true },
       });
       if (subscription) return subscription.plan.aiUsagePerWeek;
-    } catch {
-      // Lỗi kết nối DB → dùng giới hạn mặc định của gói Free
+
+      const freePlan = await this.prisma.subscriptionPlan.findFirst({
+        where: { OR: [{ name: 'free' }, { priceVnd: 0 }], isActive: true, deletedAt: null },
+        select: { aiUsagePerWeek: true },
+      });
+      if (freePlan) return freePlan.aiUsagePerWeek;
+    } catch (err) {
+      this.logger.warn(`Lỗi khi lấy weekly limit từ DB: ${err}`);
     }
-    return DEFAULT_WEEKLY_LIMIT;
+    return 0;
   }
 
   /**

@@ -132,6 +132,22 @@ export const activateAiPromptApi = async (id) => {
   return await axiosClient.patch(`/admin/ai/prompts/${id}/activate`);
 };
 
+/**
+ * Cập nhật System Prompt (chỉ cho phép khi chưa active)
+ * PATCH /api/v1/admin/ai/prompts/:id
+ */
+export const updateAiPromptApi = async (id, data) => {
+  return await axiosClient.patch(`/admin/ai/prompts/${id}`, data);
+};
+
+/**
+ * Xóa System Prompt (chỉ cho phép khi chưa active)
+ * DELETE /api/v1/admin/ai/prompts/:id
+ */
+export const deleteAiPromptApi = async (id) => {
+  return await axiosClient.delete(`/admin/ai/prompts/${id}`);
+};
+
 // ─────────────────────────────────────────────────────────────
 // CRON JOBS MANAGEMENT
 // ─────────────────────────────────────────────────────────────
@@ -232,4 +248,18 @@ export const getAdminPlansApi = async () => {
 export const updateAdminPlanApi = async (id, data) => {
   return await axiosClient.patch(`/admin/plans/${id}`, data);
 };
+
+// ─────────────────────────────────────────────────────────────
+// PAYMENT TRANSACTIONS MANAGEMENT
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Lấy lịch sử giao dịch thanh toán
+ * GET /api/v1/admin/payment-transactions
+ * Params: { page?, limit?, userId?, status? }
+ */
+export const getAdminPaymentTransactionsApi = async (params = {}) => {
+  return await axiosClient.get('/admin/payment-transactions', { params });
+};
+
 

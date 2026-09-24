@@ -51,11 +51,15 @@ class DailyMealSlotData {
 class CookingSuggestionsSection extends StatefulWidget {
   final VoidCallback? onUpgradeTap;
   final ValueChanged<RecipeModel>? onRecipeTap;
+  final VoidCallback? onMealToggled;
+  final bool showHeaderTitle;
 
   const CookingSuggestionsSection({
     super.key,
     this.onUpgradeTap,
     this.onRecipeTap,
+    this.onMealToggled,
+    this.showHeaderTitle = true,
   });
 
   @override
@@ -74,27 +78,7 @@ class CookingSuggestionsSectionState extends State<CookingSuggestionsSection> {
     _loadTodayMealPlan();
   }
 
-  // Alternative recipes pool for AI swap fallback
-  final Map<String, List<Map<String, dynamic>>> _alternativeRecipes = {
-    'breakfast': [
-      {'title': 'Cháo cánh gà nấm kim châm', 'time': 15, 'servings': 1},
-      {'title': 'Trứng cuộn phô mai & rau củ', 'time': 10, 'servings': 1},
-      {'title': 'Bún gà măng tươi thanh nhẹ', 'time': 20, 'servings': 1},
-      {'title': 'Bánh mì ốp la bơ tươi & cà chua', 'time': 12, 'servings': 1},
-    ],
-    'lunch': [
-      {'title': 'Lẩu nấm gà thanh ngọt cuối tuần', 'time': 25, 'servings': 1},
-      {'title': 'Cơm gà kho sả ớt đậm đà', 'time': 20, 'servings': 1},
-      {'title': 'Thịt heo kho trứng nước dừa', 'time': 30, 'servings': 1},
-      {'title': 'Mì xào hải sản rau củ giòn ngọt', 'time': 18, 'servings': 1},
-    ],
-    'dinner': [
-      {'title': 'Gà kho sả ớt đậm đà', 'time': 20, 'servings': 1},
-      {'title': 'Canh chua cá thát lát lá giang', 'time': 25, 'servings': 1},
-      {'title': 'Sườn nướng sả mật ong mềm mọng', 'time': 35, 'servings': 1},
-      {'title': 'Bò lúc lắc xào ớt chuông hạt nêm', 'time': 22, 'servings': 1},
-    ],
-  };
+
 
   @override
   void initState() {
@@ -257,6 +241,49 @@ class CookingSuggestionsSectionState extends State<CookingSuggestionsSection> {
     final targetSlot = _dailySlots[index];
     final newStatus = !targetSlot.isCompleted;
 
+    if (newStatus) {
+      final isEn = AppLocalizations.of(context)?.locale.languageCode == 'en';
+      final confirm = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Text(
+            isEn ? 'Confirm Cooked Meal?' : 'Xác nhận đã nấu món này?',
+            style: GoogleFonts.outfit(fontWeight: FontWeight.w800),
+          ),
+          content: Text(
+            isEn
+                ? 'This will mark the meal as completed and automatically deduct used ingredients from your fridge.'
+                : 'Hệ thống sẽ đánh dấu bữa ăn là đã hoàn thành và tự động trừ nguyên liệu tương ứng trong tủ lạnh của bạn.',
+            style: GoogleFonts.plusJakartaSans(fontSize: 14),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: Text(
+                isEn ? 'Cancel' : 'Hủy',
+                style: GoogleFonts.plusJakartaSans(color: Colors.grey),
+              ),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF008435),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: Text(
+                isEn ? 'Confirm' : 'Xác nhận',
+                style: GoogleFonts.outfit(fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+      );
+
+      if (confirm != true) return;
+    }
+
     setState(() {
       _dailySlots[index] = targetSlot.copyWith(isCompleted: newStatus);
     });
@@ -267,9 +294,12 @@ class CookingSuggestionsSectionState extends State<CookingSuggestionsSection> {
           slotId: targetSlot.id,
           completed: newStatus,
         );
+        widget.onMealToggled?.call();
       } catch (e) {
         debugPrint('[CookingSuggestionsSection] Error toggling status: $e');
       }
+    } else {
+      widget.onMealToggled?.call();
     }
   }
 
@@ -284,26 +314,69 @@ class CookingSuggestionsSectionState extends State<CookingSuggestionsSection> {
     final isEn = AppLocalizations.of(context)?.locale.languageCode == 'en';
     try {
       if (targetSlot.id.isNotEmpty && !targetSlot.id.startsWith('slot_')) {
-        final res = await ApiService().regenerateSlot(slotId: targetSlot.id);
-        final newName = res['recipeName']?.toString() ?? res['recipe']?['title']?.toString();
-        final newRecipeId = res['recipeId']?.toString() ?? targetSlot.recipeId;
+        // 1. Call POST /meal-planning/slots/:id/regenerate (Triggers AI job & rate limit check)
+        await ApiService().regenerateSlot(slotId: targetSlot.id);
 
-        if (newName != null && mounted) {
-          setState(() {
-            _dailySlots[index] = targetSlot.copyWith(
-              recipeTitle: newName,
-              recipeId: newRecipeId,
-            );
-            _loadingMealType = null;
-          });
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('✨ AI đã đổi món thành công: $newName'),
-              backgroundColor: const Color(0xFF008435),
-              duration: const Duration(seconds: 2),
-            ),
+        // 2. Fetch recipes from backend to select a replacement
+        final recipes = await ApiService().getRecipes();
+        Map<String, dynamic>? selectedRecipe;
+
+        if (recipes.isNotEmpty) {
+          final typedRecipes = recipes.map((r) => Map<String, dynamic>.from(r as Map)).toList();
+
+          // Filter matching mealType if available, excluding current recipeId
+          final matchingMealType = typedRecipes.where((r) {
+            final recMealType = r['mealType']?.toString().toLowerCase();
+            final recId = r['id']?.toString();
+            return recId != targetSlot.recipeId && (recMealType == null || recMealType == mType.toLowerCase());
+          }).toList();
+
+          if (matchingMealType.isNotEmpty) {
+            matchingMealType.shuffle();
+            selectedRecipe = matchingMealType.first;
+          } else {
+            final differentRecipes = typedRecipes.where((r) => r['id']?.toString() != targetSlot.recipeId).toList();
+            if (differentRecipes.isNotEmpty) {
+              differentRecipes.shuffle();
+              selectedRecipe = differentRecipes.first;
+            } else {
+              selectedRecipe = typedRecipes.first;
+            }
+          }
+        }
+
+        if (selectedRecipe != null) {
+          final newRecipeId = selectedRecipe['id'].toString();
+          final newRecipeTitle = selectedRecipe['title']?.toString() ?? 'Món mới AI';
+          final newCookTime = (selectedRecipe['cookTimeMinutes'] as num?)?.toInt() ?? targetSlot.cookTimeMinutes;
+          final newServings = (selectedRecipe['servings'] as num?)?.toInt() ?? targetSlot.servings;
+
+          // 3. Persist the updated recipeId in backend DB via PATCH /meal-planning/slots/:id
+          await ApiService().updateMealSlot(
+            slotId: targetSlot.id,
+            recipeId: newRecipeId,
           );
-          return;
+
+          if (mounted) {
+            setState(() {
+              _dailySlots[index] = targetSlot.copyWith(
+                recipeId: newRecipeId,
+                recipeTitle: newRecipeTitle,
+                cookTimeMinutes: newCookTime,
+                servings: newServings,
+              );
+              _loadingMealType = null;
+            });
+
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('✨ AI đã đổi món thành công: $newRecipeTitle'),
+                backgroundColor: const Color(0xFF008435),
+                duration: const Duration(seconds: 2),
+              ),
+            );
+            return;
+          }
         }
       }
     } catch (e) {
@@ -363,31 +436,6 @@ class CookingSuggestionsSectionState extends State<CookingSuggestionsSection> {
       return;
     }
 
-    // Local fallback swap
-    final pool = _alternativeRecipes[mType] ?? _alternativeRecipes['lunch']!;
-    final currentIndex = pool.indexWhere((item) => item['title'] == targetSlot.recipeTitle);
-    final nextItem = pool[(currentIndex + 1) % pool.length];
-
-    if (mounted) {
-      setState(() {
-        _dailySlots[index] = targetSlot.copyWith(
-          recipeTitle: nextItem['title'] as String,
-          cookTimeMinutes: nextItem['time'] as int,
-          servings: nextItem['servings'] as int,
-        );
-        _loadingMealType = null;
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('✨ AI đã gợi ý món mới: ${nextItem['title']}'),
-          backgroundColor: const Color(0xFF008435),
-          duration: const Duration(seconds: 2),
-        ),
-      );
-      return;
-    }
-
     if (mounted) {
       setState(() {
         _loadingMealType = null;
@@ -396,8 +444,12 @@ class CookingSuggestionsSectionState extends State<CookingSuggestionsSection> {
   }
 
   void _openRecipeDetail(DailyMealSlotData slot) {
+    final effectiveId = (slot.recipeId.isNotEmpty && !slot.recipeId.startsWith('rec_'))
+        ? slot.recipeId
+        : slot.id;
+
     final recipe = RecipeModel(
-      id: slot.recipeId,
+      id: effectiveId,
       title: slot.recipeTitle,
       englishTitle: slot.recipeTitle,
       imagePath: '',
@@ -414,7 +466,10 @@ class CookingSuggestionsSectionState extends State<CookingSuggestionsSection> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => RecipeDetailScreen(recipe: recipe),
+          builder: (context) => RecipeDetailScreen(
+            recipe: recipe,
+            slotId: slot.id,
+          ),
         ),
       );
     }
@@ -438,54 +493,56 @@ class CookingSuggestionsSectionState extends State<CookingSuggestionsSection> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 1. Header Title Row: "Gợi Ý Món Ăn Hôm Nay" + "✨ 3 bữa ăn" (NO Premium badge, NO Xem tất cả)
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Text(
-              isEn ? "Today's Meal Suggestions" : 'Gợi Ý Món Ăn Hôm Nay',
-              style: GoogleFonts.outfit(
-                fontSize: 20,
-                fontWeight: FontWeight.w800,
-                color: Colors.white,
-                letterSpacing: 0.2,
-              ),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.18),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.3),
-                  width: 1,
+        if (widget.showHeaderTitle) ...[
+          // 1. Header Title Row: "Gợi Ý Món Ăn Hôm Nay" + "✨ 3 bữa ăn"
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Text(
+                isEn ? "Today's Meal Suggestions" : 'Gợi Ý Món Ăn Hôm Nay',
+                style: GoogleFonts.outfit(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                  letterSpacing: 0.2,
                 ),
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(
-                    Icons.auto_awesome_rounded,
-                    color: Color(0xFFFFD54F),
-                    size: 14,
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.18),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.3),
+                    width: 1,
                   ),
-                  const SizedBox(width: 4),
-                  Text(
-                    isEn ? '3 meals' : '3 bữa ăn',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.auto_awesome_rounded,
+                      color: Color(0xFFFFD54F),
+                      size: 14,
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 4),
+                    Text(
+                      isEn ? '3 meals' : '3 bữa ăn',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
-        ),
+            ],
+          ),
 
-        const SizedBox(height: 14),
+          const SizedBox(height: 14),
+        ],
 
         // 2. Main Daily Meals Card Container
         Container(

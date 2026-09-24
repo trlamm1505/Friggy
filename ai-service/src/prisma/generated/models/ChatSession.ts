@@ -256,10 +256,10 @@ export type ChatSessionWhereInput = {
   updatedAt?: Prisma.DateTimeFilter<"ChatSession"> | Date | string
   closedAt?: Prisma.DateTimeNullableFilter<"ChatSession"> | Date | string | null
   deletedAt?: Prisma.DateTimeNullableFilter<"ChatSession"> | Date | string | null
-  user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
-  messages?: Prisma.ChatMessageListRelationFilter
-  weeklyPlans?: Prisma.WeeklyPlanListRelationFilter
   evaluationLogs?: Prisma.AiEvaluationLogListRelationFilter
+  messages?: Prisma.ChatMessageListRelationFilter
+  user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
+  weeklyPlans?: Prisma.WeeklyPlanListRelationFilter
 }
 
 export type ChatSessionOrderByWithRelationInput = {
@@ -273,10 +273,10 @@ export type ChatSessionOrderByWithRelationInput = {
   updatedAt?: Prisma.SortOrder
   closedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   deletedAt?: Prisma.SortOrderInput | Prisma.SortOrder
-  user?: Prisma.UserOrderByWithRelationInput
-  messages?: Prisma.ChatMessageOrderByRelationAggregateInput
-  weeklyPlans?: Prisma.WeeklyPlanOrderByRelationAggregateInput
   evaluationLogs?: Prisma.AiEvaluationLogOrderByRelationAggregateInput
+  messages?: Prisma.ChatMessageOrderByRelationAggregateInput
+  user?: Prisma.UserOrderByWithRelationInput
+  weeklyPlans?: Prisma.WeeklyPlanOrderByRelationAggregateInput
   _relevance?: Prisma.ChatSessionOrderByRelevanceInput
 }
 
@@ -294,10 +294,10 @@ export type ChatSessionWhereUniqueInput = Prisma.AtLeast<{
   updatedAt?: Prisma.DateTimeFilter<"ChatSession"> | Date | string
   closedAt?: Prisma.DateTimeNullableFilter<"ChatSession"> | Date | string | null
   deletedAt?: Prisma.DateTimeNullableFilter<"ChatSession"> | Date | string | null
-  user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
-  messages?: Prisma.ChatMessageListRelationFilter
-  weeklyPlans?: Prisma.WeeklyPlanListRelationFilter
   evaluationLogs?: Prisma.AiEvaluationLogListRelationFilter
+  messages?: Prisma.ChatMessageListRelationFilter
+  user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
+  weeklyPlans?: Prisma.WeeklyPlanListRelationFilter
 }, "id">
 
 export type ChatSessionOrderByWithAggregationInput = {
@@ -344,10 +344,10 @@ export type ChatSessionCreateInput = {
   updatedAt?: Date | string
   closedAt?: Date | string | null
   deletedAt?: Date | string | null
-  user: Prisma.UserCreateNestedOneWithoutChatSessionsInput
-  messages?: Prisma.ChatMessageCreateNestedManyWithoutSessionInput
-  weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutAiSessionInput
   evaluationLogs?: Prisma.AiEvaluationLogCreateNestedManyWithoutSessionInput
+  messages?: Prisma.ChatMessageCreateNestedManyWithoutSessionInput
+  user: Prisma.UserCreateNestedOneWithoutChatSessionsInput
+  weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutAiSessionInput
 }
 
 export type ChatSessionUncheckedCreateInput = {
@@ -361,9 +361,9 @@ export type ChatSessionUncheckedCreateInput = {
   updatedAt?: Date | string
   closedAt?: Date | string | null
   deletedAt?: Date | string | null
+  evaluationLogs?: Prisma.AiEvaluationLogUncheckedCreateNestedManyWithoutSessionInput
   messages?: Prisma.ChatMessageUncheckedCreateNestedManyWithoutSessionInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutAiSessionInput
-  evaluationLogs?: Prisma.AiEvaluationLogUncheckedCreateNestedManyWithoutSessionInput
 }
 
 export type ChatSessionUpdateInput = {
@@ -376,10 +376,10 @@ export type ChatSessionUpdateInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   closedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  user?: Prisma.UserUpdateOneRequiredWithoutChatSessionsNestedInput
-  messages?: Prisma.ChatMessageUpdateManyWithoutSessionNestedInput
-  weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutAiSessionNestedInput
   evaluationLogs?: Prisma.AiEvaluationLogUpdateManyWithoutSessionNestedInput
+  messages?: Prisma.ChatMessageUpdateManyWithoutSessionNestedInput
+  user?: Prisma.UserUpdateOneRequiredWithoutChatSessionsNestedInput
+  weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutAiSessionNestedInput
 }
 
 export type ChatSessionUncheckedUpdateInput = {
@@ -393,9 +393,9 @@ export type ChatSessionUncheckedUpdateInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   closedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  evaluationLogs?: Prisma.AiEvaluationLogUncheckedUpdateManyWithoutSessionNestedInput
   messages?: Prisma.ChatMessageUncheckedUpdateManyWithoutSessionNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutAiSessionNestedInput
-  evaluationLogs?: Prisma.AiEvaluationLogUncheckedUpdateManyWithoutSessionNestedInput
 }
 
 export type ChatSessionCreateManyInput = {
@@ -613,9 +613,9 @@ export type ChatSessionCreateWithoutUserInput = {
   updatedAt?: Date | string
   closedAt?: Date | string | null
   deletedAt?: Date | string | null
+  evaluationLogs?: Prisma.AiEvaluationLogCreateNestedManyWithoutSessionInput
   messages?: Prisma.ChatMessageCreateNestedManyWithoutSessionInput
   weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutAiSessionInput
-  evaluationLogs?: Prisma.AiEvaluationLogCreateNestedManyWithoutSessionInput
 }
 
 export type ChatSessionUncheckedCreateWithoutUserInput = {
@@ -628,9 +628,9 @@ export type ChatSessionUncheckedCreateWithoutUserInput = {
   updatedAt?: Date | string
   closedAt?: Date | string | null
   deletedAt?: Date | string | null
+  evaluationLogs?: Prisma.AiEvaluationLogUncheckedCreateNestedManyWithoutSessionInput
   messages?: Prisma.ChatMessageUncheckedCreateNestedManyWithoutSessionInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutAiSessionInput
-  evaluationLogs?: Prisma.AiEvaluationLogUncheckedCreateNestedManyWithoutSessionInput
 }
 
 export type ChatSessionCreateOrConnectWithoutUserInput = {
@@ -685,9 +685,9 @@ export type ChatSessionCreateWithoutWeeklyPlansInput = {
   updatedAt?: Date | string
   closedAt?: Date | string | null
   deletedAt?: Date | string | null
-  user: Prisma.UserCreateNestedOneWithoutChatSessionsInput
-  messages?: Prisma.ChatMessageCreateNestedManyWithoutSessionInput
   evaluationLogs?: Prisma.AiEvaluationLogCreateNestedManyWithoutSessionInput
+  messages?: Prisma.ChatMessageCreateNestedManyWithoutSessionInput
+  user: Prisma.UserCreateNestedOneWithoutChatSessionsInput
 }
 
 export type ChatSessionUncheckedCreateWithoutWeeklyPlansInput = {
@@ -701,8 +701,8 @@ export type ChatSessionUncheckedCreateWithoutWeeklyPlansInput = {
   updatedAt?: Date | string
   closedAt?: Date | string | null
   deletedAt?: Date | string | null
-  messages?: Prisma.ChatMessageUncheckedCreateNestedManyWithoutSessionInput
   evaluationLogs?: Prisma.AiEvaluationLogUncheckedCreateNestedManyWithoutSessionInput
+  messages?: Prisma.ChatMessageUncheckedCreateNestedManyWithoutSessionInput
 }
 
 export type ChatSessionCreateOrConnectWithoutWeeklyPlansInput = {
@@ -731,9 +731,9 @@ export type ChatSessionUpdateWithoutWeeklyPlansInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   closedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  user?: Prisma.UserUpdateOneRequiredWithoutChatSessionsNestedInput
-  messages?: Prisma.ChatMessageUpdateManyWithoutSessionNestedInput
   evaluationLogs?: Prisma.AiEvaluationLogUpdateManyWithoutSessionNestedInput
+  messages?: Prisma.ChatMessageUpdateManyWithoutSessionNestedInput
+  user?: Prisma.UserUpdateOneRequiredWithoutChatSessionsNestedInput
 }
 
 export type ChatSessionUncheckedUpdateWithoutWeeklyPlansInput = {
@@ -747,8 +747,8 @@ export type ChatSessionUncheckedUpdateWithoutWeeklyPlansInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   closedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  messages?: Prisma.ChatMessageUncheckedUpdateManyWithoutSessionNestedInput
   evaluationLogs?: Prisma.AiEvaluationLogUncheckedUpdateManyWithoutSessionNestedInput
+  messages?: Prisma.ChatMessageUncheckedUpdateManyWithoutSessionNestedInput
 }
 
 export type ChatSessionCreateWithoutMessagesInput = {
@@ -761,9 +761,9 @@ export type ChatSessionCreateWithoutMessagesInput = {
   updatedAt?: Date | string
   closedAt?: Date | string | null
   deletedAt?: Date | string | null
+  evaluationLogs?: Prisma.AiEvaluationLogCreateNestedManyWithoutSessionInput
   user: Prisma.UserCreateNestedOneWithoutChatSessionsInput
   weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutAiSessionInput
-  evaluationLogs?: Prisma.AiEvaluationLogCreateNestedManyWithoutSessionInput
 }
 
 export type ChatSessionUncheckedCreateWithoutMessagesInput = {
@@ -777,8 +777,8 @@ export type ChatSessionUncheckedCreateWithoutMessagesInput = {
   updatedAt?: Date | string
   closedAt?: Date | string | null
   deletedAt?: Date | string | null
-  weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutAiSessionInput
   evaluationLogs?: Prisma.AiEvaluationLogUncheckedCreateNestedManyWithoutSessionInput
+  weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutAiSessionInput
 }
 
 export type ChatSessionCreateOrConnectWithoutMessagesInput = {
@@ -807,9 +807,9 @@ export type ChatSessionUpdateWithoutMessagesInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   closedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  evaluationLogs?: Prisma.AiEvaluationLogUpdateManyWithoutSessionNestedInput
   user?: Prisma.UserUpdateOneRequiredWithoutChatSessionsNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutAiSessionNestedInput
-  evaluationLogs?: Prisma.AiEvaluationLogUpdateManyWithoutSessionNestedInput
 }
 
 export type ChatSessionUncheckedUpdateWithoutMessagesInput = {
@@ -823,8 +823,8 @@ export type ChatSessionUncheckedUpdateWithoutMessagesInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   closedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutAiSessionNestedInput
   evaluationLogs?: Prisma.AiEvaluationLogUncheckedUpdateManyWithoutSessionNestedInput
+  weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutAiSessionNestedInput
 }
 
 export type ChatSessionCreateWithoutEvaluationLogsInput = {
@@ -837,8 +837,8 @@ export type ChatSessionCreateWithoutEvaluationLogsInput = {
   updatedAt?: Date | string
   closedAt?: Date | string | null
   deletedAt?: Date | string | null
-  user: Prisma.UserCreateNestedOneWithoutChatSessionsInput
   messages?: Prisma.ChatMessageCreateNestedManyWithoutSessionInput
+  user: Prisma.UserCreateNestedOneWithoutChatSessionsInput
   weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutAiSessionInput
 }
 
@@ -883,8 +883,8 @@ export type ChatSessionUpdateWithoutEvaluationLogsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   closedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  user?: Prisma.UserUpdateOneRequiredWithoutChatSessionsNestedInput
   messages?: Prisma.ChatMessageUpdateManyWithoutSessionNestedInput
+  user?: Prisma.UserUpdateOneRequiredWithoutChatSessionsNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutAiSessionNestedInput
 }
 
@@ -925,9 +925,9 @@ export type ChatSessionUpdateWithoutUserInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   closedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  evaluationLogs?: Prisma.AiEvaluationLogUpdateManyWithoutSessionNestedInput
   messages?: Prisma.ChatMessageUpdateManyWithoutSessionNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutAiSessionNestedInput
-  evaluationLogs?: Prisma.AiEvaluationLogUpdateManyWithoutSessionNestedInput
 }
 
 export type ChatSessionUncheckedUpdateWithoutUserInput = {
@@ -940,9 +940,9 @@ export type ChatSessionUncheckedUpdateWithoutUserInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   closedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  evaluationLogs?: Prisma.AiEvaluationLogUncheckedUpdateManyWithoutSessionNestedInput
   messages?: Prisma.ChatMessageUncheckedUpdateManyWithoutSessionNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutAiSessionNestedInput
-  evaluationLogs?: Prisma.AiEvaluationLogUncheckedUpdateManyWithoutSessionNestedInput
 }
 
 export type ChatSessionUncheckedUpdateManyWithoutUserInput = {
@@ -963,15 +963,15 @@ export type ChatSessionUncheckedUpdateManyWithoutUserInput = {
  */
 
 export type ChatSessionCountOutputType = {
+  evaluationLogs: number
   messages: number
   weeklyPlans: number
-  evaluationLogs: number
 }
 
 export type ChatSessionCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  evaluationLogs?: boolean | ChatSessionCountOutputTypeCountEvaluationLogsArgs
   messages?: boolean | ChatSessionCountOutputTypeCountMessagesArgs
   weeklyPlans?: boolean | ChatSessionCountOutputTypeCountWeeklyPlansArgs
-  evaluationLogs?: boolean | ChatSessionCountOutputTypeCountEvaluationLogsArgs
 }
 
 /**
@@ -982,6 +982,13 @@ export type ChatSessionCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.
    * Select specific fields to fetch from the ChatSessionCountOutputType
    */
   select?: Prisma.ChatSessionCountOutputTypeSelect<ExtArgs> | null
+}
+
+/**
+ * ChatSessionCountOutputType without action
+ */
+export type ChatSessionCountOutputTypeCountEvaluationLogsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.AiEvaluationLogWhereInput
 }
 
 /**
@@ -998,13 +1005,6 @@ export type ChatSessionCountOutputTypeCountWeeklyPlansArgs<ExtArgs extends runti
   where?: Prisma.WeeklyPlanWhereInput
 }
 
-/**
- * ChatSessionCountOutputType without action
- */
-export type ChatSessionCountOutputTypeCountEvaluationLogsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.AiEvaluationLogWhereInput
-}
-
 
 export type ChatSessionSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -1017,10 +1017,10 @@ export type ChatSessionSelect<ExtArgs extends runtime.Types.Extensions.InternalA
   updatedAt?: boolean
   closedAt?: boolean
   deletedAt?: boolean
-  user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
-  messages?: boolean | Prisma.ChatSession$messagesArgs<ExtArgs>
-  weeklyPlans?: boolean | Prisma.ChatSession$weeklyPlansArgs<ExtArgs>
   evaluationLogs?: boolean | Prisma.ChatSession$evaluationLogsArgs<ExtArgs>
+  messages?: boolean | Prisma.ChatSession$messagesArgs<ExtArgs>
+  user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  weeklyPlans?: boolean | Prisma.ChatSession$weeklyPlansArgs<ExtArgs>
   _count?: boolean | Prisma.ChatSessionCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["chatSession"]>
 
@@ -1041,20 +1041,20 @@ export type ChatSessionSelectScalar = {
 
 export type ChatSessionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "title" | "intent" | "status" | "totalTokensUsed" | "createdAt" | "updatedAt" | "closedAt" | "deletedAt", ExtArgs["result"]["chatSession"]>
 export type ChatSessionInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
-  messages?: boolean | Prisma.ChatSession$messagesArgs<ExtArgs>
-  weeklyPlans?: boolean | Prisma.ChatSession$weeklyPlansArgs<ExtArgs>
   evaluationLogs?: boolean | Prisma.ChatSession$evaluationLogsArgs<ExtArgs>
+  messages?: boolean | Prisma.ChatSession$messagesArgs<ExtArgs>
+  user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  weeklyPlans?: boolean | Prisma.ChatSession$weeklyPlansArgs<ExtArgs>
   _count?: boolean | Prisma.ChatSessionCountOutputTypeDefaultArgs<ExtArgs>
 }
 
 export type $ChatSessionPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "ChatSession"
   objects: {
-    user: Prisma.$UserPayload<ExtArgs>
-    messages: Prisma.$ChatMessagePayload<ExtArgs>[]
-    weeklyPlans: Prisma.$WeeklyPlanPayload<ExtArgs>[]
     evaluationLogs: Prisma.$AiEvaluationLogPayload<ExtArgs>[]
+    messages: Prisma.$ChatMessagePayload<ExtArgs>[]
+    user: Prisma.$UserPayload<ExtArgs>
+    weeklyPlans: Prisma.$WeeklyPlanPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1407,10 +1407,10 @@ readonly fields: ChatSessionFieldRefs;
  */
 export interface Prisma__ChatSessionClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
-  user<T extends Prisma.UserDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserDefaultArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
-  messages<T extends Prisma.ChatSession$messagesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ChatSession$messagesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ChatMessagePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  weeklyPlans<T extends Prisma.ChatSession$weeklyPlansArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ChatSession$weeklyPlansArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$WeeklyPlanPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   evaluationLogs<T extends Prisma.ChatSession$evaluationLogsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ChatSession$evaluationLogsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AiEvaluationLogPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  messages<T extends Prisma.ChatSession$messagesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ChatSession$messagesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ChatMessagePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  user<T extends Prisma.UserDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserDefaultArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  weeklyPlans<T extends Prisma.ChatSession$weeklyPlansArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ChatSession$weeklyPlansArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$WeeklyPlanPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1798,6 +1798,30 @@ export type ChatSessionDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.I
 }
 
 /**
+ * ChatSession.evaluationLogs
+ */
+export type ChatSession$evaluationLogsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the AiEvaluationLog
+   */
+  select?: Prisma.AiEvaluationLogSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the AiEvaluationLog
+   */
+  omit?: Prisma.AiEvaluationLogOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.AiEvaluationLogInclude<ExtArgs> | null
+  where?: Prisma.AiEvaluationLogWhereInput
+  orderBy?: Prisma.AiEvaluationLogOrderByWithRelationInput | Prisma.AiEvaluationLogOrderByWithRelationInput[]
+  cursor?: Prisma.AiEvaluationLogWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.AiEvaluationLogScalarFieldEnum | Prisma.AiEvaluationLogScalarFieldEnum[]
+}
+
+/**
  * ChatSession.messages
  */
 export type ChatSession$messagesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1843,30 +1867,6 @@ export type ChatSession$weeklyPlansArgs<ExtArgs extends runtime.Types.Extensions
   take?: number
   skip?: number
   distinct?: Prisma.WeeklyPlanScalarFieldEnum | Prisma.WeeklyPlanScalarFieldEnum[]
-}
-
-/**
- * ChatSession.evaluationLogs
- */
-export type ChatSession$evaluationLogsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the AiEvaluationLog
-   */
-  select?: Prisma.AiEvaluationLogSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the AiEvaluationLog
-   */
-  omit?: Prisma.AiEvaluationLogOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.AiEvaluationLogInclude<ExtArgs> | null
-  where?: Prisma.AiEvaluationLogWhereInput
-  orderBy?: Prisma.AiEvaluationLogOrderByWithRelationInput | Prisma.AiEvaluationLogOrderByWithRelationInput[]
-  cursor?: Prisma.AiEvaluationLogWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.AiEvaluationLogScalarFieldEnum | Prisma.AiEvaluationLogScalarFieldEnum[]
 }
 
 /**

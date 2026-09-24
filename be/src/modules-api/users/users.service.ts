@@ -26,7 +26,7 @@ export class UsersService {
 
   constructor(
     private readonly prisma: PrismaService,
-  ) {}
+  ) { }
 
   // ─────────────────────────────────────────────────────────
   // GET /me
@@ -271,10 +271,14 @@ export class UsersService {
     startOfWeek.setDate(now.getDate() - diffToMonday);
     startOfWeek.setHours(0, 0, 0, 0);
 
-    const [subscription, usageByFeature] = await Promise.all([
+    const [subscription, freePlan, usageByFeature] = await Promise.all([
       this.prisma.userSubscription.findFirst({
         where: { userId, status: 'active', deletedAt: null },
         include: { plan: { select: { name: true, aiUsagePerWeek: true } } },
+      }),
+      this.prisma.subscriptionPlan.findFirst({
+        where: { OR: [{ name: 'free' }, { priceVnd: 0 }], isActive: true, deletedAt: null },
+        select: { name: true, aiUsagePerWeek: true },
       }),
       this.prisma.aiUsageLog.groupBy({
         by: ['featureType'],
@@ -283,9 +287,9 @@ export class UsersService {
       }),
     ]);
 
-    const planName = subscription?.plan?.name ?? 'free';
-    // Lấy từ DB — mặc định 2 nếu không có subscription (đồng bộ với guard)
-    const limit = subscription?.plan?.aiUsagePerWeek ?? 2;
+    const activePlan = subscription?.plan ?? freePlan;
+    const planName = activePlan?.name ?? 'free';
+    const limit = activePlan?.aiUsagePerWeek ?? 0;
     const isUnlimited = limit === -1;
 
     // Tổng usage mọi feature trong 7 ngày
@@ -322,14 +326,14 @@ export class UsersService {
       isOnboardingCompleted: user.isOnboardingCompleted,
       profile: user.profile
         ? {
-            displayName: user.profile.displayName,
-            avatarUrl: user.profile.avatarPath ?? null,
-            dateOfBirth: user.profile.dateOfBirth
-              ? user.profile.dateOfBirth.toISOString().split('T')[0]
-              : null,
-            gender: user.profile.gender ?? null,
-            bio: user.profile.bio ?? null,
-          }
+          displayName: user.profile.displayName,
+          avatarUrl: user.profile.avatarPath ?? null,
+          dateOfBirth: user.profile.dateOfBirth
+            ? user.profile.dateOfBirth.toISOString().split('T')[0]
+            : null,
+          gender: user.profile.gender ?? null,
+          bio: user.profile.bio ?? null,
+        }
         : null,
       preferences: user.preferences ? this.mapPreferences(user.preferences) : null,
     };

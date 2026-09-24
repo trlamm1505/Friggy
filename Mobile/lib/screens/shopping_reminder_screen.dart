@@ -82,6 +82,48 @@ class _ShoppingReminderScreenState extends State<ShoppingReminderScreen> {
         }
         return;
       }
+
+      // If lists is empty, auto-generate from latest plan
+      final plans = await ApiService().getMealPlans();
+      if (plans.isNotEmpty && plans.first['id'] != null) {
+        final planId = plans.first['id'].toString();
+        final createdList = await ApiService().createShoppingList(
+          weeklyPlanId: planId,
+          title: 'Danh sách mua sắm tuần này',
+        );
+        final listId = createdList['id']?.toString();
+        final rawItems = createdList['items'] as List<dynamic>? ?? [];
+
+        final List<ShoppingItemModel> loadedItems = [];
+        for (final item in rawItems) {
+          final itemMap = item as Map<String, dynamic>;
+          final bId = itemMap['id'] as int?;
+          final name = itemMap['ingredientName']?.toString() ?? 'Nguyên liệu';
+          final qtyNum = itemMap['quantity'];
+          final unitStr = itemMap['unit']?.toString() ?? '';
+          final qtyStr = qtyNum != null ? '$qtyNum $unitStr'.trim() : null;
+          final isPurchased = itemMap['isPurchased'] as bool? ?? false;
+
+          loadedItems.add(
+            ShoppingItemModel(
+              backendItemId: bId,
+              id: bId?.toString() ?? DateTime.now().millisecondsSinceEpoch.toString(),
+              name: name,
+              quantity: qtyStr,
+              isChecked: isPurchased,
+            ),
+          );
+        }
+
+        if (mounted) {
+          setState(() {
+            _currentListId = listId;
+            _shoppingList = loadedItems;
+            _isLoading = false;
+          });
+        }
+        return;
+      }
     } catch (e) {
       debugPrint('[ShoppingReminderScreen] Error fetching shopping lists: $e');
     }

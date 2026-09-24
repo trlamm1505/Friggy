@@ -100,7 +100,11 @@ class IngredientModel {
     Color badgeBgColor = const Color(0xFFE8F5E9);
     Color badgeTextColor = const Color(0xFF2E7D32);
 
-    if (daysUntilExpiry < 0) {
+    if (daysUntilExpiry == 999 || json['daysUntilExpiry'] == null) {
+      expiryText = 'Chưa có HSD';
+      badgeBgColor = const Color(0xFFF5F5F5);
+      badgeTextColor = const Color(0xFF757575);
+    } else if (daysUntilExpiry < 0) {
       expiryText = 'Quá hạn ${daysUntilExpiry.abs()} ngày';
       badgeBgColor = const Color(0xFFFFEBEE);
       badgeTextColor = const Color(0xFFC62828);

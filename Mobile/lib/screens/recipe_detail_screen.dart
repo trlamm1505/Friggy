@@ -6,10 +6,12 @@ import '../widgets/friggy_app_bar.dart';
 
 class RecipeDetailScreen extends StatefulWidget {
   final RecipeModel recipe;
+  final String? slotId;
 
   const RecipeDetailScreen({
     super.key,
     required this.recipe,
+    this.slotId,
   });
 
   @override
@@ -29,10 +31,17 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
   }
 
   Future<void> _loadFullRecipeDetail() async {
-    if (widget.recipe.id.isEmpty || widget.recipe.id.startsWith('rec_')) return;
+    final targetId = widget.recipe.id;
+    final slotId = widget.slotId;
+
+    if ((targetId.isEmpty || targetId.startsWith('rec_')) &&
+        (slotId == null || slotId.isEmpty || slotId.startsWith('rec_'))) {
+      return;
+    }
+
     setState(() => _isLoadingDetail = true);
     try {
-      final fullDetail = await RecipeRepository.fetchRecipeDetail(widget.recipe.id);
+      final fullDetail = await RecipeRepository.fetchRecipeDetail(targetId, slotId: slotId);
       if (fullDetail != null && mounted) {
         setState(() {
           _recipe = fullDetail;

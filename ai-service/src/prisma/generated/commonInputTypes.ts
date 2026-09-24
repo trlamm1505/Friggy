@@ -226,21 +226,21 @@ export type BoolWithAggregatesFilter<$PrismaModel = never> = {
   _max?: Prisma.NestedBoolFilter<$PrismaModel>
 }
 
-export type EnumOtpPurposeFilter<$PrismaModel = never> = {
-  equals?: $Enums.OtpPurpose | Prisma.EnumOtpPurposeFieldRefInput<$PrismaModel>
-  in?: $Enums.OtpPurpose[]
-  notIn?: $Enums.OtpPurpose[]
-  not?: Prisma.NestedEnumOtpPurposeFilter<$PrismaModel> | $Enums.OtpPurpose
+export type EnumEmailOtpPurposeFilter<$PrismaModel = never> = {
+  equals?: $Enums.EmailOtpPurpose | Prisma.EnumEmailOtpPurposeFieldRefInput<$PrismaModel>
+  in?: $Enums.EmailOtpPurpose[]
+  notIn?: $Enums.EmailOtpPurpose[]
+  not?: Prisma.NestedEnumEmailOtpPurposeFilter<$PrismaModel> | $Enums.EmailOtpPurpose
 }
 
-export type EnumOtpPurposeWithAggregatesFilter<$PrismaModel = never> = {
-  equals?: $Enums.OtpPurpose | Prisma.EnumOtpPurposeFieldRefInput<$PrismaModel>
-  in?: $Enums.OtpPurpose[]
-  notIn?: $Enums.OtpPurpose[]
-  not?: Prisma.NestedEnumOtpPurposeWithAggregatesFilter<$PrismaModel> | $Enums.OtpPurpose
+export type EnumEmailOtpPurposeWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.EmailOtpPurpose | Prisma.EnumEmailOtpPurposeFieldRefInput<$PrismaModel>
+  in?: $Enums.EmailOtpPurpose[]
+  notIn?: $Enums.EmailOtpPurpose[]
+  not?: Prisma.NestedEnumEmailOtpPurposeWithAggregatesFilter<$PrismaModel> | $Enums.EmailOtpPurpose
   _count?: Prisma.NestedIntFilter<$PrismaModel>
-  _min?: Prisma.NestedEnumOtpPurposeFilter<$PrismaModel>
-  _max?: Prisma.NestedEnumOtpPurposeFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumEmailOtpPurposeFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumEmailOtpPurposeFilter<$PrismaModel>
 }
 
 export type EnumGenderNullableFilter<$PrismaModel = never> = {
@@ -885,6 +885,33 @@ export type EnumNotificationTypeWithAggregatesFilter<$PrismaModel = never> = {
   _max?: Prisma.NestedEnumNotificationTypeFilter<$PrismaModel>
 }
 
+export type BigIntNullableFilter<$PrismaModel = never> = {
+  equals?: bigint | number | Prisma.BigIntFieldRefInput<$PrismaModel> | null
+  in?: bigint[] | number[] | null
+  notIn?: bigint[] | number[] | null
+  lt?: bigint | number | Prisma.BigIntFieldRefInput<$PrismaModel>
+  lte?: bigint | number | Prisma.BigIntFieldRefInput<$PrismaModel>
+  gt?: bigint | number | Prisma.BigIntFieldRefInput<$PrismaModel>
+  gte?: bigint | number | Prisma.BigIntFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedBigIntNullableFilter<$PrismaModel> | bigint | number | null
+}
+
+export type BigIntNullableWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: bigint | number | Prisma.BigIntFieldRefInput<$PrismaModel> | null
+  in?: bigint[] | number[] | null
+  notIn?: bigint[] | number[] | null
+  lt?: bigint | number | Prisma.BigIntFieldRefInput<$PrismaModel>
+  lte?: bigint | number | Prisma.BigIntFieldRefInput<$PrismaModel>
+  gt?: bigint | number | Prisma.BigIntFieldRefInput<$PrismaModel>
+  gte?: bigint | number | Prisma.BigIntFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedBigIntNullableWithAggregatesFilter<$PrismaModel> | bigint | number | null
+  _count?: Prisma.NestedIntNullableFilter<$PrismaModel>
+  _avg?: Prisma.NestedFloatNullableFilter<$PrismaModel>
+  _sum?: Prisma.NestedBigIntNullableFilter<$PrismaModel>
+  _min?: Prisma.NestedBigIntNullableFilter<$PrismaModel>
+  _max?: Prisma.NestedBigIntNullableFilter<$PrismaModel>
+}
+
 export type NestedIntFilter<$PrismaModel = never> = {
   equals?: number | Prisma.IntFieldRefInput<$PrismaModel>
   in?: number[]
@@ -1114,21 +1141,21 @@ export type NestedBoolWithAggregatesFilter<$PrismaModel = never> = {
   _max?: Prisma.NestedBoolFilter<$PrismaModel>
 }
 
-export type NestedEnumOtpPurposeFilter<$PrismaModel = never> = {
-  equals?: $Enums.OtpPurpose | Prisma.EnumOtpPurposeFieldRefInput<$PrismaModel>
-  in?: $Enums.OtpPurpose[]
-  notIn?: $Enums.OtpPurpose[]
-  not?: Prisma.NestedEnumOtpPurposeFilter<$PrismaModel> | $Enums.OtpPurpose
+export type NestedEnumEmailOtpPurposeFilter<$PrismaModel = never> = {
+  equals?: $Enums.EmailOtpPurpose | Prisma.EnumEmailOtpPurposeFieldRefInput<$PrismaModel>
+  in?: $Enums.EmailOtpPurpose[]
+  notIn?: $Enums.EmailOtpPurpose[]
+  not?: Prisma.NestedEnumEmailOtpPurposeFilter<$PrismaModel> | $Enums.EmailOtpPurpose
 }
 
-export type NestedEnumOtpPurposeWithAggregatesFilter<$PrismaModel = never> = {
-  equals?: $Enums.OtpPurpose | Prisma.EnumOtpPurposeFieldRefInput<$PrismaModel>
-  in?: $Enums.OtpPurpose[]
-  notIn?: $Enums.OtpPurpose[]
-  not?: Prisma.NestedEnumOtpPurposeWithAggregatesFilter<$PrismaModel> | $Enums.OtpPurpose
+export type NestedEnumEmailOtpPurposeWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.EmailOtpPurpose | Prisma.EnumEmailOtpPurposeFieldRefInput<$PrismaModel>
+  in?: $Enums.EmailOtpPurpose[]
+  notIn?: $Enums.EmailOtpPurpose[]
+  not?: Prisma.NestedEnumEmailOtpPurposeWithAggregatesFilter<$PrismaModel> | $Enums.EmailOtpPurpose
   _count?: Prisma.NestedIntFilter<$PrismaModel>
-  _min?: Prisma.NestedEnumOtpPurposeFilter<$PrismaModel>
-  _max?: Prisma.NestedEnumOtpPurposeFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumEmailOtpPurposeFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumEmailOtpPurposeFilter<$PrismaModel>
 }
 
 export type NestedEnumGenderNullableFilter<$PrismaModel = never> = {
@@ -1695,6 +1722,33 @@ export type NestedEnumNotificationTypeWithAggregatesFilter<$PrismaModel = never>
   _count?: Prisma.NestedIntFilter<$PrismaModel>
   _min?: Prisma.NestedEnumNotificationTypeFilter<$PrismaModel>
   _max?: Prisma.NestedEnumNotificationTypeFilter<$PrismaModel>
+}
+
+export type NestedBigIntNullableFilter<$PrismaModel = never> = {
+  equals?: bigint | number | Prisma.BigIntFieldRefInput<$PrismaModel> | null
+  in?: bigint[] | number[] | null
+  notIn?: bigint[] | number[] | null
+  lt?: bigint | number | Prisma.BigIntFieldRefInput<$PrismaModel>
+  lte?: bigint | number | Prisma.BigIntFieldRefInput<$PrismaModel>
+  gt?: bigint | number | Prisma.BigIntFieldRefInput<$PrismaModel>
+  gte?: bigint | number | Prisma.BigIntFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedBigIntNullableFilter<$PrismaModel> | bigint | number | null
+}
+
+export type NestedBigIntNullableWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: bigint | number | Prisma.BigIntFieldRefInput<$PrismaModel> | null
+  in?: bigint[] | number[] | null
+  notIn?: bigint[] | number[] | null
+  lt?: bigint | number | Prisma.BigIntFieldRefInput<$PrismaModel>
+  lte?: bigint | number | Prisma.BigIntFieldRefInput<$PrismaModel>
+  gt?: bigint | number | Prisma.BigIntFieldRefInput<$PrismaModel>
+  gte?: bigint | number | Prisma.BigIntFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedBigIntNullableWithAggregatesFilter<$PrismaModel> | bigint | number | null
+  _count?: Prisma.NestedIntNullableFilter<$PrismaModel>
+  _avg?: Prisma.NestedFloatNullableFilter<$PrismaModel>
+  _sum?: Prisma.NestedBigIntNullableFilter<$PrismaModel>
+  _min?: Prisma.NestedBigIntNullableFilter<$PrismaModel>
+  _max?: Prisma.NestedBigIntNullableFilter<$PrismaModel>
 }
 
 

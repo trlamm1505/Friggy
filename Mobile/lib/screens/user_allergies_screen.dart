@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../data/models/user_models.dart';
@@ -295,6 +296,7 @@ class _AddAllergyModalState extends State<_AddAllergyModal> {
   final ApiService _apiService = ApiService();
   final TextEditingController _searchController = TextEditingController();
   final TextEditingController _noteController = TextEditingController();
+  Timer? _debounceTimer;
 
   bool _isLoadingIngredients = true;
   bool _isSubmitting = false;
@@ -311,7 +313,7 @@ class _AddAllergyModalState extends State<_AddAllergyModal> {
 
   Future<void> _loadIngredients() async {
     try {
-      final list = await _apiService.getIngredients();
+      final list = await _apiService.getIngredients(limit: 100);
       if (mounted) {
         setState(() {
           _allIngredients = list;
@@ -328,17 +330,25 @@ class _AddAllergyModalState extends State<_AddAllergyModal> {
   }
 
   void _filterIngredients(String query) {
-    if (query.trim().isEmpty) {
+    _debounceTimer?.cancel();
+    final q = query.trim();
+    if (q.isEmpty) {
       setState(() => _filteredIngredients = _allIngredients);
-    } else {
-      final q = query.trim().toLowerCase();
-      setState(() {
-        _filteredIngredients = _allIngredients.where((item) {
-          final name = (item['name'] as String? ?? '').toLowerCase();
-          return name.contains(q);
-        }).toList();
-      });
+      return;
     }
+
+    _debounceTimer = Timer(const Duration(milliseconds: 300), () async {
+      try {
+        final list = await _apiService.getIngredients(search: q, limit: 100);
+        if (mounted) {
+          setState(() {
+            _filteredIngredients = list;
+          });
+        }
+      } catch (e) {
+        debugPrint('[_AddAllergyModal] Error searching ingredients: $e');
+      }
+    });
   }
 
   Future<void> _submit() async {
@@ -383,6 +393,7 @@ class _AddAllergyModalState extends State<_AddAllergyModal> {
 
   @override
   void dispose() {
+    _debounceTimer?.cancel();
     _searchController.dispose();
     _noteController.dispose();
     super.dispose();

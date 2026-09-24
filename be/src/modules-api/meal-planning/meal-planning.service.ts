@@ -407,15 +407,24 @@ export class MealPlanningService {
 
     const item = await this.prisma.shoppingListItem.findFirst({
       where: { id: itemId, shoppingListId: listId, deletedAt: null },
+      include: {
+        ingredient: {
+          include: { category: true },
+        },
+      },
     });
 
     if (!item) throw new NotFoundException('Không tìm thấy mặt hàng');
 
     const newPurchased = !item.isPurchased;
 
-    // Khi tick ĐÃ MUA → tự động thêm vào tủ lạnh
+    // Khi tick ĐÃ MUA → tự động thêm vào tủ lạnh (kèm tính HSD mặc định)
     // Khi bỏ tick (undo) → KHÔNG rollback FridgeItem (an toàn hơn)
     if (newPurchased) {
+      const shelfDays = item.ingredient?.category?.defaultShelfLifeDays ?? 7;
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + shelfDays);
+
       await this.prisma.fridgeItem.create({
         data: {
           id: uuidv4(),
@@ -425,10 +434,11 @@ export class MealPlanningService {
           unit: item.unit,
           addedBy: 'manual',
           storageLocation: 'fridge',
+          expiresAt,
         },
       });
       this.logger.log(
-        `🛒→🧤 [MealPlanning] Auto-add fridge: ingredientId=${item.ingredientId} qty=${item.quantity}${item.unit}`,
+        `🛒→🧤 [MealPlanning] Auto-add fridge: ingredientId=${item.ingredientId} qty=${item.quantity}${item.unit} expiresAt=${expiresAt.toISOString().split('T')[0]}`,
       );
     }
 

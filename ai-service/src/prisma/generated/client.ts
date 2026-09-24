@@ -50,10 +50,10 @@ export type Role = Prisma.RoleModel
  */
 export type User = Prisma.UserModel
 /**
- * Model OtpVerification
+ * Model EmailOtp
  * 
  */
-export type OtpVerification = Prisma.OtpVerificationModel
+export type EmailOtp = Prisma.EmailOtpModel
 /**
  * Model UserProfile
  * 
@@ -210,6 +210,11 @@ export type AdminActivityLog = Prisma.AdminActivityLogModel
  */
 export type Notification = Prisma.NotificationModel
 /**
+ * Model CronJobConfig
+ * 
+ */
+export type CronJobConfig = Prisma.CronJobConfigModel
+/**
  * Model SubscriptionPlan
  * 
  */
@@ -219,3 +224,18 @@ export type SubscriptionPlan = Prisma.SubscriptionPlanModel
  * 
  */
 export type UserSubscription = Prisma.UserSubscriptionModel
+/**
+ * Model PaymentTransaction
+ * 
+ */
+export type PaymentTransaction = Prisma.PaymentTransactionModel
+/**
+ * Model FamilyGroup
+ * 
+ */
+export type FamilyGroup = Prisma.FamilyGroupModel
+/**
+ * Model FamilyMember
+ * 
+ */
+export type FamilyMember = Prisma.FamilyMemberModel

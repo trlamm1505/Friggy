@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../data/models/ingredient_model.dart';
+import '../data/models/user_models.dart';
 import '../l10n/app_localizations.dart';
 import '../data/services/api_service.dart';
 import 'my_fridges_screen.dart';
@@ -36,6 +37,7 @@ class FridgeInventoryScreenState extends State<FridgeInventoryScreen> {
   List<IngredientModel> _ingredients = [];
   bool _isLoading = true;
   final ApiService _apiService = ApiService();
+  FamilyRoleModel? _familyRole;
 
   @override
   void initState() {
@@ -52,9 +54,18 @@ class FridgeInventoryScreenState extends State<FridgeInventoryScreen> {
     try {
       final res = await _apiService.getFridgeItems();
       final list = res.map((e) => IngredientModel.fromFridgeApi(e, widget.fridge.id, widget.fridge.name)).toList();
+      FamilyRoleModel? familyRole;
+      try {
+        final familyRes = await _apiService.getMyFamily();
+        familyRole = FamilyRoleModel.fromJson(familyRes);
+      } catch (e) {
+        debugPrint('Error loading family role in FridgeInventoryScreen: $e');
+      }
+
       if (mounted) {
         setState(() {
           _ingredients = list;
+          _familyRole = familyRole;
           _isLoading = false;
         });
       }
@@ -602,73 +613,74 @@ class FridgeInventoryScreenState extends State<FridgeInventoryScreen> {
                     ),
 
                     // Group Members Pill Badge
-                    GestureDetector(
-                      onTap: () {
-                        showFridgeMembersModal(
-                          context,
-                          fridgeName: fridgeDisplayName,
-                          members: widget.fridge.members,
-                          onAddMember: (newMem) {
-                            setState(() {
-                              widget.fridge.members.add(newMem);
-                            });
-                          },
-                          onRemoveMember: (memId) {
-                            setState(() {
-                              widget.fridge.members
-                                  .removeWhere((m) => m.id == memId);
-                            });
-                          },
-                        );
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: isDark
-                              ? const Color(0xFF19271E)
-                              : Colors.white.withValues(alpha: 0.9),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: isDark
-                                ? const Color(0xFF2E4D36)
-                                : const Color(0xFFA5E69C),
-                            width: 1,
+                    if (_familyRole?.group != null && (_familyRole?.role == 'owner' || _familyRole?.role == 'member'))
+                      GestureDetector(
+                        onTap: () {
+                          showFridgeMembersModal(
+                            context,
+                            fridgeName: fridgeDisplayName,
+                            members: widget.fridge.members,
+                            onAddMember: (newMem) {
+                              setState(() {
+                                widget.fridge.members.add(newMem);
+                              });
+                            },
+                            onRemoveMember: (memId) {
+                              setState(() {
+                                widget.fridge.members
+                                    .removeWhere((m) => m.id == memId);
+                              });
+                            },
+                          );
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
                           ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
-                              blurRadius: 6,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.group_rounded,
-                              size: 15,
+                          decoration: BoxDecoration(
+                            color: isDark
+                                ? const Color(0xFF19271E)
+                                : Colors.white.withValues(alpha: 0.9),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
                               color: isDark
-                                  ? const Color(0xFF81C784)
-                                  : const Color(0xFF008435),
+                                  ? const Color(0xFF2E4D36)
+                                  : const Color(0xFFA5E69C),
+                              width: 1,
                             ),
-                            const SizedBox(width: 5),
-                            Text(
-                              '${widget.fridge.members.length}',
-                              style: GoogleFonts.plusJakartaSans(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w900,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
+                                blurRadius: 6,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.group_rounded,
+                                size: 15,
                                 color: isDark
                                     ? const Color(0xFF81C784)
                                     : const Color(0xFF008435),
                               ),
-                            ),
-                          ],
+                              const SizedBox(width: 5),
+                              Text(
+                                '${_familyRole!.group!.activeCount}',
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w900,
+                                  color: isDark
+                                      ? const Color(0xFF81C784)
+                                      : const Color(0xFF008435),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
                   ],
                 ),
               ),
