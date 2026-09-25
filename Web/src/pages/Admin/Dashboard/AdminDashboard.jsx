@@ -43,7 +43,7 @@ export const AdminDashboard = (props) => {
     if (rawUrl.startsWith('http://') || rawUrl.startsWith('https://') || rawUrl.startsWith('data:')) {
       return rawUrl;
     }
-    const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3069';
+    const apiBase = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || 'https://api.friggy.io.vn/api/v1';
     const baseUrl = apiBase.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
     return `${baseUrl}${rawUrl.startsWith('/') ? '' : '/'}${rawUrl}`;
   };

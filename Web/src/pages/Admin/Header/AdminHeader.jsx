@@ -3,6 +3,7 @@ import { Menu, Sparkles } from 'lucide-react';
 
 import cuteMascotImg from '../../../assets/images/cute_mascot.png';
 import { getMeApi } from '../../../services/userService';
+import { API_BASE_URL } from '../../../utils/constants';
 
 export const AdminHeader = ({ activeTab, setMobileOpen, onExitAdmin }) => {
   const resolveAvatarUrl = (rawUrl) => {
@@ -10,8 +11,7 @@ export const AdminHeader = ({ activeTab, setMobileOpen, onExitAdmin }) => {
     if (rawUrl.startsWith('http://') || rawUrl.startsWith('https://') || rawUrl.startsWith('data:')) {
       return rawUrl;
     }
-    const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3069';
-    const baseUrl = apiBase.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
+    const baseUrl = (API_BASE_URL || '').replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
     return `${baseUrl}${rawUrl.startsWith('/') ? '' : '/'}${rawUrl}`;
   };
 
