@@ -58,33 +58,44 @@ export class RateLimitService {
       return;
     }
 
-    // Đếm số lần đã dùng AI trong tuần hiện tại
+    // Đếm từ mốc mới nhất giữa đầu tuần và lần mua gói gần nhất
+    // → User mua gói giữa tuần được fresh quota ngay, không chờ thứ 2
     const weekStart = this.getWeekStart();
+
+    const sub = await this.prisma.userSubscription.findFirst({
+      where: { userId, status: 'active', deletedAt: null },
+      select: { quotaResetAt: true },
+    });
+    const countFrom =
+      sub?.quotaResetAt && sub.quotaResetAt > weekStart
+        ? sub.quotaResetAt  // Mua gói trong tuần này → đếm từ lúc mua
+        : weekStart;        // Thường → đếm từ đầu tuần (thứ 2)
+
     const usedCount = await this.prisma.aiUsageLog.count({
       where: {
         userId,
-        usedAt: { gte: weekStart },
+        usedAt: { gte: countFrom },
       },
     });
 
     this.logger.log(
-      `📊 Kiểm tra hạn mức: userId=${userId} | tính năng=${featureType} | đã dùng=${usedCount}/${weeklyLimit}`,
+      `📊 Kiểm tra hạn mức: userId=${userId} | tính năng=${featureType} | đã dùng=${usedCount}/${weeklyLimit} | đếm từ=${countFrom.toISOString()}`,
     );
 
     // Hết hạn mức → từ chối và thông báo nâng cấp gói
     if (usedCount >= weeklyLimit) {
-      const individualPlan = await this.prisma.subscriptionPlan.findFirst({
+      const upgradePlan = await this.prisma.subscriptionPlan.findFirst({
         where: { name: 'individual', isActive: true, deletedAt: null },
         select: { priceVnd: true, displayName: true },
       });
-      const priceText = individualPlan?.priceVnd
-        ? `${Math.round(individualPlan.priceVnd / 1000)}k/tháng`
-        : '25k/tháng';
-      const planName = individualPlan?.displayName ?? 'Individual';
+      const priceText = upgradePlan?.priceVnd
+        ? `${Math.round(upgradePlan.priceVnd / 1000)}k/tháng`
+        : '35k/tháng';
+      const planName = upgradePlan?.displayName ?? 'Individual';
 
       throw new ForbiddenException(
         `Bạn đã dùng hết ${weeklyLimit} lượt AI trong tuần này. ` +
-        `Nâng cấp lên gói ${planName} (${priceText}) để sử dụng không giới hạn.`,
+        `Nâng cấp lên gói ${planName} (${priceText}) để sử dụng nhiều hơn.`,
       );
     }
   }

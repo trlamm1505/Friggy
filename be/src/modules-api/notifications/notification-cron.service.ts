@@ -55,18 +55,32 @@ export class NotificationCronService implements OnModuleInit {
   // Khởi động: seed defaults + đăng ký tất cả dynamic jobs
   // ─────────────────────────────────────────────────────────
   async onModuleInit() {
-    await this.seedDefaultConfigs();
-    await this.registerAllJobs();
+    try {
+      await this.seedDefaultConfigs();
+      await this.registerAllJobs();
+    } catch (err) {
+      this.logger.error(`⚠️ Khởi tạo cron service thất bại (sẽ tiếp tục chạy): ${(err as Error)?.message}`);
+    }
   }
 
-  /** Seed các config mặc định nếu DB chưa có */
-  private async seedDefaultConfigs() {
-    for (const config of DEFAULT_CRON_CONFIGS) {
-      await this.prisma.cronJobConfig.upsert({
-        where: { name: config.name },
-        create: config,
-        update: {}, // Không ghi đè nếu đã tồn tại (admin có thể đã sửa)
-      });
+  /** Seed các config mặc định nếu DB chưa có, retry nếu pool chưa sẵn sàng */
+  private async seedDefaultConfigs(retries = 3, delayMs = 3000) {
+    for (let attempt = 1; attempt <= retries; attempt++) {
+      try {
+        for (const config of DEFAULT_CRON_CONFIGS) {
+          await this.prisma.cronJobConfig.upsert({
+            where: { name: config.name },
+            create: config,
+            update: {}, // Không ghi đè nếu đã tồn tại (admin có thể đã sửa)
+          });
+        }
+        return; // thành công
+      } catch (err) {
+        this.logger.warn(`⏳ Seed cron configs attempt ${attempt}/${retries} failed, retry sau ${delayMs}ms...`);
+        if (attempt === retries) throw err;
+        await new Promise((r) => setTimeout(r, delayMs));
+        delayMs *= 2; // exponential backoff
+      }
     }
   }
 

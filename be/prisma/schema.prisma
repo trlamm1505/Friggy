@@ -657,20 +657,21 @@ model SubscriptionPlan {
 }
 
 model UserSubscription {
-  id            String           @id @default(uuid()) @db.Char(36)
-  userId        String           @unique @db.Char(36)
-  planId        Int
-  startDate     DateTime         @db.Date
-  endDate       DateTime?        @db.Date
-  status        String           @db.VarChar(20)  // active | pending | cancelled
-  pendingPlanId Int?                               // planId đang chờ thanh toán (chưa activate)
-  autoRenew     Boolean          @default(true)   // false = đặt hủy gia hạn cuối kỳ
-  cancelledAt   DateTime?                          // thời điểm user yêu cầu hủy gia hạn
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
-  deletedAt     DateTime?
-  plan          SubscriptionPlan @relation(fields: [planId], references: [id])
-  user          User             @relation(fields: [userId], references: [id])
+  id             String           @id @default(uuid()) @db.Char(36)
+  userId         String           @unique @db.Char(36)
+  planId         Int
+  startDate      DateTime         @db.Date
+  endDate        DateTime?        @db.Date
+  status         String           @db.VarChar(20)  // active | pending | cancelled
+  pendingPlanId  Int?                               // planId đang chờ thanh toán (chưa activate)
+  autoRenew      Boolean          @default(true)   // false = đặt hủy gia hạn cuối kỳ
+  cancelledAt    DateTime?                          // thời điểm user yêu cầu hủy gia hạn
+  quotaResetAt   DateTime?                          // reset quota AI khi mua gói mới
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  deletedAt      DateTime?
+  plan           SubscriptionPlan @relation(fields: [planId], references: [id])
+  user           User             @relation(fields: [userId], references: [id])
 
   @@index([userId, status])
   @@index([planId], map: "user_subscriptions_planId_fkey")

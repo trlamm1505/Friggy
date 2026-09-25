@@ -8,15 +8,25 @@ import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const app = await NestFactory.createMicroservice<MicroserviceOptions>(AppModule, {
-    transport: Transport.RMQ,
-    options: {
-      urls: [process.env.RABBIT_MQ_URL ?? 'amqp://user:12345@localhost:5673'],
-      queue: 'email_queue',
-      queueOptions: { durable: true },
-      prefetchCount: 5,
+  const app = await NestFactory.createMicroservice<MicroserviceOptions>(
+    AppModule,
+    {
+      transport: Transport.RMQ,
+      options: {
+        urls: [process.env.RABBIT_MQ_URL ?? 'amqp://user:12345@localhost:5673'],
+        queue: 'email_queue',
+        queueOptions: { durable: true },
+        prefetchCount: 5,
+        socketOptions: {
+          connectionOptions: {
+            clientProperties: {
+              connection_name: 'friggy-email-service',
+            },
+          },
+        },
+      },
     },
-  });
+  );
 
   await app.listen();
   console.log('📧 Email microservice đang lắng nghe queue: email_queue');

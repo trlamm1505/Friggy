@@ -3694,6 +3694,7 @@ export const UserSubscriptionScalarFieldEnum = {
   pendingPlanId: 'pendingPlanId',
   autoRenew: 'autoRenew',
   cancelledAt: 'cancelledAt',
+  quotaResetAt: 'quotaResetAt',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
   deletedAt: 'deletedAt'
