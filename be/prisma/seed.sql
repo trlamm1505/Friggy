@@ -37,8 +37,8 @@ INSERT IGNORE INTO `user_profiles` (`id`, `userId`, `displayName`, `updatedAt`) 
 -- aiUsagePerWeek: -1 = không giới hạn
 -- ============================================================
 INSERT IGNORE INTO `subscription_plans` (`id`, `name`, `displayName`, `priceVnd`, `billingCycle`, `features`, `aiUsagePerWeek`, `isActive`, `createdAt`) VALUES
-  (1, 'free',       'Gói Miễn Phí',  0,      'forever', '["Quản lý tủ lạnh", "Gợi ý công thức cơ bản"]',                         2,  1, NOW()),
-  (2, 'individual', 'Gói Cá Nhân',   79000,  'monthly', '["AI không giới hạn", "Lập thực đơn tuần", "Scan ảnh"]',                -1, 1, NOW()),
+  (1, 'free',       'Gói Miễn Phí',  0,      'forever', '["Quản lý tủ lạnh", "Gợi ý công thức cơ bản"]',                         15,  1, NOW()),
+  (2, 'individual', 'Gói Cá Nhân',   79000,  'monthly', '["AI không giới hạn", "Lập thực đơn tuần", "Scan ảnh"]',                35, 1, NOW()),
   (3, 'family',     'Gói Gia Đình',  149000, 'monthly', '["Tất cả tính năng Individual", "Tối đa 5 thành viên"]',                -1, 1, NOW());
 
 -- ============================================================
