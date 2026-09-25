@@ -215,12 +215,8 @@ export class SubscriptionsService {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
-      // endDate cộng dồn: không mất ngày còn lại nếu gia hạn sớm
-      const baseDate =
-        sub.endDate && sub.endDate > today
-          ? new Date(sub.endDate)
-          : today;
-      const endDate = new Date(baseDate);
+      // endDate = ngày hiện tại + 1 tháng
+      const endDate = new Date(today);
       endDate.setMonth(endDate.getMonth() + 1);
 
       const newPlanId = sub.pendingPlanId ?? tx.planId;
@@ -232,6 +228,7 @@ export class SubscriptionsService {
           status: 'active',
           startDate: today,
           endDate,
+          quotaResetAt: new Date(), // Reset quota ngay khi kích hoạt gói mới
         },
       });
 
