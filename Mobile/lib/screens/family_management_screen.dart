@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../data/models/user_models.dart';
 import '../data/services/api_service.dart';
 import '../l10n/app_localizations.dart';
+import '../config/app_constants.dart';
 import '../widgets/family_plan_modal.dart';
 
 class FamilyManagementScreen extends StatefulWidget {
@@ -442,7 +443,7 @@ class _FamilyManagementScreenState extends State<FamilyManagementScreen> {
   String? _getFullAvatarUrl(String? url) {
     if (url == null || url.isEmpty) return null;
     if (url.startsWith('http://') || url.startsWith('https://')) return url;
-    return 'http://10.0.2.2:6969$url';
+    return '${AppConstants.serverBaseUrl}$url';
   }
 
   @override

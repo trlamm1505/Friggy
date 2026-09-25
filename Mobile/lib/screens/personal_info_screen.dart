@@ -6,6 +6,7 @@ import '../data/local/storage_service.dart';
 import '../data/models/user_models.dart';
 import '../data/services/api_exception.dart';
 import '../data/services/api_service.dart';
+import '../config/app_constants.dart';
 import '../l10n/app_localizations.dart';
 
 class PersonalInfoScreen extends StatefulWidget {
@@ -321,7 +322,7 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
   String? _getFullAvatarUrl(String? url) {
     if (url == null || url.isEmpty) return null;
     if (url.startsWith('http://') || url.startsWith('https://')) return url;
-    return 'http://10.0.2.2:6969$url';
+    return '${AppConstants.serverBaseUrl}$url';
   }
 
   @override
