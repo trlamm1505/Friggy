@@ -6,6 +6,7 @@ import '../data/local/storage_service.dart';
 import '../data/models/user_models.dart';
 import '../data/services/api_service.dart';
 import '../data/services/auth_service.dart';
+import '../config/app_constants.dart';
 import '../l10n/app_localizations.dart';
 import 'login_screen.dart';
 import 'personal_info_screen.dart';
@@ -216,7 +217,7 @@ class UserProfileScreenState extends State<UserProfileScreen> {
   String? _getFullAvatarUrl(String? url) {
     if (url == null || url.isEmpty) return null;
     if (url.startsWith('http://') || url.startsWith('https://')) return url;
-    return 'http://10.0.2.2:6969$url';
+    return '${AppConstants.serverBaseUrl}$url';
   }
 
   @override

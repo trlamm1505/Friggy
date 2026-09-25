@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../config/app_constants.dart';
 import '../data/models/ingredient_model.dart';
 
 class IngredientAvatarWidget extends StatelessWidget {
@@ -19,7 +20,7 @@ class IngredientAvatarWidget extends StatelessWidget {
     if (rawPath.startsWith('http://') || rawPath.startsWith('https://')) {
       fullUrl = rawPath;
     } else if (rawPath.isNotEmpty && rawPath != 'null') {
-      fullUrl = 'http://10.0.2.2:6969${rawPath.startsWith('/') ? '' : '/'}$rawPath';
+      fullUrl = '${AppConstants.serverBaseUrl}${rawPath.startsWith('/') ? '' : '/'}$rawPath';
     }
 
     return Container(

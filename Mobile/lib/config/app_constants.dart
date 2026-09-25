@@ -2,8 +2,17 @@ class AppConstants {
   AppConstants._();
 
   // Network Configuration
-  // 10.0.2.2 is the Android emulator loopback to host machine localhost
-  static const String baseUrl = 'http://10.0.2.2:6969/api/v1';
+  static const String baseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: 'https://api.friggy.io.vn/api/v1',
+  );
+
+  static String get serverBaseUrl {
+    if (baseUrl.endsWith('/api/v1')) {
+      return baseUrl.substring(0, baseUrl.length - '/api/v1'.length);
+    }
+    return baseUrl;
+  }
   static const String googleClientId = '302076463841-itoefla7rlbl9rgadphcodev7poj62rn.apps.googleusercontent.com';
   static const Duration connectTimeout = Duration(seconds: 30);
   static const Duration receiveTimeout = Duration(seconds: 30);
