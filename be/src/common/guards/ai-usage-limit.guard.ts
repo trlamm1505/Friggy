@@ -28,14 +28,14 @@ export class AiUsageLimitGuard implements CanActivate {
   constructor(
     private readonly reflector: Reflector,
     private readonly prisma: PrismaService,
-  ) { }
+  ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     // Lấy featureType từ decorator — nếu không có thì bỏ qua guard
-    const featureType = this.reflector.getAllAndOverride<string>(AI_FEATURE_KEY, [
-      context.getHandler(),
-      context.getClass(),
-    ]);
+    const featureType = this.reflector.getAllAndOverride<string>(
+      AI_FEATURE_KEY,
+      [context.getHandler(), context.getClass()],
+    );
 
     if (!featureType) return true;
 
@@ -55,12 +55,17 @@ export class AiUsageLimitGuard implements CanActivate {
         select: { priceVnd: true, displayName: true },
       }),
       this.prisma.subscriptionPlan.findFirst({
-        where: { OR: [{ name: 'free' }, { priceVnd: 0 }], isActive: true, deletedAt: null },
+        where: {
+          OR: [{ name: 'free' }, { priceVnd: 0 }],
+          isActive: true,
+          deletedAt: null,
+        },
         select: { aiUsagePerWeek: true },
       }),
     ]);
 
-    const limit = subscription?.plan?.aiUsagePerWeek ?? freePlan?.aiUsagePerWeek ?? 0;
+    const limit =
+      subscription?.plan?.aiUsagePerWeek ?? freePlan?.aiUsagePerWeek ?? 0;
     const priceText = individualPlan?.priceVnd
       ? `${Math.round(individualPlan.priceVnd / 1000)}k/tháng`
       : '25k/tháng';
@@ -74,10 +79,15 @@ export class AiUsageLimitGuard implements CanActivate {
     startOfWeek.setDate(now.getDate() - diffToMonday);
     startOfWeek.setHours(0, 0, 0, 0);
 
+    // Nếu user vừa mua gói mới (quotaResetAt > startOfWeek) → reset từ thời điểm mua
+    const quotaResetAt = subscription?.quotaResetAt;
+    const windowStart =
+      quotaResetAt && quotaResetAt > startOfWeek ? quotaResetAt : startOfWeek;
+
     const usedCount = await this.prisma.aiUsageLog.count({
       where: {
         userId,
-        usedAt: { gte: startOfWeek },
+        usedAt: { gte: windowStart },
       },
     });
 
@@ -107,7 +117,9 @@ export class AiUsageLimitGuard implements CanActivate {
       );
     }
 
-    this.logger.log(`✅ AI usage [${featureType}] user ${userId}: ${usedCount}/${limit}`);
+    this.logger.log(
+      `✅ AI usage [${featureType}] user ${userId}: ${usedCount}/${limit}`,
+    );
     return true;
   }
 }
