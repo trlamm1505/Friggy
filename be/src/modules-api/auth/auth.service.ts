@@ -1,4 +1,4 @@
-﻿import {
+import {
   Injectable,
   BadRequestException,
   UnauthorizedException,
@@ -34,7 +34,7 @@ import { ClientProxy } from '@nestjs/microservices';
 import { Inject } from '@nestjs/common';
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID ?? '';
-const OTP_TTL_SECONDS = 300;       // 5 phút
+const OTP_TTL_SECONDS = 300; // 5 phút
 const OTP_MAX_ATTEMPTS = 5;
 const OTP_RATE_LIMIT_MAX = 3;
 const OTP_RATE_LIMIT_WINDOW_MINUTES = 10;
@@ -96,7 +96,10 @@ export class AuthService {
     });
 
     this.logger.log(`📧 OTP register gửi tới ${email}`);
-    return { message: `Mã OTP đã được gửi tới ${email}`, expiresIn: OTP_TTL_SECONDS };
+    return {
+      message: `Mã OTP đã được gửi tới ${email}`,
+      expiresIn: OTP_TTL_SECONDS,
+    };
   }
 
   // ─────────────────────────────────────────────────────────
@@ -117,8 +120,11 @@ export class AuthService {
     await this.validateOtpAttempt(otpRecord, dto.otpCode);
 
     // 2. Lấy role
-    const userRole = await this.prisma.role.findFirst({ where: { name: 'user' } });
-    if (!userRole) throw new InternalServerErrorException('Cấu hình role không tồn tại');
+    const userRole = await this.prisma.role.findFirst({
+      where: { name: 'user' },
+    });
+    if (!userRole)
+      throw new InternalServerErrorException('Cấu hình role không tồn tại');
 
     // 3. Tạo user
     const user = await this.prisma.user.create({
@@ -154,7 +160,12 @@ export class AuthService {
     });
 
     // 7. Sinh tokens
-    const tokens = await this.tokensService.generateTokenPair(user.id, user.role.name, deviceInfo, ipAddress);
+    const tokens = await this.tokensService.generateTokenPair(
+      user.id,
+      user.role.name,
+      deviceInfo,
+      ipAddress,
+    );
 
     return {
       ...tokens,
@@ -205,7 +216,12 @@ export class AuthService {
       data: { lastLoginAt: new Date() },
     });
 
-    const tokens = await this.tokensService.generateTokenPair(user.id, user.role.name, deviceInfo, ipAddress);
+    const tokens = await this.tokensService.generateTokenPair(
+      user.id,
+      user.role.name,
+      deviceInfo,
+      ipAddress,
+    );
 
     return {
       ...tokens,
@@ -232,7 +248,10 @@ export class AuthService {
     // Không tiết lộ email có tồn tại không (security best practice)
     const user = await this.prisma.user.findUnique({ where: { email } });
     if (!user || user.authProvider !== 'email') {
-      return { message: `Nếu email tồn tại, OTP đã được gửi tới ${email}`, expiresIn: OTP_TTL_SECONDS };
+      return {
+        message: `Nếu email tồn tại, OTP đã được gửi tới ${email}`,
+        expiresIn: OTP_TTL_SECONDS,
+      };
     }
 
     await this.checkOtpRateLimit(email);
@@ -240,12 +259,25 @@ export class AuthService {
     const otp = generateOtp();
     const otpHash = await hashOtp(otp);
     await this.prisma.emailOtp.create({
-      data: { id: uuid(), email, otpHash, purpose: 'reset_password', expiresAt: new Date(Date.now() + OTP_TTL_SECONDS * 1000) },
+      data: {
+        id: uuid(),
+        email,
+        otpHash,
+        purpose: 'reset_password',
+        expiresAt: new Date(Date.now() + OTP_TTL_SECONDS * 1000),
+      },
     });
 
-    this.emailClient.emit('email.send', { type: 'otp', to: email, data: { otp, purpose: 'reset_password' } });
+    this.emailClient.emit('email.send', {
+      type: 'otp',
+      to: email,
+      data: { otp, purpose: 'reset_password' },
+    });
 
-    return { message: `Nếu email tồn tại, OTP đã được gửi tới ${email}`, expiresIn: OTP_TTL_SECONDS };
+    return {
+      message: `Nếu email tồn tại, OTP đã được gửi tới ${email}`,
+      expiresIn: OTP_TTL_SECONDS,
+    };
   }
 
   // ─────────────────────────────────────────────────────────
@@ -272,7 +304,10 @@ export class AuthService {
   // CHANGE PASSWORD — Đổi mật khẩu khi đã đăng nhập
   // ─────────────────────────────────────────────────────────
 
-  async changePassword(userId: string, dto: ChangePasswordDto): Promise<MessageResponseDto> {
+  async changePassword(
+    userId: string,
+    dto: ChangePasswordDto,
+  ): Promise<MessageResponseDto> {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user || !user.passwordHash) {
       throw new BadRequestException('Tài khoản không dùng email + mật khẩu');
@@ -284,7 +319,10 @@ export class AuthService {
     }
 
     const newHash = await bcrypt.hash(dto.newPassword, BCRYPT_ROUNDS);
-    await this.prisma.user.update({ where: { id: userId }, data: { passwordHash: newHash } });
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { passwordHash: newHash },
+    });
 
     // Gửi email xác nhận
     if (user.email) {
@@ -302,10 +340,17 @@ export class AuthService {
   // GOOGLE AUTH (giữ nguyên logic, chỉ đổi field phone→email)
   // ─────────────────────────────────────────────────────────
 
-  async googleAuth(dto: GoogleAuthDto, deviceInfo?: string, ipAddress?: string): Promise<AuthResponseDto> {
+  async googleAuth(
+    dto: GoogleAuthDto,
+    deviceInfo?: string,
+    ipAddress?: string,
+  ): Promise<AuthResponseDto> {
     let googlePayload: { sub: string; email?: string; name?: string };
     try {
-      const ticket = await this.googleClient.verifyIdToken({ idToken: dto.idToken, audience: GOOGLE_CLIENT_ID || undefined });
+      const ticket = await this.googleClient.verifyIdToken({
+        idToken: dto.idToken,
+        audience: GOOGLE_CLIENT_ID || undefined,
+      });
       const p = ticket.getPayload();
       if (!p?.sub) throw new Error('No sub in Google payload');
       googlePayload = { sub: p.sub, email: p.email, name: p.name };
@@ -314,8 +359,11 @@ export class AuthService {
       throw new UnauthorizedException('Google ID Token không hợp lệ');
     }
 
-    const userRole = await this.prisma.role.findFirst({ where: { name: 'user' } });
-    if (!userRole) throw new InternalServerErrorException('Cấu hình role không tồn tại');
+    const userRole = await this.prisma.role.findFirst({
+      where: { name: 'user' },
+    });
+    if (!userRole)
+      throw new InternalServerErrorException('Cấu hình role không tồn tại');
 
     let isNewUser = false;
 
@@ -342,14 +390,17 @@ export class AuthService {
           googleEmail: googlePayload.email,
           lastLoginAt: new Date(),
         };
-        if (!existingByEmail.name && googlePayload.name) updateData.name = googlePayload.name;
+        if (!existingByEmail.name && googlePayload.name)
+          updateData.name = googlePayload.name;
 
         user = await this.prisma.user.update({
           where: { id: existingByEmail.id },
           data: updateData,
           include: { role: true },
         });
-        this.logger.log(`🔗 Merge Google → email account: ${googlePayload.email}`);
+        this.logger.log(
+          `🔗 Merge Google → email account: ${googlePayload.email}`,
+        );
       }
     }
 
@@ -374,7 +425,11 @@ export class AuthService {
 
       if (googlePayload.name) {
         await this.prisma.userProfile.create({
-          data: { id: uuid(), userId: user.id, displayName: googlePayload.name },
+          data: {
+            id: uuid(),
+            userId: user.id,
+            displayName: googlePayload.name,
+          },
         });
       }
       await this.assignFreePlan(user.id);
@@ -388,16 +443,28 @@ export class AuthService {
         });
       }
     } else {
-      if (user.status === 'suspended') throw new ForbiddenException('Tài khoản của bạn đã bị khoá');
+      if (user.status === 'suspended')
+        throw new ForbiddenException('Tài khoản của bạn đã bị khoá');
       const updateData: any = { lastLoginAt: new Date() };
-      if (!user.name && googlePayload.name) updateData.name = googlePayload.name;
+      if (!user.name && googlePayload.name)
+        updateData.name = googlePayload.name;
       // Cập nhật googleId nếu chưa có (trường hợp merge)
       if (!user.googleId) updateData.googleId = googlePayload.sub;
-      if (!user.googleEmail && googlePayload.email) updateData.googleEmail = googlePayload.email;
-      user = await this.prisma.user.update({ where: { id: user.id }, data: updateData, include: { role: true } });
+      if (!user.googleEmail && googlePayload.email)
+        updateData.googleEmail = googlePayload.email;
+      user = await this.prisma.user.update({
+        where: { id: user.id },
+        data: updateData,
+        include: { role: true },
+      });
     }
 
-    const tokens = await this.tokensService.generateTokenPair(user.id, user.role.name, deviceInfo, ipAddress);
+    const tokens = await this.tokensService.generateTokenPair(
+      user.id,
+      user.role.name,
+      deviceInfo,
+      ipAddress,
+    );
 
     return {
       ...tokens,
@@ -414,14 +481,18 @@ export class AuthService {
     };
   }
 
-
   // ─────────────────────────────────────────────────────────
   // REFRESH TOKEN
   // ─────────────────────────────────────────────────────────
 
   async refresh(dto: RefreshTokenDto): Promise<RefreshResponseDto> {
-    const payload = await this.tokensService.verifyRefreshToken(dto.refreshToken);
-    if (!payload) throw new UnauthorizedException('Refresh token không hợp lệ hoặc đã hết hạn');
+    const payload = await this.tokensService.verifyRefreshToken(
+      dto.refreshToken,
+    );
+    if (!payload)
+      throw new UnauthorizedException(
+        'Refresh token không hợp lệ hoặc đã hết hạn',
+      );
     const accessToken = await this.tokensService.refreshAccessToken(payload);
     return { accessToken };
   }
@@ -439,7 +510,9 @@ export class AuthService {
   // ─────────────────────────────────────────────────────────
 
   private async checkOtpRateLimit(email: string): Promise<void> {
-    const windowStart = new Date(Date.now() - OTP_RATE_LIMIT_WINDOW_MINUTES * 60_000);
+    const windowStart = new Date(
+      Date.now() - OTP_RATE_LIMIT_WINDOW_MINUTES * 60_000,
+    );
     const count = await this.prisma.emailOtp.count({
       where: { email, createdAt: { gt: windowStart } },
     });
@@ -455,19 +528,28 @@ export class AuthService {
       where: { email, purpose: purpose as any, expiresAt: { gt: new Date() } },
       orderBy: { createdAt: 'desc' },
     });
-    if (!record) throw new BadRequestException('OTP không tồn tại hoặc đã hết hạn');
+    if (!record)
+      throw new BadRequestException('OTP không tồn tại hoặc đã hết hạn');
     return record;
   }
 
-  private async validateOtpAttempt(otpRecord: any, inputOtp: string): Promise<void> {
+  private async validateOtpAttempt(
+    otpRecord: any,
+    inputOtp: string,
+  ): Promise<void> {
     if (otpRecord.attempts >= OTP_MAX_ATTEMPTS) {
       await this.prisma.emailOtp.delete({ where: { id: otpRecord.id } });
-      throw new BadRequestException('OTP đã vượt quá số lần thử. Vui lòng yêu cầu OTP mới.');
+      throw new BadRequestException(
+        'OTP đã vượt quá số lần thử. Vui lòng yêu cầu OTP mới.',
+      );
     }
 
     const isValid = await verifyOtp(inputOtp, otpRecord.otpHash);
     if (!isValid) {
-      await this.prisma.emailOtp.update({ where: { id: otpRecord.id }, data: { attempts: otpRecord.attempts + 1 } });
+      await this.prisma.emailOtp.update({
+        where: { id: otpRecord.id },
+        data: { attempts: otpRecord.attempts + 1 },
+      });
       throw new BadRequestException('OTP không chính xác');
     }
 
@@ -476,12 +558,16 @@ export class AuthService {
   }
 
   private async assignFreePlan(userId: string): Promise<void> {
-    const freePlan = await this.prisma.subscriptionPlan.findFirst({ where: { name: 'free', isActive: true } });
+    const freePlan = await this.prisma.subscriptionPlan.findFirst({
+      where: { name: 'free', isActive: true },
+    });
     if (!freePlan) {
       this.logger.warn(`⚠️ Không tìm thấy gói 'free' trong DB`);
       return;
     }
-    const existing = await this.prisma.userSubscription.findUnique({ where: { userId } });
+    const existing = await this.prisma.userSubscription.findUnique({
+      where: { userId },
+    });
     if (existing) return;
 
     await this.prisma.userSubscription.create({
