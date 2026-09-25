@@ -24,6 +24,7 @@ export class AdminStatsService {
       newUsersThisMonth,
       activeSubscriptions,
       revenueThisMonth,
+      totalRevenue,
     ] = await Promise.all([
       this.prisma.user.count({ where: { deletedAt: null } }),
       this.prisma.user.count({ where: { deletedAt: null, status: 'active' } }),
@@ -35,17 +36,20 @@ export class AdminStatsService {
           OR: [{ endDate: null }, { endDate: { gte: now } }],
         },
       }),
-      // Revenue = tổng priceVnd của các subscription active tháng này
-      this.prisma.userSubscription.findMany({
-        where: { createdAt: { gte: monthStart }, status: 'active' },
-        select: { plan: { select: { priceVnd: true } } },
+      // Doanh thu tháng này = tổng tiền giao dịch paid trong tháng
+      this.prisma.paymentTransaction.aggregate({
+        where: { status: 'paid', createdAt: { gte: monthStart } },
+        _sum: { amount: true },
+      }),
+      // Tổng doanh thu toàn thời gian
+      this.prisma.paymentTransaction.aggregate({
+        where: { status: 'paid' },
+        _sum: { amount: true },
       }),
     ]);
 
-    const revenueVnd = revenueThisMonth.reduce(
-      (sum, s) => sum + (s.plan?.priceVnd ?? 0),
-      0,
-    );
+    const revenueVnd = revenueThisMonth._sum.amount ?? 0;
+    const totalRevenueVnd = totalRevenue._sum.amount ?? 0;
 
     return {
       totalUsers,
@@ -54,6 +58,7 @@ export class AdminStatsService {
       newUsersThisMonth,
       activeSubscriptions,
       revenueThisMonthVnd: revenueVnd,
+      totalRevenueVnd,
     };
   }
 

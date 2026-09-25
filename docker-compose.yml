@@ -1,0 +1,127 @@
+version: '3.9'
+
+# ============================================================
+# FRIGGY — Docker Compose
+# Dùng: docker compose up -d --build
+# ============================================================
+
+services:
+  # ── Infrastructure ────────────────────────────────────────
+
+  mysql:
+    image: mysql:8.0
+    container_name: con-friggy-mysql
+    restart: unless-stopped
+    env_file: .env.docker
+    ports:
+      - "3309:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./be/prisma/seed.sql:/docker-entrypoint-initdb.d/seed.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - friggy-net
+
+  redis:
+    image: redis:7-alpine
+    container_name: con-friggy-redis
+    restart: unless-stopped
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - friggy-net
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: con-friggy-rabbitmq
+    restart: unless-stopped
+    env_file: .env.docker
+    ports:
+      - "5673:5672"    # AMQP
+      - "15673:15672"  # Management UI
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+    networks:
+      - friggy-net
+
+  # ── Application Services ──────────────────────────────────
+
+  be:
+    build:
+      context: ./be
+      dockerfile: Dockerfile
+    container_name: con-friggy-be
+    restart: unless-stopped
+    env_file: .env.docker
+    ports:
+      - "6969:6969"
+    volumes:
+      - ./be/public:/app/public   # avatar, ảnh upload — bind mount vào folder thật
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - friggy-net
+
+  ai-service:
+    build:
+      context: ./ai-service
+      dockerfile: Dockerfile
+    container_name: con-friggy-ai
+    restart: unless-stopped
+    env_file: .env.docker
+    ports:
+      - "6970:6970"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - friggy-net
+
+  email-service:
+    build:
+      context: ./email-service
+      dockerfile: Dockerfile
+    container_name: con-friggy-email
+    restart: unless-stopped
+    env_file: .env.docker
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - friggy-net
+
+# ── Volumes & Networks ─────────────────────────────────────
+
+volumes:
+  mysql_data:
+  redis_data:
+  rabbitmq_data:
+
+networks:
+  friggy-net:
+    driver: bridge

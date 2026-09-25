@@ -24,9 +24,3 @@ CREATE TABLE IF NOT EXISTS `payment_transactions` (
   INDEX `payment_transactions_userId_idx` (`userId`),
   INDEX `payment_transactions_status_expiredAt_idx` (`status`, `expiredAt`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
--- Remove payosOrderCode unique index + column from user_subscriptions
-ALTER TABLE `user_subscriptions` DROP INDEX `user_subscriptions_payosOrderCode_key`;
-ALTER TABLE `user_subscriptions` DROP COLUMN `payosOrderCode`;
-ALTER TABLE `user_subscriptions` DROP COLUMN `paymentRef`;
-ALTER TABLE `user_subscriptions` DROP COLUMN `payosPaymentLinkId`;
