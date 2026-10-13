@@ -4,7 +4,7 @@ export const defaultSystemSettings = {
   supportHotline: '0854340045 - 0398050670',
   supportEmail: 'friggy@gmail.com',
   workingHours: 'Hỗ trợ 24/7 (Phản hồi trong 5 phút)',
-  downloadUrl: '/friggy-app.apk',
+  downloadUrl: 'https://github.com/trlamm1505/Friggy/releases/latest/download/friggy-app.apk',
   qrImageUrl: '',
 };
 
