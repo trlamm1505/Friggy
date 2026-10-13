@@ -26,7 +26,7 @@ export const DownloadCtaBanner = () => {
     };
   }, []);
 
-  const rawDownloadUrl = settings.downloadUrl || '/friggy-app.apk';
+  const rawDownloadUrl = settings.downloadUrl || 'https://github.com/trlamm1505/Friggy/releases/latest/download/friggy-app.apk';
   const fullDownloadUrl = typeof window !== 'undefined'
     ? (rawDownloadUrl.startsWith('http') ? rawDownloadUrl : `${window.location.origin}${rawDownloadUrl.startsWith('/') ? '' : '/'}${rawDownloadUrl}`)
     : rawDownloadUrl;
