@@ -139,6 +139,8 @@ export class AdminIngredientsService {
         name: dto.name,
         parentId: dto.parentId ?? null,
         defaultShelfLifeDays: dto.defaultShelfLifeDays ?? null,
+        freezerShelfLifeDays: dto.freezerShelfLifeDays ?? null,
+        pantryShelfLifeDays:  dto.pantryShelfLifeDays  ?? null,
       },
       include: { children: { where: { deletedAt: null } } },
     });
@@ -177,6 +179,12 @@ export class AdminIngredientsService {
         ...(dto.parentId !== undefined && { parentId: dto.parentId }),
         ...(dto.defaultShelfLifeDays !== undefined && {
           defaultShelfLifeDays: dto.defaultShelfLifeDays,
+        }),
+        ...(dto.freezerShelfLifeDays !== undefined && {
+          freezerShelfLifeDays: dto.freezerShelfLifeDays,
+        }),
+        ...(dto.pantryShelfLifeDays !== undefined && {
+          pantryShelfLifeDays: dto.pantryShelfLifeDays,
         }),
       },
       include: { children: { where: { deletedAt: null } } },
@@ -258,12 +266,16 @@ export class AdminIngredientsService {
       iconPath: c.iconPath ?? null,
       parentId: c.parentId ?? null,
       defaultShelfLifeDays: c.defaultShelfLifeDays ?? null,
+      freezerShelfLifeDays: c.freezerShelfLifeDays ?? null,
+      pantryShelfLifeDays:  c.pantryShelfLifeDays  ?? null,
       children: (c.children ?? []).map((child: any) => ({
         id: child.id,
         name: child.name,
         iconPath: child.iconPath ?? null,
         parentId: child.parentId ?? null,
         defaultShelfLifeDays: child.defaultShelfLifeDays ?? null,
+        freezerShelfLifeDays: child.freezerShelfLifeDays ?? null,
+        pantryShelfLifeDays:  child.pantryShelfLifeDays  ?? null,
       })),
     };
   }

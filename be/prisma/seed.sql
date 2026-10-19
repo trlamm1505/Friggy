@@ -33,6 +33,27 @@ INSERT IGNORE INTO `user_profiles` (`id`, `userId`, `displayName`, `updatedAt`) 
    'Friggy Admin', NOW());
 
 -- ============================================================
+-- [1c] TEST USER ACCOUNT
+-- Email   : user@friggy.vn
+-- Password: User@12345  (bcrypt rounds=10)
+-- ⚠️ Chỉ dùng cho môi trường dev/test
+-- ============================================================
+INSERT IGNORE INTO `users`
+  (`id`, `email`, `passwordHash`, `authProvider`, `status`, `roleId`, `isOnboardingCompleted`, `name`, `createdAt`, `updatedAt`)
+VALUES
+  ('00000000-0000-0000-0000-000000000002',
+   'user@friggy.vn',
+   '$2b$10$96ezLLhHcO29v9tjkmdrMeEjEj8QzaaMSTWL.hwrKm9L3pVYkDMW.',
+   'email', 'active', 2, 1, 'Test User', NOW(), NOW());
+
+INSERT IGNORE INTO `user_profiles`
+  (`id`, `userId`, `displayName`, `updatedAt`)
+VALUES
+  ('00000000-0000-0000-0000-000000000002',
+   '00000000-0000-0000-0000-000000000002',
+   'Test User', NOW());
+
+-- ============================================================
 -- [2] SUBSCRIPTION PLANS
 -- aiUsagePerWeek: -1 = không giới hạn
 -- ============================================================

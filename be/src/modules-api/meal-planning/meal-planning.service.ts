@@ -21,6 +21,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { MEAL_PLAN_ROUTING_KEY, AI_SLOT_REGENERATE_ROUTING_KEY, AI_EXPIRING_MEAL_ROUTING_KEY } from 'src/common/constants/app.constant';
 import { RabbitMqPublisherService } from 'src/modules-system/rabbit-mq/rabbit-mq-publisher.service';
 import { normalizeToBaseUnit, canCompare } from 'src/common/utils/unit.util';
+import { estimateExpiryDate } from 'src/common/utils/expiry-estimator.util';
 import type {
   GenerateMealPlanDto,
   UpdateMealPlanDto,
@@ -418,12 +419,14 @@ export class MealPlanningService {
 
     const newPurchased = !item.isPurchased;
 
-    // Khi tick ĐÃ MUA → tự động thêm vào tủ lạnh (kèm tính HSD mặc định)
-    // Khi bỏ tick (undo) → KHÔNG rollback FridgeItem (an toàn hơn)
+    // Khi tick ĐÃ MUA → tự động thêm vào tủ lạnh (kèm tính HSD theo category + location)
+    // Shopping list luôn add vào ngăn mát (fridge) theo mặc định
     if (newPurchased) {
-      const shelfDays = item.ingredient?.category?.defaultShelfLifeDays ?? 7;
-      const expiresAt = new Date();
-      expiresAt.setDate(expiresAt.getDate() + shelfDays);
+      const expiresAt = estimateExpiryDate(
+        item.ingredient?.category,
+        item.ingredient?.name ?? '',
+        'fridge',
+      );
 
       await this.prisma.fridgeItem.create({
         data: {

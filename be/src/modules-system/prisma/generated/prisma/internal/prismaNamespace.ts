@@ -3308,6 +3308,8 @@ export const IngredientCategoryScalarFieldEnum = {
   iconPath: 'iconPath',
   parentId: 'parentId',
   defaultShelfLifeDays: 'defaultShelfLifeDays',
+  freezerShelfLifeDays: 'freezerShelfLifeDays',
+  pantryShelfLifeDays: 'pantryShelfLifeDays',
   createdAt: 'createdAt',
   deletedAt: 'deletedAt'
 } as const
