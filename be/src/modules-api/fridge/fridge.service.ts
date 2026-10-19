@@ -142,13 +142,14 @@ export class FridgeService {
       throw new BadRequestException(`Nguyên liệu '${dto.name || ''}' chưa có trong danh mục hệ thống.`);
     }
 
-    // Tự tính ngày hết hạn nếu FE không truyền (ưu tiên DB → category name → keyword → 7 ngày)
+    // Tự tính ngày hết hạn nếu FE không truyền (ưu tiên DB field theo location → nhân hệ số → bảng hardcode → keyword → fallback)
+    const storageLocation = (dto.storageLocation ?? 'fridge') as 'fridge' | 'freezer' | 'pantry';
     const expiresAt = dto.expiresAt
       ? new Date(dto.expiresAt)
       : estimateExpiryDate(
-          ingredient.category?.defaultShelfLifeDays,
-          ingredient.category?.name,
+          ingredient.category,
           ingredient.name,
+          storageLocation,
         );
 
     const item = await this.prisma.fridgeItem.create({
@@ -394,13 +395,14 @@ export class FridgeService {
         throw new BadRequestException(`Nguyên liệu '${item.name || ''}' chưa có trong danh mục hệ thống.`);
       }
 
-      // Tự tính ngày hết hạn nếu FE không truyền (ưu tiên DB → category name → keyword → 7 ngày)
+      // Tự tính ngày hết hạn nếu FE không truyền (ưu tiên DB field theo location → nhân hệ số → bảng hardcode → keyword → fallback)
+      const itemStorageLocation = (item.storageLocation ?? 'fridge') as 'fridge' | 'freezer' | 'pantry';
       const expiresAt = item.expiresAt
         ? new Date(item.expiresAt)
         : estimateExpiryDate(
-            ingredient.category?.defaultShelfLifeDays,
-            ingredient.category?.name,
+            ingredient.category,
             ingredient.name,
+            itemStorageLocation,
           );
 
       const fridgeItem = await this.prisma.fridgeItem.create({

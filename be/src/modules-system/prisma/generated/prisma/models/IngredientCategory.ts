@@ -30,12 +30,16 @@ export type IngredientCategoryAvgAggregateOutputType = {
   id: number | null
   parentId: number | null
   defaultShelfLifeDays: number | null
+  freezerShelfLifeDays: number | null
+  pantryShelfLifeDays: number | null
 }
 
 export type IngredientCategorySumAggregateOutputType = {
   id: number | null
   parentId: number | null
   defaultShelfLifeDays: number | null
+  freezerShelfLifeDays: number | null
+  pantryShelfLifeDays: number | null
 }
 
 export type IngredientCategoryMinAggregateOutputType = {
@@ -44,6 +48,8 @@ export type IngredientCategoryMinAggregateOutputType = {
   iconPath: string | null
   parentId: number | null
   defaultShelfLifeDays: number | null
+  freezerShelfLifeDays: number | null
+  pantryShelfLifeDays: number | null
   createdAt: Date | null
   deletedAt: Date | null
 }
@@ -54,6 +60,8 @@ export type IngredientCategoryMaxAggregateOutputType = {
   iconPath: string | null
   parentId: number | null
   defaultShelfLifeDays: number | null
+  freezerShelfLifeDays: number | null
+  pantryShelfLifeDays: number | null
   createdAt: Date | null
   deletedAt: Date | null
 }
@@ -64,6 +72,8 @@ export type IngredientCategoryCountAggregateOutputType = {
   iconPath: number
   parentId: number
   defaultShelfLifeDays: number
+  freezerShelfLifeDays: number
+  pantryShelfLifeDays: number
   createdAt: number
   deletedAt: number
   _all: number
@@ -74,12 +84,16 @@ export type IngredientCategoryAvgAggregateInputType = {
   id?: true
   parentId?: true
   defaultShelfLifeDays?: true
+  freezerShelfLifeDays?: true
+  pantryShelfLifeDays?: true
 }
 
 export type IngredientCategorySumAggregateInputType = {
   id?: true
   parentId?: true
   defaultShelfLifeDays?: true
+  freezerShelfLifeDays?: true
+  pantryShelfLifeDays?: true
 }
 
 export type IngredientCategoryMinAggregateInputType = {
@@ -88,6 +102,8 @@ export type IngredientCategoryMinAggregateInputType = {
   iconPath?: true
   parentId?: true
   defaultShelfLifeDays?: true
+  freezerShelfLifeDays?: true
+  pantryShelfLifeDays?: true
   createdAt?: true
   deletedAt?: true
 }
@@ -98,6 +114,8 @@ export type IngredientCategoryMaxAggregateInputType = {
   iconPath?: true
   parentId?: true
   defaultShelfLifeDays?: true
+  freezerShelfLifeDays?: true
+  pantryShelfLifeDays?: true
   createdAt?: true
   deletedAt?: true
 }
@@ -108,6 +126,8 @@ export type IngredientCategoryCountAggregateInputType = {
   iconPath?: true
   parentId?: true
   defaultShelfLifeDays?: true
+  freezerShelfLifeDays?: true
+  pantryShelfLifeDays?: true
   createdAt?: true
   deletedAt?: true
   _all?: true
@@ -205,6 +225,8 @@ export type IngredientCategoryGroupByOutputType = {
   iconPath: string | null
   parentId: number | null
   defaultShelfLifeDays: number | null
+  freezerShelfLifeDays: number | null
+  pantryShelfLifeDays: number | null
   createdAt: Date
   deletedAt: Date | null
   _count: IngredientCategoryCountAggregateOutputType | null
@@ -238,6 +260,8 @@ export type IngredientCategoryWhereInput = {
   iconPath?: Prisma.StringNullableFilter<"IngredientCategory"> | string | null
   parentId?: Prisma.IntNullableFilter<"IngredientCategory"> | number | null
   defaultShelfLifeDays?: Prisma.IntNullableFilter<"IngredientCategory"> | number | null
+  freezerShelfLifeDays?: Prisma.IntNullableFilter<"IngredientCategory"> | number | null
+  pantryShelfLifeDays?: Prisma.IntNullableFilter<"IngredientCategory"> | number | null
   createdAt?: Prisma.DateTimeFilter<"IngredientCategory"> | Date | string
   deletedAt?: Prisma.DateTimeNullableFilter<"IngredientCategory"> | Date | string | null
   parent?: Prisma.XOR<Prisma.IngredientCategoryNullableScalarRelationFilter, Prisma.IngredientCategoryWhereInput> | null
@@ -251,6 +275,8 @@ export type IngredientCategoryOrderByWithRelationInput = {
   iconPath?: Prisma.SortOrderInput | Prisma.SortOrder
   parentId?: Prisma.SortOrderInput | Prisma.SortOrder
   defaultShelfLifeDays?: Prisma.SortOrderInput | Prisma.SortOrder
+  freezerShelfLifeDays?: Prisma.SortOrderInput | Prisma.SortOrder
+  pantryShelfLifeDays?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   parent?: Prisma.IngredientCategoryOrderByWithRelationInput
@@ -268,6 +294,8 @@ export type IngredientCategoryWhereUniqueInput = Prisma.AtLeast<{
   iconPath?: Prisma.StringNullableFilter<"IngredientCategory"> | string | null
   parentId?: Prisma.IntNullableFilter<"IngredientCategory"> | number | null
   defaultShelfLifeDays?: Prisma.IntNullableFilter<"IngredientCategory"> | number | null
+  freezerShelfLifeDays?: Prisma.IntNullableFilter<"IngredientCategory"> | number | null
+  pantryShelfLifeDays?: Prisma.IntNullableFilter<"IngredientCategory"> | number | null
   createdAt?: Prisma.DateTimeFilter<"IngredientCategory"> | Date | string
   deletedAt?: Prisma.DateTimeNullableFilter<"IngredientCategory"> | Date | string | null
   parent?: Prisma.XOR<Prisma.IngredientCategoryNullableScalarRelationFilter, Prisma.IngredientCategoryWhereInput> | null
@@ -281,6 +309,8 @@ export type IngredientCategoryOrderByWithAggregationInput = {
   iconPath?: Prisma.SortOrderInput | Prisma.SortOrder
   parentId?: Prisma.SortOrderInput | Prisma.SortOrder
   defaultShelfLifeDays?: Prisma.SortOrderInput | Prisma.SortOrder
+  freezerShelfLifeDays?: Prisma.SortOrderInput | Prisma.SortOrder
+  pantryShelfLifeDays?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   _count?: Prisma.IngredientCategoryCountOrderByAggregateInput
@@ -299,6 +329,8 @@ export type IngredientCategoryScalarWhereWithAggregatesInput = {
   iconPath?: Prisma.StringNullableWithAggregatesFilter<"IngredientCategory"> | string | null
   parentId?: Prisma.IntNullableWithAggregatesFilter<"IngredientCategory"> | number | null
   defaultShelfLifeDays?: Prisma.IntNullableWithAggregatesFilter<"IngredientCategory"> | number | null
+  freezerShelfLifeDays?: Prisma.IntNullableWithAggregatesFilter<"IngredientCategory"> | number | null
+  pantryShelfLifeDays?: Prisma.IntNullableWithAggregatesFilter<"IngredientCategory"> | number | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"IngredientCategory"> | Date | string
   deletedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"IngredientCategory"> | Date | string | null
 }
@@ -307,6 +339,8 @@ export type IngredientCategoryCreateInput = {
   name: string
   iconPath?: string | null
   defaultShelfLifeDays?: number | null
+  freezerShelfLifeDays?: number | null
+  pantryShelfLifeDays?: number | null
   createdAt?: Date | string
   deletedAt?: Date | string | null
   parent?: Prisma.IngredientCategoryCreateNestedOneWithoutChildrenInput
@@ -320,6 +354,8 @@ export type IngredientCategoryUncheckedCreateInput = {
   iconPath?: string | null
   parentId?: number | null
   defaultShelfLifeDays?: number | null
+  freezerShelfLifeDays?: number | null
+  pantryShelfLifeDays?: number | null
   createdAt?: Date | string
   deletedAt?: Date | string | null
   children?: Prisma.IngredientCategoryUncheckedCreateNestedManyWithoutParentInput
@@ -330,6 +366,8 @@ export type IngredientCategoryUpdateInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   iconPath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   defaultShelfLifeDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  freezerShelfLifeDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  pantryShelfLifeDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   parent?: Prisma.IngredientCategoryUpdateOneWithoutChildrenNestedInput
@@ -343,6 +381,8 @@ export type IngredientCategoryUncheckedUpdateInput = {
   iconPath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   parentId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   defaultShelfLifeDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  freezerShelfLifeDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  pantryShelfLifeDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   children?: Prisma.IngredientCategoryUncheckedUpdateManyWithoutParentNestedInput
@@ -355,6 +395,8 @@ export type IngredientCategoryCreateManyInput = {
   iconPath?: string | null
   parentId?: number | null
   defaultShelfLifeDays?: number | null
+  freezerShelfLifeDays?: number | null
+  pantryShelfLifeDays?: number | null
   createdAt?: Date | string
   deletedAt?: Date | string | null
 }
@@ -363,6 +405,8 @@ export type IngredientCategoryUpdateManyMutationInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   iconPath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   defaultShelfLifeDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  freezerShelfLifeDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  pantryShelfLifeDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
@@ -373,6 +417,8 @@ export type IngredientCategoryUncheckedUpdateManyInput = {
   iconPath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   parentId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   defaultShelfLifeDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  freezerShelfLifeDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  pantryShelfLifeDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
@@ -404,6 +450,8 @@ export type IngredientCategoryCountOrderByAggregateInput = {
   iconPath?: Prisma.SortOrder
   parentId?: Prisma.SortOrder
   defaultShelfLifeDays?: Prisma.SortOrder
+  freezerShelfLifeDays?: Prisma.SortOrder
+  pantryShelfLifeDays?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrder
 }
@@ -412,6 +460,8 @@ export type IngredientCategoryAvgOrderByAggregateInput = {
   id?: Prisma.SortOrder
   parentId?: Prisma.SortOrder
   defaultShelfLifeDays?: Prisma.SortOrder
+  freezerShelfLifeDays?: Prisma.SortOrder
+  pantryShelfLifeDays?: Prisma.SortOrder
 }
 
 export type IngredientCategoryMaxOrderByAggregateInput = {
@@ -420,6 +470,8 @@ export type IngredientCategoryMaxOrderByAggregateInput = {
   iconPath?: Prisma.SortOrder
   parentId?: Prisma.SortOrder
   defaultShelfLifeDays?: Prisma.SortOrder
+  freezerShelfLifeDays?: Prisma.SortOrder
+  pantryShelfLifeDays?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrder
 }
@@ -430,6 +482,8 @@ export type IngredientCategoryMinOrderByAggregateInput = {
   iconPath?: Prisma.SortOrder
   parentId?: Prisma.SortOrder
   defaultShelfLifeDays?: Prisma.SortOrder
+  freezerShelfLifeDays?: Prisma.SortOrder
+  pantryShelfLifeDays?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrder
 }
@@ -438,6 +492,8 @@ export type IngredientCategorySumOrderByAggregateInput = {
   id?: Prisma.SortOrder
   parentId?: Prisma.SortOrder
   defaultShelfLifeDays?: Prisma.SortOrder
+  freezerShelfLifeDays?: Prisma.SortOrder
+  pantryShelfLifeDays?: Prisma.SortOrder
 }
 
 export type IngredientCategoryScalarRelationFilter = {
@@ -521,6 +577,8 @@ export type IngredientCategoryCreateWithoutChildrenInput = {
   name: string
   iconPath?: string | null
   defaultShelfLifeDays?: number | null
+  freezerShelfLifeDays?: number | null
+  pantryShelfLifeDays?: number | null
   createdAt?: Date | string
   deletedAt?: Date | string | null
   parent?: Prisma.IngredientCategoryCreateNestedOneWithoutChildrenInput
@@ -533,6 +591,8 @@ export type IngredientCategoryUncheckedCreateWithoutChildrenInput = {
   iconPath?: string | null
   parentId?: number | null
   defaultShelfLifeDays?: number | null
+  freezerShelfLifeDays?: number | null
+  pantryShelfLifeDays?: number | null
   createdAt?: Date | string
   deletedAt?: Date | string | null
   ingredients?: Prisma.IngredientUncheckedCreateNestedManyWithoutCategoryInput
@@ -547,6 +607,8 @@ export type IngredientCategoryCreateWithoutParentInput = {
   name: string
   iconPath?: string | null
   defaultShelfLifeDays?: number | null
+  freezerShelfLifeDays?: number | null
+  pantryShelfLifeDays?: number | null
   createdAt?: Date | string
   deletedAt?: Date | string | null
   children?: Prisma.IngredientCategoryCreateNestedManyWithoutParentInput
@@ -558,6 +620,8 @@ export type IngredientCategoryUncheckedCreateWithoutParentInput = {
   name: string
   iconPath?: string | null
   defaultShelfLifeDays?: number | null
+  freezerShelfLifeDays?: number | null
+  pantryShelfLifeDays?: number | null
   createdAt?: Date | string
   deletedAt?: Date | string | null
   children?: Prisma.IngredientCategoryUncheckedCreateNestedManyWithoutParentInput
@@ -589,6 +653,8 @@ export type IngredientCategoryUpdateWithoutChildrenInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   iconPath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   defaultShelfLifeDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  freezerShelfLifeDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  pantryShelfLifeDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   parent?: Prisma.IngredientCategoryUpdateOneWithoutChildrenNestedInput
@@ -601,6 +667,8 @@ export type IngredientCategoryUncheckedUpdateWithoutChildrenInput = {
   iconPath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   parentId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   defaultShelfLifeDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  freezerShelfLifeDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  pantryShelfLifeDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   ingredients?: Prisma.IngredientUncheckedUpdateManyWithoutCategoryNestedInput
@@ -631,6 +699,8 @@ export type IngredientCategoryScalarWhereInput = {
   iconPath?: Prisma.StringNullableFilter<"IngredientCategory"> | string | null
   parentId?: Prisma.IntNullableFilter<"IngredientCategory"> | number | null
   defaultShelfLifeDays?: Prisma.IntNullableFilter<"IngredientCategory"> | number | null
+  freezerShelfLifeDays?: Prisma.IntNullableFilter<"IngredientCategory"> | number | null
+  pantryShelfLifeDays?: Prisma.IntNullableFilter<"IngredientCategory"> | number | null
   createdAt?: Prisma.DateTimeFilter<"IngredientCategory"> | Date | string
   deletedAt?: Prisma.DateTimeNullableFilter<"IngredientCategory"> | Date | string | null
 }
@@ -639,6 +709,8 @@ export type IngredientCategoryCreateWithoutIngredientsInput = {
   name: string
   iconPath?: string | null
   defaultShelfLifeDays?: number | null
+  freezerShelfLifeDays?: number | null
+  pantryShelfLifeDays?: number | null
   createdAt?: Date | string
   deletedAt?: Date | string | null
   parent?: Prisma.IngredientCategoryCreateNestedOneWithoutChildrenInput
@@ -651,6 +723,8 @@ export type IngredientCategoryUncheckedCreateWithoutIngredientsInput = {
   iconPath?: string | null
   parentId?: number | null
   defaultShelfLifeDays?: number | null
+  freezerShelfLifeDays?: number | null
+  pantryShelfLifeDays?: number | null
   createdAt?: Date | string
   deletedAt?: Date | string | null
   children?: Prisma.IngredientCategoryUncheckedCreateNestedManyWithoutParentInput
@@ -676,6 +750,8 @@ export type IngredientCategoryUpdateWithoutIngredientsInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   iconPath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   defaultShelfLifeDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  freezerShelfLifeDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  pantryShelfLifeDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   parent?: Prisma.IngredientCategoryUpdateOneWithoutChildrenNestedInput
@@ -688,6 +764,8 @@ export type IngredientCategoryUncheckedUpdateWithoutIngredientsInput = {
   iconPath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   parentId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   defaultShelfLifeDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  freezerShelfLifeDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  pantryShelfLifeDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   children?: Prisma.IngredientCategoryUncheckedUpdateManyWithoutParentNestedInput
@@ -698,6 +776,8 @@ export type IngredientCategoryCreateManyParentInput = {
   name: string
   iconPath?: string | null
   defaultShelfLifeDays?: number | null
+  freezerShelfLifeDays?: number | null
+  pantryShelfLifeDays?: number | null
   createdAt?: Date | string
   deletedAt?: Date | string | null
 }
@@ -706,6 +786,8 @@ export type IngredientCategoryUpdateWithoutParentInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   iconPath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   defaultShelfLifeDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  freezerShelfLifeDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  pantryShelfLifeDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   children?: Prisma.IngredientCategoryUpdateManyWithoutParentNestedInput
@@ -717,6 +799,8 @@ export type IngredientCategoryUncheckedUpdateWithoutParentInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   iconPath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   defaultShelfLifeDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  freezerShelfLifeDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  pantryShelfLifeDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   children?: Prisma.IngredientCategoryUncheckedUpdateManyWithoutParentNestedInput
@@ -728,6 +812,8 @@ export type IngredientCategoryUncheckedUpdateManyWithoutParentInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   iconPath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   defaultShelfLifeDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  freezerShelfLifeDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  pantryShelfLifeDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
@@ -778,6 +864,8 @@ export type IngredientCategorySelect<ExtArgs extends runtime.Types.Extensions.In
   iconPath?: boolean
   parentId?: boolean
   defaultShelfLifeDays?: boolean
+  freezerShelfLifeDays?: boolean
+  pantryShelfLifeDays?: boolean
   createdAt?: boolean
   deletedAt?: boolean
   parent?: boolean | Prisma.IngredientCategory$parentArgs<ExtArgs>
@@ -794,11 +882,13 @@ export type IngredientCategorySelectScalar = {
   iconPath?: boolean
   parentId?: boolean
   defaultShelfLifeDays?: boolean
+  freezerShelfLifeDays?: boolean
+  pantryShelfLifeDays?: boolean
   createdAt?: boolean
   deletedAt?: boolean
 }
 
-export type IngredientCategoryOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "iconPath" | "parentId" | "defaultShelfLifeDays" | "createdAt" | "deletedAt", ExtArgs["result"]["ingredientCategory"]>
+export type IngredientCategoryOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "iconPath" | "parentId" | "defaultShelfLifeDays" | "freezerShelfLifeDays" | "pantryShelfLifeDays" | "createdAt" | "deletedAt", ExtArgs["result"]["ingredientCategory"]>
 export type IngredientCategoryInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   parent?: boolean | Prisma.IngredientCategory$parentArgs<ExtArgs>
   children?: boolean | Prisma.IngredientCategory$childrenArgs<ExtArgs>
@@ -819,6 +909,8 @@ export type $IngredientCategoryPayload<ExtArgs extends runtime.Types.Extensions.
     iconPath: string | null
     parentId: number | null
     defaultShelfLifeDays: number | null
+    freezerShelfLifeDays: number | null
+    pantryShelfLifeDays: number | null
     createdAt: Date
     deletedAt: Date | null
   }, ExtArgs["result"]["ingredientCategory"]>
@@ -1198,6 +1290,8 @@ export interface IngredientCategoryFieldRefs {
   readonly iconPath: Prisma.FieldRef<"IngredientCategory", 'String'>
   readonly parentId: Prisma.FieldRef<"IngredientCategory", 'Int'>
   readonly defaultShelfLifeDays: Prisma.FieldRef<"IngredientCategory", 'Int'>
+  readonly freezerShelfLifeDays: Prisma.FieldRef<"IngredientCategory", 'Int'>
+  readonly pantryShelfLifeDays: Prisma.FieldRef<"IngredientCategory", 'Int'>
   readonly createdAt: Prisma.FieldRef<"IngredientCategory", 'DateTime'>
   readonly deletedAt: Prisma.FieldRef<"IngredientCategory", 'DateTime'>
 }
