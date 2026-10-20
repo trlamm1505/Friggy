@@ -1,0 +1,36 @@
+{
+  "notifications": [
+    {
+      "id": "n1",
+      "type": "expiring",
+      "title": "Sắp hết hạn",
+      "message": "Sữa tươi sẽ hết hạn trong 2 ngày",
+      "time": "2026-10-16T08:00:00",
+      "read": false
+    },
+    {
+      "id": "n2",
+      "type": "expiring",
+      "title": "Sắp hết hạn",
+      "message": "Cà chua sẽ hết hạn trong 2 ngày",
+      "time": "2026-10-16T07:30:00",
+      "read": false
+    },
+    {
+      "id": "n3",
+      "type": "recipe",
+      "title": "Gợi ý công thức",
+      "message": "Có 3 công thức mới phù hợp với tủ lạnh của bạn",
+      "time": "2026-10-15T18:00:00",
+      "read": true
+    },
+    {
+      "id": "n4",
+      "type": "system",
+      "title": "Chào mừng",
+      "message": "Chào mừng bạn đến với Friggy!",
+      "time": "2026-10-14T09:00:00",
+      "read": true
+    }
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "recipes": [
+    {
+      "id": "r1",
+      "name": "Trứng xào cà chua",
+      "image": "recipe_tomato_egg",
+      "cookTime": 15,
+      "difficulty": "easy",
+      "servings": 2,
+      "ingredients": ["Cà chua", "Trứng gà", "Hành lá", "Gia vị"],
+      "steps": [
+        "Rửa sạch cà chua, cắt múi.",
+        "Đánh trứng với chút muối.",
+        "Phi thơm hành, xào trứng chín tới.",
+        "Cho cà chua vào xào chung, nêm nếm vừa ăn."
+      ]
+    },
+    {
+      "id": "r2",
+      "name": "Canh rau củ",
+      "image": "recipe_veggie_soup",
+      "cookTime": 25,
+      "difficulty": "easy",
+      "servings": 4,
+      "ingredients": ["Cà rốt", "Khoai tây", "Hành tây", "Cải bó xôi"],
+      "steps": [
+        "Gọt vỏ, cắt khối rau củ.",
+        "Nấu nước dùng sôi, cho rau cứng vào trước.",
+        "Nêm nếm gia vị, cho rau mềm vào sau.",
+        "Tắt bếp, rắc hành lá."
+      ]
+    },
+    {
+      "id": "r3",
+      "name": "Thịt heo kho trứng",
+      "image": null,
+      "cookTime": 45,
+      "difficulty": "medium",
+      "servings": 4,
+      "ingredients": ["Thịt heo", "Trứng gà", "Nước dừa", "Nước mắm"],
+      "steps": [
+        "Ướp thịt với nước mắm, đường, tiêu.",
+        "Luộc trứng, bóc vỏ.",
+        "Kho thịt với nước dừa, cho trứng vào.",
+        "Kho nhỏ lửa 30 phút đến khi thịt mềm."
+      ]
+    }
+  ]
+}

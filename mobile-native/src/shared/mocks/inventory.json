@@ -1,0 +1,12 @@
+{
+  "items": [
+    { "id": "1", "name": "Cà chua", "category": "vegetable", "quantity": 5, "unit": "quả", "expiryDate": "2026-10-18", "status": "expiring", "image": "food_tomato" },
+    { "id": "2", "name": "Sữa tươi", "category": "dairy", "quantity": 1, "unit": "hộp", "expiryDate": "2026-10-20", "status": "expiring", "image": "food_milk" },
+    { "id": "3", "name": "Thịt heo", "category": "meat", "quantity": 300, "unit": "g", "expiryDate": "2026-10-17", "status": "expiring", "image": "food_pork" },
+    { "id": "4", "name": "Cải bó xôi", "category": "vegetable", "quantity": 1, "unit": "bó", "expiryDate": "2026-10-22", "status": "fresh", "image": "food_bokchoy" },
+    { "id": "5", "name": "Trứng gà", "category": "dairy", "quantity": 10, "unit": "quả", "expiryDate": "2026-11-05", "status": "fresh", "image": null },
+    { "id": "6", "name": "Hành tây", "category": "vegetable", "quantity": 3, "unit": "củ", "expiryDate": "2026-11-10", "status": "fresh", "image": null },
+    { "id": "7", "name": "Cà rốt", "category": "vegetable", "quantity": 4, "unit": "củ", "expiryDate": "2026-10-25", "status": "fresh", "image": null },
+    { "id": "8", "name": "Ớt chuông", "category": "vegetable", "quantity": 2, "unit": "quả", "expiryDate": "2026-10-30", "status": "fresh", "image": null }
+  ]
+}

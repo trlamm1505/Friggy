@@ -1,0 +1,20 @@
+{
+  "packages": [
+    {
+      "id": "premium-monthly",
+      "name": "Premium",
+      "price": 49000,
+      "currency": "VND",
+      "period": "monthly",
+      "features": ["Gợi ý AI không giới hạn", "Thống kê chi tiết", "Công thức độc quyền"]
+    },
+    {
+      "id": "family-monthly",
+      "name": "Gia đình",
+      "price": 99000,
+      "currency": "VND",
+      "period": "monthly",
+      "features": ["Tất cả tính năng Premium", "Quản lý tủ lạnh dùng chung", "Tối đa 6 thành viên"]
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "items": [
+    { "id": "1", "name": "Sữa tươi", "quantity": 2, "unit": "hộp", "done": false },
+    { "id": "2", "name": "Trứng gà", "quantity": 1, "unit": "vỉ", "done": false },
+    { "id": "3", "name": "Cà chua", "quantity": 1, "unit": "kg", "done": true },
+    { "id": "4", "name": "Hành tây", "quantity": 3, "unit": "củ", "done": false }
+  ]
+}

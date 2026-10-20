@@ -1,0 +1,6 @@
+{
+  "allergies": [
+    { "id": "1", "name": "Tôm cua", "severity": "high" },
+    { "id": "2", "name": "Đậu phộng", "severity": "medium" }
+  ]
+}
