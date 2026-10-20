@@ -8,7 +8,7 @@ import { StatsOverviewDto, AiUsageDto, SubscriptionBreakdownItemDto } from './dt
 @ApiTags('Admin / Stats')
 
 @ApiBearerAuth('access-token')
-@Roles('admin')
+@Roles('admin', 'manager')
 @Controller('admin/stats')
 export class AdminStatsController {
   constructor(private readonly service: AdminStatsService) {}

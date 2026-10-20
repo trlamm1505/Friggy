@@ -28,10 +28,12 @@ export type AggregateUser = {
 
 export type UserAvgAggregateOutputType = {
   roleId: number | null
+  aiQuotaOverride: number | null
 }
 
 export type UserSumAggregateOutputType = {
   roleId: number | null
+  aiQuotaOverride: number | null
 }
 
 export type UserMinAggregateOutputType = {
@@ -49,6 +51,7 @@ export type UserMinAggregateOutputType = {
   deletedAt: Date | null
   isOnboardingCompleted: boolean | null
   name: string | null
+  aiQuotaOverride: number | null
 }
 
 export type UserMaxAggregateOutputType = {
@@ -66,6 +69,7 @@ export type UserMaxAggregateOutputType = {
   deletedAt: Date | null
   isOnboardingCompleted: boolean | null
   name: string | null
+  aiQuotaOverride: number | null
 }
 
 export type UserCountAggregateOutputType = {
@@ -83,16 +87,19 @@ export type UserCountAggregateOutputType = {
   deletedAt: number
   isOnboardingCompleted: number
   name: number
+  aiQuotaOverride: number
   _all: number
 }
 
 
 export type UserAvgAggregateInputType = {
   roleId?: true
+  aiQuotaOverride?: true
 }
 
 export type UserSumAggregateInputType = {
   roleId?: true
+  aiQuotaOverride?: true
 }
 
 export type UserMinAggregateInputType = {
@@ -110,6 +117,7 @@ export type UserMinAggregateInputType = {
   deletedAt?: true
   isOnboardingCompleted?: true
   name?: true
+  aiQuotaOverride?: true
 }
 
 export type UserMaxAggregateInputType = {
@@ -127,6 +135,7 @@ export type UserMaxAggregateInputType = {
   deletedAt?: true
   isOnboardingCompleted?: true
   name?: true
+  aiQuotaOverride?: true
 }
 
 export type UserCountAggregateInputType = {
@@ -144,6 +153,7 @@ export type UserCountAggregateInputType = {
   deletedAt?: true
   isOnboardingCompleted?: true
   name?: true
+  aiQuotaOverride?: true
   _all?: true
 }
 
@@ -248,6 +258,7 @@ export type UserGroupByOutputType = {
   deletedAt: Date | null
   isOnboardingCompleted: boolean
   name: string | null
+  aiQuotaOverride: number | null
   _count: UserCountAggregateOutputType | null
   _avg: UserAvgAggregateOutputType | null
   _sum: UserSumAggregateOutputType | null
@@ -288,6 +299,7 @@ export type UserWhereInput = {
   deletedAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
   isOnboardingCompleted?: Prisma.BoolFilter<"User"> | boolean
   name?: Prisma.StringNullableFilter<"User"> | string | null
+  aiQuotaOverride?: Prisma.IntNullableFilter<"User"> | number | null
   adminLogs?: Prisma.AdminActivityLogListRelationFilter
   activatedConfigs?: Prisma.AiProviderConfigListRelationFilter
   activatedPrompts?: Prisma.AiSystemPromptListRelationFilter
@@ -327,6 +339,7 @@ export type UserOrderByWithRelationInput = {
   deletedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   isOnboardingCompleted?: Prisma.SortOrder
   name?: Prisma.SortOrderInput | Prisma.SortOrder
+  aiQuotaOverride?: Prisma.SortOrderInput | Prisma.SortOrder
   adminLogs?: Prisma.AdminActivityLogOrderByRelationAggregateInput
   activatedConfigs?: Prisma.AiProviderConfigOrderByRelationAggregateInput
   activatedPrompts?: Prisma.AiSystemPromptOrderByRelationAggregateInput
@@ -370,6 +383,7 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   deletedAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
   isOnboardingCompleted?: Prisma.BoolFilter<"User"> | boolean
   name?: Prisma.StringNullableFilter<"User"> | string | null
+  aiQuotaOverride?: Prisma.IntNullableFilter<"User"> | number | null
   adminLogs?: Prisma.AdminActivityLogListRelationFilter
   activatedConfigs?: Prisma.AiProviderConfigListRelationFilter
   activatedPrompts?: Prisma.AiSystemPromptListRelationFilter
@@ -409,6 +423,7 @@ export type UserOrderByWithAggregationInput = {
   deletedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   isOnboardingCompleted?: Prisma.SortOrder
   name?: Prisma.SortOrderInput | Prisma.SortOrder
+  aiQuotaOverride?: Prisma.SortOrderInput | Prisma.SortOrder
   _count?: Prisma.UserCountOrderByAggregateInput
   _avg?: Prisma.UserAvgOrderByAggregateInput
   _max?: Prisma.UserMaxOrderByAggregateInput
@@ -434,6 +449,7 @@ export type UserScalarWhereWithAggregatesInput = {
   deletedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
   isOnboardingCompleted?: Prisma.BoolWithAggregatesFilter<"User"> | boolean
   name?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
+  aiQuotaOverride?: Prisma.IntNullableWithAggregatesFilter<"User"> | number | null
 }
 
 export type UserCreateInput = {
@@ -450,6 +466,7 @@ export type UserCreateInput = {
   deletedAt?: Date | string | null
   isOnboardingCompleted?: boolean
   name?: string | null
+  aiQuotaOverride?: number | null
   adminLogs?: Prisma.AdminActivityLogCreateNestedManyWithoutAdminInput
   activatedConfigs?: Prisma.AiProviderConfigCreateNestedManyWithoutActivatedByUserInput
   activatedPrompts?: Prisma.AiSystemPromptCreateNestedManyWithoutActivatedByUserInput
@@ -489,6 +506,7 @@ export type UserUncheckedCreateInput = {
   deletedAt?: Date | string | null
   isOnboardingCompleted?: boolean
   name?: string | null
+  aiQuotaOverride?: number | null
   adminLogs?: Prisma.AdminActivityLogUncheckedCreateNestedManyWithoutAdminInput
   activatedConfigs?: Prisma.AiProviderConfigUncheckedCreateNestedManyWithoutActivatedByUserInput
   activatedPrompts?: Prisma.AiSystemPromptUncheckedCreateNestedManyWithoutActivatedByUserInput
@@ -526,6 +544,7 @@ export type UserUpdateInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiQuotaOverride?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   adminLogs?: Prisma.AdminActivityLogUpdateManyWithoutAdminNestedInput
   activatedConfigs?: Prisma.AiProviderConfigUpdateManyWithoutActivatedByUserNestedInput
   activatedPrompts?: Prisma.AiSystemPromptUpdateManyWithoutActivatedByUserNestedInput
@@ -565,6 +584,7 @@ export type UserUncheckedUpdateInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiQuotaOverride?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   adminLogs?: Prisma.AdminActivityLogUncheckedUpdateManyWithoutAdminNestedInput
   activatedConfigs?: Prisma.AiProviderConfigUncheckedUpdateManyWithoutActivatedByUserNestedInput
   activatedPrompts?: Prisma.AiSystemPromptUncheckedUpdateManyWithoutActivatedByUserNestedInput
@@ -603,6 +623,7 @@ export type UserCreateManyInput = {
   deletedAt?: Date | string | null
   isOnboardingCompleted?: boolean
   name?: string | null
+  aiQuotaOverride?: number | null
 }
 
 export type UserUpdateManyMutationInput = {
@@ -619,6 +640,7 @@ export type UserUpdateManyMutationInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiQuotaOverride?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
 }
 
 export type UserUncheckedUpdateManyInput = {
@@ -636,6 +658,7 @@ export type UserUncheckedUpdateManyInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiQuotaOverride?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
 }
 
 export type UserListRelationFilter = {
@@ -669,10 +692,12 @@ export type UserCountOrderByAggregateInput = {
   deletedAt?: Prisma.SortOrder
   isOnboardingCompleted?: Prisma.SortOrder
   name?: Prisma.SortOrder
+  aiQuotaOverride?: Prisma.SortOrder
 }
 
 export type UserAvgOrderByAggregateInput = {
   roleId?: Prisma.SortOrder
+  aiQuotaOverride?: Prisma.SortOrder
 }
 
 export type UserMaxOrderByAggregateInput = {
@@ -690,6 +715,7 @@ export type UserMaxOrderByAggregateInput = {
   deletedAt?: Prisma.SortOrder
   isOnboardingCompleted?: Prisma.SortOrder
   name?: Prisma.SortOrder
+  aiQuotaOverride?: Prisma.SortOrder
 }
 
 export type UserMinOrderByAggregateInput = {
@@ -707,10 +733,12 @@ export type UserMinOrderByAggregateInput = {
   deletedAt?: Prisma.SortOrder
   isOnboardingCompleted?: Prisma.SortOrder
   name?: Prisma.SortOrder
+  aiQuotaOverride?: Prisma.SortOrder
 }
 
 export type UserSumOrderByAggregateInput = {
   roleId?: Prisma.SortOrder
+  aiQuotaOverride?: Prisma.SortOrder
 }
 
 export type UserScalarRelationFilter = {
@@ -779,6 +807,14 @@ export type EnumUserStatusFieldUpdateOperationsInput = {
 
 export type BoolFieldUpdateOperationsInput = {
   set?: boolean
+}
+
+export type NullableIntFieldUpdateOperationsInput = {
+  set?: number | null
+  increment?: number
+  decrement?: number
+  multiply?: number
+  divide?: number
 }
 
 export type UserCreateNestedOneWithoutProfileInput = {
@@ -1097,6 +1133,7 @@ export type UserCreateWithoutRoleInput = {
   deletedAt?: Date | string | null
   isOnboardingCompleted?: boolean
   name?: string | null
+  aiQuotaOverride?: number | null
   adminLogs?: Prisma.AdminActivityLogCreateNestedManyWithoutAdminInput
   activatedConfigs?: Prisma.AiProviderConfigCreateNestedManyWithoutActivatedByUserInput
   activatedPrompts?: Prisma.AiSystemPromptCreateNestedManyWithoutActivatedByUserInput
@@ -1134,6 +1171,7 @@ export type UserUncheckedCreateWithoutRoleInput = {
   deletedAt?: Date | string | null
   isOnboardingCompleted?: boolean
   name?: string | null
+  aiQuotaOverride?: number | null
   adminLogs?: Prisma.AdminActivityLogUncheckedCreateNestedManyWithoutAdminInput
   activatedConfigs?: Prisma.AiProviderConfigUncheckedCreateNestedManyWithoutActivatedByUserInput
   activatedPrompts?: Prisma.AiSystemPromptUncheckedCreateNestedManyWithoutActivatedByUserInput
@@ -1201,6 +1239,7 @@ export type UserScalarWhereInput = {
   deletedAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
   isOnboardingCompleted?: Prisma.BoolFilter<"User"> | boolean
   name?: Prisma.StringNullableFilter<"User"> | string | null
+  aiQuotaOverride?: Prisma.IntNullableFilter<"User"> | number | null
 }
 
 export type UserCreateWithoutProfileInput = {
@@ -1217,6 +1256,7 @@ export type UserCreateWithoutProfileInput = {
   deletedAt?: Date | string | null
   isOnboardingCompleted?: boolean
   name?: string | null
+  aiQuotaOverride?: number | null
   adminLogs?: Prisma.AdminActivityLogCreateNestedManyWithoutAdminInput
   activatedConfigs?: Prisma.AiProviderConfigCreateNestedManyWithoutActivatedByUserInput
   activatedPrompts?: Prisma.AiSystemPromptCreateNestedManyWithoutActivatedByUserInput
@@ -1255,6 +1295,7 @@ export type UserUncheckedCreateWithoutProfileInput = {
   deletedAt?: Date | string | null
   isOnboardingCompleted?: boolean
   name?: string | null
+  aiQuotaOverride?: number | null
   adminLogs?: Prisma.AdminActivityLogUncheckedCreateNestedManyWithoutAdminInput
   activatedConfigs?: Prisma.AiProviderConfigUncheckedCreateNestedManyWithoutActivatedByUserInput
   activatedPrompts?: Prisma.AiSystemPromptUncheckedCreateNestedManyWithoutActivatedByUserInput
@@ -1307,6 +1348,7 @@ export type UserUpdateWithoutProfileInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiQuotaOverride?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   adminLogs?: Prisma.AdminActivityLogUpdateManyWithoutAdminNestedInput
   activatedConfigs?: Prisma.AiProviderConfigUpdateManyWithoutActivatedByUserNestedInput
   activatedPrompts?: Prisma.AiSystemPromptUpdateManyWithoutActivatedByUserNestedInput
@@ -1345,6 +1387,7 @@ export type UserUncheckedUpdateWithoutProfileInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiQuotaOverride?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   adminLogs?: Prisma.AdminActivityLogUncheckedUpdateManyWithoutAdminNestedInput
   activatedConfigs?: Prisma.AiProviderConfigUncheckedUpdateManyWithoutActivatedByUserNestedInput
   activatedPrompts?: Prisma.AiSystemPromptUncheckedUpdateManyWithoutActivatedByUserNestedInput
@@ -1381,6 +1424,7 @@ export type UserCreateWithoutPreferencesInput = {
   deletedAt?: Date | string | null
   isOnboardingCompleted?: boolean
   name?: string | null
+  aiQuotaOverride?: number | null
   adminLogs?: Prisma.AdminActivityLogCreateNestedManyWithoutAdminInput
   activatedConfigs?: Prisma.AiProviderConfigCreateNestedManyWithoutActivatedByUserInput
   activatedPrompts?: Prisma.AiSystemPromptCreateNestedManyWithoutActivatedByUserInput
@@ -1419,6 +1463,7 @@ export type UserUncheckedCreateWithoutPreferencesInput = {
   deletedAt?: Date | string | null
   isOnboardingCompleted?: boolean
   name?: string | null
+  aiQuotaOverride?: number | null
   adminLogs?: Prisma.AdminActivityLogUncheckedCreateNestedManyWithoutAdminInput
   activatedConfigs?: Prisma.AiProviderConfigUncheckedCreateNestedManyWithoutActivatedByUserInput
   activatedPrompts?: Prisma.AiSystemPromptUncheckedCreateNestedManyWithoutActivatedByUserInput
@@ -1471,6 +1516,7 @@ export type UserUpdateWithoutPreferencesInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiQuotaOverride?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   adminLogs?: Prisma.AdminActivityLogUpdateManyWithoutAdminNestedInput
   activatedConfigs?: Prisma.AiProviderConfigUpdateManyWithoutActivatedByUserNestedInput
   activatedPrompts?: Prisma.AiSystemPromptUpdateManyWithoutActivatedByUserNestedInput
@@ -1509,6 +1555,7 @@ export type UserUncheckedUpdateWithoutPreferencesInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiQuotaOverride?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   adminLogs?: Prisma.AdminActivityLogUncheckedUpdateManyWithoutAdminNestedInput
   activatedConfigs?: Prisma.AiProviderConfigUncheckedUpdateManyWithoutActivatedByUserNestedInput
   activatedPrompts?: Prisma.AiSystemPromptUncheckedUpdateManyWithoutActivatedByUserNestedInput
@@ -1545,6 +1592,7 @@ export type UserCreateWithoutRefreshTokensInput = {
   deletedAt?: Date | string | null
   isOnboardingCompleted?: boolean
   name?: string | null
+  aiQuotaOverride?: number | null
   adminLogs?: Prisma.AdminActivityLogCreateNestedManyWithoutAdminInput
   activatedConfigs?: Prisma.AiProviderConfigCreateNestedManyWithoutActivatedByUserInput
   activatedPrompts?: Prisma.AiSystemPromptCreateNestedManyWithoutActivatedByUserInput
@@ -1583,6 +1631,7 @@ export type UserUncheckedCreateWithoutRefreshTokensInput = {
   deletedAt?: Date | string | null
   isOnboardingCompleted?: boolean
   name?: string | null
+  aiQuotaOverride?: number | null
   adminLogs?: Prisma.AdminActivityLogUncheckedCreateNestedManyWithoutAdminInput
   activatedConfigs?: Prisma.AiProviderConfigUncheckedCreateNestedManyWithoutActivatedByUserInput
   activatedPrompts?: Prisma.AiSystemPromptUncheckedCreateNestedManyWithoutActivatedByUserInput
@@ -1635,6 +1684,7 @@ export type UserUpdateWithoutRefreshTokensInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiQuotaOverride?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   adminLogs?: Prisma.AdminActivityLogUpdateManyWithoutAdminNestedInput
   activatedConfigs?: Prisma.AiProviderConfigUpdateManyWithoutActivatedByUserNestedInput
   activatedPrompts?: Prisma.AiSystemPromptUpdateManyWithoutActivatedByUserNestedInput
@@ -1673,6 +1723,7 @@ export type UserUncheckedUpdateWithoutRefreshTokensInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiQuotaOverride?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   adminLogs?: Prisma.AdminActivityLogUncheckedUpdateManyWithoutAdminNestedInput
   activatedConfigs?: Prisma.AiProviderConfigUncheckedUpdateManyWithoutActivatedByUserNestedInput
   activatedPrompts?: Prisma.AiSystemPromptUncheckedUpdateManyWithoutActivatedByUserNestedInput
@@ -1709,6 +1760,7 @@ export type UserCreateWithoutAuthoredRecipesInput = {
   deletedAt?: Date | string | null
   isOnboardingCompleted?: boolean
   name?: string | null
+  aiQuotaOverride?: number | null
   adminLogs?: Prisma.AdminActivityLogCreateNestedManyWithoutAdminInput
   activatedConfigs?: Prisma.AiProviderConfigCreateNestedManyWithoutActivatedByUserInput
   activatedPrompts?: Prisma.AiSystemPromptCreateNestedManyWithoutActivatedByUserInput
@@ -1747,6 +1799,7 @@ export type UserUncheckedCreateWithoutAuthoredRecipesInput = {
   deletedAt?: Date | string | null
   isOnboardingCompleted?: boolean
   name?: string | null
+  aiQuotaOverride?: number | null
   adminLogs?: Prisma.AdminActivityLogUncheckedCreateNestedManyWithoutAdminInput
   activatedConfigs?: Prisma.AiProviderConfigUncheckedCreateNestedManyWithoutActivatedByUserInput
   activatedPrompts?: Prisma.AiSystemPromptUncheckedCreateNestedManyWithoutActivatedByUserInput
@@ -1799,6 +1852,7 @@ export type UserUpdateWithoutAuthoredRecipesInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiQuotaOverride?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   adminLogs?: Prisma.AdminActivityLogUpdateManyWithoutAdminNestedInput
   activatedConfigs?: Prisma.AiProviderConfigUpdateManyWithoutActivatedByUserNestedInput
   activatedPrompts?: Prisma.AiSystemPromptUpdateManyWithoutActivatedByUserNestedInput
@@ -1837,6 +1891,7 @@ export type UserUncheckedUpdateWithoutAuthoredRecipesInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiQuotaOverride?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   adminLogs?: Prisma.AdminActivityLogUncheckedUpdateManyWithoutAdminNestedInput
   activatedConfigs?: Prisma.AiProviderConfigUncheckedUpdateManyWithoutActivatedByUserNestedInput
   activatedPrompts?: Prisma.AiSystemPromptUncheckedUpdateManyWithoutActivatedByUserNestedInput
@@ -1873,6 +1928,7 @@ export type UserCreateWithoutSavedRecipesInput = {
   deletedAt?: Date | string | null
   isOnboardingCompleted?: boolean
   name?: string | null
+  aiQuotaOverride?: number | null
   adminLogs?: Prisma.AdminActivityLogCreateNestedManyWithoutAdminInput
   activatedConfigs?: Prisma.AiProviderConfigCreateNestedManyWithoutActivatedByUserInput
   activatedPrompts?: Prisma.AiSystemPromptCreateNestedManyWithoutActivatedByUserInput
@@ -1911,6 +1967,7 @@ export type UserUncheckedCreateWithoutSavedRecipesInput = {
   deletedAt?: Date | string | null
   isOnboardingCompleted?: boolean
   name?: string | null
+  aiQuotaOverride?: number | null
   adminLogs?: Prisma.AdminActivityLogUncheckedCreateNestedManyWithoutAdminInput
   activatedConfigs?: Prisma.AiProviderConfigUncheckedCreateNestedManyWithoutActivatedByUserInput
   activatedPrompts?: Prisma.AiSystemPromptUncheckedCreateNestedManyWithoutActivatedByUserInput
@@ -1963,6 +2020,7 @@ export type UserUpdateWithoutSavedRecipesInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiQuotaOverride?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   adminLogs?: Prisma.AdminActivityLogUpdateManyWithoutAdminNestedInput
   activatedConfigs?: Prisma.AiProviderConfigUpdateManyWithoutActivatedByUserNestedInput
   activatedPrompts?: Prisma.AiSystemPromptUpdateManyWithoutActivatedByUserNestedInput
@@ -2001,6 +2059,7 @@ export type UserUncheckedUpdateWithoutSavedRecipesInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiQuotaOverride?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   adminLogs?: Prisma.AdminActivityLogUncheckedUpdateManyWithoutAdminNestedInput
   activatedConfigs?: Prisma.AiProviderConfigUncheckedUpdateManyWithoutActivatedByUserNestedInput
   activatedPrompts?: Prisma.AiSystemPromptUncheckedUpdateManyWithoutActivatedByUserNestedInput
@@ -2037,6 +2096,7 @@ export type UserCreateWithoutFridgeItemsInput = {
   deletedAt?: Date | string | null
   isOnboardingCompleted?: boolean
   name?: string | null
+  aiQuotaOverride?: number | null
   adminLogs?: Prisma.AdminActivityLogCreateNestedManyWithoutAdminInput
   activatedConfigs?: Prisma.AiProviderConfigCreateNestedManyWithoutActivatedByUserInput
   activatedPrompts?: Prisma.AiSystemPromptCreateNestedManyWithoutActivatedByUserInput
@@ -2075,6 +2135,7 @@ export type UserUncheckedCreateWithoutFridgeItemsInput = {
   deletedAt?: Date | string | null
   isOnboardingCompleted?: boolean
   name?: string | null
+  aiQuotaOverride?: number | null
   adminLogs?: Prisma.AdminActivityLogUncheckedCreateNestedManyWithoutAdminInput
   activatedConfigs?: Prisma.AiProviderConfigUncheckedCreateNestedManyWithoutActivatedByUserInput
   activatedPrompts?: Prisma.AiSystemPromptUncheckedCreateNestedManyWithoutActivatedByUserInput
@@ -2127,6 +2188,7 @@ export type UserUpdateWithoutFridgeItemsInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiQuotaOverride?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   adminLogs?: Prisma.AdminActivityLogUpdateManyWithoutAdminNestedInput
   activatedConfigs?: Prisma.AiProviderConfigUpdateManyWithoutActivatedByUserNestedInput
   activatedPrompts?: Prisma.AiSystemPromptUpdateManyWithoutActivatedByUserNestedInput
@@ -2165,6 +2227,7 @@ export type UserUncheckedUpdateWithoutFridgeItemsInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiQuotaOverride?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   adminLogs?: Prisma.AdminActivityLogUncheckedUpdateManyWithoutAdminNestedInput
   activatedConfigs?: Prisma.AiProviderConfigUncheckedUpdateManyWithoutActivatedByUserNestedInput
   activatedPrompts?: Prisma.AiSystemPromptUncheckedUpdateManyWithoutActivatedByUserNestedInput
@@ -2201,6 +2264,7 @@ export type UserCreateWithoutScanLogsInput = {
   deletedAt?: Date | string | null
   isOnboardingCompleted?: boolean
   name?: string | null
+  aiQuotaOverride?: number | null
   adminLogs?: Prisma.AdminActivityLogCreateNestedManyWithoutAdminInput
   activatedConfigs?: Prisma.AiProviderConfigCreateNestedManyWithoutActivatedByUserInput
   activatedPrompts?: Prisma.AiSystemPromptCreateNestedManyWithoutActivatedByUserInput
@@ -2239,6 +2303,7 @@ export type UserUncheckedCreateWithoutScanLogsInput = {
   deletedAt?: Date | string | null
   isOnboardingCompleted?: boolean
   name?: string | null
+  aiQuotaOverride?: number | null
   adminLogs?: Prisma.AdminActivityLogUncheckedCreateNestedManyWithoutAdminInput
   activatedConfigs?: Prisma.AiProviderConfigUncheckedCreateNestedManyWithoutActivatedByUserInput
   activatedPrompts?: Prisma.AiSystemPromptUncheckedCreateNestedManyWithoutActivatedByUserInput
@@ -2291,6 +2356,7 @@ export type UserUpdateWithoutScanLogsInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiQuotaOverride?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   adminLogs?: Prisma.AdminActivityLogUpdateManyWithoutAdminNestedInput
   activatedConfigs?: Prisma.AiProviderConfigUpdateManyWithoutActivatedByUserNestedInput
   activatedPrompts?: Prisma.AiSystemPromptUpdateManyWithoutActivatedByUserNestedInput
@@ -2329,6 +2395,7 @@ export type UserUncheckedUpdateWithoutScanLogsInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiQuotaOverride?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   adminLogs?: Prisma.AdminActivityLogUncheckedUpdateManyWithoutAdminNestedInput
   activatedConfigs?: Prisma.AiProviderConfigUncheckedUpdateManyWithoutActivatedByUserNestedInput
   activatedPrompts?: Prisma.AiSystemPromptUncheckedUpdateManyWithoutActivatedByUserNestedInput
@@ -2365,6 +2432,7 @@ export type UserCreateWithoutAllergiesInput = {
   deletedAt?: Date | string | null
   isOnboardingCompleted?: boolean
   name?: string | null
+  aiQuotaOverride?: number | null
   adminLogs?: Prisma.AdminActivityLogCreateNestedManyWithoutAdminInput
   activatedConfigs?: Prisma.AiProviderConfigCreateNestedManyWithoutActivatedByUserInput
   activatedPrompts?: Prisma.AiSystemPromptCreateNestedManyWithoutActivatedByUserInput
@@ -2403,6 +2471,7 @@ export type UserUncheckedCreateWithoutAllergiesInput = {
   deletedAt?: Date | string | null
   isOnboardingCompleted?: boolean
   name?: string | null
+  aiQuotaOverride?: number | null
   adminLogs?: Prisma.AdminActivityLogUncheckedCreateNestedManyWithoutAdminInput
   activatedConfigs?: Prisma.AiProviderConfigUncheckedCreateNestedManyWithoutActivatedByUserInput
   activatedPrompts?: Prisma.AiSystemPromptUncheckedCreateNestedManyWithoutActivatedByUserInput
@@ -2455,6 +2524,7 @@ export type UserUpdateWithoutAllergiesInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiQuotaOverride?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   adminLogs?: Prisma.AdminActivityLogUpdateManyWithoutAdminNestedInput
   activatedConfigs?: Prisma.AiProviderConfigUpdateManyWithoutActivatedByUserNestedInput
   activatedPrompts?: Prisma.AiSystemPromptUpdateManyWithoutActivatedByUserNestedInput
@@ -2493,6 +2563,7 @@ export type UserUncheckedUpdateWithoutAllergiesInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiQuotaOverride?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   adminLogs?: Prisma.AdminActivityLogUncheckedUpdateManyWithoutAdminNestedInput
   activatedConfigs?: Prisma.AiProviderConfigUncheckedUpdateManyWithoutActivatedByUserNestedInput
   activatedPrompts?: Prisma.AiSystemPromptUncheckedUpdateManyWithoutActivatedByUserNestedInput
@@ -2529,6 +2600,7 @@ export type UserCreateWithoutWeeklyPlansInput = {
   deletedAt?: Date | string | null
   isOnboardingCompleted?: boolean
   name?: string | null
+  aiQuotaOverride?: number | null
   adminLogs?: Prisma.AdminActivityLogCreateNestedManyWithoutAdminInput
   activatedConfigs?: Prisma.AiProviderConfigCreateNestedManyWithoutActivatedByUserInput
   activatedPrompts?: Prisma.AiSystemPromptCreateNestedManyWithoutActivatedByUserInput
@@ -2567,6 +2639,7 @@ export type UserUncheckedCreateWithoutWeeklyPlansInput = {
   deletedAt?: Date | string | null
   isOnboardingCompleted?: boolean
   name?: string | null
+  aiQuotaOverride?: number | null
   adminLogs?: Prisma.AdminActivityLogUncheckedCreateNestedManyWithoutAdminInput
   activatedConfigs?: Prisma.AiProviderConfigUncheckedCreateNestedManyWithoutActivatedByUserInput
   activatedPrompts?: Prisma.AiSystemPromptUncheckedCreateNestedManyWithoutActivatedByUserInput
@@ -2619,6 +2692,7 @@ export type UserUpdateWithoutWeeklyPlansInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiQuotaOverride?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   adminLogs?: Prisma.AdminActivityLogUpdateManyWithoutAdminNestedInput
   activatedConfigs?: Prisma.AiProviderConfigUpdateManyWithoutActivatedByUserNestedInput
   activatedPrompts?: Prisma.AiSystemPromptUpdateManyWithoutActivatedByUserNestedInput
@@ -2657,6 +2731,7 @@ export type UserUncheckedUpdateWithoutWeeklyPlansInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiQuotaOverride?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   adminLogs?: Prisma.AdminActivityLogUncheckedUpdateManyWithoutAdminNestedInput
   activatedConfigs?: Prisma.AiProviderConfigUncheckedUpdateManyWithoutActivatedByUserNestedInput
   activatedPrompts?: Prisma.AiSystemPromptUncheckedUpdateManyWithoutActivatedByUserNestedInput
@@ -2693,6 +2768,7 @@ export type UserCreateWithoutShoppingListsInput = {
   deletedAt?: Date | string | null
   isOnboardingCompleted?: boolean
   name?: string | null
+  aiQuotaOverride?: number | null
   adminLogs?: Prisma.AdminActivityLogCreateNestedManyWithoutAdminInput
   activatedConfigs?: Prisma.AiProviderConfigCreateNestedManyWithoutActivatedByUserInput
   activatedPrompts?: Prisma.AiSystemPromptCreateNestedManyWithoutActivatedByUserInput
@@ -2731,6 +2807,7 @@ export type UserUncheckedCreateWithoutShoppingListsInput = {
   deletedAt?: Date | string | null
   isOnboardingCompleted?: boolean
   name?: string | null
+  aiQuotaOverride?: number | null
   adminLogs?: Prisma.AdminActivityLogUncheckedCreateNestedManyWithoutAdminInput
   activatedConfigs?: Prisma.AiProviderConfigUncheckedCreateNestedManyWithoutActivatedByUserInput
   activatedPrompts?: Prisma.AiSystemPromptUncheckedCreateNestedManyWithoutActivatedByUserInput
@@ -2783,6 +2860,7 @@ export type UserUpdateWithoutShoppingListsInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiQuotaOverride?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   adminLogs?: Prisma.AdminActivityLogUpdateManyWithoutAdminNestedInput
   activatedConfigs?: Prisma.AiProviderConfigUpdateManyWithoutActivatedByUserNestedInput
   activatedPrompts?: Prisma.AiSystemPromptUpdateManyWithoutActivatedByUserNestedInput
@@ -2821,6 +2899,7 @@ export type UserUncheckedUpdateWithoutShoppingListsInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiQuotaOverride?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   adminLogs?: Prisma.AdminActivityLogUncheckedUpdateManyWithoutAdminNestedInput
   activatedConfigs?: Prisma.AiProviderConfigUncheckedUpdateManyWithoutActivatedByUserNestedInput
   activatedPrompts?: Prisma.AiSystemPromptUncheckedUpdateManyWithoutActivatedByUserNestedInput
@@ -2857,6 +2936,7 @@ export type UserCreateWithoutActivatedPromptsInput = {
   deletedAt?: Date | string | null
   isOnboardingCompleted?: boolean
   name?: string | null
+  aiQuotaOverride?: number | null
   adminLogs?: Prisma.AdminActivityLogCreateNestedManyWithoutAdminInput
   activatedConfigs?: Prisma.AiProviderConfigCreateNestedManyWithoutActivatedByUserInput
   aiUsageLogs?: Prisma.AiUsageLogCreateNestedManyWithoutUserInput
@@ -2895,6 +2975,7 @@ export type UserUncheckedCreateWithoutActivatedPromptsInput = {
   deletedAt?: Date | string | null
   isOnboardingCompleted?: boolean
   name?: string | null
+  aiQuotaOverride?: number | null
   adminLogs?: Prisma.AdminActivityLogUncheckedCreateNestedManyWithoutAdminInput
   activatedConfigs?: Prisma.AiProviderConfigUncheckedCreateNestedManyWithoutActivatedByUserInput
   aiUsageLogs?: Prisma.AiUsageLogUncheckedCreateNestedManyWithoutUserInput
@@ -2947,6 +3028,7 @@ export type UserUpdateWithoutActivatedPromptsInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiQuotaOverride?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   adminLogs?: Prisma.AdminActivityLogUpdateManyWithoutAdminNestedInput
   activatedConfigs?: Prisma.AiProviderConfigUpdateManyWithoutActivatedByUserNestedInput
   aiUsageLogs?: Prisma.AiUsageLogUpdateManyWithoutUserNestedInput
@@ -2985,6 +3067,7 @@ export type UserUncheckedUpdateWithoutActivatedPromptsInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiQuotaOverride?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   adminLogs?: Prisma.AdminActivityLogUncheckedUpdateManyWithoutAdminNestedInput
   activatedConfigs?: Prisma.AiProviderConfigUncheckedUpdateManyWithoutActivatedByUserNestedInput
   aiUsageLogs?: Prisma.AiUsageLogUncheckedUpdateManyWithoutUserNestedInput
@@ -3021,6 +3104,7 @@ export type UserCreateWithoutChatSessionsInput = {
   deletedAt?: Date | string | null
   isOnboardingCompleted?: boolean
   name?: string | null
+  aiQuotaOverride?: number | null
   adminLogs?: Prisma.AdminActivityLogCreateNestedManyWithoutAdminInput
   activatedConfigs?: Prisma.AiProviderConfigCreateNestedManyWithoutActivatedByUserInput
   activatedPrompts?: Prisma.AiSystemPromptCreateNestedManyWithoutActivatedByUserInput
@@ -3059,6 +3143,7 @@ export type UserUncheckedCreateWithoutChatSessionsInput = {
   deletedAt?: Date | string | null
   isOnboardingCompleted?: boolean
   name?: string | null
+  aiQuotaOverride?: number | null
   adminLogs?: Prisma.AdminActivityLogUncheckedCreateNestedManyWithoutAdminInput
   activatedConfigs?: Prisma.AiProviderConfigUncheckedCreateNestedManyWithoutActivatedByUserInput
   activatedPrompts?: Prisma.AiSystemPromptUncheckedCreateNestedManyWithoutActivatedByUserInput
@@ -3111,6 +3196,7 @@ export type UserUpdateWithoutChatSessionsInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiQuotaOverride?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   adminLogs?: Prisma.AdminActivityLogUpdateManyWithoutAdminNestedInput
   activatedConfigs?: Prisma.AiProviderConfigUpdateManyWithoutActivatedByUserNestedInput
   activatedPrompts?: Prisma.AiSystemPromptUpdateManyWithoutActivatedByUserNestedInput
@@ -3149,6 +3235,7 @@ export type UserUncheckedUpdateWithoutChatSessionsInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiQuotaOverride?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   adminLogs?: Prisma.AdminActivityLogUncheckedUpdateManyWithoutAdminNestedInput
   activatedConfigs?: Prisma.AiProviderConfigUncheckedUpdateManyWithoutActivatedByUserNestedInput
   activatedPrompts?: Prisma.AiSystemPromptUncheckedUpdateManyWithoutActivatedByUserNestedInput
@@ -3185,6 +3272,7 @@ export type UserCreateWithoutActivatedConfigsInput = {
   deletedAt?: Date | string | null
   isOnboardingCompleted?: boolean
   name?: string | null
+  aiQuotaOverride?: number | null
   adminLogs?: Prisma.AdminActivityLogCreateNestedManyWithoutAdminInput
   activatedPrompts?: Prisma.AiSystemPromptCreateNestedManyWithoutActivatedByUserInput
   aiUsageLogs?: Prisma.AiUsageLogCreateNestedManyWithoutUserInput
@@ -3223,6 +3311,7 @@ export type UserUncheckedCreateWithoutActivatedConfigsInput = {
   deletedAt?: Date | string | null
   isOnboardingCompleted?: boolean
   name?: string | null
+  aiQuotaOverride?: number | null
   adminLogs?: Prisma.AdminActivityLogUncheckedCreateNestedManyWithoutAdminInput
   activatedPrompts?: Prisma.AiSystemPromptUncheckedCreateNestedManyWithoutActivatedByUserInput
   aiUsageLogs?: Prisma.AiUsageLogUncheckedCreateNestedManyWithoutUserInput
@@ -3275,6 +3364,7 @@ export type UserUpdateWithoutActivatedConfigsInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiQuotaOverride?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   adminLogs?: Prisma.AdminActivityLogUpdateManyWithoutAdminNestedInput
   activatedPrompts?: Prisma.AiSystemPromptUpdateManyWithoutActivatedByUserNestedInput
   aiUsageLogs?: Prisma.AiUsageLogUpdateManyWithoutUserNestedInput
@@ -3313,6 +3403,7 @@ export type UserUncheckedUpdateWithoutActivatedConfigsInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiQuotaOverride?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   adminLogs?: Prisma.AdminActivityLogUncheckedUpdateManyWithoutAdminNestedInput
   activatedPrompts?: Prisma.AiSystemPromptUncheckedUpdateManyWithoutActivatedByUserNestedInput
   aiUsageLogs?: Prisma.AiUsageLogUncheckedUpdateManyWithoutUserNestedInput
@@ -3349,6 +3440,7 @@ export type UserCreateWithoutAiUsageLogsInput = {
   deletedAt?: Date | string | null
   isOnboardingCompleted?: boolean
   name?: string | null
+  aiQuotaOverride?: number | null
   adminLogs?: Prisma.AdminActivityLogCreateNestedManyWithoutAdminInput
   activatedConfigs?: Prisma.AiProviderConfigCreateNestedManyWithoutActivatedByUserInput
   activatedPrompts?: Prisma.AiSystemPromptCreateNestedManyWithoutActivatedByUserInput
@@ -3387,6 +3479,7 @@ export type UserUncheckedCreateWithoutAiUsageLogsInput = {
   deletedAt?: Date | string | null
   isOnboardingCompleted?: boolean
   name?: string | null
+  aiQuotaOverride?: number | null
   adminLogs?: Prisma.AdminActivityLogUncheckedCreateNestedManyWithoutAdminInput
   activatedConfigs?: Prisma.AiProviderConfigUncheckedCreateNestedManyWithoutActivatedByUserInput
   activatedPrompts?: Prisma.AiSystemPromptUncheckedCreateNestedManyWithoutActivatedByUserInput
@@ -3439,6 +3532,7 @@ export type UserUpdateWithoutAiUsageLogsInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiQuotaOverride?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   adminLogs?: Prisma.AdminActivityLogUpdateManyWithoutAdminNestedInput
   activatedConfigs?: Prisma.AiProviderConfigUpdateManyWithoutActivatedByUserNestedInput
   activatedPrompts?: Prisma.AiSystemPromptUpdateManyWithoutActivatedByUserNestedInput
@@ -3477,6 +3571,7 @@ export type UserUncheckedUpdateWithoutAiUsageLogsInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiQuotaOverride?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   adminLogs?: Prisma.AdminActivityLogUncheckedUpdateManyWithoutAdminNestedInput
   activatedConfigs?: Prisma.AiProviderConfigUncheckedUpdateManyWithoutActivatedByUserNestedInput
   activatedPrompts?: Prisma.AiSystemPromptUncheckedUpdateManyWithoutActivatedByUserNestedInput
@@ -3513,6 +3608,7 @@ export type UserCreateWithoutAdminLogsInput = {
   deletedAt?: Date | string | null
   isOnboardingCompleted?: boolean
   name?: string | null
+  aiQuotaOverride?: number | null
   activatedConfigs?: Prisma.AiProviderConfigCreateNestedManyWithoutActivatedByUserInput
   activatedPrompts?: Prisma.AiSystemPromptCreateNestedManyWithoutActivatedByUserInput
   aiUsageLogs?: Prisma.AiUsageLogCreateNestedManyWithoutUserInput
@@ -3551,6 +3647,7 @@ export type UserUncheckedCreateWithoutAdminLogsInput = {
   deletedAt?: Date | string | null
   isOnboardingCompleted?: boolean
   name?: string | null
+  aiQuotaOverride?: number | null
   activatedConfigs?: Prisma.AiProviderConfigUncheckedCreateNestedManyWithoutActivatedByUserInput
   activatedPrompts?: Prisma.AiSystemPromptUncheckedCreateNestedManyWithoutActivatedByUserInput
   aiUsageLogs?: Prisma.AiUsageLogUncheckedCreateNestedManyWithoutUserInput
@@ -3603,6 +3700,7 @@ export type UserUpdateWithoutAdminLogsInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiQuotaOverride?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   activatedConfigs?: Prisma.AiProviderConfigUpdateManyWithoutActivatedByUserNestedInput
   activatedPrompts?: Prisma.AiSystemPromptUpdateManyWithoutActivatedByUserNestedInput
   aiUsageLogs?: Prisma.AiUsageLogUpdateManyWithoutUserNestedInput
@@ -3641,6 +3739,7 @@ export type UserUncheckedUpdateWithoutAdminLogsInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiQuotaOverride?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   activatedConfigs?: Prisma.AiProviderConfigUncheckedUpdateManyWithoutActivatedByUserNestedInput
   activatedPrompts?: Prisma.AiSystemPromptUncheckedUpdateManyWithoutActivatedByUserNestedInput
   aiUsageLogs?: Prisma.AiUsageLogUncheckedUpdateManyWithoutUserNestedInput
@@ -3677,6 +3776,7 @@ export type UserCreateWithoutNotificationsInput = {
   deletedAt?: Date | string | null
   isOnboardingCompleted?: boolean
   name?: string | null
+  aiQuotaOverride?: number | null
   adminLogs?: Prisma.AdminActivityLogCreateNestedManyWithoutAdminInput
   activatedConfigs?: Prisma.AiProviderConfigCreateNestedManyWithoutActivatedByUserInput
   activatedPrompts?: Prisma.AiSystemPromptCreateNestedManyWithoutActivatedByUserInput
@@ -3715,6 +3815,7 @@ export type UserUncheckedCreateWithoutNotificationsInput = {
   deletedAt?: Date | string | null
   isOnboardingCompleted?: boolean
   name?: string | null
+  aiQuotaOverride?: number | null
   adminLogs?: Prisma.AdminActivityLogUncheckedCreateNestedManyWithoutAdminInput
   activatedConfigs?: Prisma.AiProviderConfigUncheckedCreateNestedManyWithoutActivatedByUserInput
   activatedPrompts?: Prisma.AiSystemPromptUncheckedCreateNestedManyWithoutActivatedByUserInput
@@ -3767,6 +3868,7 @@ export type UserUpdateWithoutNotificationsInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiQuotaOverride?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   adminLogs?: Prisma.AdminActivityLogUpdateManyWithoutAdminNestedInput
   activatedConfigs?: Prisma.AiProviderConfigUpdateManyWithoutActivatedByUserNestedInput
   activatedPrompts?: Prisma.AiSystemPromptUpdateManyWithoutActivatedByUserNestedInput
@@ -3805,6 +3907,7 @@ export type UserUncheckedUpdateWithoutNotificationsInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiQuotaOverride?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   adminLogs?: Prisma.AdminActivityLogUncheckedUpdateManyWithoutAdminNestedInput
   activatedConfigs?: Prisma.AiProviderConfigUncheckedUpdateManyWithoutActivatedByUserNestedInput
   activatedPrompts?: Prisma.AiSystemPromptUncheckedUpdateManyWithoutActivatedByUserNestedInput
@@ -3841,6 +3944,7 @@ export type UserCreateWithoutDevicesInput = {
   deletedAt?: Date | string | null
   isOnboardingCompleted?: boolean
   name?: string | null
+  aiQuotaOverride?: number | null
   adminLogs?: Prisma.AdminActivityLogCreateNestedManyWithoutAdminInput
   activatedConfigs?: Prisma.AiProviderConfigCreateNestedManyWithoutActivatedByUserInput
   activatedPrompts?: Prisma.AiSystemPromptCreateNestedManyWithoutActivatedByUserInput
@@ -3879,6 +3983,7 @@ export type UserUncheckedCreateWithoutDevicesInput = {
   deletedAt?: Date | string | null
   isOnboardingCompleted?: boolean
   name?: string | null
+  aiQuotaOverride?: number | null
   adminLogs?: Prisma.AdminActivityLogUncheckedCreateNestedManyWithoutAdminInput
   activatedConfigs?: Prisma.AiProviderConfigUncheckedCreateNestedManyWithoutActivatedByUserInput
   activatedPrompts?: Prisma.AiSystemPromptUncheckedCreateNestedManyWithoutActivatedByUserInput
@@ -3931,6 +4036,7 @@ export type UserUpdateWithoutDevicesInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiQuotaOverride?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   adminLogs?: Prisma.AdminActivityLogUpdateManyWithoutAdminNestedInput
   activatedConfigs?: Prisma.AiProviderConfigUpdateManyWithoutActivatedByUserNestedInput
   activatedPrompts?: Prisma.AiSystemPromptUpdateManyWithoutActivatedByUserNestedInput
@@ -3969,6 +4075,7 @@ export type UserUncheckedUpdateWithoutDevicesInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiQuotaOverride?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   adminLogs?: Prisma.AdminActivityLogUncheckedUpdateManyWithoutAdminNestedInput
   activatedConfigs?: Prisma.AiProviderConfigUncheckedUpdateManyWithoutActivatedByUserNestedInput
   activatedPrompts?: Prisma.AiSystemPromptUncheckedUpdateManyWithoutActivatedByUserNestedInput
@@ -4005,6 +4112,7 @@ export type UserCreateWithoutSubscriptionInput = {
   deletedAt?: Date | string | null
   isOnboardingCompleted?: boolean
   name?: string | null
+  aiQuotaOverride?: number | null
   adminLogs?: Prisma.AdminActivityLogCreateNestedManyWithoutAdminInput
   activatedConfigs?: Prisma.AiProviderConfigCreateNestedManyWithoutActivatedByUserInput
   activatedPrompts?: Prisma.AiSystemPromptCreateNestedManyWithoutActivatedByUserInput
@@ -4043,6 +4151,7 @@ export type UserUncheckedCreateWithoutSubscriptionInput = {
   deletedAt?: Date | string | null
   isOnboardingCompleted?: boolean
   name?: string | null
+  aiQuotaOverride?: number | null
   adminLogs?: Prisma.AdminActivityLogUncheckedCreateNestedManyWithoutAdminInput
   activatedConfigs?: Prisma.AiProviderConfigUncheckedCreateNestedManyWithoutActivatedByUserInput
   activatedPrompts?: Prisma.AiSystemPromptUncheckedCreateNestedManyWithoutActivatedByUserInput
@@ -4095,6 +4204,7 @@ export type UserUpdateWithoutSubscriptionInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiQuotaOverride?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   adminLogs?: Prisma.AdminActivityLogUpdateManyWithoutAdminNestedInput
   activatedConfigs?: Prisma.AiProviderConfigUpdateManyWithoutActivatedByUserNestedInput
   activatedPrompts?: Prisma.AiSystemPromptUpdateManyWithoutActivatedByUserNestedInput
@@ -4133,6 +4243,7 @@ export type UserUncheckedUpdateWithoutSubscriptionInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiQuotaOverride?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   adminLogs?: Prisma.AdminActivityLogUncheckedUpdateManyWithoutAdminNestedInput
   activatedConfigs?: Prisma.AiProviderConfigUncheckedUpdateManyWithoutActivatedByUserNestedInput
   activatedPrompts?: Prisma.AiSystemPromptUncheckedUpdateManyWithoutActivatedByUserNestedInput
@@ -4169,6 +4280,7 @@ export type UserCreateWithoutPaymentTransactionsInput = {
   deletedAt?: Date | string | null
   isOnboardingCompleted?: boolean
   name?: string | null
+  aiQuotaOverride?: number | null
   adminLogs?: Prisma.AdminActivityLogCreateNestedManyWithoutAdminInput
   activatedConfigs?: Prisma.AiProviderConfigCreateNestedManyWithoutActivatedByUserInput
   activatedPrompts?: Prisma.AiSystemPromptCreateNestedManyWithoutActivatedByUserInput
@@ -4207,6 +4319,7 @@ export type UserUncheckedCreateWithoutPaymentTransactionsInput = {
   deletedAt?: Date | string | null
   isOnboardingCompleted?: boolean
   name?: string | null
+  aiQuotaOverride?: number | null
   adminLogs?: Prisma.AdminActivityLogUncheckedCreateNestedManyWithoutAdminInput
   activatedConfigs?: Prisma.AiProviderConfigUncheckedCreateNestedManyWithoutActivatedByUserInput
   activatedPrompts?: Prisma.AiSystemPromptUncheckedCreateNestedManyWithoutActivatedByUserInput
@@ -4259,6 +4372,7 @@ export type UserUpdateWithoutPaymentTransactionsInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiQuotaOverride?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   adminLogs?: Prisma.AdminActivityLogUpdateManyWithoutAdminNestedInput
   activatedConfigs?: Prisma.AiProviderConfigUpdateManyWithoutActivatedByUserNestedInput
   activatedPrompts?: Prisma.AiSystemPromptUpdateManyWithoutActivatedByUserNestedInput
@@ -4297,6 +4411,7 @@ export type UserUncheckedUpdateWithoutPaymentTransactionsInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiQuotaOverride?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   adminLogs?: Prisma.AdminActivityLogUncheckedUpdateManyWithoutAdminNestedInput
   activatedConfigs?: Prisma.AiProviderConfigUncheckedUpdateManyWithoutActivatedByUserNestedInput
   activatedPrompts?: Prisma.AiSystemPromptUncheckedUpdateManyWithoutActivatedByUserNestedInput
@@ -4333,6 +4448,7 @@ export type UserCreateWithoutFamilyOwnedInput = {
   deletedAt?: Date | string | null
   isOnboardingCompleted?: boolean
   name?: string | null
+  aiQuotaOverride?: number | null
   adminLogs?: Prisma.AdminActivityLogCreateNestedManyWithoutAdminInput
   activatedConfigs?: Prisma.AiProviderConfigCreateNestedManyWithoutActivatedByUserInput
   activatedPrompts?: Prisma.AiSystemPromptCreateNestedManyWithoutActivatedByUserInput
@@ -4371,6 +4487,7 @@ export type UserUncheckedCreateWithoutFamilyOwnedInput = {
   deletedAt?: Date | string | null
   isOnboardingCompleted?: boolean
   name?: string | null
+  aiQuotaOverride?: number | null
   adminLogs?: Prisma.AdminActivityLogUncheckedCreateNestedManyWithoutAdminInput
   activatedConfigs?: Prisma.AiProviderConfigUncheckedCreateNestedManyWithoutActivatedByUserInput
   activatedPrompts?: Prisma.AiSystemPromptUncheckedCreateNestedManyWithoutActivatedByUserInput
@@ -4423,6 +4540,7 @@ export type UserUpdateWithoutFamilyOwnedInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiQuotaOverride?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   adminLogs?: Prisma.AdminActivityLogUpdateManyWithoutAdminNestedInput
   activatedConfigs?: Prisma.AiProviderConfigUpdateManyWithoutActivatedByUserNestedInput
   activatedPrompts?: Prisma.AiSystemPromptUpdateManyWithoutActivatedByUserNestedInput
@@ -4461,6 +4579,7 @@ export type UserUncheckedUpdateWithoutFamilyOwnedInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiQuotaOverride?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   adminLogs?: Prisma.AdminActivityLogUncheckedUpdateManyWithoutAdminNestedInput
   activatedConfigs?: Prisma.AiProviderConfigUncheckedUpdateManyWithoutActivatedByUserNestedInput
   activatedPrompts?: Prisma.AiSystemPromptUncheckedUpdateManyWithoutActivatedByUserNestedInput
@@ -4497,6 +4616,7 @@ export type UserCreateWithoutFamilyMembershipsInput = {
   deletedAt?: Date | string | null
   isOnboardingCompleted?: boolean
   name?: string | null
+  aiQuotaOverride?: number | null
   adminLogs?: Prisma.AdminActivityLogCreateNestedManyWithoutAdminInput
   activatedConfigs?: Prisma.AiProviderConfigCreateNestedManyWithoutActivatedByUserInput
   activatedPrompts?: Prisma.AiSystemPromptCreateNestedManyWithoutActivatedByUserInput
@@ -4535,6 +4655,7 @@ export type UserUncheckedCreateWithoutFamilyMembershipsInput = {
   deletedAt?: Date | string | null
   isOnboardingCompleted?: boolean
   name?: string | null
+  aiQuotaOverride?: number | null
   adminLogs?: Prisma.AdminActivityLogUncheckedCreateNestedManyWithoutAdminInput
   activatedConfigs?: Prisma.AiProviderConfigUncheckedCreateNestedManyWithoutActivatedByUserInput
   activatedPrompts?: Prisma.AiSystemPromptUncheckedCreateNestedManyWithoutActivatedByUserInput
@@ -4587,6 +4708,7 @@ export type UserUpdateWithoutFamilyMembershipsInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiQuotaOverride?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   adminLogs?: Prisma.AdminActivityLogUpdateManyWithoutAdminNestedInput
   activatedConfigs?: Prisma.AiProviderConfigUpdateManyWithoutActivatedByUserNestedInput
   activatedPrompts?: Prisma.AiSystemPromptUpdateManyWithoutActivatedByUserNestedInput
@@ -4625,6 +4747,7 @@ export type UserUncheckedUpdateWithoutFamilyMembershipsInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiQuotaOverride?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   adminLogs?: Prisma.AdminActivityLogUncheckedUpdateManyWithoutAdminNestedInput
   activatedConfigs?: Prisma.AiProviderConfigUncheckedUpdateManyWithoutActivatedByUserNestedInput
   activatedPrompts?: Prisma.AiSystemPromptUncheckedUpdateManyWithoutActivatedByUserNestedInput
@@ -4661,6 +4784,7 @@ export type UserCreateManyRoleInput = {
   deletedAt?: Date | string | null
   isOnboardingCompleted?: boolean
   name?: string | null
+  aiQuotaOverride?: number | null
 }
 
 export type UserUpdateWithoutRoleInput = {
@@ -4677,6 +4801,7 @@ export type UserUpdateWithoutRoleInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiQuotaOverride?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   adminLogs?: Prisma.AdminActivityLogUpdateManyWithoutAdminNestedInput
   activatedConfigs?: Prisma.AiProviderConfigUpdateManyWithoutActivatedByUserNestedInput
   activatedPrompts?: Prisma.AiSystemPromptUpdateManyWithoutActivatedByUserNestedInput
@@ -4714,6 +4839,7 @@ export type UserUncheckedUpdateWithoutRoleInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiQuotaOverride?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   adminLogs?: Prisma.AdminActivityLogUncheckedUpdateManyWithoutAdminNestedInput
   activatedConfigs?: Prisma.AiProviderConfigUncheckedUpdateManyWithoutActivatedByUserNestedInput
   activatedPrompts?: Prisma.AiSystemPromptUncheckedUpdateManyWithoutActivatedByUserNestedInput
@@ -4751,6 +4877,7 @@ export type UserUncheckedUpdateManyWithoutRoleInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiQuotaOverride?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
 }
 
 
@@ -4943,6 +5070,7 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   deletedAt?: boolean
   isOnboardingCompleted?: boolean
   name?: boolean
+  aiQuotaOverride?: boolean
   adminLogs?: boolean | Prisma.User$adminLogsArgs<ExtArgs>
   activatedConfigs?: boolean | Prisma.User$activatedConfigsArgs<ExtArgs>
   activatedPrompts?: boolean | Prisma.User$activatedPromptsArgs<ExtArgs>
@@ -4985,9 +5113,10 @@ export type UserSelectScalar = {
   deletedAt?: boolean
   isOnboardingCompleted?: boolean
   name?: boolean
+  aiQuotaOverride?: boolean
 }
 
-export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "email" | "passwordHash" | "googleId" | "googleEmail" | "authProvider" | "status" | "roleId" | "lastLoginAt" | "createdAt" | "updatedAt" | "deletedAt" | "isOnboardingCompleted" | "name", ExtArgs["result"]["user"]>
+export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "email" | "passwordHash" | "googleId" | "googleEmail" | "authProvider" | "status" | "roleId" | "lastLoginAt" | "createdAt" | "updatedAt" | "deletedAt" | "isOnboardingCompleted" | "name" | "aiQuotaOverride", ExtArgs["result"]["user"]>
 export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   adminLogs?: boolean | Prisma.User$adminLogsArgs<ExtArgs>
   activatedConfigs?: boolean | Prisma.User$activatedConfigsArgs<ExtArgs>
@@ -5055,6 +5184,7 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     deletedAt: Date | null
     isOnboardingCompleted: boolean
     name: string | null
+    aiQuotaOverride: number | null
   }, ExtArgs["result"]["user"]>
   composites: {}
 }
@@ -5460,6 +5590,7 @@ export interface UserFieldRefs {
   readonly deletedAt: Prisma.FieldRef<"User", 'DateTime'>
   readonly isOnboardingCompleted: Prisma.FieldRef<"User", 'Boolean'>
   readonly name: Prisma.FieldRef<"User", 'String'>
+  readonly aiQuotaOverride: Prisma.FieldRef<"User", 'Int'>
 }
     
 

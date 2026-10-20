@@ -14,7 +14,7 @@ import { SponsorDto, CampaignDto } from './dto/admin-sponsors-response.dto';
 
 @ApiTags('Admin / Sponsors')
 @ApiBearerAuth('access-token')
-@Roles('admin')
+@Roles('admin', 'manager')
 @Controller('admin/sponsors')
 export class AdminSponsorsController {
   constructor(private readonly service: AdminSponsorsService) {}

@@ -33,9 +33,12 @@ import {
 import { ClientProxy } from '@nestjs/microservices';
 import { Inject } from '@nestjs/common';
 import { GOOGLE_CLIENT_ID } from 'src/common/constants/app.constant';
+import { RedisService } from 'src/modules-system/redis/redis.service';
 
-const OTP_TTL_SECONDS = 300; // 5 phút
-const OTP_MAX_ATTEMPTS = 5;
+// OTP_TTL_SECONDS và OTP_MAX_ATTEMPTS được đọc động từ Redis → DB → fallback
+// OTP_RATE_LIMIT_MAX và OTP_RATE_LIMIT_WINDOW_MINUTES là rate-limit cứng, không cấu hình qua admin
+const DEFAULT_OTP_TTL_SECONDS = 300; // fallback 5 phút
+const DEFAULT_OTP_MAX_ATTEMPTS = 5;  // fallback 5 lần
 const OTP_RATE_LIMIT_MAX = 3;
 const OTP_RATE_LIMIT_WINDOW_MINUTES = 10;
 const BCRYPT_ROUNDS = 10;
@@ -48,8 +51,26 @@ export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly tokensService: TokensService,
+    private readonly redis: RedisService,
     @Inject('EMAIL_SERVICE') private readonly emailClient: ClientProxy,
   ) { }
+
+  // ─────────────────────────────────────────────────────────
+  // HELPER — đọc OTP config từ Redis → DB → fallback
+  // ─────────────────────────────────────────────────────────
+
+  private async getOtpConfig(): Promise<{ ttlSeconds: number; maxAttempts: number }> {
+    const [ttlStr, maxStr] = await Promise.all([
+      this.redis.get<string>('sysconfig:otp.ttlSeconds')
+        .then(async (v) => v ?? (await this.prisma.systemConfig.findUnique({ where: { key: 'otp.ttlSeconds' } }))?.value ?? String(DEFAULT_OTP_TTL_SECONDS)),
+      this.redis.get<string>('sysconfig:otp.maxAttempts')
+        .then(async (v) => v ?? (await this.prisma.systemConfig.findUnique({ where: { key: 'otp.maxAttempts' } }))?.value ?? String(DEFAULT_OTP_MAX_ATTEMPTS)),
+    ]);
+    return {
+      ttlSeconds: parseInt(ttlStr, 10),
+      maxAttempts: parseInt(maxStr, 10),
+    };
+  }
 
   // ─────────────────────────────────────────────────────────
   // EMAIL REGISTER
@@ -82,7 +103,8 @@ export class AuthService {
     // 3. Sinh OTP + lưu DB
     const otp = generateOtp();
     const otpHash = await hashOtp(otp);
-    const expiresAt = new Date(Date.now() + OTP_TTL_SECONDS * 1000);
+    const { ttlSeconds } = await this.getOtpConfig();
+    const expiresAt = new Date(Date.now() + ttlSeconds * 1000);
 
     await this.prisma.emailOtp.create({
       data: { id: uuid(), email, otpHash, purpose: 'register', expiresAt },
@@ -98,7 +120,7 @@ export class AuthService {
     this.logger.log(`📧 OTP register gửi tới ${email}`);
     return {
       message: `Mã OTP đã được gửi tới ${email}`,
-      expiresIn: OTP_TTL_SECONDS,
+      expiresIn: ttlSeconds,
     };
   }
 
@@ -247,10 +269,11 @@ export class AuthService {
 
     // Không tiết lộ email có tồn tại không (security best practice)
     const user = await this.prisma.user.findUnique({ where: { email } });
+    const { ttlSeconds } = await this.getOtpConfig();
     if (!user || user.authProvider !== 'email') {
       return {
         message: `Nếu email tồn tại, OTP đã được gửi tới ${email}`,
-        expiresIn: OTP_TTL_SECONDS,
+        expiresIn: ttlSeconds,
       };
     }
 
@@ -264,7 +287,7 @@ export class AuthService {
         email,
         otpHash,
         purpose: 'reset_password',
-        expiresAt: new Date(Date.now() + OTP_TTL_SECONDS * 1000),
+        expiresAt: new Date(Date.now() + ttlSeconds * 1000),
       },
     });
 
@@ -276,7 +299,7 @@ export class AuthService {
 
     return {
       message: `Nếu email tồn tại, OTP đã được gửi tới ${email}`,
-      expiresIn: OTP_TTL_SECONDS,
+      expiresIn: ttlSeconds,
     };
   }
 
@@ -537,7 +560,8 @@ export class AuthService {
     otpRecord: any,
     inputOtp: string,
   ): Promise<void> {
-    if (otpRecord.attempts >= OTP_MAX_ATTEMPTS) {
+    const { maxAttempts } = await this.getOtpConfig();
+    if (otpRecord.attempts >= maxAttempts) {
       await this.prisma.emailOtp.delete({ where: { id: otpRecord.id } });
       throw new BadRequestException(
         'OTP đã vượt quá số lần thử. Vui lòng yêu cầu OTP mới.',
