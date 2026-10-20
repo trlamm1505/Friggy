@@ -24,6 +24,7 @@ export const showToast = {
 
   error: (message, options = {}) => {
     return toast.error(message, {
+      id: typeof message === 'string' ? message : undefined,
       ...options,
       style: {
         background: '#fff1f2',

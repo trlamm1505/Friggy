@@ -2,12 +2,14 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsString,
   IsOptional,
+  IsDefined,
   IsInt,
   IsBoolean,
   IsNumber,
   Min,
   MaxLength,
   IsPositive,
+  ValidateIf,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -105,12 +107,29 @@ export class CreateCategoryDto {
   @Type(() => Number)
   parentId?: number;
 
-  @ApiPropertyOptional({ example: 7, description: 'Số ngày bảo quản mặc định' })
-  @IsOptional()
+  @ApiProperty({ nullable: true, example: 7, description: 'Ngày bảo quản ngăn mát (null = không áp dụng)' })
+  @IsDefined()
+  @ValidateIf((_o, v) => v !== null)
   @IsInt()
   @Min(1)
   @Type(() => Number)
-  defaultShelfLifeDays?: number;
+  defaultShelfLifeDays!: number | null;
+
+  @ApiProperty({ nullable: true, example: 180, description: 'Ngày bảo quản ngăn đông (null = không áp dụng)' })
+  @IsDefined()
+  @ValidateIf((_o, v) => v !== null)
+  @IsInt()
+  @Min(1)
+  @Type(() => Number)
+  freezerShelfLifeDays!: number | null;
+
+  @ApiProperty({ nullable: true, example: 3, description: 'Ngày bảo quản tủ bếp/phòng (null = không áp dụng)' })
+  @IsDefined()
+  @ValidateIf((_o, v) => v !== null)
+  @IsInt()
+  @Min(1)
+  @Type(() => Number)
+  pantryShelfLifeDays!: number | null;
 }
 
 export class UpdateCategoryDto {
@@ -127,10 +146,27 @@ export class UpdateCategoryDto {
   @Type(() => Number)
   parentId?: number;
 
-  @ApiPropertyOptional({ example: 5, description: 'Số ngày bảo quản mặc định' })
+  @ApiPropertyOptional({ nullable: true, example: 5, description: 'Ngày bảo quản ngăn mát (null = không áp dụng)' })
   @IsOptional()
+  @ValidateIf((_o, v) => v !== null)
   @IsInt()
   @Min(1)
   @Type(() => Number)
-  defaultShelfLifeDays?: number;
+  defaultShelfLifeDays?: number | null;
+
+  @ApiPropertyOptional({ nullable: true, example: 180, description: 'Ngày bảo quản ngăn đông (null = không áp dụng)' })
+  @IsOptional()
+  @ValidateIf((_o, v) => v !== null)
+  @IsInt()
+  @Min(1)
+  @Type(() => Number)
+  freezerShelfLifeDays?: number | null;
+
+  @ApiPropertyOptional({ nullable: true, example: 3, description: 'Ngày bảo quản tủ bếp/phòng (null = không áp dụng)' })
+  @IsOptional()
+  @ValidateIf((_o, v) => v !== null)
+  @IsInt()
+  @Min(1)
+  @Type(() => Number)
+  pantryShelfLifeDays?: number | null;
 }

@@ -116,7 +116,7 @@ export const Navbar = ({ onOpenAuthModal, onOpenAdmin }) => {
             </button>
           )}
           <a
-            href="/friggy-app.apk"
+            href="https://github.com/trlamm1505/Friggy/releases/latest/download/friggy-app.apk"
             download="friggy-app.apk"
             className="flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white text-sm font-bold px-5 py-2.5 rounded-full shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 hover:-translate-y-0.5 transition-all cursor-pointer"
           >
@@ -186,7 +186,7 @@ export const Navbar = ({ onOpenAuthModal, onOpenAdmin }) => {
               </button>
             )}
             <a
-              href="/friggy-app.apk"
+              href="https://github.com/trlamm1505/Friggy/releases/latest/download/friggy-app.apk"
               download="friggy-app.apk"
               onClick={() => setMobileMenuOpen(false)}
               className="w-full flex justify-center items-center gap-2 bg-emerald-600 text-white font-bold py-2.5 rounded-full cursor-pointer"

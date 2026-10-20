@@ -26,10 +26,12 @@ import {
   ActivateResponseDto,
 } from './dto/admin-ai-response.dto';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
+import { Roles } from 'src/common/decorators/roles.decorator';
 import type { JwtPayload } from 'src/common/interfaces/jwt-payload.interface';
 
 @ApiTags('Admin / AI')
 @ApiBearerAuth('access-token')
+@Roles('admin')
 @Controller('admin/ai')
 export class AdminAiController {
   constructor(private readonly adminAiService: AdminAiService) {}

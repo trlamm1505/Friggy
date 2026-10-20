@@ -755,14 +755,6 @@ export type UserPreferenceUncheckedUpdateOneWithoutUserNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserPreferenceUpdateToOneWithWhereWithoutUserInput, Prisma.UserPreferenceUpdateWithoutUserInput>, Prisma.UserPreferenceUncheckedUpdateWithoutUserInput>
 }
 
-export type NullableIntFieldUpdateOperationsInput = {
-  set?: number | null
-  increment?: number
-  decrement?: number
-  multiply?: number
-  divide?: number
-}
-
 export type NullableEnumDietaryStyleFieldUpdateOperationsInput = {
   set?: $Enums.DietaryStyle | null
 }

@@ -25,6 +25,20 @@ const processQueue = (error, token = null) => {
   failedQueue = [];
 };
 
+const SESSION_EXPIRED_MESSAGE = 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!';
+
+// Các API xác thực công khai: 401 ở đây là sai thông tin đăng nhập, KHÔNG phải hết phiên
+const AUTH_ENDPOINTS = ['/auth/email/login', '/auth/google', '/auth/refresh', '/auth/logout'];
+const isAuthEndpoint = (url = '') => AUTH_ENDPOINTS.some((path) => url.includes(path));
+
+// Chuẩn hoá lỗi: ưu tiên message từ backend thay vì "Request failed with status code xxx"
+const toFriendlyError = (error, fallback = 'Có lỗi xảy ra, vui lòng thử lại!') => {
+  const message = error?.response?.data?.message || error?.message || fallback;
+  const err = new Error(Array.isArray(message) ? message.join(', ') : message);
+  err.status = error?.response?.status;
+  return err;
+};
+
 // Xóa Token & chuyển về trang chủ Guest khi Refresh Token hết hạn
 const handleSessionExpired = () => {
   localStorage.removeItem('friggy_access_token');
@@ -34,7 +48,7 @@ const handleSessionExpired = () => {
   localStorage.removeItem('refreshToken');
   localStorage.removeItem('token');
   localStorage.removeItem('user');
-  showToast.error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!');
+  showToast.error(SESSION_EXPIRED_MESSAGE, { id: 'session-expired' });
   setTimeout(() => {
     window.location.href = '/';
   }, 1200);
@@ -66,11 +80,10 @@ axiosClient.interceptors.response.use(
     const originalRequest = error.config;
 
     // Nếu lỗi 401 Unauthorized và chưa thử retry request này
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      // Nếu chính API /auth/refresh bị 401 -> Refresh token đã hết hạn
-      if (originalRequest.url?.includes('/auth/refresh') || originalRequest.url?.includes('/auth/google')) {
-        handleSessionExpired();
-        return Promise.reject(error);
+    if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
+      // API xác thực (login/google/refresh/logout) bị 401 -> trả lỗi của backend, không refresh
+      if (isAuthEndpoint(originalRequest.url)) {
+        return Promise.reject(toFriendlyError(error, 'Thông tin đăng nhập không hợp lệ!'));
       }
 
       if (isRefreshing) {
@@ -93,7 +106,7 @@ axiosClient.interceptors.response.use(
       if (!refreshToken) {
         isRefreshing = false;
         handleSessionExpired();
-        return Promise.reject(error);
+        return Promise.reject(new Error(SESSION_EXPIRED_MESSAGE));
       }
 
       try {
@@ -120,19 +133,16 @@ axiosClient.interceptors.response.use(
         processQueue(null, newAccessToken);
         return axiosClient(originalRequest);
       } catch (refreshErr) {
-        processQueue(refreshErr, null);
+        const expiredErr = new Error(SESSION_EXPIRED_MESSAGE);
+        processQueue(expiredErr, null);
         handleSessionExpired();
-        return Promise.reject(refreshErr);
+        return Promise.reject(expiredErr);
       } finally {
         isRefreshing = false;
       }
     }
 
-    const message =
-      error.response?.data?.message ||
-      error.message ||
-      'Có lỗi xảy ra, vui lòng thử lại!';
-    return Promise.reject(new Error(Array.isArray(message) ? message.join(', ') : message));
+    return Promise.reject(toFriendlyError(error));
   }
 );
 

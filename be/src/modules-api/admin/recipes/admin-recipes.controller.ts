@@ -19,7 +19,7 @@ import { RecipeDetailDto } from './dto/recipes-response.dto';
 
 @ApiTags('Admin / Recipes')
 @ApiBearerAuth('access-token')
-@Roles('admin')
+@Roles('admin', 'manager')
 @Controller('admin/recipes')
 export class AdminRecipesController {
   constructor(private readonly recipesService: AdminRecipesService) {}

@@ -222,3 +222,8 @@ export type FamilyGroup = Prisma.FamilyGroupModel
  * 
  */
 export type FamilyMember = Prisma.FamilyMemberModel
+/**
+ * Model SystemConfig
+ * 
+ */
+export type SystemConfig = Prisma.SystemConfigModel

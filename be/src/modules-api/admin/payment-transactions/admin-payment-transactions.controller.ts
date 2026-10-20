@@ -12,7 +12,7 @@ import { AdminPaymentTransactionListResponseDto } from './dto/admin-payment-tran
 
 @ApiTags('Admin / Payment Transactions')
 @ApiBearerAuth('access-token')
-@Roles('admin')
+@Roles('admin', 'manager')
 @Controller('admin/payment-transactions')
 export class AdminPaymentTransactionsController {
   constructor(private readonly service: AdminPaymentTransactionsService) {}

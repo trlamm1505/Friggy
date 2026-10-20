@@ -6,6 +6,8 @@ export class CategoryResponseDto {
   @ApiPropertyOptional() iconPath!: string | null;
   @ApiPropertyOptional() parentId!: number | null;
   @ApiPropertyOptional() defaultShelfLifeDays!: number | null;
+  @ApiPropertyOptional() freezerShelfLifeDays!: number | null;
+  @ApiPropertyOptional() pantryShelfLifeDays!: number | null;
   @ApiPropertyOptional({ type: () => [CategoryResponseDto] }) children?: CategoryResponseDto[];
 }
 

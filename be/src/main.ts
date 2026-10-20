@@ -44,8 +44,15 @@ async function bootstrap() {
         `- Tiền tệ đơn vị **VND** (số nguyên)\n` +
         `- Ảnh trả về dưới dạng **path tương đối** \`/avatars/...\`\n\n` +
         `### Auth\n` +
-        `Dùng **Bearer Token** (JWT). Lấy token qua \`POST /api/v1/auth/google\` hoặc \`POST /api/v1/auth/email/login\`.`,
-    )
+        `Dùng **Bearer Token** (JWT). Lấy token qua \`POST /api/v1/auth/google\` hoặc \`POST /api/v1/auth/email/login\`.\n\n` +
+        `### Phân quyền Admin Panel\n` +
+        `Các nhóm chức năng quản trị được phân biệt qua tiền tố trong mô tả tag:\n\n` +
+        `| Tiền tố trên tag | Quyền truy cập |\n` +
+        `|---|---|\n` +
+        `| **[Chỉ Admin]** | Chỉ tài khoản admin (siêu quản trị) mới có quyền |\n` +
+        `| **[Admin | Manager]** | Cả admin lẫn manager đều có quyền |\n\n` +
+        `> **Manager** có thể quản lý nội dung & kinh doanh nhưng không được truy cập cấu hình kỹ thuật (AI, Cron Jobs, tạo/sửa/xoá gói cước).`,
+  )
     .setVersion('1.0')
     .addServer(
       APP_URL,
@@ -75,15 +82,19 @@ async function bootstrap() {
     .addTag('Meal Planning', 'Thực đơn tuần & Danh sách mua')
     .addTag('AI Chat', 'Đầu bếp AI — Chat có tài khoản & Chatbot công khai')
     .addTag('AI Public Chat', 'API Chat public (Chatbot SEO)')
-    .addTag('Admin / AI', 'Quản lý AI providers & prompts')
-    .addTag('Admin / Cron', 'Quản lý cron jobs — bật/tắt, đổi schedule, trigger thủ công')
-    .addTag('Admin / Ingredients', 'Quản lý nguyên liệu & danh mục nguyên liệu')
-    .addTag('Admin / Payment Transactions', 'Toàn bộ lịch sử giao dịch thanh toán')
-    .addTag('Admin / Plans', 'Quản lý gói dịch vụ — giá, rate limit, tính năng')
-    .addTag('Admin / Recipes', 'Quản lý công thức nấu ăn')
-    .addTag('Admin / Sponsors', 'Quản lý đối tác & chiến dịch quảng cáo')
-    .addTag('Admin / Stats', 'Dashboard thống kê — users, revenue, AI usage, subscriptions')
-    .addTag('Admin / Users', 'Quản lý tài khoản người dùng')
+    .addTag('Admin / AI', '[Chỉ Admin] Cấu hình AI provider & system prompt — chỉ tài khoản admin mới được phép')
+    .addTag('Admin / Cron', '[Chỉ Admin] Điều khiển cron job — bật/tắt, đổi schedule, trigger thủ công')
+    .addTag('Admin / Ingredients', '[Admin | Manager] Quản lý nguyên liệu & danh mục nguyên liệu')
+    .addTag('Admin / Payment Transactions', '[Admin | Manager] Xem toàn bộ lịch sử giao dịch thanh toán')
+    .addTag('Admin / Plans', '[Chỉ Admin] Tạo / Sửa / Xoá gói cước | [Admin | Manager] Xem danh sách gói')
+    .addTag('Admin / Recipes', '[Admin | Manager] Quản lý công thức nấu ăn hệ thống')
+    .addTag('Admin / Sponsors', '[Admin | Manager] Quản lý nhà tài trợ & chiến dịch quảng cáo')
+    .addTag('Admin / Stats', '[Admin | Manager] Dashboard thống kê — người dùng, doanh thu, AI usage')
+    .addTag('Admin / Users', '[Admin | Manager] Quản lý tài khoản & trạng thái người dùng')
+    .addTag('Admin / Sessions & AI Quota', '[Chỉ Admin] Quản lý phiên đăng nhập & ghi đè quota AI theo user')
+    .addTag('Admin / System Config', '[Chỉ Admin] Cấu hình hệ thống runtime: Token TTL, OTP, Bảo trì, Health')
+    .addTag('Admin / Activity Logs', '[Chỉ Admin] Lịch sử hoạt động của admin và manager')
+    .addTag('Admin / Broadcast', '[Chỉ Admin] Gửi thông báo đẩy hàng loạt đến nhóm người dùng')
     .build();
 
   const document = SwaggerModule.createDocument(app, swaggerConfig);

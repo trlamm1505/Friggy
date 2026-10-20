@@ -28,7 +28,7 @@ import {
 
 @ApiTags('Admin / Ingredients')
 @ApiBearerAuth('access-token')
-@Roles('admin')
+@Roles('admin', 'manager')
 @Controller('admin/ingredients')
 export class AdminIngredientsController {
   constructor(private readonly ingredientsService: AdminIngredientsService) {}
