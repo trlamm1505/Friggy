@@ -34,6 +34,7 @@ model User {
   deletedAt             DateTime?
   isOnboardingCompleted Boolean             @default(false)
   name                  String?             @db.VarChar(100)
+  aiQuotaOverride       Int?                // null = dùng quota mặc định từ SubscriptionPlan; >= 0 = ghi đè
   adminLogs             AdminActivityLog[]
   activatedConfigs      AiProviderConfig[]  @relation("ConfigActivatedBy")
   activatedPrompts      AiSystemPrompt[]    @relation("PromptActivatedBy")
@@ -727,6 +728,7 @@ model PaymentTransaction {
 
 enum RoleName {
   admin
+  manager
   user
 }
 
@@ -968,3 +970,18 @@ model FamilyMember {
   @@index([inviteToken])
   @@map("family_members")
 }
+
+// ─────────────────────────────────────────────────────────
+// System Configuration — Admin Runtime Config
+// ─────────────────────────────────────────────────────────
+
+model SystemConfig {
+  key         String   @id @db.VarChar(100) // VD: "token.accessTtl", "otp.ttlSeconds", "maintenance.isEnabled"
+  value       String   @db.VarChar(500)      // Giá trị dưới dạng string, parse tại runtime
+  description String?  @db.VarChar(255)
+  updatedAt   DateTime @updatedAt
+  updatedBy   String?  @db.Char(36)          // adminId thực hiện thay đổi cuối cùng
+
+  @@map("system_configs")
+}
+

@@ -13,7 +13,8 @@ export class AdminPlansController {
   constructor(private readonly adminPlansService: AdminPlansService) {}
 
   @Get()
-  @ApiOperation({ summary: '[Admin] Danh sách tất cả gói dịch vụ' })
+  @Roles('admin', 'manager')
+  @ApiOperation({ summary: '[Admin | Manager] Danh sách tất cả gói dịch vụ' })
   @ApiResponse({ status: 200, type: [SubscriptionPlanDto] })
   getPlans() {
     return this.adminPlansService.getPlans();

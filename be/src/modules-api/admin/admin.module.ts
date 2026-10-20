@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { PrismaModule } from 'src/modules-system/prisma/prisma.module';
+import { FcmModule } from 'src/modules-system/fcm/fcm.module';
 
 // ── AI ────────────────────────────────────────────────────
 import { AdminAiController } from './ai/admin-ai.controller';
@@ -38,10 +39,27 @@ import { AdminIngredientsService } from './ingredients/admin-ingredients.service
 import { AdminRecipesController } from './recipes/admin-recipes.controller';
 import { AdminRecipesService } from './recipes/admin-recipes.service';
 
+// ── System Config ─────────────────────────────────────────
+import { AdminSystemConfigController } from './system-config/admin-system-config.controller';
+import { AdminSystemConfigService } from './system-config/admin-system-config.service';
+
+// ── Sessions & AI Quota ───────────────────────────────────
+import { AdminSessionsController } from './users/admin-sessions.controller';
+import { AdminSessionsService } from './users/admin-sessions.service';
+
+// ── Activity Logs ─────────────────────────────────────────
+import { AdminActivityLogsController } from './activity-logs/admin-activity-logs.controller';
+import { AdminActivityLogsService } from './activity-logs/admin-activity-logs.service';
+
+// ── Broadcast ─────────────────────────────────────────────
+import { AdminBroadcastController } from './broadcast/admin-broadcast.controller';
+import { AdminBroadcastService } from './broadcast/admin-broadcast.service';
+
 @Module({
   imports: [
     PrismaModule,
     NotificationsModule,
+    FcmModule,
   ],
   controllers: [
     AdminAiController,
@@ -53,6 +71,11 @@ import { AdminRecipesService } from './recipes/admin-recipes.service';
     AdminPaymentTransactionsController,
     AdminIngredientsController,
     AdminRecipesController,
+    // Mới
+    AdminSystemConfigController,
+    AdminSessionsController,
+    AdminActivityLogsController,
+    AdminBroadcastController,
   ],
   providers: [
     AdminAiService,
@@ -64,6 +87,11 @@ import { AdminRecipesService } from './recipes/admin-recipes.service';
     AdminPaymentTransactionsService,
     AdminIngredientsService,
     AdminRecipesService,
+    // Mới
+    AdminSystemConfigService,
+    AdminSessionsService,
+    AdminActivityLogsService,
+    AdminBroadcastService,
   ],
 })
 export class AdminModule {}

@@ -7,7 +7,7 @@ import { PaginatedUsersDto, UserDetailDto, UserActionResponseDto } from './dto/a
 
 @ApiTags('Admin / Users')
 @ApiBearerAuth('access-token')
-@Roles('admin')
+@Roles('admin', 'manager')
 @Controller('admin/users')
 export class AdminUsersController {
   constructor(private readonly service: AdminUsersService) {}

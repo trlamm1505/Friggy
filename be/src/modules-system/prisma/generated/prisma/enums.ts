@@ -11,6 +11,7 @@
 
 export const RoleName = {
   admin: 'admin',
+  manager: 'manager',
   user: 'user'
 } as const
 

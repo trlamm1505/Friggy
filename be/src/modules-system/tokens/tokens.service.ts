@@ -1,5 +1,6 @@
-﻿import { Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { RedisService } from '../redis/redis.service';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   JWT_ACCESS_EXPIRES_IN,
@@ -11,6 +12,14 @@ import { JwtPayload } from 'src/common/interfaces/jwt-payload.interface';
 import { hashToken, verifyToken } from 'src/common/utils/otp.util';
 import { v4 as uuid } from 'uuid';
 
+// Hàm chuyển TTL dạng chuỗi (VD: "15m", "7d") sang số giây
+function parseTtlToSeconds(ttl: string): number {
+  const unit = ttl.slice(-1);
+  const value = parseInt(ttl.slice(0, -1), 10);
+  const map: Record<string, number> = { s: 1, m: 60, h: 3600, d: 86400 };
+  return value * (map[unit] ?? 1);
+}
+
 export interface TokenPair {
   accessToken: string;
   refreshToken: string;
@@ -21,7 +30,20 @@ export class TokensService {
   constructor(
     private readonly jwtService: JwtService,
     private readonly prisma: PrismaService,
+    private readonly redis: RedisService,
   ) {}
+
+  /**
+   * Đọc TTL từ Redis (do AdminSystemConfigService set) → DB → fallback .env
+   */
+  private async getDynamicTtl(key: string, fallback: string): Promise<string> {
+    const cached = await this.redis.get<string>(`sysconfig:${key}`);
+    if (cached) return cached;
+    const record = await this.prisma.systemConfig.findUnique({
+      where: { key },
+    });
+    return record?.value ?? fallback;
+  }
 
   /**
    * Sinh cặp Access Token + Refresh Token cho user
@@ -35,21 +57,28 @@ export class TokensService {
   ): Promise<TokenPair> {
     const payload: JwtPayload = { sub: userId, role };
 
+    // Đọc TTL động — ưu tiên Redis → DB → fallback .env
+    const [accessTtl, refreshTtl] = await Promise.all([
+      this.getDynamicTtl('token.accessTtl', JWT_ACCESS_EXPIRES_IN),
+      this.getDynamicTtl('token.refreshTtl', JWT_REFRESH_EXPIRES_IN),
+    ]);
+
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(payload, {
         secret: JWT_ACCESS_SECRET,
-        expiresIn: JWT_ACCESS_EXPIRES_IN as any,
+        expiresIn: accessTtl as any,
       }),
       this.jwtService.signAsync(payload, {
         secret: JWT_REFRESH_SECRET,
-        expiresIn: JWT_REFRESH_EXPIRES_IN as any,
+        expiresIn: refreshTtl as any,
       }),
     ]);
 
-    // Lưu hash refresh token vào DB
+    // Tính expiresAt từ refreshTtl động (không hardcode 7 ngày)
     const tokenHash = await hashToken(refreshToken);
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 7); // 7 ngày
+    const expiresAt = new Date(
+      Date.now() + parseTtlToSeconds(refreshTtl) * 1000,
+    );
 
     await this.prisma.refreshToken.create({
       data: {
@@ -69,9 +98,7 @@ export class TokensService {
    * Xác minh refresh token: verify JWT signature + check DB chưa revoked
    * Trả về payload nếu hợp lệ, null nếu không
    */
-  async verifyRefreshToken(
-    refreshToken: string,
-  ): Promise<JwtPayload | null> {
+  async verifyRefreshToken(refreshToken: string): Promise<JwtPayload | null> {
     try {
       const payload = await this.jwtService.verifyAsync<JwtPayload>(
         refreshToken,
@@ -104,7 +131,10 @@ export class TokensService {
    * Thu hồi refresh token (logout)
    * So sánh hash và set revokedAt
    */
-  async revokeRefreshToken(refreshToken: string, userId: string): Promise<void> {
+  async revokeRefreshToken(
+    refreshToken: string,
+    userId: string,
+  ): Promise<void> {
     const tokens = await this.prisma.refreshToken.findMany({
       where: {
         userId,
@@ -129,9 +159,13 @@ export class TokensService {
    * Sinh access token mới từ payload (dùng cho /refresh endpoint)
    */
   async refreshAccessToken(payload: JwtPayload): Promise<string> {
+    const accessTtl = await this.getDynamicTtl(
+      'token.accessTtl',
+      JWT_ACCESS_EXPIRES_IN,
+    );
     return this.jwtService.signAsync(
       { sub: payload.sub, role: payload.role },
-      { secret: JWT_ACCESS_SECRET, expiresIn: JWT_ACCESS_EXPIRES_IN as any },
+      { secret: JWT_ACCESS_SECRET, expiresIn: accessTtl as any },
     );
   }
 }

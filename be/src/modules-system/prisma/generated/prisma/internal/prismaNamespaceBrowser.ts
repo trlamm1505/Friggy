@@ -91,7 +91,8 @@ export const ModelName = {
   UserSubscription: 'UserSubscription',
   PaymentTransaction: 'PaymentTransaction',
   FamilyGroup: 'FamilyGroup',
-  FamilyMember: 'FamilyMember'
+  FamilyMember: 'FamilyMember',
+  SystemConfig: 'SystemConfig'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -135,7 +136,8 @@ export const UserScalarFieldEnum = {
   updatedAt: 'updatedAt',
   deletedAt: 'deletedAt',
   isOnboardingCompleted: 'isOnboardingCompleted',
-  name: 'name'
+  name: 'name',
+  aiQuotaOverride: 'aiQuotaOverride'
 } as const
 
 export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
@@ -746,6 +748,17 @@ export const FamilyMemberScalarFieldEnum = {
 export type FamilyMemberScalarFieldEnum = (typeof FamilyMemberScalarFieldEnum)[keyof typeof FamilyMemberScalarFieldEnum]
 
 
+export const SystemConfigScalarFieldEnum = {
+  key: 'key',
+  value: 'value',
+  description: 'description',
+  updatedAt: 'updatedAt',
+  updatedBy: 'updatedBy'
+} as const
+
+export type SystemConfigScalarFieldEnum = (typeof SystemConfigScalarFieldEnum)[keyof typeof SystemConfigScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -1188,4 +1201,14 @@ export const FamilyMemberOrderByRelevanceFieldEnum = {
 } as const
 
 export type FamilyMemberOrderByRelevanceFieldEnum = (typeof FamilyMemberOrderByRelevanceFieldEnum)[keyof typeof FamilyMemberOrderByRelevanceFieldEnum]
+
+
+export const SystemConfigOrderByRelevanceFieldEnum = {
+  key: 'key',
+  value: 'value',
+  description: 'description',
+  updatedBy: 'updatedBy'
+} as const
+
+export type SystemConfigOrderByRelevanceFieldEnum = (typeof SystemConfigOrderByRelevanceFieldEnum)[keyof typeof SystemConfigOrderByRelevanceFieldEnum]
 

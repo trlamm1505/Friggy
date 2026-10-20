@@ -437,7 +437,8 @@ export const ModelName = {
   UserSubscription: 'UserSubscription',
   PaymentTransaction: 'PaymentTransaction',
   FamilyGroup: 'FamilyGroup',
-  FamilyMember: 'FamilyMember'
+  FamilyMember: 'FamilyMember',
+  SystemConfig: 'SystemConfig'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -453,7 +454,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "role" | "user" | "emailOtp" | "userProfile" | "userPreference" | "refreshToken" | "ingredientCategory" | "ingredient" | "tag" | "recipe" | "recipeIngredient" | "recipeStep" | "recipeTag" | "userSavedRecipe" | "fridgeItem" | "ingredientScanLog" | "userAllergy" | "weeklyPlan" | "dailyPlan" | "mealSlot" | "shoppingList" | "shoppingListItem" | "aiSystemPrompt" | "chatSession" | "chatMessage" | "aiEvaluationLog" | "aiProviderConfig" | "aiUsageLog" | "sponsor" | "sponsorCampaign" | "campaignRecipe" | "ingredientPurchaseLink" | "adminActivityLog" | "notification" | "userDevice" | "cronJobConfig" | "subscriptionPlan" | "userSubscription" | "paymentTransaction" | "familyGroup" | "familyMember"
+    modelProps: "role" | "user" | "emailOtp" | "userProfile" | "userPreference" | "refreshToken" | "ingredientCategory" | "ingredient" | "tag" | "recipe" | "recipeIngredient" | "recipeStep" | "recipeTag" | "userSavedRecipe" | "fridgeItem" | "ingredientScanLog" | "userAllergy" | "weeklyPlan" | "dailyPlan" | "mealSlot" | "shoppingList" | "shoppingListItem" | "aiSystemPrompt" | "chatSession" | "chatMessage" | "aiEvaluationLog" | "aiProviderConfig" | "aiUsageLog" | "sponsor" | "sponsorCampaign" | "campaignRecipe" | "ingredientPurchaseLink" | "adminActivityLog" | "notification" | "userDevice" | "cronJobConfig" | "subscriptionPlan" | "userSubscription" | "paymentTransaction" | "familyGroup" | "familyMember" | "systemConfig"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -3163,6 +3164,72 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    SystemConfig: {
+      payload: Prisma.$SystemConfigPayload<ExtArgs>
+      fields: Prisma.SystemConfigFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.SystemConfigFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SystemConfigPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.SystemConfigFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SystemConfigPayload>
+        }
+        findFirst: {
+          args: Prisma.SystemConfigFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SystemConfigPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.SystemConfigFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SystemConfigPayload>
+        }
+        findMany: {
+          args: Prisma.SystemConfigFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SystemConfigPayload>[]
+        }
+        create: {
+          args: Prisma.SystemConfigCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SystemConfigPayload>
+        }
+        createMany: {
+          args: Prisma.SystemConfigCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        delete: {
+          args: Prisma.SystemConfigDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SystemConfigPayload>
+        }
+        update: {
+          args: Prisma.SystemConfigUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SystemConfigPayload>
+        }
+        deleteMany: {
+          args: Prisma.SystemConfigDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.SystemConfigUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        upsert: {
+          args: Prisma.SystemConfigUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SystemConfigPayload>
+        }
+        aggregate: {
+          args: Prisma.SystemConfigAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateSystemConfig>
+        }
+        groupBy: {
+          args: Prisma.SystemConfigGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.SystemConfigGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.SystemConfigCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.SystemConfigCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -3227,7 +3294,8 @@ export const UserScalarFieldEnum = {
   updatedAt: 'updatedAt',
   deletedAt: 'deletedAt',
   isOnboardingCompleted: 'isOnboardingCompleted',
-  name: 'name'
+  name: 'name',
+  aiQuotaOverride: 'aiQuotaOverride'
 } as const
 
 export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
@@ -3838,6 +3906,17 @@ export const FamilyMemberScalarFieldEnum = {
 export type FamilyMemberScalarFieldEnum = (typeof FamilyMemberScalarFieldEnum)[keyof typeof FamilyMemberScalarFieldEnum]
 
 
+export const SystemConfigScalarFieldEnum = {
+  key: 'key',
+  value: 'value',
+  description: 'description',
+  updatedAt: 'updatedAt',
+  updatedBy: 'updatedBy'
+} as const
+
+export type SystemConfigScalarFieldEnum = (typeof SystemConfigScalarFieldEnum)[keyof typeof SystemConfigScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -4280,6 +4359,16 @@ export const FamilyMemberOrderByRelevanceFieldEnum = {
 } as const
 
 export type FamilyMemberOrderByRelevanceFieldEnum = (typeof FamilyMemberOrderByRelevanceFieldEnum)[keyof typeof FamilyMemberOrderByRelevanceFieldEnum]
+
+
+export const SystemConfigOrderByRelevanceFieldEnum = {
+  key: 'key',
+  value: 'value',
+  description: 'description',
+  updatedBy: 'updatedBy'
+} as const
+
+export type SystemConfigOrderByRelevanceFieldEnum = (typeof SystemConfigOrderByRelevanceFieldEnum)[keyof typeof SystemConfigOrderByRelevanceFieldEnum]
 
 
 
@@ -4745,6 +4834,7 @@ export type GlobalOmitConfig = {
   paymentTransaction?: Prisma.PaymentTransactionOmit
   familyGroup?: Prisma.FamilyGroupOmit
   familyMember?: Prisma.FamilyMemberOmit
+  systemConfig?: Prisma.SystemConfigOmit
 }
 
 /* Types for Logging */
