@@ -1,14 +1,13 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Pressable, Image, Alert } from 'react-native';
 import { useTheme } from '../../theme/ThemeContext';
-import { AppColors } from '../../theme/colors';
-import { sp } from '../../utils/responsive';
 import { FontWeights, FontFamily } from '../../theme/typography';
 import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@react-navigation/native';
 import { ChevronLeft, Camera, Image as ImageIcon, RotateCw } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { CustomButton } from '../../components/common/CustomButton';
+import { Routes } from '../../../shared/constants/routes';
 
 export const ScanFoodPhotoScreen = () => {
   const { isDark } = useTheme();
@@ -33,7 +32,10 @@ export const ScanFoodPhotoScreen = () => {
       Alert.alert(t('scan.processing'), 'AI đã nhận diện 3 nguyên liệu', [
         {
           text: 'OK',
-          onPress: () => navigation.replace(Routes.ScanResultReview, { items: ['Cà chua', 'Sữa tươi', 'Trứng'] }),
+          onPress: () =>
+            navigation.replace(Routes.ScanResultReview, {
+              items: ['Cà chua', 'Sữa tươi', 'Trứng'],
+            }),
         },
       ]);
     }, 1500);

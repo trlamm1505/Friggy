@@ -16,38 +16,12 @@ import { sp } from '../../utils/responsive';
 import { FontFamily, FontWeights } from '../../theme/typography';
 import { useTranslation } from 'react-i18next';
 
-export const ProgressBar = ({
-  current,
-  total,
-  showLabels = true,
-  variant = 'linear',
-  style,
-}) => {
+export const ProgressBar = ({ current, total, showLabels = true, variant = 'linear', style }) => {
   const { isDark } = useTheme();
   const { t } = useTranslation();
 
-  if (variant === 'dots') {
-    return (
-      <View style={[styles.dotsRow, style]}>
-        {Array.from({ length: total }, (_, i) => (
-          <View
-            key={i}
-            style={[
-              styles.dot,
-              {
-                backgroundColor: i <= current
-                  ? AppColors.primary
-                  : isDark ? '#2E4D36' : '#E3E8E4',
-                width: i === current ? sp(24) : sp(8),
-              },
-            ]}
-          />
-        ))}
-      </View>
-    );
-  }
-
-  // Linear variant (default)
+  // Rules of Hooks: hooks phải được gọi TRƯỚC mọi early return.
+  // Vì vậy progress/widthAnim được tính cho cả 2 variant ('dots' và 'linear').
   const progress = total > 0 ? (current + 1) / total : 0;
   const widthAnim = useRef(new Animated.Value(0)).current;
 
@@ -64,6 +38,26 @@ export const ProgressBar = ({
     outputRange: ['0%', '100%'],
   });
 
+  if (variant === 'dots') {
+    return (
+      <View style={[styles.dotsRow, style]}>
+        {Array.from({ length: total }, (_, i) => (
+          <View
+            key={i}
+            style={[
+              styles.dot,
+              {
+                backgroundColor: i <= current ? AppColors.primary : isDark ? '#2E4D36' : '#E3E8E4',
+                width: i === current ? sp(24) : sp(8),
+              },
+            ]}
+          />
+        ))}
+      </View>
+    );
+  }
+
+  // Linear variant (default)
   return (
     <View style={[styles.container, style]}>
       {showLabels ? (
@@ -92,12 +86,7 @@ export const ProgressBar = ({
           </Text>
         </View>
       ) : null}
-      <View
-        style={[
-          styles.track,
-          { backgroundColor: isDark ? '#2E4D36' : '#E3E8E4' },
-        ]}
-      >
+      <View style={[styles.track, { backgroundColor: isDark ? '#2E4D36' : '#E3E8E4' }]}>
         <Animated.View
           style={[
             styles.fill,

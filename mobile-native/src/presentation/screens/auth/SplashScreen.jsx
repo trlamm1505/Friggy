@@ -25,11 +25,13 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../theme/ThemeContext';
 import { AppColors } from '../../theme/colors';
+import { AppGradients } from '../../theme/gradients';
 import { sp, sh, sw, screenHeight } from '../../utils/responsive';
 import { FontFamily, FontWeights } from '../../theme/typography';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
-import { ArrowRight, Calendar, Sparkles, Users, Check } from 'lucide-react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ArrowRight, Calendar, Sparkles, Users } from 'lucide-react-native';
 import { BrandLogo } from '../../components/common/BrandLogo';
 import { Routes } from '../../../shared/constants/routes';
 import { showInfo } from '../../utils/helpers';
@@ -44,6 +46,7 @@ const FEATURES = [
 
 export const SplashScreen = () => {
   const { isDark } = useTheme();
+  const insets = useSafeAreaInsets();
   const navigation = useNavigation();
   const { t } = useTranslation();
   const [featureIndex, setFeatureIndex] = useState(0);
@@ -67,7 +70,7 @@ export const SplashScreen = () => {
           easing: Easing.inOut(Easing.sin),
           useNativeDriver: Platform.OS !== 'web',
         }),
-      ]),
+      ])
     ).start();
   }, [mascotAnim]);
 
@@ -80,10 +83,13 @@ export const SplashScreen = () => {
     }).start();
   }, [logoAnim]);
 
-  const handleScroll = useCallback((e) => {
-    const index = Math.round(e.nativeEvent.contentOffset.x / SCREEN_WIDTH);
-    if (index !== featureIndex) setFeatureIndex(index);
-  }, [featureIndex]);
+  const handleScroll = useCallback(
+    (e) => {
+      const index = Math.round(e.nativeEvent.contentOffset.x / SCREEN_WIDTH);
+      if (index !== featureIndex) setFeatureIndex(index);
+    },
+    [featureIndex]
+  );
 
   const goToLogin = useCallback(() => {
     navigation.navigate(Routes.Login);
@@ -94,7 +100,14 @@ export const SplashScreen = () => {
   }, []);
 
   return (
-    <View style={[styles.container, { backgroundColor: isDark ? '#0E1611' : '#FFFFFF' }]}>
+    <View style={styles.container}>
+      <LinearGradient
+        colors={AppGradients.getBackground(isDark).colors}
+        locations={AppGradients.getBackground(isDark).locations}
+        start={AppGradients.getBackground(isDark).start}
+        end={AppGradients.getBackground(isDark).end}
+        style={StyleSheet.absoluteFillObject}
+      />
       <View style={styles.topArea}>
         {/* Sparkle accents */}
         <Text
@@ -108,14 +121,19 @@ export const SplashScreen = () => {
         <Text
           style={[
             styles.sparkle,
-            { top: sh(140), right: sw(40), color: isDark ? '#2E4D36' : '#C4EAD0', fontSize: sp(20) },
+            {
+              top: sh(140),
+              right: sw(40),
+              color: isDark ? '#2E4D36' : '#C4EAD0',
+              fontSize: sp(20),
+            },
           ]}
         >
           ✦
         </Text>
 
         {/* Title */}
-        <View style={styles.titleBlock}>
+        <View style={[styles.titleBlock, { top: insets.top + sp(28) }]}>
           <Text
             style={[
               styles.welcomeLine,
@@ -130,9 +148,7 @@ export const SplashScreen = () => {
         </View>
 
         {/* Mascot */}
-        <Animated.View
-          style={[styles.mascotWrap, { transform: [{ translateY: mascotAnim }] }]}
-        >
+        <Animated.View style={[styles.mascotWrap, { transform: [{ translateY: mascotAnim }] }]}>
           <Image
             source={require('../../../../assets/images/onboarding_fridge.png')}
             style={styles.mascotImg}
@@ -178,9 +194,8 @@ export const SplashScreen = () => {
                 style={[
                   styles.dot,
                   {
-                    backgroundColor: i === featureIndex
-                      ? AppColors.primary
-                      : isDark ? '#2E4D36' : '#C4EAD0',
+                    backgroundColor:
+                      i === featureIndex ? AppColors.primary : isDark ? '#2E4D36' : '#C4EAD0',
                     width: i === featureIndex ? sp(24) : sp(8),
                   },
                 ]}

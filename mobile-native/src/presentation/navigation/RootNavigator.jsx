@@ -37,10 +37,7 @@ export const RootNavigator = () => {
   }, []);
 
   return (
-    <Stack.Navigator
-      key={`${isLoading}-${isAuthenticated}-${isOnboarded}`}
-      screenOptions={{ headerShown: false, animation: 'fade' }}
-    >
+    <Stack.Navigator screenOptions={{ headerShown: false, animation: 'fade' }}>
       {isLoading ? (
         <Stack.Screen name={Routes.InitialLoading} component={InitialLoadingScreen} />
       ) : !isAuthenticated ? (

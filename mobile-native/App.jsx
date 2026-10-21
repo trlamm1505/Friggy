@@ -1,7 +1,31 @@
+/**
+ * App.jsx - entry point.
+ *
+ * Phase 0 (P0.6):
+ *   1. Chi seed khi USE_MOCKS=true (da chot o muc 8b cua plan).
+ *      Ly do: neu app vua co du lieu seed gia vua co du lieu that tu API,
+ *      rat kho chan doan "3 item trong list - tu API hay tu seed?".
+ *
+ * ⚠️ File nay KHONG immutable. Moi sprint them 1 dong import Real service
+ * o vung "Sprint import-side-effect" ben duoi khi service do da duoc tao.
+ * Chi them DUNG 1 DONG - dung viet import cho service chua ton tai
+ * (import file khong co = app crash ngay).
+ *
+ * ⚠️ KHONG duoc them `eslint-disable` o day. File nay la entry point,
+ *   moi sprint deu cham vao - tat lint se bien mat lop bao ve o noi can nhat.
+ */
+
 import React, { useEffect, useState } from 'react';
 import { View, ActivityIndicator, StatusBar, StyleSheet } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
-import { useFonts, PlusJakartaSans_400Regular, PlusJakartaSans_500Medium, PlusJakartaSans_600SemiBold, PlusJakartaSans_700Bold, PlusJakartaSans_800ExtraBold } from '@expo-google-fonts/plus-jakarta-sans';
+import {
+  useFonts,
+  PlusJakartaSans_400Regular,
+  PlusJakartaSans_500Medium,
+  PlusJakartaSans_600SemiBold,
+  PlusJakartaSans_700Bold,
+  PlusJakartaSans_800ExtraBold,
+} from '@expo-google-fonts/plus-jakarta-sans';
 import Toast from 'react-native-toast-message';
 import { AppProviders } from './src/providers/AppProviders';
 import { RootNavigator } from './src/presentation/navigation/RootNavigator';
@@ -9,7 +33,25 @@ import { useAuthStore } from './src/shared/stores/useAuthStore';
 import { useThemeStore } from './src/shared/stores/useThemeStore';
 import { useLanguageStore } from './src/shared/stores/useLanguageStore';
 import { AppColors } from './src/presentation/theme/colors';
-import { seedAll } from './src/data/storage/seedData';
+import { initAppShell } from './src/data/appInit';
+
+// ══════════════════════════════════════════════════════════════════
+// Sprint import-side-effect
+// ══════════════════════════════════════════════════════════════════
+// Mỗi Real*Service tự đăng ký vào ServiceRegistry bằng side-effect import.
+// ServiceProvider.jsx đọc registry đó, nên chỉ cần import là domain đó
+// tự chuyển từ mock sang thật - không sửa ServiceProvider/useServiceHooks.
+//
+// CÁCH DÙNG (mỗi sprint thêm ĐÚNG 1 DÒNG, ngay dưới comment này):
+//   Sprint A1:  import './src/data/services/real/realAuth.register';
+//   Sprint B1:  import './src/data/services/real/realFridge.register';
+//
+// ⚠️ CHỈ import SAU KHI file đó đã được tạo trong src/data/services/real/.
+//    Import file không tồn tại = app crash ngay khi khởi động
+//    ("Unable to resolve module"), kể cả khi USE_MOCKS=true.
+//    Phase 0 chưa có Real*Service nào (tạo ở A1/B1 trở đi) nên vùng này
+//    để trống là đúng.
+// ══════════════════════════════════════════════════════════════════
 
 export default function App() {
   const [fontsLoaded] = useFonts({
@@ -28,20 +70,12 @@ export default function App() {
 
   useEffect(() => {
     (async () => {
-      try {
-        // Khởi tạo stores
-        initAuth();
-        initTheme();
-        initLocale();
-        // Seed dữ liệu mock vào SQLite (idempotent)
-        await seedAll();
-      } catch (e) {
-        if (__DEV__) {
-          console.warn('[App] Init error:', e);
-        }
-      } finally {
-        setIsDbReady(true);
-      }
+      initAuth();
+      initTheme();
+      initLocale();
+      // P0.6: chi seed khi USE_MOCKS=true (xem src/data/appInit.test.js)
+      await initAppShell();
+      setIsDbReady(true);
     })();
   }, []);
 

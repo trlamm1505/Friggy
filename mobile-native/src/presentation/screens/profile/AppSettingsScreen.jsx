@@ -8,23 +8,35 @@
  */
 
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
 import { useTheme } from '../../theme/ThemeContext';
 import { AppColors } from '../../theme/colors';
 import { sp } from '../../utils/responsive';
 import { FontFamily, FontWeights } from '../../theme/typography';
 import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@react-navigation/native';
-import { FriggyAppBar } from '../../components/navigation/FriggyAppBar';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { BackCircleButton } from '../../components/common/BackCircleButton';
 import { SettingsSection } from '../../components/common/SettingsSection';
 import { SettingsMenuItem } from '../../components/common/SettingsMenuItem';
 import { ToggleRow } from '../../components/common/ToggleRow';
-import { Bell, Mail, Smartphone, Trash2, Vibrate, Info, FileText, Shield, Github } from 'lucide-react-native';
+import {
+  Bell,
+  Mail,
+  Smartphone,
+  Trash2,
+  Vibrate,
+  Info,
+  FileText,
+  Shield,
+  Github,
+} from 'lucide-react-native';
 
 export const AppSettingsScreen = () => {
   const { isDark } = useTheme();
   const { t } = useTranslation();
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
 
   const [pushEnabled, setPushEnabled] = useState(true);
   const [emailEnabled, setEmailEnabled] = useState(false);
@@ -45,13 +57,20 @@ export const AppSettingsScreen = () => {
             Alert.alert('Thành công', 'Đã xóa cache');
           },
         },
-      ],
+      ]
     );
   }, [t]);
 
   return (
-    <View style={[styles.container, { backgroundColor: isDark ? '#0E1611' : '#FFFFFF' }]}>
-      <FriggyAppBar showBackButton onBackTap={() => navigation.goBack()} />
+    <View
+      style={[
+        styles.container,
+        { backgroundColor: isDark ? AppColors.darkBackground : AppColors.lightBackground },
+      ]}
+    >
+      <View style={{ paddingTop: insets.top + sp(12), paddingHorizontal: sp(20) }}>
+        <BackCircleButton onPress={() => navigation.goBack()} />
+      </View>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <Text
           style={[
@@ -104,26 +123,13 @@ export const AppSettingsScreen = () => {
             value={t('home.settingsCacheSize', { size: '12.4' })}
             onPress={handleClearCache}
           />
-          <SettingsMenuItem
-            icon={Info}
-            label={t('home.settingsVersion')}
-            value="1.0.0"
-            isLast
-          />
+          <SettingsMenuItem icon={Info} label={t('home.settingsVersion')} value="1.0.0" isLast />
         </SettingsSection>
 
         {/* About */}
         <SettingsSection title={t('home.settingsAbout')}>
-          <SettingsMenuItem
-            icon={Shield}
-            label={t('home.settingsPrivacy')}
-            onPress={() => {}}
-          />
-          <SettingsMenuItem
-            icon={FileText}
-            label={t('home.settingsTerms')}
-            onPress={() => {}}
-          />
+          <SettingsMenuItem icon={Shield} label={t('home.settingsPrivacy')} onPress={() => {}} />
+          <SettingsMenuItem icon={FileText} label={t('home.settingsTerms')} onPress={() => {}} />
           <SettingsMenuItem
             icon={Github}
             label={t('home.settingsOpenSource')}

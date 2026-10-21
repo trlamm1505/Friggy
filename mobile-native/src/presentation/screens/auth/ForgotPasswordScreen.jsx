@@ -1,5 +1,14 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, KeyboardAvoidingView, Platform, StatusBar } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Pressable,
+  KeyboardAvoidingView,
+  Platform,
+  StatusBar,
+} from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../theme/ThemeContext';
 import { AppColors } from '../../theme/colors';
@@ -12,6 +21,7 @@ import { CustomTextField } from '../../components/common/CustomTextField';
 import { CustomButton } from '../../components/common/CustomButton';
 import { isValidEmail } from '../../utils/validators';
 import { showSuccess } from '../../utils/helpers';
+import { Routes } from '../../../shared/constants/routes';
 
 export const ForgotPasswordScreen = () => {
   const { isDark } = useTheme();
@@ -48,7 +58,9 @@ export const ForgotPasswordScreen = () => {
     >
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
       <LinearGradient
-        colors={isDark ? ['#0E1611', '#142017', '#1B2E21'] : ['#FFFFFF', '#F5FCF4', '#C7EFC2', '#86D978']}
+        colors={
+          isDark ? ['#0E1611', '#142017', '#1B2E21'] : ['#FFFFFF', '#F5FCF4', '#C7EFC2', '#86D978']
+        }
         start={{ x: 0.5, y: 0 }}
         end={{ x: 0.5, y: 1 }}
         style={StyleSheet.absoluteFillObject}
@@ -57,20 +69,30 @@ export const ForgotPasswordScreen = () => {
       {/* Top back button */}
       <View style={styles.topBar}>
         <Pressable onPress={() => navigation.goBack()} style={styles.backRow}>
-          <ChevronLeft
-            color={isDark ? '#FFFFFF' : AppColors.textPrimary}
-            size={20}
-          />
+          <ChevronLeft color={isDark ? '#FFFFFF' : AppColors.textPrimary} size={20} />
         </Pressable>
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         {!sent ? (
           <>
-            <Text style={[styles.title, { color: isDark ? '#FFFFFF' : AppColors.textPrimary, fontSize: sp(28) }]}>
+            <Text
+              style={[
+                styles.title,
+                { color: isDark ? '#FFFFFF' : AppColors.textPrimary, fontSize: sp(28) },
+              ]}
+            >
               {t('auth.forgotPasswordTitle')}
             </Text>
-            <Text style={[styles.subtitle, { color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary, fontSize: sp(15) }]}>
+            <Text
+              style={[
+                styles.subtitle,
+                {
+                  color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                  fontSize: sp(15),
+                },
+              ]}
+            >
               {t('auth.forgotPasswordDesc')}
             </Text>
             <View style={{ marginTop: 32 }}>
@@ -80,11 +102,17 @@ export const ForgotPasswordScreen = () => {
                 onChangeText={setEmail}
                 keyboardType="email-address"
                 error={error}
-                prefixIcon={(props) => <Mail {...props} color={isDark ? AppColors.primaryLight : '#8C9890'} size={22} />}
+                prefixIcon={(props) => (
+                  <Mail {...props} color={isDark ? AppColors.primaryLight : '#8C9890'} size={22} />
+                )}
               />
             </View>
             <View style={{ marginTop: 24 }}>
-              <CustomButton title={t('auth.sendResetLink')} onPress={handleSend} loading={isLoading} />
+              <CustomButton
+                title={t('auth.sendResetLink')}
+                onPress={handleSend}
+                loading={isLoading}
+              />
             </View>
           </>
         ) : (
@@ -92,14 +120,35 @@ export const ForgotPasswordScreen = () => {
             <View style={[styles.checkCircle, { backgroundColor: AppColors.primary }]}>
               <Check color="#FFFFFF" size={32} strokeWidth={3} />
             </View>
-            <Text style={[styles.title, { color: isDark ? '#FFFFFF' : AppColors.textPrimary, fontSize: sp(28), textAlign: 'center' }]}>
+            <Text
+              style={[
+                styles.title,
+                {
+                  color: isDark ? '#FFFFFF' : AppColors.textPrimary,
+                  fontSize: sp(28),
+                  textAlign: 'center',
+                },
+              ]}
+            >
               {t('auth.checkYourEmail')}
             </Text>
-            <Text style={[styles.subtitle, { color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary, fontSize: sp(15), textAlign: 'center' }]}>
+            <Text
+              style={[
+                styles.subtitle,
+                {
+                  color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                  fontSize: sp(15),
+                  textAlign: 'center',
+                },
+              ]}
+            >
               {t('auth.emailSentDesc')}
             </Text>
             <View style={{ marginTop: 24, width: '100%' }}>
-              <CustomButton title={t('auth.backToLogin')} onPress={() => navigation.navigate(Routes.Login)} />
+              <CustomButton
+                title={t('auth.backToLogin')}
+                onPress={() => navigation.navigate(Routes.Login)}
+              />
             </View>
           </View>
         )}

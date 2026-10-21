@@ -15,7 +15,8 @@ import { sp } from '../../utils/responsive';
 import { FontWeights, FontFamily } from '../../theme/typography';
 import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@react-navigation/native';
-import { FriggyAppBar } from '../../components/navigation/FriggyAppBar';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { BackCircleButton } from '../../components/common/BackCircleButton';
 import { CustomButton } from '../../components/common/CustomButton';
 import { CustomChip } from '../../components/common/CustomChip';
 import { Stepper } from '../../components/common/Stepper';
@@ -25,8 +26,12 @@ export const UserPreferencesScreen = () => {
   const { isDark } = useTheme();
   const { t } = useTranslation();
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
   const [diet, setDiet] = useState('none');
   const [spice, setSpice] = useState('medium');
+  const [goal, setGoal] = useState('balanced');
+  const [priority, setPriority] = useState('health');
+  const [cookingSkill, setCookingSkill] = useState('beginner');
   const [servings, setServings] = useState(2);
 
   const handleSave = useCallback(() => {
@@ -35,8 +40,15 @@ export const UserPreferencesScreen = () => {
   }, [navigation, t]);
 
   return (
-    <View style={[styles.container, { backgroundColor: isDark ? '#0E1611' : '#FFFFFF' }]}>
-      <FriggyAppBar showBackButton onBackTap={() => navigation.goBack()} />
+    <View
+      style={[
+        styles.container,
+        { backgroundColor: isDark ? AppColors.darkBackground : AppColors.lightBackground },
+      ]}
+    >
+      <View style={{ paddingTop: insets.top + sp(12), paddingHorizontal: sp(20) }}>
+        <BackCircleButton onPress={() => navigation.goBack()} />
+      </View>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <Text
           style={[
@@ -49,11 +61,52 @@ export const UserPreferencesScreen = () => {
         <Text
           style={[
             styles.subtitle,
-            { color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary, fontSize: sp(13) },
+            {
+              color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+              fontSize: sp(13),
+            },
           ]}
         >
           Tùy chỉnh chế độ ăn để nhận gợi ý phù hợp hơn
         </Text>
+
+        {/* P0.8 (ảnh 13): Mục tiêu chính */}
+        <Section label={t('profile.goal')} isDark={isDark}>
+          <View style={styles.chipRow}>
+            {[
+              { value: 'balanced', label: t('profile.goalBalanced') },
+              { value: 'lose_weight', label: t('profile.goalLoseWeight') },
+              { value: 'gain_muscle', label: t('profile.goalGainMuscle') },
+              { value: 'save_time', label: t('profile.goalSaveTime') },
+            ].map((g) => (
+              <CustomChip
+                key={g.value}
+                label={g.label}
+                selected={goal === g.value}
+                onPress={() => setGoal(g.value)}
+              />
+            ))}
+          </View>
+        </Section>
+
+        {/* P0.8 (ảnh 13): Tầm quan trọng khi chọn thực phẩm */}
+        <Section label={t('profile.priority')} isDark={isDark}>
+          <View style={styles.chipRow}>
+            {[
+              { value: 'health', label: t('profile.priorityHealth') },
+              { value: 'taste', label: t('profile.priorityTaste') },
+              { value: 'price', label: t('profile.priorityPrice') },
+              { value: 'speed', label: t('profile.prioritySpeed') },
+            ].map((p) => (
+              <CustomChip
+                key={p.value}
+                label={p.label}
+                selected={priority === p.value}
+                onPress={() => setPriority(p.value)}
+              />
+            ))}
+          </View>
+        </Section>
 
         {/* Diet section */}
         <Section label={t('home.diet')} isDark={isDark}>
@@ -93,18 +146,28 @@ export const UserPreferencesScreen = () => {
           </View>
         </Section>
 
+        {/* P0.8 (ảnh 13): Kỹ năng nấu ăn */}
+        <Section label={t('profile.cookingSkill')} isDark={isDark}>
+          <View style={styles.chipRow}>
+            {[
+              { value: 'beginner', label: t('profile.skillBeginner') },
+              { value: 'intermediate', label: t('profile.skillIntermediate') },
+              { value: 'advanced', label: t('profile.skillAdvanced') },
+            ].map((c) => (
+              <CustomChip
+                key={c.value}
+                label={c.label}
+                selected={cookingSkill === c.value}
+                onPress={() => setCookingSkill(c.value)}
+              />
+            ))}
+          </View>
+        </Section>
+
         {/* Servings section */}
-        <Section
-          label={t('home.servingsLabel', { count: servings })}
-          isDark={isDark}
-        >
+        <Section label={t('home.servingsLabel', { count: servings })} isDark={isDark}>
           <View style={styles.stepperWrap}>
-            <Stepper
-              value={servings}
-              onChange={setServings}
-              min={1}
-              max={12}
-            />
+            <Stepper value={servings} onChange={setServings} min={1} max={12} />
           </View>
         </Section>
 

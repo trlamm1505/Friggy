@@ -1,8 +1,17 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, Animated, Easing, Platform, RefreshControl } from 'react-native';
+import {
+  View,
+  StyleSheet,
+  ScrollView,
+  Animated,
+  Easing,
+  Platform,
+  RefreshControl,
+} from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../theme/ThemeContext';
-import { AppColors, AppGradients } from '../../theme/colors';
+import { AppColors } from '../../theme/colors';
+import { AppGradients } from '../../theme/gradients';
 import { sp } from '../../utils/responsive';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
@@ -15,15 +24,19 @@ import { WeeklyStatisticsSection } from '../../components/home/WeeklyStatisticsS
 import { CookingSuggestionsSection } from '../../components/home/CookingSuggestionsSection';
 import { Routes } from '../../../shared/constants/routes';
 import { showInfo } from '../../utils/helpers';
-import { useCurrentPlan, useFridgeSummary, useWeeklyStats, useRecipeSuggestions, useNotifications } from '../../hooks/useServiceHooks';
-import { useServices } from '../../../data/ServiceProvider';
+import {
+  useCurrentPlan,
+  useFridgeSummary,
+  useWeeklyStats,
+  useRecipeSuggestions,
+  useNotifications,
+} from '../../hooks/useServiceHooks';
 
 export const HomeScreen = () => {
   const { isDark } = useTheme();
   const navigation = useNavigation();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  const services = useServices();
 
   // Data từ service layer
   const { data: plan, refetch: refetchPlan } = useCurrentPlan();
@@ -35,7 +48,8 @@ export const HomeScreen = () => {
   const [searchValue, setSearchValue] = useState('');
   const [refreshing, setRefreshing] = useState(false);
 
-  const isFamilyPlan = plan?.name?.toLowerCase().includes('family') ||
+  const isFamilyPlan =
+    plan?.name?.toLowerCase().includes('family') ||
     plan?.displayName?.toLowerCase().includes('gia đình');
 
   // Pull-to-refresh: gọi tất cả các refetch cùng lúc
@@ -83,15 +97,18 @@ export const HomeScreen = () => {
       easing: Easing.out(Easing.cubic),
       useNativeDriver: Platform.OS !== 'web',
     }).start();
-  }, []);
+    // animController là ref.current (stable) -> thêm vào deps là an toàn.
+  }, [animController]);
 
   return (
     <View style={styles.container}>
+      {/* P0.8: gradient phủ toàn bộ màn (ảnh 5/8) - header trong suốt để
+          gradient liền mạch, bottom nav trắng mờ nổi phía trên. */}
       <LinearGradient
         colors={AppGradients.getBackground(isDark).colors}
         locations={AppGradients.getBackground(isDark).locations}
-        start={{ x: 0.5, y: 0 }}
-        end={{ x: 0.5, y: 1 }}
+        start={AppGradients.getBackground(isDark).start}
+        end={AppGradients.getBackground(isDark).end}
         style={StyleSheet.absoluteFillObject}
       />
       <Animated.View style={{ opacity: headerFade, transform: [{ translateY: headerSlide }] }}>
@@ -118,7 +135,7 @@ export const HomeScreen = () => {
             />
           }
         >
-          <View style={{ marginTop: sp(8) }}>
+          <View style={{ marginTop: sp(16) }}>
             <GreetingBanner />
           </View>
 
@@ -129,7 +146,7 @@ export const HomeScreen = () => {
             />
           </View>
 
-          <View style={{ marginTop: sp(18) }}>
+          <View style={{ marginTop: sp(20) }}>
             <PremiumBanner
               isFamilyPlan={isFamilyPlan}
               onTryNowTap={() => {
@@ -142,7 +159,7 @@ export const HomeScreen = () => {
             />
           </View>
 
-          <View style={{ marginTop: sp(18) }}>
+          <View style={{ marginTop: sp(20) }}>
             <WeeklyStatisticsSection
               onDetailTap={() => navigation.navigate(Routes.IngredientStatistics)}
               onMealSuggestionsTap={() => navigation.navigate(Routes.NextWeekSuggestions)}

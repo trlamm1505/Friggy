@@ -5,7 +5,7 @@ import { Home as HomeIcon, Bot, User, Plus } from 'lucide-react-native';
 import { useTheme } from '../../theme/ThemeContext';
 import { AppColors } from '../../theme/colors';
 import { sp } from '../../utils/responsive';
-import { FontWeights, FontFamily } from '../../theme/typography';
+import { FontFamily } from '../../theme/typography';
 import { useTranslation } from 'react-i18next';
 import { FriggyIcon } from '../icons/FriggyIcon';
 import { useNavigation } from '@react-navigation/native';
@@ -17,8 +17,8 @@ export const CustomBottomNav = ({ activeTab = 0, onTabChange }) => {
   const { t } = useTranslation();
   const navigation = useNavigation();
 
-  const navBg = isDark ? 'rgba(20,36,25,0.9)' : 'rgba(255,255,255,0.15)';
-  const navBorder = isDark ? 'rgba(46,77,54,0.8)' : 'rgba(255,255,255,0.25)';
+  const navBg = isDark ? 'rgba(20,36,25,0.92)' : 'rgba(255,255,255,0.88)';
+  const navBorder = isDark ? 'rgba(46,77,54,0.8)' : 'rgba(0,0,0,0.06)';
   const accentColor = AppColors.forestAccent;
   const selectedColor = isDark ? AppColors.primaryLight : accentColor;
   const unselectedColor = isDark ? AppColors.darkTextSecondary : 'rgba(255,255,255,0.85)';
@@ -55,7 +55,7 @@ export const CustomBottomNav = ({ activeTab = 0, onTabChange }) => {
           onPress={() => onTabChange(1)}
           renderIcon={(color) => <FriggyIcon size={24} color={color} isSelected={false} />}
         />
-        <AddButton onPress={handleAdd} />
+        <AddButton onPress={handleAdd} isDark={isDark} />
         <NavItem
           active={activeTab === 3}
           selectedColor={selectedColor}
@@ -85,10 +85,7 @@ const NavItem = ({ active, selectedColor, unselectedColor, label, onPress, rende
         {renderIcon(color)}
       </View>
       <Text
-        style={[
-          styles.itemLabel,
-          { color, fontWeight: active ? '800' : '500', fontSize: sp(10) },
-        ]}
+        style={[styles.itemLabel, { color, fontWeight: active ? '800' : '500', fontSize: sp(10) }]}
       >
         {label}
       </Text>
@@ -96,13 +93,16 @@ const NavItem = ({ active, selectedColor, unselectedColor, label, onPress, rende
   );
 };
 
-const AddButton = ({ onPress }) => (
-  <Pressable onPress={onPress} style={styles.addWrap} hitSlop={4}>
-    <View style={styles.addCircle}>
-      <Plus color="#FFFFFF" size={28} strokeWidth={2.5} />
-    </View>
-  </Pressable>
-);
+const AddButton = ({ onPress, isDark }) => {
+  const circleColor = isDark ? AppColors.primaryLight : AppColors.forestAccent;
+  return (
+    <Pressable onPress={onPress} style={styles.addWrap} hitSlop={4}>
+      <View style={[styles.addCircle, { backgroundColor: circleColor, shadowColor: circleColor }]}>
+        <Plus color="#FFFFFF" size={28} strokeWidth={2.5} />
+      </View>
+    </Pressable>
+  );
+};
 
 const styles = StyleSheet.create({
   wrap: {
@@ -148,13 +148,11 @@ const styles = StyleSheet.create({
     width: 54,
     height: 54,
     borderRadius: 27,
-    backgroundColor: AppColors.forestAccent,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: AppColors.forestAccent,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.35,
-    shadowRadius: 8,
-    elevation: 6,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 10,
+    elevation: 8,
   },
 });

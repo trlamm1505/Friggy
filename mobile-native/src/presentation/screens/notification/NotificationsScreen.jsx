@@ -15,10 +15,9 @@ import { useTheme } from '../../theme/ThemeContext';
 import { AppColors } from '../../theme/colors';
 import { sp } from '../../utils/responsive';
 import { FontFamily, FontWeights } from '../../theme/typography';
-import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@react-navigation/native';
 import { FriggyAppBar } from '../../components/navigation/FriggyAppBar';
-import { CheckCheck, Settings as SettingsIcon, Bell, BellOff } from 'lucide-react-native';
+import { CheckCheck, Settings as SettingsIcon, BellOff } from 'lucide-react-native';
 import { useNotifications } from '../../hooks/useServiceHooks';
 import { useServices } from '../../../data/ServiceProvider';
 import { NotificationItem } from '../../components/notification/NotificationItem';
@@ -71,7 +70,6 @@ const groupByDate = (items) => {
 
 export const NotificationsScreen = () => {
   const { isDark } = useTheme();
-  const { t } = useTranslation();
   const navigation = useNavigation();
   const services = useServices();
   const { data: items, loading, error, refetch } = useNotifications();
@@ -90,8 +88,7 @@ export const NotificationsScreen = () => {
       const q = search.toLowerCase();
       result = result.filter(
         (it) =>
-          (it.title || '').toLowerCase().includes(q) ||
-          (it.message || '').toLowerCase().includes(q),
+          (it.title || '').toLowerCase().includes(q) || (it.message || '').toLowerCase().includes(q)
       );
     }
     return result;
@@ -115,10 +112,10 @@ export const NotificationsScreen = () => {
   const markAllRead = useCallback(async () => {
     if (!items) return;
     try {
-      await services.notifications.markAllAsRead();
+      await services.notificationService.markAllAsRead();
       refetch();
       showSuccess('Đã đánh dấu tất cả là đã đọc');
-    } catch (e) {
+    } catch (_e) {
       // silent
     }
   }, [items, services, refetch]);
@@ -127,21 +124,26 @@ export const NotificationsScreen = () => {
     async (item) => {
       if (!item.read) {
         try {
-          await services.notifications.markAsRead(item.id);
+          await services.notificationService.markAsRead(item.id);
           refetch();
-        } catch (e) {
+        } catch (_e) {
           // silent
         }
       }
     },
-    [services, refetch],
+    [services, refetch]
   );
 
   const filterOptions = [
     { key: FILTER_KEYS.ALL, label: 'Tất cả', count: counts.all },
     { key: FILTER_KEYS.UNREAD, label: 'Chưa đọc', count: counts.unread, color: '#FF9800' },
     { key: FILTER_KEYS.EXPIRING, label: 'Hết hạn', count: counts.expiring, color: '#FF9800' },
-    { key: FILTER_KEYS.RECIPES, label: 'Công thức', count: counts.recipe, color: AppColors.primary },
+    {
+      key: FILTER_KEYS.RECIPES,
+      label: 'Công thức',
+      count: counts.recipe,
+      color: AppColors.primary,
+    },
     { key: FILTER_KEYS.SYSTEM, label: 'Hệ thống', count: counts.system, color: '#2196F3' },
   ];
 
@@ -171,7 +173,6 @@ export const NotificationsScreen = () => {
   }
 
   const hasUnread = counts.unread > 0;
-  const totalCount = filteredItems.length;
 
   return (
     <View style={[styles.container, { backgroundColor: isDark ? '#0E1611' : '#FFFFFF' }]}>
@@ -180,7 +181,12 @@ export const NotificationsScreen = () => {
       {/* Header with stats + settings */}
       <View style={styles.headerBlock}>
         <View style={{ flex: 1 }}>
-          <Text style={[styles.title, { color: isDark ? '#FFFFFF' : AppColors.textPrimary, fontSize: sp(22) }]}>
+          <Text
+            style={[
+              styles.title,
+              { color: isDark ? '#FFFFFF' : AppColors.textPrimary, fontSize: sp(22) },
+            ]}
+          >
             Thông báo
           </Text>
           {hasUnread ? (
@@ -188,11 +194,34 @@ export const NotificationsScreen = () => {
               <View style={[styles.unreadBadge, { backgroundColor: AppColors.primary }]}>
                 <Text style={styles.unreadBadgeText}>{counts.unread}</Text>
               </View>
-              <Text style={[styles.subtitle, { color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary, fontSize: sp(12) }]}>
+              <Text
+                style={[
+                  styles.subtitle,
+                  {
+                    color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                    fontSize: sp(12),
+                  },
+                ]}
+              >
                 chưa đọc
               </Text>
-              <Text style={[styles.dot, { color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary }]}>·</Text>
-              <Text style={[styles.subtitle, { color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary, fontSize: sp(12) }]}>
+              <Text
+                style={[
+                  styles.dot,
+                  { color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary },
+                ]}
+              >
+                ·
+              </Text>
+              <Text
+                style={[
+                  styles.subtitle,
+                  {
+                    color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                    fontSize: sp(12),
+                  },
+                ]}
+              >
                 {counts.all} tổng
               </Text>
             </View>
@@ -256,22 +285,40 @@ export const NotificationsScreen = () => {
         contentContainerStyle={{ paddingHorizontal: sp(20), paddingBottom: sp(24) }}
         renderSectionHeader={({ section }) => (
           <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary, fontSize: sp(11) }]}>
+            <Text
+              style={[
+                styles.sectionTitle,
+                {
+                  color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                  fontSize: sp(11),
+                },
+              ]}
+            >
               {section.title.toUpperCase()}
             </Text>
-            <Text style={[styles.sectionCount, { color: isDark ? AppColors.darkTextSecondary : AppColors.hintText, fontSize: sp(11) }]}>
+            <Text
+              style={[
+                styles.sectionCount,
+                {
+                  color: isDark ? AppColors.darkTextSecondary : AppColors.hintText,
+                  fontSize: sp(11),
+                },
+              ]}
+            >
               {section.data.length}
             </Text>
           </View>
         )}
-        renderItem={({ item }) => (
-          <NotificationItem item={item} onPress={onNotificationPress} />
-        )}
+        renderItem={({ item }) => <NotificationItem item={item} onPress={onNotificationPress} />}
         ItemSeparatorComponent={() => <View style={{ height: sp(10) }} />}
         SectionSeparatorComponent={() => <View style={{ height: sp(4) }} />}
         ListEmptyComponent={
           search || filter !== FILTER_KEYS.ALL ? (
-            <EmptyState emoji="🔍" title="Không có kết quả" hint="Thử thay đổi bộ lọc hoặc từ khóa" />
+            <EmptyState
+              emoji="🔍"
+              title="Không có kết quả"
+              hint="Thử thay đổi bộ lọc hoặc từ khóa"
+            />
           ) : (
             <View style={{ marginTop: 40 }}>
               <EmptyState

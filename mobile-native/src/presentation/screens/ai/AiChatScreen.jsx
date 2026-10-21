@@ -21,13 +21,16 @@ import {
   Pressable,
   KeyboardAvoidingView,
   Platform,
+  Animated,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../theme/ThemeContext';
 import { AppColors } from '../../theme/colors';
+import { AppGradients } from '../../theme/gradients';
 import { sp } from '../../utils/responsive';
 import { FontWeights, FontFamily } from '../../theme/typography';
 import { useTranslation } from 'react-i18next';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Send, Bot, User, Sparkles } from 'lucide-react-native';
 import { showInfo } from '../../utils/helpers';
 import { MessageBubble } from '../../components/chat/MessageBubble';
@@ -51,10 +54,7 @@ const UserAvatar = () => {
         },
       ]}
     >
-      <User
-        color={isDark ? AppColors.primaryLight : AppColors.forestAccent}
-        size={16}
-      />
+      <User color={isDark ? AppColors.primaryLight : AppColors.forestAccent} size={16} />
     </View>
   );
 };
@@ -70,21 +70,21 @@ const TypingIndicator = ({ isDark }) => {
         Animated.sequence([
           Animated.timing(opacity1, { toValue: 1, duration: 400, useNativeDriver: true }),
           Animated.timing(opacity1, { toValue: 0.3, duration: 400, useNativeDriver: true }),
-        ]),
+        ])
       ),
       Animated.loop(
         Animated.sequence([
           Animated.delay(200),
           Animated.timing(opacity2, { toValue: 1, duration: 400, useNativeDriver: true }),
           Animated.timing(opacity2, { toValue: 0.3, duration: 400, useNativeDriver: true }),
-        ]),
+        ])
       ),
       Animated.loop(
         Animated.sequence([
           Animated.delay(400),
           Animated.timing(opacity3, { toValue: 1, duration: 400, useNativeDriver: true }),
           Animated.timing(opacity3, { toValue: 0.3, duration: 400, useNativeDriver: true }),
-        ]),
+        ])
       ),
     ];
     animations.forEach((a) => a.start());
@@ -103,9 +103,15 @@ const TypingIndicator = ({ isDark }) => {
       ]}
     >
       <View style={styles.thinkingDots}>
-        <Animated.View style={[styles.dot, { backgroundColor: AppColors.primary, opacity: opacity1 }]} />
-        <Animated.View style={[styles.dot, { backgroundColor: AppColors.primary, opacity: opacity2 }]} />
-        <Animated.View style={[styles.dot, { backgroundColor: AppColors.primary, opacity: opacity3 }]} />
+        <Animated.View
+          style={[styles.dot, { backgroundColor: AppColors.primary, opacity: opacity1 }]}
+        />
+        <Animated.View
+          style={[styles.dot, { backgroundColor: AppColors.primary, opacity: opacity2 }]}
+        />
+        <Animated.View
+          style={[styles.dot, { backgroundColor: AppColors.primary, opacity: opacity3 }]}
+        />
       </View>
     </View>
   );
@@ -124,7 +130,12 @@ const generateReply = (input, t) => {
   if (lower.includes('cà chua') || lower.includes('tomato')) {
     return 'Cà chua rất tốt cho sức khỏe! Bạn có thể nấu: Canh cà chua, Cà chua xào trứng, Salad cà chua. Món nào bạn thích nhất?';
   }
-  if (lower.includes('gợi ý') || lower.includes('cook') || lower.includes('nấu') || lower.includes('today')) {
+  if (
+    lower.includes('gợi ý') ||
+    lower.includes('cook') ||
+    lower.includes('nấu') ||
+    lower.includes('today')
+  ) {
     return 'Dựa trên tủ lạnh của bạn, tôi gợi ý 3 món:\n1. Trứng xào cà chua (15 phút)\n2. Canh rau củ (25 phút)\n3. Thịt heo kho trứng (45 phút)\nBạn thích món nào?';
   }
   if (lower.includes('bảo quản') || lower.includes('store')) {
@@ -133,12 +144,17 @@ const generateReply = (input, t) => {
   if (lower.includes('calo') || lower.includes('calorie')) {
     return 'Món ăn ít calo gợi ý:\n• Canh rau củ (~80 calo/bát)\n• Salad cà chua dưa chuột (~60 calo)\n• Trứng luộc (~78 calo/quả)\nBạn muốn công thức chi tiết?';
   }
-  return 'Tôi hiểu bạn đang hỏi về "' + input + '". Tôi sẽ tìm công thức phù hợp với nguyên liệu trong tủ lạnh. Bạn cho tôi biết thêm chi tiết nhé!';
+  return (
+    'Tôi hiểu bạn đang hỏi về "' +
+    input +
+    '". Tôi sẽ tìm công thức phù hợp với nguyên liệu trong tủ lạnh. Bạn cho tôi biết thêm chi tiết nhé!'
+  );
 };
 
 export const AiChatScreen = () => {
   const { isDark } = useTheme();
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
   const [messages, setMessages] = useState(() => [
     { id: 1, sender: 'ai', text: t('home.aiWelcome'), time: now() },
   ]);
@@ -171,14 +187,14 @@ export const AiChatScreen = () => {
         setThinking(false);
       }, 1200);
     },
-    [input, t],
+    [input, t]
   );
 
   const handleSuggestion = useCallback(
     (key) => {
       send(t('home.' + key));
     },
-    [send, t],
+    [send, t]
   );
 
   const clearChat = useCallback(() => {
@@ -189,20 +205,18 @@ export const AiChatScreen = () => {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      style={[
-        styles.container,
-        { backgroundColor: isDark ? '#0E1611' : AppColors.accentGreen },
-      ]}
+      style={[styles.container, { backgroundColor: isDark ? '#0E1611' : AppColors.accentGreen }]}
     >
       <LinearGradient
-        colors={isDark ? ['#0E1611', '#142017'] : ['#FFFFFF', '#F5FCF4', '#C7EFC2']}
-        start={{ x: 0.5, y: 0 }}
-        end={{ x: 0.5, y: 1 }}
+        colors={AppGradients.getBackground(isDark).colors}
+        locations={AppGradients.getBackground(isDark).locations}
+        start={AppGradients.getBackground(isDark).start}
+        end={AppGradients.getBackground(isDark).end}
         style={StyleSheet.absoluteFillObject}
       />
 
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + sp(12) }]}>
         <AIAvatarLarge />
         <View style={{ flex: 1, marginLeft: 12 }}>
           <Text
@@ -263,7 +277,10 @@ export const AiChatScreen = () => {
             <Text
               style={[
                 styles.suggestionsTitle,
-                { color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary, fontSize: sp(12) },
+                {
+                  color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                  fontSize: sp(12),
+                },
               ]}
             >
               {t('home.aiSuggestions')}
@@ -285,7 +302,10 @@ export const AiChatScreen = () => {
                   <Text
                     style={[
                       styles.suggestionText,
-                      { color: isDark ? AppColors.primaryLight : AppColors.forestAccent, fontSize: sp(12) },
+                      {
+                        color: isDark ? AppColors.primaryLight : AppColors.forestAccent,
+                        fontSize: sp(12),
+                      },
                     ]}
                   >
                     {t('home.' + k)}
@@ -349,7 +369,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingTop: 50,
+    // safe area top được cộng ở inline style: { paddingTop: insets.top + sp(12) }
+    paddingTop: 12,
     paddingBottom: 12,
   },
   aiAvatarLarge: {

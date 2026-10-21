@@ -10,7 +10,16 @@
  */
 
 import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView, Animated, Easing, Platform } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Pressable,
+  ScrollView,
+  Animated,
+  Easing,
+  Platform,
+} from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../theme/ThemeContext';
 import { AppColors } from '../../theme/colors';
@@ -18,6 +27,7 @@ import { sp } from '../../utils/responsive';
 import { FontWeights, FontFamily } from '../../theme/typography';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore } from '../../../shared/stores/useAuthStore';
 import { showSuccess } from '../../utils/helpers';
 import { Check } from 'lucide-react-native';
@@ -76,6 +86,7 @@ const STEPS = [
 export const OnboardingSurveyScreen = () => {
   const { isDark } = useTheme();
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
   const { t } = useTranslation();
   const { completeOnboarding } = useAuthStore();
   const [step, setStep] = useState(0);
@@ -106,7 +117,11 @@ export const OnboardingSurveyScreen = () => {
         // Multi-select (cho allergies)
         setAnswers((prev) => {
           if (value === 'none') {
-            return { ...prev, [current.key]: prev[current.key].length === 0 || prev[current.key][0] === 'none' ? [] : ['none'] };
+            return {
+              ...prev,
+              [current.key]:
+                prev[current.key].length === 0 || prev[current.key][0] === 'none' ? [] : ['none'],
+            };
           }
           let next = prev[current.key].filter((v) => v !== 'none');
           if (next.includes(value)) {
@@ -120,7 +135,7 @@ export const OnboardingSurveyScreen = () => {
         setAnswers((prev) => ({ ...prev, [current.key]: value }));
       }
     },
-    [current],
+    [current]
   );
 
   const canProceed = useMemo(() => {
@@ -157,15 +172,24 @@ export const OnboardingSurveyScreen = () => {
       />
 
       {/* Top bar with skip */}
-      <View style={styles.topBar}>
-        <Pressable onPress={handleBack} hitSlop={8} style={({ pressed }) => [{ opacity: pressed ? 0.5 : 1 }]}>
+      <View style={[styles.topBar, { paddingTop: insets.top + sp(12) }]}>
+        <Pressable
+          onPress={handleBack}
+          hitSlop={8}
+          style={({ pressed }) => [{ opacity: pressed ? 0.5 : 1 }]}
+        >
           <Text
             style={[
               styles.topBarText,
               {
-                color: step > 0
-                  ? isDark ? AppColors.primaryLight : AppColors.primary
-                  : isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                color:
+                  step > 0
+                    ? isDark
+                      ? AppColors.primaryLight
+                      : AppColors.primary
+                    : isDark
+                      ? AppColors.darkTextSecondary
+                      : AppColors.textSecondary,
                 fontSize: sp(14),
               },
             ]}
@@ -173,11 +197,18 @@ export const OnboardingSurveyScreen = () => {
             {t('home.onboardingBack')}
           </Text>
         </Pressable>
-        <Pressable onPress={handleSkip} hitSlop={8} style={({ pressed }) => [{ opacity: pressed ? 0.5 : 1 }]}>
+        <Pressable
+          onPress={handleSkip}
+          hitSlop={8}
+          style={({ pressed }) => [{ opacity: pressed ? 0.5 : 1 }]}
+        >
           <Text
             style={[
               styles.topBarText,
-              { color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary, fontSize: sp(14) },
+              {
+                color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                fontSize: sp(14),
+              },
             ]}
           >
             {t('home.onboardingSkip')}
@@ -216,7 +247,10 @@ export const OnboardingSurveyScreen = () => {
           <Text
             style={[
               styles.subtitle,
-              { color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary, fontSize: sp(14) },
+              {
+                color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                fontSize: sp(14),
+              },
             ]}
           >
             {current.multi ? 'Có thể chọn nhiều' : t('home.onboardingSelectOne')}
@@ -239,13 +273,9 @@ export const OnboardingSurveyScreen = () => {
                           ? '#1E3A25'
                           : AppColors.accentGreen
                         : isDark
-                        ? '#19271E'
-                        : '#F2F5F3',
-                      borderColor: selected
-                        ? AppColors.primary
-                        : isDark
-                        ? '#2E4D36'
-                        : '#E3E8E4',
+                          ? '#19271E'
+                          : '#F2F5F3',
+                      borderColor: selected ? AppColors.primary : isDark ? '#2E4D36' : '#E3E8E4',
                       opacity: pressed ? 0.85 : 1,
                     },
                   ]}
@@ -273,11 +303,7 @@ export const OnboardingSurveyScreen = () => {
       {/* Bottom CTA */}
       <View style={styles.bottomBar}>
         <CustomButton
-          title={
-            step === STEPS.length - 1
-              ? t('home.onboardingFinish')
-              : t('home.onboardingNext')
-          }
+          title={step === STEPS.length - 1 ? t('home.onboardingFinish') : t('home.onboardingNext')}
           onPress={handleNext}
           disabled={!canProceed}
           height={52}
@@ -296,7 +322,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 50,
+    paddingTop: 50, // override bằng insets.top ở inline style
     paddingBottom: 12,
   },
   topBarText: {

@@ -16,8 +16,9 @@ import { sp } from '../../utils/responsive';
 import { FontWeights, FontFamily } from '../../theme/typography';
 import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@react-navigation/native';
-import { FriggyAppBar } from '../../components/navigation/FriggyAppBar';
-import { Plus, X, AlertCircle } from 'lucide-react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { BackCircleButton } from '../../components/common/BackCircleButton';
+import { Plus, X } from 'lucide-react-native';
 import allergiesMock from '../../../shared/mocks/allergies.json';
 import { showInfo } from '../../utils/helpers';
 import { EmptyState } from '../../components/common/EmptyState';
@@ -37,18 +38,8 @@ const SEVERITY_LABELS = {
 const SeverityBadge = ({ severity, isDark }) => {
   const color = SEVERITY_COLORS[severity] || SEVERITY_COLORS.medium;
   return (
-    <View
-      style={[
-        styles.severityBadge,
-        { backgroundColor: isDark ? color.darkBg : color.bg },
-      ]}
-    >
-      <View
-        style={[
-          styles.severityDot,
-          { backgroundColor: isDark ? color.darkFg : color.fg },
-        ]}
-      />
+    <View style={[styles.severityBadge, { backgroundColor: isDark ? color.darkBg : color.bg }]}>
+      <View style={[styles.severityDot, { backgroundColor: isDark ? color.darkFg : color.fg }]} />
     </View>
   );
 };
@@ -57,6 +48,7 @@ export const UserAllergiesScreen = () => {
   const { isDark } = useTheme();
   const { t } = useTranslation();
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
   const [allergies, setAllergies] = useState(allergiesMock.allergies);
 
   const remove = useCallback(
@@ -70,7 +62,7 @@ export const UserAllergiesScreen = () => {
         },
       ]);
     },
-    [allergies, t],
+    [allergies, t]
   );
 
   const cycleSeverity = useCallback(
@@ -81,10 +73,10 @@ export const UserAllergiesScreen = () => {
           const order = ['low', 'medium', 'high'];
           const idx = order.indexOf(a.severity);
           return { ...a, severity: order[(idx + 1) % order.length] };
-        }),
+        })
       );
     },
-    [allergies],
+    [allergies]
   );
 
   const add = useCallback(() => {
@@ -96,8 +88,15 @@ export const UserAllergiesScreen = () => {
   }, [allergies]);
 
   return (
-    <View style={[styles.container, { backgroundColor: isDark ? '#0E1611' : '#FFFFFF' }]}>
-      <FriggyAppBar showBackButton onBackTap={() => navigation.goBack()} />
+    <View
+      style={[
+        styles.container,
+        { backgroundColor: isDark ? AppColors.darkBackground : AppColors.lightBackground },
+      ]}
+    >
+      <View style={{ paddingTop: insets.top + sp(12), paddingHorizontal: sp(20) }}>
+        <BackCircleButton onPress={() => navigation.goBack()} />
+      </View>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <Text
           style={[
@@ -110,7 +109,10 @@ export const UserAllergiesScreen = () => {
         <Text
           style={[
             styles.subtitle,
-            { color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary, fontSize: sp(13) },
+            {
+              color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+              fontSize: sp(13),
+            },
           ]}
         >
           {t('home.allergiesSubtitle')}
@@ -174,12 +176,12 @@ export const UserAllergiesScreen = () => {
                   <Pressable
                     onPress={() => remove(a.id)}
                     hitSlop={8}
-                    style={({ pressed }) => [
-                      styles.removeBtn,
-                      { opacity: pressed ? 0.6 : 1 },
-                    ]}
+                    style={({ pressed }) => [styles.removeBtn, { opacity: pressed ? 0.6 : 1 }]}
                   >
-                    <X color={isDark ? AppColors.darkTextSecondary : AppColors.hintText} size={18} />
+                    <X
+                      color={isDark ? AppColors.darkTextSecondary : AppColors.hintText}
+                      size={18}
+                    />
                   </Pressable>
                 </View>
               );
@@ -201,7 +203,10 @@ export const UserAllergiesScreen = () => {
               <Text
                 style={[
                   styles.addText,
-                  { color: isDark ? AppColors.primaryLight : AppColors.forestAccent, fontSize: sp(14) },
+                  {
+                    color: isDark ? AppColors.primaryLight : AppColors.forestAccent,
+                    fontSize: sp(14),
+                  },
                 ]}
               >
                 {t('home.addAllergy')}
@@ -209,8 +214,22 @@ export const UserAllergiesScreen = () => {
             </Pressable>
           </View>
         )}
-        <View style={{ height: 40 }} />
+        <View style={{ height: 100 }} />
       </ScrollView>
+      {/* P0.8: FAB nút + nổi góc phải dưới (ảnh 6) */}
+      <Pressable
+        onPress={add}
+        style={({ pressed }) => [
+          styles.fab,
+          {
+            bottom: insets.bottom + sp(24),
+            backgroundColor: isDark ? AppColors.primaryLight : AppColors.primary,
+            opacity: pressed ? 0.85 : 1,
+          },
+        ]}
+      >
+        <Plus color="#FFFFFF" size={26} strokeWidth={2.6} />
+      </Pressable>
     </View>
   );
 };
@@ -284,5 +303,19 @@ const styles = StyleSheet.create({
     fontFamily: FontFamily.semibold,
     fontWeight: FontWeights.semibold,
     marginLeft: sp(8),
+  },
+  fab: {
+    position: 'absolute',
+    right: sp(20),
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 6,
   },
 });

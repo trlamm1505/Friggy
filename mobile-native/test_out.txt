@@ -1,0 +1,1360 @@
+﻿node.exe : npm warn Unknown env config "devdir". This will stop working in the next major version of npm. See `npm 
+help npmrc` for supported config options.
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Users\Admin\AppData\Roaming\ ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (npm warn Unknow...config options.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+FAIL src/presentation/screens/__tests__/P071ImportContracts.test.js
+  P0.7.1: AppGradients tß╗ôn tß║íi v├á ─æ├║ng shape
+    ΓêÜ AppColors export ─æ╞░ß╗úc tß╗½ colors.js (2 ms)
+    ΓêÜ AppGradients export ─æ╞░ß╗úc tß╗½ gradients.js (KH├öNG phß║úi colors.js) (1 ms)
+    ΓêÜ AppGradients.getBackground l├á function
+    ΓêÜ getBackground(false) -> lightBackground c├│ 2 field colors+locations
+    ΓêÜ getBackground(true) -> darkBackground c├│ 2 field colors+locations (1 ms)
+  P0.7.1: 3 screen import kh├┤ng throw l├║c require
+    ΓêÜ HomeScreen require ─æ╞░ß╗úc, kh├┤ng throw (2345 ms)
+    ΓêÜ FridgeInventoryScreen require ─æ╞░ß╗úc, kh├┤ng throw (105 ms)
+    ΓêÜ UserProfileScreen require ─æ╞░ß╗úc, kh├┤ng throw (41 ms)
+  P0.7.1: 3 file KH├öNG import AppGradients tß╗½ colors (─æ├ú sß╗¡a)
+    ΓêÜ KH├öNG c├│ "AppGradients" trong import tß╗½ colors.js: HomeScreen.jsx (1 ms)
+    ΓêÜ KH├öNG c├│ "AppGradients" trong import tß╗½ colors.js: FridgeInventoryScreen.jsx
+    ΓêÜ KH├öNG c├│ "AppGradients" trong import tß╗½ colors.js: UserProfileScreen.jsx
+    ├ù Cß║ú 3 file KH├öNG import AppGradients tß╗½ colors.js (lu├┤n ─æ├║ng, kß╗â cß║ú P0.8) (2 ms)
+  P0.8: gradient ─æ╞░ß╗úc kh├┤i phß╗Ñc theo 12 ß║únh thiß║┐t kß║┐
+    ΓêÜ HomeScreen.jsx d├╣ng LinearGradient tß╗½ token AppGradients (1 ms)
+    ├ù HomeScreen.jsx KH├öNG hardcode mß║úng m├áu gradient ri├¬ng (1 ms)
+    ΓêÜ FridgeInventoryScreen.jsx d├╣ng LinearGradient tß╗½ token AppGradients (1 ms)
+    ├ù FridgeInventoryScreen.jsx KH├öNG hardcode mß║úng m├áu gradient ri├¬ng
+    ΓêÜ SplashScreen.jsx d├╣ng LinearGradient tß╗½ token AppGradients
+    ΓêÜ SplashScreen.jsx KH├öNG hardcode mß║úng m├áu gradient ri├¬ng
+    ΓêÜ LoginScreen.jsx d├╣ng LinearGradient tß╗½ token AppGradients (1 ms)
+    ΓêÜ LoginScreen.jsx KH├öNG hardcode mß║úng m├áu gradient ri├¬ng
+    ├ù AiChatScreen.jsx d├╣ng LinearGradient tß╗½ token AppGradients (2 ms)
+    ΓêÜ AiChatScreen.jsx KH├öNG hardcode mß║úng m├áu gradient ri├¬ng (1 ms)
+
+  ΓùÅ P0.7.1: 3 file KH├öNG import AppGradients tß╗½ colors (─æ├ú sß╗¡a) ΓÇ║ Cß║ú 3 file KH├öNG import AppGradients 
+tß╗½ colors.js (lu├┤n ─æ├║ng, kß╗â cß║ú P0.8)
+
+    expect(received).not.toMatch(expected)
+
+    Expected pattern: not /AppGradients/
+    Received string:      "import React, { useState, useEffect, useRef, useCallback } from 'react';
+    import {
+      View,
+      Text,
+      StyleSheet,
+      ScrollView,
+      Animated,
+      Easing,
+      Platform,
+      RefreshControl,
+    } from 'react-native';
+    import { LinearGradient } from 'expo-linear-gradient';
+    import { useTheme } from '../../theme/ThemeContext';
+    import { AppColors } from '../../theme/colors';
+    import { AppGradients } from '../../theme/gradients';
+    import { sp } from '../../utils/responsive';
+    import { useNavigation } from '@react-navigation/native';
+    import { useTranslation } from 'react-i18next';
+    import { useSafeAreaInsets } from 'react-native-safe-area-context';
+    import { HomeHeader } from '../../components/home/HomeHeader';
+    import { GreetingBanner } from '../../components/home/GreetingBanner';
+    import { FridgeSummaryCards } from '../../components/home/FridgeSummaryCards';
+    import { PremiumBanner } from '../../components/home/PremiumBanner';
+    import { WeeklyStatisticsSection } from '../../components/home/WeeklyStatisticsSection';
+    import { CookingSuggestionsSection } from '../../components/home/CookingSuggestionsSection';
+    import { Routes } from '../../../shared/constants/routes';
+    import { showInfo } from '../../utils/helpers';
+    import {
+      useCurrentPlan,
+      useFridgeSummary,
+      useWeeklyStats,
+      useRecipeSuggestions,
+      useNotifications,
+    } from '../../hooks/useServiceHooks';
+    import { useServices } from '../../../data/ServiceProvider';
+
+    export const HomeScreen = () => {
+      const { isDark } = useTheme();
+      const navigation = useNavigation();
+      const { t } = useTranslation();
+      const insets = useSafeAreaInsets();
+      const services = useServices();
+
+      // Data tß╗½ service layer
+      const { data: plan, refetch: refetchPlan } = useCurrentPlan();
+      const { refetch: refetchSummary } = useFridgeSummary();
+      const { refetch: refetchStats } = useWeeklyStats();
+      const { refetch: refetchSuggestions } = useRecipeSuggestions();
+      const { refetch: refetchNotifications } = useNotifications();
+
+      const [searchValue, setSearchValue] = useState('');
+      const [refreshing, setRefreshing] = useState(false);
+
+      const isFamilyPlan =
+        plan?.name?.toLowerCase().includes('family') ||
+        plan?.displayName?.toLowerCase().includes('gia ─æ├¼nh');
+
+      // Pull-to-refresh: gß╗ìi tß║Ñt cß║ú c├íc refetch c├╣ng l├║c
+      const onRefresh = useCallback(async () => {
+        setRefreshing(true);
+        try {
+          await Promise.allSettled([
+            refetchPlan(),
+            refetchSummary(),
+            refetchStats(),
+            refetchSuggestions(),
+            refetchNotifications(),
+          ]);
+        } catch (e) {
+          if (__DEV__) console.warn('[Home] Refresh error:', e);
+        } finally {
+          // Giß╗» refresh indicator tß╗æi thiß╗âu 500ms ─æß╗â UX tß╗æt h╞ín
+          setTimeout(() => setRefreshing(false), 500);
+        }
+      }, [refetchPlan, refetchSummary, refetchStats, refetchSuggestions, refetchNotifications]);
+
+      // Animation values
+      const animController = useRef(new Animated.Value(0)).current;
+      const headerFade = animController.interpolate({
+        inputRange: [0, 0.5],
+        outputRange: [0, 1],
+      });
+      const headerSlide = animController.interpolate({
+        inputRange: [0, 0.5],
+        outputRange: [-15, 0],
+      });
+      const bodyFade = animController.interpolate({
+        inputRange: [0.15, 0.75],
+        outputRange: [0, 1],
+      });
+      const bodySlide = animController.interpolate({
+        inputRange: [0.15, 0.75],
+        outputRange: [8, 0],
+      });
+
+      useEffect(() => {
+        Animated.timing(animController, {
+          toValue: 1,
+          duration: 400,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: Platform.OS !== 'web',
+        }).start();
+      }, []);
+
+      return (
+        <View style={styles.container}>
+          {/* P0.8: gradient phß╗º to├án bß╗Ö m├án (ß║únh 5/8) - header trong suß╗æt ─æß╗â
+              gradient liß╗ün mß║ích, bottom nav trß║»ng mß╗¥ nß╗òi ph├¡a tr├¬n. */}
+          <LinearGradient
+            colors={AppGradients.getBackground(isDark).colors}
+            locations={AppGradients.getBackground(isDark).locations}
+            start={AppGradients.getBackground(isDark).start}
+            end={AppGradients.getBackground(isDark).end}
+            style={StyleSheet.absoluteFillObject}
+          />
+          <Animated.View style={{ opacity: headerFade, transform: [{ translateY: headerSlide }] }}>
+            <HomeHeader
+              searchValue={searchValue}
+              onSearchChange={setSearchValue}
+              onNotificationTap={() => navigation.navigate(Routes.Notifications)}
+              onFilterTap={() => showInfo(t('home.filterTapped'))}
+            />
+          </Animated.View>
+
+          <Animated.View style={{ flex: 1, opacity: bodyFade, transform: [{ translateY: bodySlide }] }}>
+            <ScrollView
+              style={{ flex: 1 }}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{ paddingBottom: 100 + insets.bottom }}
+              refreshControl={
+                <RefreshControl
+                  refreshing={refreshing}
+                  onRefresh={onRefresh}
+                  colors={[AppColors.primary]}
+                  tintColor={isDark ? AppColors.primaryLight : AppColors.primary}
+                  progressBackgroundColor={isDark ? AppColors.darkCardBg : '#FFFFFF'}
+                />
+              }
+            >
+              <View style={{ marginTop: sp(16) }}>
+                <GreetingBanner />
+              </View>
+
+              <View style={{ marginTop: sp(16) }}>
+                <FridgeSummaryCards
+                  onExpiringTap={() => navigation.navigate(Routes.AllExpiredItems)}
+                  onAvailableTap={() => navigation.navigate(Routes.AllAvailableItems)}
+                />
+              </View>
+
+              <View style={{ marginTop: sp(20) }}>
+                <PremiumBanner
+                  isFamilyPlan={isFamilyPlan}
+                  onTryNowTap={() => {
+                    if (isFamilyPlan) {
+                      navigation.navigate(Routes.PackageManagement);
+                    } else {
+                      showInfo('Mß╗ƒ modal ─æ─âng k├╜ g├│i Family');
+                    }
+                  }}
+                />
+              </View>
+
+              <View style={{ marginTop: sp(20) }}>
+                <WeeklyStatisticsSection
+                  onDetailTap={() => navigation.navigate(Routes.IngredientStatistics)}
+                  onMealSuggestionsTap={() => navigation.navigate(Routes.NextWeekSuggestions)}
+                  onShoppingReminderTap={() => navigation.navigate(Routes.ShoppingReminder)}
+                />
+              </View>
+
+              <CookingSuggestionsSection
+                onRecipeTap={(recipe) => navigation.navigate(Routes.RecipeDetail, { recipe })}
+                onUpgradeTap={() => showInfo(t('home.upgradeTapped'))}
+              />
+            </ScrollView>
+          </Animated.View>
+        </View>
+      );
+    };
+
+    const styles = StyleSheet.create({
+      container: {
+        flex: 1,
+      },
+    });
+    "
+
+      127 |       const full = path.join(ROOT, rel);
+      128 |       const src = fs.readFileSync(full, 'utf8');
+    > 129 |       expect(src).not.toMatch(/AppGradients/);
+          |                       ^
+      130 |     });
+      131 |   });
+      132 | });
+
+      at toMatch (src/presentation/screens/__tests__/P071ImportContracts.test.js:129:23)
+          at Array.forEach (<anonymous>)
+      at Object.forEach (src/presentation/screens/__tests__/P071ImportContracts.test.js:126:15)
+
+  ΓùÅ P0.8: gradient ─æ╞░ß╗úc kh├┤i phß╗Ñc theo 12 ß║únh thiß║┐t kß║┐ ΓÇ║ HomeScreen.jsx KH├öNG hardcode mß║úng m├áu 
+gradient ri├¬ng
+
+    expect(received).not.toMatch(expected)
+
+    Expected pattern: not /colors=\{\s*\[/
+    Received string:      "import React, { useState, useEffect, useRef, useCallback } from 'react';
+    import {
+      View,
+      Text,
+      StyleSheet,
+      ScrollView,
+      Animated,
+      Easing,
+      Platform,
+      RefreshControl,
+    } from 'react-native';
+    import { LinearGradient } from 'expo-linear-gradient';
+    import { useTheme } from '../../theme/ThemeContext';
+    import { AppColors } from '../../theme/colors';
+    import { AppGradients } from '../../theme/gradients';
+    import { sp } from '../../utils/responsive';
+    import { useNavigation } from '@react-navigation/native';
+    import { useTranslation } from 'react-i18next';
+    import { useSafeAreaInsets } from 'react-native-safe-area-context';
+    import { HomeHeader } from '../../components/home/HomeHeader';
+    import { GreetingBanner } from '../../components/home/GreetingBanner';
+    import { FridgeSummaryCards } from '../../components/home/FridgeSummaryCards';
+    import { PremiumBanner } from '../../components/home/PremiumBanner';
+    import { WeeklyStatisticsSection } from '../../components/home/WeeklyStatisticsSection';
+    import { CookingSuggestionsSection } from '../../components/home/CookingSuggestionsSection';
+    import { Routes } from '../../../shared/constants/routes';
+    import { showInfo } from '../../utils/helpers';
+    import {
+      useCurrentPlan,
+      useFridgeSummary,
+      useWeeklyStats,
+      useRecipeSuggestions,
+      useNotifications,
+    } from '../../hooks/useServiceHooks';
+    import { useServices } from '../../../data/ServiceProvider';
+
+    export const HomeScreen = () => {
+      const { isDark } = useTheme();
+      const navigation = useNavigation();
+      const { t } = useTranslation();
+      const insets = useSafeAreaInsets();
+      const services = useServices();
+
+      // Data tß╗½ service layer
+      const { data: plan, refetch: refetchPlan } = useCurrentPlan();
+      const { refetch: refetchSummary } = useFridgeSummary();
+      const { refetch: refetchStats } = useWeeklyStats();
+      const { refetch: refetchSuggestions } = useRecipeSuggestions();
+      const { refetch: refetchNotifications } = useNotifications();
+
+      const [searchValue, setSearchValue] = useState('');
+      const [refreshing, setRefreshing] = useState(false);
+
+      const isFamilyPlan =
+        plan?.name?.toLowerCase().includes('family') ||
+        plan?.displayName?.toLowerCase().includes('gia ─æ├¼nh');
+
+      // Pull-to-refresh: gß╗ìi tß║Ñt cß║ú c├íc refetch c├╣ng l├║c
+      const onRefresh = useCallback(async () => {
+        setRefreshing(true);
+        try {
+          await Promise.allSettled([
+            refetchPlan(),
+            refetchSummary(),
+            refetchStats(),
+            refetchSuggestions(),
+            refetchNotifications(),
+          ]);
+        } catch (e) {
+          if (__DEV__) console.warn('[Home] Refresh error:', e);
+        } finally {
+          // Giß╗» refresh indicator tß╗æi thiß╗âu 500ms ─æß╗â UX tß╗æt h╞ín
+          setTimeout(() => setRefreshing(false), 500);
+        }
+      }, [refetchPlan, refetchSummary, refetchStats, refetchSuggestions, refetchNotifications]);
+
+      // Animation values
+      const animController = useRef(new Animated.Value(0)).current;
+      const headerFade = animController.interpolate({
+        inputRange: [0, 0.5],
+        outputRange: [0, 1],
+      });
+      const headerSlide = animController.interpolate({
+        inputRange: [0, 0.5],
+        outputRange: [-15, 0],
+      });
+      const bodyFade = animController.interpolate({
+        inputRange: [0.15, 0.75],
+        outputRange: [0, 1],
+      });
+      const bodySlide = animController.interpolate({
+        inputRange: [0.15, 0.75],
+        outputRange: [8, 0],
+      });
+
+      useEffect(() => {
+        Animated.timing(animController, {
+          toValue: 1,
+          duration: 400,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: Platform.OS !== 'web',
+        }).start();
+      }, []);
+
+      return (
+        <View style={styles.container}>
+          {/* P0.8: gradient phß╗º to├án bß╗Ö m├án (ß║únh 5/8) - header trong suß╗æt ─æß╗â
+              gradient liß╗ün mß║ích, bottom nav trß║»ng mß╗¥ nß╗òi ph├¡a tr├¬n. */}
+          <LinearGradient
+            colors={AppGradients.getBackground(isDark).colors}
+            locations={AppGradients.getBackground(isDark).locations}
+            start={AppGradients.getBackground(isDark).start}
+            end={AppGradients.getBackground(isDark).end}
+            style={StyleSheet.absoluteFillObject}
+          />
+          <Animated.View style={{ opacity: headerFade, transform: [{ translateY: headerSlide }] }}>
+            <HomeHeader
+              searchValue={searchValue}
+              onSearchChange={setSearchValue}
+              onNotificationTap={() => navigation.navigate(Routes.Notifications)}
+              onFilterTap={() => showInfo(t('home.filterTapped'))}
+            />
+          </Animated.View>
+
+          <Animated.View style={{ flex: 1, opacity: bodyFade, transform: [{ translateY: bodySlide }] }}>
+            <ScrollView
+              style={{ flex: 1 }}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{ paddingBottom: 100 + insets.bottom }}
+              refreshControl={
+                <RefreshControl
+                  refreshing={refreshing}
+                  onRefresh={onRefresh}
+                  colors={[AppColors.primary]}
+                  tintColor={isDark ? AppColors.primaryLight : AppColors.primary}
+                  progressBackgroundColor={isDark ? AppColors.darkCardBg : '#FFFFFF'}
+                />
+              }
+            >
+              <View style={{ marginTop: sp(16) }}>
+                <GreetingBanner />
+              </View>
+
+              <View style={{ marginTop: sp(16) }}>
+                <FridgeSummaryCards
+                  onExpiringTap={() => navigation.navigate(Routes.AllExpiredItems)}
+                  onAvailableTap={() => navigation.navigate(Routes.AllAvailableItems)}
+                />
+              </View>
+
+              <View style={{ marginTop: sp(20) }}>
+                <PremiumBanner
+                  isFamilyPlan={isFamilyPlan}
+                  onTryNowTap={() => {
+                    if (isFamilyPlan) {
+                      navigation.navigate(Routes.PackageManagement);
+                    } else {
+                      showInfo('Mß╗ƒ modal ─æ─âng k├╜ g├│i Family');
+                    }
+                  }}
+                />
+              </View>
+
+              <View style={{ marginTop: sp(20) }}>
+                <WeeklyStatisticsSection
+                  onDetailTap={() => navigation.navigate(Routes.IngredientStatistics)}
+                  onMealSuggestionsTap={() => navigation.navigate(Routes.NextWeekSuggestions)}
+                  onShoppingReminderTap={() => navigation.navigate(Routes.ShoppingReminder)}
+                />
+              </View>
+
+              <CookingSuggestionsSection
+                onRecipeTap={(recipe) => navigation.navigate(Routes.RecipeDetail, { recipe })}
+                onUpgradeTap={() => showInfo(t('home.upgradeTapped'))}
+              />
+            </ScrollView>
+          </Animated.View>
+        </View>
+      );
+    };
+
+    const styles = StyleSheet.create({
+      container: {
+        flex: 1,
+      },
+    });
+    "
+
+      158 |       const src = fs.readFileSync(path.join(ROOT, rel), 'utf8');
+      159 |       // Kh├┤ng ─æ╞░ß╗úc tß╗▒ define mß║úng m├áu gradient kiß╗âu ['#FFFFFF', '#F5FCF4', ...]
+    > 160 |       expect(src).not.toMatch(/colors=\{\s*\[/);
+          |                       ^
+      161 |     });
+      162 |   });
+      163 | });
+
+      at Object.toMatch (src/presentation/screens/__tests__/P071ImportContracts.test.js:160:23)
+
+  ΓùÅ P0.8: gradient ─æ╞░ß╗úc kh├┤i phß╗Ñc theo 12 ß║únh thiß║┐t kß║┐ ΓÇ║ FridgeInventoryScreen.jsx KH├öNG hardcode 
+mß║úng m├áu gradient ri├¬ng
+
+    expect(received).not.toMatch(expected)
+
+    Expected pattern: not /colors=\{\s*\[/
+    Received string:      "/**
+     * FridgeInventoryScreen
+     *
+     * Redesigned (Sprint 5):
+     * - D├╣ng useFridgeItems vß╗¢i search/sort/filter qua service layer
+     * - Search bar live
+     * - Filter chips: All / Fresh / Expiring + Category chips
+     * - Sort menu: Expiry / Name / Quantity / Category
+     * - FridgeItem component (─æ├ú l├ám ß╗ƒ Sprint 4)
+     * - Pull-to-refresh
+     * - Loading / empty / error states
+     * - Compact stats header
+     */
+
+    import React, { useState, useMemo, useCallback } from 'react';
+    import { View, Text, StyleSheet, FlatList, Pressable, RefreshControl } from 'react-native';
+    import { LinearGradient } from 'expo-linear-gradient';
+    import { useTheme } from '../../theme/ThemeContext';
+    import { AppColors } from '../../theme/colors';
+    import { AppGradients } from '../../theme/gradients';
+    import { sp } from '../../utils/responsive';
+    import { FontWeights, FontFamily } from '../../theme/typography';
+    import { useTranslation } from 'react-i18next';
+    import { useNavigation } from '@react-navigation/native';
+    import { useSafeAreaInsets } from 'react-native-safe-area-context';
+    import { Plus, Refrigerator } from 'lucide-react-native';
+    import { FriggyAppBar } from '../../components/navigation/FriggyAppBar';
+    import { FridgeItem } from '../../components/fridge/FridgeItem';
+    import { SearchBar } from '../../components/common/SearchBar';
+    import { FilterChips } from '../../components/common/FilterChips';
+    import { SortMenu } from '../../components/common/SortMenu';
+    import { EmptyState } from '../../components/common/EmptyState';
+    import { ErrorState } from '../../components/common/ErrorState';
+    import { Skeleton } from '../../components/common/Skeleton';
+    import { useFridgeItems } from '../../hooks/useServiceHooks';
+    import { Routes } from '../../../shared/constants/routes';
+
+    const STATUS_KEYS = {
+      ALL: 'all',
+      FRESH: 'fresh',
+      EXPIRING: 'expiring',
+    };
+
+    const CATEGORY_KEYS = {
+      ALL: 'all',
+      VEGETABLE: 'vegetable',
+      MEAT: 'meat',
+      DAIRY: 'dairy',
+      FRUIT: 'fruit',
+    };
+
+    const SORT_KEYS = {
+      EXPIRY_ASC: 'expiry_asc',
+      EXPIRY_DESC: 'expiry_desc',
+      NAME_ASC: 'name_asc',
+      NAME_DESC: 'name_desc',
+      QUANTITY_ASC: 'quantity_asc',
+      QUANTITY_DESC: 'quantity_desc',
+    };
+
+    export const FridgeInventoryScreen = ({ fridge, isEmbedded = false, onRename }) => {
+      const { isDark } = useTheme();
+      const { t } = useTranslation();
+      const navigation = useNavigation();
+      const insets = useSafeAreaInsets();
+
+      const [search, setSearch] = useState('');
+      const [statusFilter, setStatusFilter] = useState(STATUS_KEYS.ALL);
+      const [categoryFilter, setCategoryFilter] = useState(CATEGORY_KEYS.ALL);
+      const [sort, setSort] = useState(SORT_KEYS.EXPIRY_ASC);
+      const [refreshing, setRefreshing] = useState(false);
+
+      // Build service filters
+      const serviceFilters = useMemo(() => {
+        const f = {};
+        if (search.trim()) f.search = search.trim();
+        if (statusFilter !== STATUS_KEYS.ALL) f.status = statusFilter;
+        if (categoryFilter !== CATEGORY_KEYS.ALL) f.category = categoryFilter;
+        if (sort === SORT_KEYS.EXPIRY_ASC) {
+          f.sortBy = 'expiry';
+          f.sortDir = 'asc';
+        } else if (sort === SORT_KEYS.EXPIRY_DESC) {
+          f.sortBy = 'expiry';
+          f.sortDir = 'desc';
+        } else if (sort === SORT_KEYS.NAME_ASC) {
+          f.sortBy = 'name';
+          f.sortDir = 'asc';
+        } else if (sort === SORT_KEYS.NAME_DESC) {
+          f.sortBy = 'name';
+          f.sortDir = 'desc';
+        } else if (sort === SORT_KEYS.QUANTITY_ASC) {
+          f.sortBy = 'quantity';
+          f.sortDir = 'asc';
+        } else if (sort === SORT_KEYS.QUANTITY_DESC) {
+          f.sortBy = 'quantity';
+          f.sortDir = 'desc';
+        }
+        return f;
+      }, [search, statusFilter, categoryFilter, sort]);
+
+      const { data: items, loading, error, refetch } = useFridgeItems(serviceFilters);
+
+      // Stats
+      const stats = useMemo(() => {
+        if (!items) return { total: 0, expiring: 0, fresh: 0 };
+        return {
+          total: items.length,
+          expiring: items.filter((it) => it.status === 'expiring').length,
+          fresh: items.filter((it) => it.status === 'fresh').length,
+        };
+      }, [items]);
+
+      // Category counts (t├¡nh tß╗½ items ─æang hiß╗ân thß╗ï - ─æ├ú filter status nh╞░ng ch╞░a filter category)
+      const categoryCounts = useMemo(() => {
+        if (!items) return { all: 0, vegetable: 0, meat: 0, dairy: 0, fruit: 0 };
+        return {
+          all: items.length,
+          vegetable: items.filter((it) => it.category === 'vegetable').length,
+          meat: items.filter((it) => it.category === 'meat').length,
+          dairy: items.filter((it) => it.category === 'dairy').length,
+          fruit: items.filter((it) => it.category === 'fruit').length,
+        };
+      }, [items]);
+
+      // Status counts
+      const statusCounts = useMemo(() => {
+        if (!items) return { all: 0, fresh: 0, expiring: 0 };
+        return {
+          all: items.length,
+          fresh: items.filter((it) => it.status === 'fresh').length,
+          expiring: items.filter((it) => it.status === 'expiring').length,
+        };
+      }, [items]);
+
+      const statusOptions = [
+        { key: STATUS_KEYS.ALL, label: t('home.all'), count: statusCounts.all },
+        {
+          key: STATUS_KEYS.FRESH,
+          label: t('home.filterFresh'),
+          count: statusCounts.fresh,
+          color: AppColors.primary,
+        },
+        {
+          key: STATUS_KEYS.EXPIRING,
+          label: t('home.filterExpiring'),
+          count: statusCounts.expiring,
+          color: '#FF9800',
+        },
+      ];
+
+      const categoryOptions = [
+        { key: CATEGORY_KEYS.ALL, label: t('home.categoryAll'), count: categoryCounts.all },
+        {
+          key: CATEGORY_KEYS.VEGETABLE,
+          label: t('home.categoryVegetable'),
+          count: categoryCounts.vegetable,
+          color: '#4CAF50',
+        },
+        {
+          key: CATEGORY_KEYS.MEAT,
+          label: t('home.categoryMeat'),
+          count: categoryCounts.meat,
+          color: '#E57373',
+        },
+        {
+          key: CATEGORY_KEYS.DAIRY,
+          label: t('home.categoryDairy'),
+          count: categoryCounts.dairy,
+          color: '#FFB300',
+        },
+        {
+          key: CATEGORY_KEYS.FRUIT,
+          label: t('home.categoryFruit'),
+          count: categoryCounts.fruit,
+          color: '#FF7043',
+        },
+      ];
+
+      const sortOptions = [
+        { key: SORT_KEYS.EXPIRY_ASC, label: t('home.sortExpiryAsc') },
+        { key: SORT_KEYS.EXPIRY_DESC, label: t('home.sortExpiryDesc') },
+        { key: SORT_KEYS.NAME_ASC, label: t('home.sortNameAsc') },
+        { key: SORT_KEYS.NAME_DESC, label: t('home.sortNameDesc') },
+        { key: SORT_KEYS.QUANTITY_ASC, label: t('home.sortQuantityAsc') },
+        { key: SORT_KEYS.QUANTITY_DESC, label: t('home.sortQuantityDesc') },
+      ];
+
+      const onRefresh = useCallback(async () => {
+        setRefreshing(true);
+        try {
+          await refetch();
+        } finally {
+          setTimeout(() => setRefreshing(false), 400);
+        }
+      }, [refetch]);
+
+      // Loading state lß║ºn ─æß║ºu
+      if (loading && !items) {
+        return (
+          <View style={styles.container}>
+            <LinearGradient
+              colors={AppGradients.getBackground(isDark).colors}
+              locations={AppGradients.getBackground(isDark).locations}
+              start={AppGradients.getBackground(isDark).start}
+              end={AppGradients.getBackground(isDark).end}
+              style={StyleSheet.absoluteFillObject}
+            />
+            {!isEmbedded && <FriggyAppBar showBackButton onBackTap={() => navigation.goBack()} />}
+            <View style={{ paddingHorizontal: sp(20), gap: sp(10), marginTop: sp(8) }}>
+              <Skeleton width=\"60%\" height={sp(20)} style={{ marginBottom: sp(8) }} />
+              <Skeleton width=\"40%\" height={sp(13)} />
+              <Skeleton
+                width=\"100%\"
+                height={sp(42)}
+                borderRadius={sp(12)}
+                style={{ marginTop: sp(8), marginBottom: sp(8) }}
+              />
+              {[0, 1, 2, 3, 4].map((i) => (
+                <Skeleton key={i} width=\"100%\" height={sp(72)} borderRadius={sp(14)} />
+              ))}
+            </View>
+          </View>
+        );
+      }
+
+      // Error state
+      if (error && !items) {
+        return (
+          <View style={styles.container}>
+            <LinearGradient
+              colors={AppGradients.getBackground(isDark).colors}
+              locations={AppGradients.getBackground(isDark).locations}
+              start={AppGradients.getBackground(isDark).start}
+              end={AppGradients.getBackground(isDark).end}
+              style={StyleSheet.absoluteFillObject}
+            />
+            {!isEmbedded && <FriggyAppBar showBackButton onBackTap={() => navigation.goBack()} />}
+            <ErrorState onRetry={refetch} style={{ marginTop: sp(60) }} />
+          </View>
+        );
+      }
+
+      const hasFilters =
+        search || statusFilter !== STATUS_KEYS.ALL || categoryFilter !== CATEGORY_KEYS.ALL;
+
+      return (
+        <View style={styles.container}>
+          <LinearGradient
+            colors={AppGradients.getBackground(isDark).colors}
+            locations={AppGradients.getBackground(isDark).locations}
+            start={AppGradients.getBackground(isDark).start}
+            end={AppGradients.getBackground(isDark).end}
+            style={StyleSheet.absoluteFillObject}
+          />
+          {!isEmbedded && <FriggyAppBar showBackButton onBackTap={() => navigation.goBack()} />}
+
+          <View style={[styles.header, { paddingTop: sp(8) }]}>
+            <View style={{ flex: 1 }}>
+              <View style={styles.titleRow}>
+                <Refrigerator
+                  color={isDark ? AppColors.primaryLight : AppColors.forestAccent}
+                  size={22}
+                />
+                <Text
+                  style={[styles.title, { color: isDark ? '#FFFFFF' : '#0D4314', fontSize: sp(22) }]}
+                  numberOfLines={1}
+                >
+                  {fridge?.name || t('home.myFridge')}
+                </Text>
+              </View>
+              <Text
+                style={[
+                  styles.subtitle,
+                  {
+                    color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                    fontSize: sp(13),
+                  },
+                ]}
+              >
+                {t('home.fridgeStats', { total: stats.total, expiring: stats.expiring })}
+              </Text>
+            </View>
+            <Pressable
+              onPress={() => navigation.navigate(Routes.ManualAddIngredient)}
+              style={({ pressed }) => [
+                styles.addBtn,
+                { backgroundColor: AppColors.primary, opacity: pressed ? 0.85 : 1 },
+              ]}
+            >
+              <Plus color=\"#FFFFFF\" size={20} strokeWidth={2.5} />
+            </Pressable>
+          </View>
+
+          <View style={{ paddingHorizontal: sp(20), marginBottom: sp(10) }}>
+            <SearchBar value={search} onChangeText={setSearch} placeholder={t('home.searchHint')} />
+          </View>
+
+          <FilterChips
+            options={statusOptions}
+            selectedKey={statusFilter}
+            onSelect={setStatusFilter}
+            style={{ marginBottom: sp(8) }}
+          />
+
+          <FilterChips
+            options={categoryOptions}
+            selectedKey={categoryFilter}
+            onSelect={setCategoryFilter}
+            style={{ marginBottom: sp(10) }}
+          />
+
+          <View style={styles.sortRow}>
+            <Text
+              style={[
+                styles.resultText,
+                {
+                  color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                  fontSize: sp(12),
+                },
+              ]}
+            >
+              {items.length} {t('home.resultCount', { count: '' }).replace('{{count}} ', '')}
+            </Text>
+            <SortMenu options={sortOptions} selectedKey={sort} onSelect={setSort} />
+          </View>
+
+          <FlatList
+            data={items}
+            keyExtractor={(it) => it.id}
+            contentContainerStyle={{ paddingHorizontal: sp(20), paddingBottom: 100 + insets.bottom }}
+            ItemSeparatorComponent={() => <View style={{ height: sp(10) }} />}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                colors={[AppColors.primary]}
+                tintColor={isDark ? AppColors.primaryLight : AppColors.primary}
+                progressBackgroundColor={isDark ? AppColors.darkCardBg : '#FFFFFF'}
+              />
+            }
+            ListEmptyComponent={
+              hasFilters ? (
+                <EmptyState emoji=\"≡ƒöì\" title={t('home.noResults')} hint={t('home.noResultsHint')} />
+              ) : (
+                <EmptyState
+                  emoji=\"≡ƒÑ¼\"
+                  title={t('home.noData')}
+                  hint={t('fridge.emptyFridge')}
+                  actionText={t('home.addNew')}
+                  onAction={() => navigation.navigate(Routes.ManualAddIngredient)}
+                />
+              )
+            }
+            renderItem={({ item }) => <FridgeItem item={item} />}
+          />
+        </View>
+      );
+    };
+
+    const styles = StyleSheet.create({
+      container: {
+        flex: 1,
+      },
+      header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: sp(20),
+        paddingTop: sp(8),
+        paddingBottom: sp(12),
+      },
+      titleRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+      },
+      title: {
+        fontFamily: FontFamily.black,
+        fontWeight: FontWeights.black,
+        marginLeft: sp(8),
+      },
+      subtitle: {
+        fontFamily: FontFamily.medium,
+        fontWeight: FontWeights.medium,
+        marginTop: sp(4),
+        marginLeft: sp(30),
+      },
+      addBtn: {
+        width: sp(42),
+        height: sp(42),
+        borderRadius: sp(21),
+        alignItems: 'center',
+        justifyContent: 'center',
+        shadowColor: AppColors.primary,
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.3,
+        shadowRadius: 6,
+        elevation: 3,
+      },
+      sortRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: sp(20),
+        marginBottom: sp(12),
+      },
+      resultText: {
+        fontFamily: FontFamily.medium,
+        fontWeight: FontWeights.medium,
+      },
+    });
+    "
+
+      158 |       const src = fs.readFileSync(path.join(ROOT, rel), 'utf8');
+      159 |       // Kh├┤ng ─æ╞░ß╗úc tß╗▒ define mß║úng m├áu gradient kiß╗âu ['#FFFFFF', '#F5FCF4', ...]
+    > 160 |       expect(src).not.toMatch(/colors=\{\s*\[/);
+          |                       ^
+      161 |     });
+      162 |   });
+      163 | });
+
+      at Object.toMatch (src/presentation/screens/__tests__/P071ImportContracts.test.js:160:23)
+
+  ΓùÅ P0.8: gradient ─æ╞░ß╗úc kh├┤i phß╗Ñc theo 12 ß║únh thiß║┐t kß║┐ ΓÇ║ AiChatScreen.jsx d├╣ng LinearGradient tß╗½ 
+token AppGradients
+
+    expect(received).toMatch(expected)
+
+    Expected pattern: /AppGradients\.getBackground/
+    Received string:  "/**
+     * AiChatScreen
+     *
+     * Redesigned (Sprint 7):
+     * - MessageBubble component (t├ích tß╗½ inline code)
+     * - Suggestion chips khi mß╗¢i mß╗ƒ (gß╗úi ├╜ c├óu hß╗Åi)
+     * - Animated typing indicator (3 dots fade in/out)
+     * - Avatar cho AI (Bot icon) v├á user (User icon)
+     * - Smart reply generator vß╗¢i pattern matching th├┤ng minh h╞ín
+     * - Pull-down to clear chat
+     * - Auto-scroll to bottom khi c├│ tin nhß║»n mß╗¢i
+     */┬╖
+    import React, { useState, useRef, useEffect, useCallback } from 'react';
+    import {
+      View,
+      Text,
+      StyleSheet,
+      ScrollView,
+      TextInput,
+      Pressable,
+      KeyboardAvoidingView,
+      Platform,
+    } from 'react-native';
+    import { LinearGradient } from 'expo-linear-gradient';
+    import { useTheme } from '../../theme/ThemeContext';
+    import { AppColors } from '../../theme/colors';
+    import { sp } from '../../utils/responsive';
+    import { FontWeights, FontFamily } from '../../theme/typography';
+    import { useTranslation } from 'react-i18next';
+    import { useSafeAreaInsets } from 'react-native-safe-area-context';
+    import { Send, Bot, User, Sparkles } from 'lucide-react-native';
+    import { showInfo } from '../../utils/helpers';
+    import { MessageBubble } from '../../components/chat/MessageBubble';┬╖
+    const AIAvatar = () => {
+      return (
+        <View style={[styles.avatar, { backgroundColor: AppColors.primary }]}>
+          <Bot color=\"#FFFFFF\" size={16} strokeWidth={2.2} />
+        </View>
+      );
+    };┬╖
+    const UserAvatar = () => {
+      const { isDark } = useTheme();
+      return (
+        <View
+          style={[
+            styles.avatar,
+            {
+              backgroundColor: isDark ? '#233629' : AppColors.accentGreen,
+            },
+          ]}
+        >
+          <User color={isDark ? AppColors.primaryLight : AppColors.forestAccent} size={16} />
+        </View>
+      );
+    };┬╖
+    const TypingIndicator = ({ isDark }) => {
+      const opacity1 = useRef(new Animated.Value(0.3)).current;
+      const opacity2 = useRef(new Animated.Value(0.3)).current;
+      const opacity3 = useRef(new Animated.Value(0.3)).current;┬╖
+      useEffect(() => {
+        const animations = [
+          Animated.loop(
+            Animated.sequence([
+              Animated.timing(opacity1, { toValue: 1, duration: 400, useNativeDriver: true }),
+              Animated.timing(opacity1, { toValue: 0.3, duration: 400, useNativeDriver: true }),
+            ])
+          ),
+          Animated.loop(
+            Animated.sequence([
+              Animated.delay(200),
+              Animated.timing(opacity2, { toValue: 1, duration: 400, useNativeDriver: true }),
+              Animated.timing(opacity2, { toValue: 0.3, duration: 400, useNativeDriver: true }),
+            ])
+          ),
+          Animated.loop(
+            Animated.sequence([
+              Animated.delay(400),
+              Animated.timing(opacity3, { toValue: 1, duration: 400, useNativeDriver: true }),
+              Animated.timing(opacity3, { toValue: 0.3, duration: 400, useNativeDriver: true }),
+            ])
+          ),
+        ];
+        animations.forEach((a) => a.start());
+        return () => animations.forEach((a) => a.stop());
+      }, [opacity1, opacity2, opacity3]);┬╖
+      return (
+        <View
+          style={[
+            styles.bubble,
+            styles.aiBubble,
+            {
+              backgroundColor: isDark ? '#19271E' : '#FFFFFF',
+              borderColor: isDark ? '#2E4D36' : '#A5E69C',
+            },
+          ]}
+        >
+          <View style={styles.thinkingDots}>
+            <Animated.View
+              style={[styles.dot, { backgroundColor: AppColors.primary, opacity: opacity1 }]}
+            />
+            <Animated.View
+              style={[styles.dot, { backgroundColor: AppColors.primary, opacity: opacity2 }]}
+            />
+            <Animated.View
+              style={[styles.dot, { backgroundColor: AppColors.primary, opacity: opacity3 }]}
+            />
+          </View>
+        </View>
+      );
+    };┬╖
+    const now = () => {
+      const d = new Date();
+      return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+    };┬╖
+    const generateReply = (input, t) => {
+      const lower = input.toLowerCase();
+      if (lower.includes('trß╗⌐ng') || lower.includes('egg')) {
+        return 'Vß╗¢i trß╗⌐ng trong tß╗º lß║ính, bß║ín c├│ thß╗â l├ám: Trß╗⌐ng x├áo c├á chua, Trß╗⌐ng chi├¬n, Trß╗⌐ng 
+luß╗Öc, hoß║╖c Trß╗⌐ng cuß╗Ön rau. Bß║ín muß╗æn c├┤ng thß╗⌐c chi tiß║┐t kh├┤ng?';
+      }
+      if (lower.includes('c├á chua') || lower.includes('tomato')) {
+        return 'C├á chua rß║Ñt tß╗æt cho sß╗⌐c khß╗Åe! Bß║ín c├│ thß╗â nß║Ñu: Canh c├á chua, C├á chua x├áo trß╗⌐ng, 
+Salad c├á chua. M├│n n├áo bß║ín th├¡ch nhß║Ñt?';
+      }
+      if (
+        lower.includes('gß╗úi ├╜') ||
+        lower.includes('cook') ||
+        lower.includes('nß║Ñu') ||
+        lower.includes('today')
+      ) {
+        return 'Dß╗▒a tr├¬n tß╗º lß║ính cß╗ºa bß║ín, t├┤i gß╗úi ├╜ 3 m├│n:\\n1. Trß╗⌐ng x├áo c├á chua (15 ph├║t)\\n2. 
+Canh rau cß╗º (25 ph├║t)\\n3. Thß╗ït heo kho trß╗⌐ng (45 ph├║t)\\nBß║ín th├¡ch m├│n n├áo?';
+      }
+      if (lower.includes('bß║úo quß║ún') || lower.includes('store')) {
+        return 'Mß║╣o bß║úo quß║ún:\\nΓÇó Rau cß╗º: rß╗¡a sß║ích, lau kh├┤, cho v├áo hß╗Öp k├¡n, ─æß╗â ng─ân m├ít 3-5 
+ng├áy\\nΓÇó Thß╗ït: chia phß║ºn nhß╗Å, g├│i k├¡n, cß║Ñp ─æ├┤ng\\nΓÇó Sß╗»a: ─æß╗â ng─ân m├ít, uß╗æng trong 5-7 ng├áy 
+sau mß╗ƒ';
+      }
+      if (lower.includes('calo') || lower.includes('calorie')) {
+        return 'M├│n ─ân ├¡t calo gß╗úi ├╜:\\nΓÇó Canh rau cß╗º (~80 calo/b├ít)\\nΓÇó Salad c├á chua d╞░a chuß╗Öt (~60 
+calo)\\nΓÇó Trß╗⌐ng luß╗Öc (~78 calo/quß║ú)\\nBß║ín muß╗æn c├┤ng thß╗⌐c chi tiß║┐t?';
+      }
+      return (
+        'T├┤i hiß╗âu bß║ín ─æang hß╗Åi vß╗ü \"' +
+        input +
+        '\". T├┤i sß║╜ t├¼m c├┤ng thß╗⌐c ph├╣ hß╗úp vß╗¢i nguy├¬n liß╗çu trong tß╗º lß║ính. Bß║ín cho t├┤i biß║┐t 
+th├¬m chi tiß║┐t nh├⌐!'
+      );
+    };┬╖
+    export const AiChatScreen = () => {
+      const { isDark } = useTheme();
+      const { t } = useTranslation();
+      const insets = useSafeAreaInsets();
+      const [messages, setMessages] = useState(() => [
+        { id: 1, sender: 'ai', text: t('home.aiWelcome'), time: now() },
+      ]);
+      const [input, setInput] = useState('');
+      const [thinking, setThinking] = useState(false);
+      const scrollRef = useRef(null);┬╖
+      const suggestionKeys = ['aiSug1', 'aiSug2', 'aiSug3', 'aiSug4'];┬╖
+      useEffect(() => {
+        setTimeout(() => {
+          scrollRef.current?.scrollToEnd({ animated: true });
+        }, 100);
+      }, [messages, thinking]);┬╖
+      const send = useCallback(
+        (text) => {
+          const messageText = (text ?? input).trim();
+          if (!messageText) return;
+          const userMsg = { id: Date.now(), sender: 'user', text: messageText, time: now() };
+          setMessages((prev) => [...prev, userMsg]);
+          setInput('');
+          setThinking(true);
+          setTimeout(() => {
+            const reply = generateReply(messageText, t);
+            setMessages((prev) => [
+              ...prev,
+              { id: Date.now() + 1, sender: 'ai', text: reply, time: now() },
+            ]);
+            setThinking(false);
+          }, 1200);
+        },
+        [input, t]
+      );┬╖
+      const handleSuggestion = useCallback(
+        (key) => {
+          send(t('home.' + key));
+        },
+        [send, t]
+      );┬╖
+      const clearChat = useCallback(() => {
+        setMessages([{ id: Date.now(), sender: 'ai', text: t('home.aiWelcome'), time: now() }]);
+        showInfo(t('home.aiClearChat'));
+      }, [t]);┬╖
+      return (
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={[styles.container, { backgroundColor: isDark ? '#0E1611' : AppColors.accentGreen }]}
+        >
+          <LinearGradient
+            colors={isDark ? ['#0E1611', '#142017'] : ['#FFFFFF', '#F5FCF4', '#C7EFC2']}
+            start={{ x: 0.5, y: 0 }}
+            end={{ x: 0.5, y: 1 }}
+            style={StyleSheet.absoluteFillObject}
+          />┬╖
+          {/* Header */}
+          <View style={styles.header}>
+            <AIAvatarLarge />
+            <View style={{ flex: 1, marginLeft: 12 }}>
+              <Text
+                style={[
+                  styles.headerTitle,
+                  { color: isDark ? '#FFFFFF' : AppColors.textPrimary, fontSize: sp(17) },
+                ]}
+              >
+                {t('home.aiTitle')}
+              </Text>
+              <View style={styles.statusRow}>
+                <View style={styles.onlineDot} />
+                <Text
+                  style={[
+                    styles.headerStatus,
+                    {
+                      color: isDark ? AppColors.primaryLight : AppColors.forestAccent,
+                      fontSize: sp(12),
+                    },
+                  ]}
+                >
+                  {t('home.aiOnline')}
+                </Text>
+              </View>
+            </View>
+            <Pressable
+              onPress={clearChat}
+              hitSlop={8}
+              style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}
+            >
+              <Sparkles
+                color={isDark ? AppColors.darkTextSecondary : AppColors.textSecondary}
+                size={20}
+              />
+            </Pressable>
+          </View>┬╖
+          <ScrollView
+            ref={scrollRef}
+            style={styles.messages}
+            contentContainerStyle={{ padding: 16, paddingBottom: 16 }}
+            showsVerticalScrollIndicator={false}
+          >
+            {messages.map((m) => (
+              <MessageBubble
+                key={m.id}
+                message={m}
+                avatar={m.sender === 'ai' ? AIAvatar : UserAvatar}
+                showAvatar
+              />
+            ))}┬╖
+            {thinking ? <TypingIndicator isDark={isDark} /> : null}┬╖
+            {/* Suggestion chips (chß╗ë hiß╗ân thß╗ï khi mß╗¢i mß╗ƒ) */}
+            {messages.length === 1 && !thinking ? (
+              <View style={styles.suggestionsBlock}>
+                <Text
+                  style={[
+                    styles.suggestionsTitle,
+                    {
+                      color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                      fontSize: sp(12),
+                    },
+                  ]}
+                >
+                  {t('home.aiSuggestions')}
+                </Text>
+                <View style={styles.suggestionsWrap}>
+                  {suggestionKeys.map((k) => (
+                    <Pressable
+                      key={k}
+                      onPress={() => handleSuggestion(k)}
+                      style={({ pressed }) => [
+                        styles.suggestionChip,
+                        {
+                          backgroundColor: isDark ? '#19271E' : '#FFFFFF',
+                          borderColor: isDark ? '#2E4D36' : '#A5E69C',
+                          opacity: pressed ? 0.8 : 1,
+                        },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.suggestionText,
+                          {
+                            color: isDark ? AppColors.primaryLight : AppColors.forestAccent,
+                            fontSize: sp(12),
+                          },
+                        ]}
+                      >
+                        {t('home.' + k)}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </View>
+            ) : null}
+          </ScrollView>┬╖
+          <View
+            style={[
+              styles.inputBar,
+              {
+                backgroundColor: isDark ? '#0E1611' : '#FFFFFF',
+                borderTopColor: isDark ? '#2E4D36' : '#E3E8E4',
+              },
+            ]}
+          >
+            <TextInput
+              value={input}
+              onChangeText={setInput}
+              placeholder={t('home.aiAskPlaceholder')}
+              placeholderTextColor={AppColors.hintText}
+              style={[
+                styles.input,
+                { color: isDark ? '#FFFFFF' : AppColors.textPrimary, fontSize: sp(15) },
+              ]}
+              multiline
+            />
+            <Pressable
+              onPress={() => send()}
+              disabled={!input.trim()}
+              style={({ pressed }) => [
+                styles.sendBtn,
+                {
+                  backgroundColor: AppColors.primary,
+                  opacity: !input.trim() ? 0.5 : pressed ? 0.85 : 1,
+                },
+              ]}
+            >
+              <Send color=\"#FFFFFF\" size={20} strokeWidth={2.2} />
+            </Pressable>
+          </View>
+        </KeyboardAvoidingView>
+      );
+    };┬╖
+    const AIAvatarLarge = () => (
+      <View style={[styles.aiAvatarLarge, { backgroundColor: AppColors.primary }]}>
+        <Bot color=\"#FFFFFF\" size={24} strokeWidth={2.2} />
+      </View>
+    );┬╖
+    const styles = StyleSheet.create({
+      container: {
+        flex: 1,
+      },
+      header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 16,
+        paddingTop: 12, // safe area top chß╗½a qua LinearGradient (khoß║úng trß║»ng ─æß║ºu m├án)
+        paddingBottom: 12,
+      },
+      aiAvatarLarge: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        alignItems: 'center',
+        justifyContent: 'center',
+      },
+      headerTitle: {
+        fontFamily: FontFamily.bold,
+        fontWeight: FontWeights.bold,
+      },
+      statusRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: 2,
+      },
+      onlineDot: {
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+        backgroundColor: AppColors.primary,
+        marginRight: 4,
+      },
+      headerStatus: {
+        fontFamily: FontFamily.semibold,
+        fontWeight: FontWeights.semibold,
+      },
+      messages: {
+        flex: 1,
+      },
+      avatar: {
+        width: 28,
+        height: 28,
+        borderRadius: 14,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 8,
+      },
+      bubble: {
+        maxWidth: '75%',
+        padding: 12,
+        borderRadius: 18,
+        borderWidth: 1,
+      },
+      aiBubble: {
+        borderBottomLeftRadius: 4,
+      },
+      thinkingDots: {
+        flexDirection: 'row',
+        alignItems: 'center',
+      },
+      dot: {
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+        marginHorizontal: 2,
+      },
+      inputBar: {
+        flexDirection: 'row',
+        alignItems: 'flex-end',
+        padding: 12,
+        borderTopWidth: 1,
+      },
+      input: {
+        flex: 1,
+        fontFamily: FontFamily.regular,
+        minHeight: 40,
+        maxHeight: 100,
+        paddingHorizontal: 14,
+        paddingVertical: 10,
+      },
+      sendBtn: {
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginLeft: 8,
+      },
+      suggestionsBlock: {
+        marginTop: 20,
+        padding: 14,
+        borderRadius: 16,
+        backgroundColor: 'transparent',
+      },
+      suggestionsTitle: {
+        fontFamily: FontFamily.bold,
+        fontWeight: FontWeights.bold,
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
+        marginBottom: 10,
+      },
+      suggestionsWrap: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 8,
+      },
+      suggestionChip: {
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: 14,
+        borderWidth: 1,
+      },
+      suggestionText: {
+        fontFamily: FontFamily.medium,
+        fontWeight: FontWeights.medium,
+      },
+    });
+    "
+
+      152 |       const src = fs.readFileSync(path.join(ROOT, rel), 'utf8');
+      153 |       expect(src).toMatch(/from 'expo-linear-gradient'/);
+    > 154 |       expect(src).toMatch(/AppGradients\.getBackground/);
+          |                   ^
+      155 |     });
+      156 |
+      157 |     it(`${path.basename(rel)} KH├öNG hardcode mß║úng m├áu gradient ri├¬ng`, () => {
+
+      at Object.toMatch (src/presentation/screens/__tests__/P071ImportContracts.test.js:154:19)
+
+Test Suites: 1 failed, 1 total
+Tests:       4 failed, 18 passed, 22 total
+Snapshots:   0 total
+Time:        3.426 s, estimated 6 s
+Ran all test suites matching /src\\presentation\\screens\\__tests__\\P071ImportContracts/i.

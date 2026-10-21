@@ -17,6 +17,7 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  Pressable,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../theme/ThemeContext';
@@ -25,13 +26,13 @@ import { sp } from '../../utils/responsive';
 import { FontWeights, FontFamily } from '../../theme/typography';
 import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@react-navigation/native';
-import { FriggyAppBar } from '../../components/navigation/FriggyAppBar';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { BackCircleButton } from '../../components/common/BackCircleButton';
 import { CustomTextField } from '../../components/common/CustomTextField';
 import { CustomButton } from '../../components/common/CustomButton';
 import { showSuccess } from '../../utils/helpers';
 import { isValidPassword } from '../../utils/validators';
 import { Lock, ShieldCheck, KeyRound, Eye, EyeOff } from 'lucide-react-native';
-import { Pressable } from 'react-native';
 
 const LockIcon = ({ color = '#8C9890' }) => <Lock color={color} size={20} />;
 
@@ -39,6 +40,7 @@ export const ChangePasswordScreen = () => {
   const { isDark } = useTheme();
   const { t } = useTranslation();
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
   const [current, setCurrent] = useState('');
   const [next, setNext] = useState('');
   const [confirm, setConfirm] = useState('');
@@ -61,12 +63,9 @@ export const ChangePasswordScreen = () => {
   // Check password match
   const passwordMatch = useMemo(
     () => next.length > 0 && confirm.length > 0 && next === confirm,
-    [next, confirm],
+    [next, confirm]
   );
-  const passwordMismatch = useMemo(
-    () => confirm.length > 0 && next !== confirm,
-    [next, confirm],
-  );
+  const passwordMismatch = useMemo(() => confirm.length > 0 && next !== confirm, [next, confirm]);
 
   const iconColor = isDark ? AppColors.primaryLight : '#8C9890';
   const headerBg = isDark ? ['#19271E', '#1B2E21'] : ['#E8F5E9', '#FFFFFF'];
@@ -76,9 +75,14 @@ export const ChangePasswordScreen = () => {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      style={[styles.container, { backgroundColor: isDark ? '#0E1611' : '#FFFFFF' }]}
+      style={[
+        styles.container,
+        { backgroundColor: isDark ? AppColors.darkBackground : AppColors.lightBackground },
+      ]}
     >
-      <FriggyAppBar showBackButton onBackTap={() => navigation.goBack()} />
+      <View style={[styles.topBar, { paddingTop: insets.top + sp(12) }]}>
+        <BackCircleButton onPress={() => navigation.goBack()} />
+      </View>
       <ScrollView
         contentContainerStyle={styles.scroll}
         keyboardShouldPersistTaps="handled"
@@ -106,7 +110,10 @@ export const ChangePasswordScreen = () => {
           <Text
             style={[
               styles.headerSubtitle,
-              { color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary, fontSize: sp(13) },
+              {
+                color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                fontSize: sp(13),
+              },
             ]}
           >
             {t('home.passwordMin')}
@@ -116,7 +123,10 @@ export const ChangePasswordScreen = () => {
         <Text
           style={[
             styles.sectionTitle,
-            { color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary, fontSize: sp(11) },
+            {
+              color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+              fontSize: sp(11),
+            },
           ]}
         >
           THAY ĐỔI MẬT KHẨU
@@ -185,11 +195,17 @@ export const ChangePasswordScreen = () => {
                 },
               ]}
             >
-              <ShieldCheck color={isDark ? AppColors.primaryLight : AppColors.primaryDark} size={16} />
+              <ShieldCheck
+                color={isDark ? AppColors.primaryLight : AppColors.primaryDark}
+                size={16}
+              />
               <Text
                 style={[
                   styles.matchHintText,
-                  { color: isDark ? AppColors.primaryLight : AppColors.primaryDark, fontSize: sp(12) },
+                  {
+                    color: isDark ? AppColors.primaryLight : AppColors.primaryDark,
+                    fontSize: sp(12),
+                  },
                 ]}
               >
                 Mật khẩu khớp ✓
@@ -230,6 +246,10 @@ export const ChangePasswordScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  topBar: {
+    paddingHorizontal: sp(20),
+    paddingBottom: sp(8),
   },
   scroll: {
     paddingHorizontal: sp(20),

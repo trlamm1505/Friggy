@@ -42,7 +42,9 @@ export const useAsyncData = (fetcher, initialValue = null, deps = []) => {
         setLoading(false);
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // `deps` do caller truyền vào (mảng động) nên không thể là array literal.
+    // exhaustive-deps + use-memo đều yêu cầu literal -> tắt tại chỗ này.
+    // eslint-disable-next-line react-hooks/exhaustive-deps, react-hooks/use-memo
   }, deps);
 
   useEffect(() => {
@@ -63,7 +65,7 @@ export const useFridgeItems = (filters) => {
   return useAsyncData(
     (s) => s.fridgeService.getItems(filters),
     [],
-    [JSON.stringify(filters || {})],
+    [JSON.stringify(filters || {})]
   );
 };
 
@@ -89,7 +91,7 @@ export const useRecipesFiltered = (filters) => {
   return useAsyncData(
     (s) => s.recipeService.getRecipesFiltered(filters),
     [],
-    [JSON.stringify(filters || {})],
+    [JSON.stringify(filters || {})]
   );
 };
 
@@ -98,11 +100,7 @@ export const useRecipesFiltered = (filters) => {
  * @param {string} id
  */
 export const useRecipeById = (id) => {
-  return useAsyncData(
-    (s) => s.recipeService.getRecipeById(id),
-    null,
-    [id],
-  );
+  return useAsyncData((s) => s.recipeService.getRecipeById(id), null, [id]);
 };
 
 /**
@@ -116,10 +114,12 @@ export const useRecipeSuggestions = () => {
  * Hook lấy weekly stats
  */
 export const useWeeklyStats = () => {
-  return useAsyncData(
-    (s) => s.recipeService.getWeeklyStats(),
-    { week: [], data: [], total: 0, previousWeek: 0 },
-  );
+  return useAsyncData((s) => s.recipeService.getWeeklyStats(), {
+    week: [],
+    data: [],
+    total: 0,
+    previousWeek: 0,
+  });
 };
 
 /**
@@ -129,7 +129,7 @@ export const useNotifications = (filters) => {
   return useAsyncData(
     (s) => s.notificationService.getNotifications(filters),
     [],
-    [JSON.stringify(filters || {})],
+    [JSON.stringify(filters || {})]
   );
 };
 
@@ -144,18 +144,17 @@ export const useUnreadCount = () => {
  * Hook lấy user profile
  */
 export const useUserProfile = () => {
-  return useAsyncData(
-    (s) => s.userService.getProfile(),
-    { id: '', name: '', email: '' },
-  );
+  return useAsyncData((s) => s.userService.getProfile(), { id: '', name: '', email: '' });
 };
 
 /**
  * Hook lấy current subscription plan
  */
 export const useCurrentPlan = () => {
-  return useAsyncData(
-    (s) => s.userService.getCurrentPlan(),
-    { name: 'free', displayName: 'Miễn phí', price: 0, currency: 'VND' },
-  );
+  return useAsyncData((s) => s.userService.getCurrentPlan(), {
+    name: 'free',
+    displayName: 'Miễn phí',
+    price: 0,
+    currency: 'VND',
+  });
 };

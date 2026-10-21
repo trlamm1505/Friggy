@@ -9,15 +9,8 @@
  * - Action bar: Favorite + Cook Now + Share
  */
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Image,
-  ScrollView,
-  Pressable,
-} from 'react-native';
+import React, { useState, useMemo, useCallback } from 'react';
+import { View, Text, StyleSheet, Image, ScrollView, Pressable } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../theme/ThemeContext';
 import { AppColors } from '../../theme/colors';
@@ -25,7 +18,19 @@ import { sp } from '../../utils/responsive';
 import { FontFamily, FontWeights } from '../../theme/typography';
 import { useTranslation } from 'react-i18next';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { ChevronLeft, Clock, Users, ChefHat, Heart, Share2, Star, Flame, Beef, Wheat, Droplet, Plus, Minus } from 'lucide-react-native';
+import {
+  ChevronLeft,
+  Clock,
+  Users,
+  ChefHat,
+  Heart,
+  Share2,
+  Star,
+  Flame,
+  Beef,
+  Wheat,
+  Droplet,
+} from 'lucide-react-native';
 import { CustomButton } from '../../components/common/CustomButton';
 import { SegmentedControl } from '../../components/common/SegmentedControl';
 import { Stepper } from '../../components/common/Stepper';
@@ -99,14 +104,26 @@ export const RecipeDetailScreen = () => {
 
   const recipe = routeRecipe || fetchedRecipe || FALLBACK_RECIPE;
 
-  useEffect(() => {
-    if (recipe?.servings) setServings(recipe.servings);
-  }, [recipe?.servings]);
+  // servings là "derived state" từ recipe.servings, nhưng người dùng có thể
+  // chỉnh bằng Stepper -> cần giữ state cục bộ.
+  // Theo pattern "adjust state during render" của React: khi recipe.servings
+  // đổi (đổi món / fetch xong) thì đồng bộ lại giá trị đang hiển thị.
+  // Trước đây dùng useEffect -> setState trong effect (react-hooks/set-state-in-effect).
+  const [syncedServings, setSyncedServings] = useState(recipe?.servings);
+  if (recipe?.servings && recipe.servings !== syncedServings) {
+    setSyncedServings(recipe.servings);
+    setServings(recipe.servings);
+  }
 
   // Tính match percent
   const matchInfo = useMemo(() => {
     if (!recipe?.ingredients || !fridgeItems) {
-      return { haveCount: 0, needCount: recipe?.ingredients?.length || 0, percent: 0, missingItems: [] };
+      return {
+        haveCount: 0,
+        needCount: recipe?.ingredients?.length || 0,
+        percent: 0,
+        missingItems: [],
+      };
     }
     const fridgeNames = fridgeItems.map((it) => it.name.toLowerCase());
     const have = [];
@@ -114,14 +131,20 @@ export const RecipeDetailScreen = () => {
     for (const ing of recipe.ingredients) {
       const name = typeof ing === 'string' ? ing : ing.name;
       const found = fridgeNames.some(
-        (n) => n.includes(name.toLowerCase()) || name.toLowerCase().includes(n),
+        (n) => n.includes(name.toLowerCase()) || name.toLowerCase().includes(n)
       );
       if (found) have.push(name);
       else missing.push(name);
     }
     const total = recipe.ingredients.length;
     const percent = total > 0 ? Math.round((have.length / total) * 100) : 0;
-    return { haveCount: have.length, needCount: missing.length, percent, missingItems: missing, haveItems: have };
+    return {
+      haveCount: have.length,
+      needCount: missing.length,
+      percent,
+      missingItems: missing,
+      haveItems: have,
+    };
   }, [recipe, fridgeItems]);
 
   const isIngredientInFridge = useCallback(
@@ -129,10 +152,10 @@ export const RecipeDetailScreen = () => {
       if (!fridgeItems) return false;
       const lower = ingredientName.toLowerCase();
       return fridgeItems.some(
-        (it) => it.name.toLowerCase().includes(lower) || lower.includes(it.name.toLowerCase()),
+        (it) => it.name.toLowerCase().includes(lower) || lower.includes(it.name.toLowerCase())
       );
     },
-    [fridgeItems],
+    [fridgeItems]
   );
 
   // Scale ingredients theo servings
@@ -188,7 +211,10 @@ export const RecipeDetailScreen = () => {
 
   return (
     <View style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 120 }}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 120 }}
+      >
         {/* Hero */}
         <View style={styles.hero}>
           {imageSource ? (
@@ -201,14 +227,15 @@ export const RecipeDetailScreen = () => {
               <ChefHat color={isDark ? AppColors.primaryLight : AppColors.primary} size={80} />
             </LinearGradient>
           )}
-          <LinearGradient
-            colors={['rgba(0,0,0,0.5)', 'transparent']}
-            style={styles.heroOverlay}
-          />
+          <LinearGradient colors={['rgba(0,0,0,0.5)', 'transparent']} style={styles.heroOverlay} />
           <Pressable onPress={() => navigation.goBack()} style={styles.backBtn} hitSlop={8}>
             <ChevronLeft color="#FFFFFF" size={24} />
           </Pressable>
-          <Pressable onPress={() => showSuccess('Đã sao chép link')} style={[styles.backBtn, { left: undefined, right: 16 }]} hitSlop={8}>
+          <Pressable
+            onPress={() => showSuccess('Đã sao chép link')}
+            style={[styles.backBtn, { left: undefined, right: 16 }]}
+            hitSlop={8}
+          >
             <Share2 color="#FFFFFF" size={20} />
           </Pressable>
 
@@ -220,7 +247,12 @@ export const RecipeDetailScreen = () => {
         </View>
 
         <View style={[styles.body, { backgroundColor: isDark ? '#0E1611' : '#FFFFFF' }]}>
-          <Text style={[styles.title, { color: isDark ? '#FFFFFF' : AppColors.textPrimary, fontSize: sp(24) }]}>
+          <Text
+            style={[
+              styles.title,
+              { color: isDark ? '#FFFFFF' : AppColors.textPrimary, fontSize: sp(24) },
+            ]}
+          >
             {recipe.name}
           </Text>
 
@@ -228,10 +260,23 @@ export const RecipeDetailScreen = () => {
           {recipe.rating ? (
             <View style={styles.ratingRow}>
               <Star color="#FFB300" size={14} fill="#FFB300" />
-              <Text style={[styles.ratingText, { color: isDark ? '#FFFFFF' : AppColors.textPrimary, fontSize: sp(13) }]}>
+              <Text
+                style={[
+                  styles.ratingText,
+                  { color: isDark ? '#FFFFFF' : AppColors.textPrimary, fontSize: sp(13) },
+                ]}
+              >
                 {recipe.rating}
               </Text>
-              <Text style={[styles.reviewText, { color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary, fontSize: sp(12) }]}>
+              <Text
+                style={[
+                  styles.reviewText,
+                  {
+                    color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                    fontSize: sp(12),
+                  },
+                ]}
+              >
                 ({recipe.reviews} đánh giá)
               </Text>
             </View>
@@ -240,13 +285,23 @@ export const RecipeDetailScreen = () => {
           <View style={styles.metaRow}>
             <View style={[styles.metaItem, { backgroundColor: isDark ? '#19271E' : '#E8F5E9' }]}>
               <Clock color={isDark ? AppColors.primaryLight : AppColors.forestAccent} size={16} />
-              <Text style={[styles.metaText, { color: isDark ? '#FFFFFF' : AppColors.textPrimary, fontSize: sp(13) }]}>
+              <Text
+                style={[
+                  styles.metaText,
+                  { color: isDark ? '#FFFFFF' : AppColors.textPrimary, fontSize: sp(13) },
+                ]}
+              >
                 {recipe.cookTime} {t('home.minutes')}
               </Text>
             </View>
             <View style={[styles.metaItem, { backgroundColor: isDark ? '#19271E' : '#E8F5E9' }]}>
               <Users color={isDark ? AppColors.primaryLight : AppColors.forestAccent} size={16} />
-              <Text style={[styles.metaText, { color: isDark ? '#FFFFFF' : AppColors.textPrimary, fontSize: sp(13) }]}>
+              <Text
+                style={[
+                  styles.metaText,
+                  { color: isDark ? '#FFFFFF' : AppColors.textPrimary, fontSize: sp(13) },
+                ]}
+              >
                 {servings} {t('home.people')}
               </Text>
             </View>
@@ -258,12 +313,22 @@ export const RecipeDetailScreen = () => {
               style={[
                 styles.matchCard,
                 {
-                  backgroundColor: matchInfo.percent === 100
-                    ? isDark ? '#1B3324' : '#E8F5E9'
-                    : isDark ? '#3D2E1A' : '#FFF3E0',
-                  borderColor: matchInfo.percent === 100
-                    ? isDark ? '#2E4D36' : '#A5D6A7'
-                    : isDark ? '#5E4A35' : '#FFCC80',
+                  backgroundColor:
+                    matchInfo.percent === 100
+                      ? isDark
+                        ? '#1B3324'
+                        : '#E8F5E9'
+                      : isDark
+                        ? '#3D2E1A'
+                        : '#FFF3E0',
+                  borderColor:
+                    matchInfo.percent === 100
+                      ? isDark
+                        ? '#2E4D36'
+                        : '#A5D6A7'
+                      : isDark
+                        ? '#5E4A35'
+                        : '#FFCC80',
                 },
               ]}
             >
@@ -272,9 +337,14 @@ export const RecipeDetailScreen = () => {
                   style={[
                     styles.matchTitle,
                     {
-                      color: matchInfo.percent === 100
-                        ? isDark ? AppColors.primaryLight : AppColors.primaryDark
-                        : isDark ? '#FFB74D' : '#E65100',
+                      color:
+                        matchInfo.percent === 100
+                          ? isDark
+                            ? AppColors.primaryLight
+                            : AppColors.primaryDark
+                          : isDark
+                            ? '#FFB74D'
+                            : '#E65100',
                     },
                   ]}
                 >
@@ -285,7 +355,10 @@ export const RecipeDetailScreen = () => {
                 <Text
                   style={[
                     styles.matchSub,
-                    { color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary, fontSize: sp(11) },
+                    {
+                      color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                      fontSize: sp(11),
+                    },
                   ]}
                 >
                   Có sẵn: {matchInfo.haveCount}/{recipe.ingredients.length}
@@ -302,7 +375,12 @@ export const RecipeDetailScreen = () => {
                     },
                   ]}
                 >
-                  <Text style={[styles.addListText, { color: isDark ? '#FFB74D' : '#E65100', fontSize: sp(11) }]}>
+                  <Text
+                    style={[
+                      styles.addListText,
+                      { color: isDark ? '#FFB74D' : '#E65100', fontSize: sp(11) },
+                    ]}
+                  >
                     + Thêm vào DS
                   </Text>
                 </Pressable>
@@ -312,11 +390,7 @@ export const RecipeDetailScreen = () => {
 
           {/* Tabs */}
           <View style={{ marginTop: sp(24) }}>
-            <SegmentedControl
-              options={TABS}
-              selectedKey={activeTab}
-              onSelect={setActiveTab}
-            />
+            <SegmentedControl options={TABS} selectedKey={activeTab} onSelect={setActiveTab} />
           </View>
 
           {/* Tab content */}
@@ -333,10 +407,23 @@ export const RecipeDetailScreen = () => {
                 ]}
               >
                 <View>
-                  <Text style={[styles.servingsLabel, { color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary, fontSize: sp(11) }]}>
+                  <Text
+                    style={[
+                      styles.servingsLabel,
+                      {
+                        color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                        fontSize: sp(11),
+                      },
+                    ]}
+                  >
                     SỐ NGƯỜI ĂN
                   </Text>
-                  <Text style={[styles.servingsValue, { color: isDark ? '#FFFFFF' : AppColors.textPrimary, fontSize: sp(20) }]}>
+                  <Text
+                    style={[
+                      styles.servingsValue,
+                      { color: isDark ? '#FFFFFF' : AppColors.textPrimary, fontSize: sp(20) },
+                    ]}
+                  >
                     {servings} người
                   </Text>
                 </View>
@@ -349,17 +436,14 @@ export const RecipeDetailScreen = () => {
                   return (
                     <View
                       key={i}
-                      style={[
-                        styles.ingRow,
-                        { backgroundColor: isDark ? '#19271E' : '#F4F7F4' },
-                      ]}
+                      style={[styles.ingRow, { backgroundColor: isDark ? '#19271E' : '#F4F7F4' }]}
                     >
                       <View
                         style={[
                           styles.ingCheck,
                           {
                             backgroundColor: have ? AppColors.primary : 'transparent',
-                            borderColor: have ? AppColors.primary : (isDark ? '#2E4D36' : '#C7D6CB'),
+                            borderColor: have ? AppColors.primary : isDark ? '#2E4D36' : '#C7D6CB',
                           },
                         ]}
                       >
@@ -380,7 +464,10 @@ export const RecipeDetailScreen = () => {
                         <Text
                           style={[
                             styles.ingAmount,
-                            { color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary, fontSize: sp(12) },
+                            {
+                              color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                              fontSize: sp(12),
+                            },
                           ]}
                         >
                           {ing.amount} {ing.unit}
@@ -433,10 +520,23 @@ export const RecipeDetailScreen = () => {
                 ]}
               >
                 <Flame color={isDark ? AppColors.primaryLight : AppColors.primary} size={28} />
-                <Text style={[styles.nutritionBig, { color: isDark ? '#FFFFFF' : AppColors.textPrimary, fontSize: sp(36) }]}>
+                <Text
+                  style={[
+                    styles.nutritionBig,
+                    { color: isDark ? '#FFFFFF' : AppColors.textPrimary, fontSize: sp(36) },
+                  ]}
+                >
                   {recipe.nutrition.calories}
                 </Text>
-                <Text style={[styles.nutritionLabel, { color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary, fontSize: sp(12) }]}>
+                <Text
+                  style={[
+                    styles.nutritionLabel,
+                    {
+                      color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                      fontSize: sp(12),
+                    },
+                  ]}
+                >
                   kcal / {servings} người
                 </Text>
               </View>
@@ -479,7 +579,12 @@ export const RecipeDetailScreen = () => {
                       style={[styles.tipRow, { backgroundColor: isDark ? '#19271E' : '#F4F7F4' }]}
                     >
                       <Text style={[styles.tipBullet, { color: AppColors.primary }]}>💡</Text>
-                      <Text style={[styles.tipText, { color: isDark ? '#FFFFFF' : AppColors.textPrimary, fontSize: sp(13) }]}>
+                      <Text
+                        style={[
+                          styles.tipText,
+                          { color: isDark ? '#FFFFFF' : AppColors.textPrimary, fontSize: sp(13) },
+                        ]}
+                      >
                         {tip}
                       </Text>
                     </View>
@@ -492,12 +597,28 @@ export const RecipeDetailScreen = () => {
                   {recipe.variants.map((variant, i) => (
                     <View
                       key={i}
-                      style={[styles.variantRow, { backgroundColor: isDark ? '#19271E' : '#F4F7F4' }]}
+                      style={[
+                        styles.variantRow,
+                        { backgroundColor: isDark ? '#19271E' : '#F4F7F4' },
+                      ]}
                     >
-                      <Text style={[styles.variantName, { color: isDark ? '#FFFFFF' : AppColors.textPrimary, fontSize: sp(14) }]}>
+                      <Text
+                        style={[
+                          styles.variantName,
+                          { color: isDark ? '#FFFFFF' : AppColors.textPrimary, fontSize: sp(14) },
+                        ]}
+                      >
                         {variant.name}
                       </Text>
-                      <Text style={[styles.variantDesc, { color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary, fontSize: sp(12) }]}>
+                      <Text
+                        style={[
+                          styles.variantDesc,
+                          {
+                            color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                            fontSize: sp(12),
+                          },
+                        ]}
+                      >
                         {variant.description}
                       </Text>
                     </View>
@@ -510,7 +631,15 @@ export const RecipeDetailScreen = () => {
       </ScrollView>
 
       {/* Bottom action bar */}
-      <View style={[styles.bottom, { backgroundColor: isDark ? '#0E1611' : '#FFFFFF', borderTopColor: isDark ? '#2E4D36' : '#E3E8E4' }]}>
+      <View
+        style={[
+          styles.bottom,
+          {
+            backgroundColor: isDark ? '#0E1611' : '#FFFFFF',
+            borderTopColor: isDark ? '#2E4D36' : '#E3E8E4',
+          },
+        ]}
+      >
         <Pressable
           onPress={toggleFavorite}
           style={({ pressed }) => [
@@ -540,20 +669,26 @@ export const RecipeDetailScreen = () => {
 };
 
 const NutritionItem = ({ icon: Icon, label, value, unit, color, isDark }) => (
-  <View
-    style={[
-      styles.nutritionItem,
-      { backgroundColor: isDark ? '#19271E' : '#F4F7F4' },
-    ]}
-  >
+  <View style={[styles.nutritionItem, { backgroundColor: isDark ? '#19271E' : '#F4F7F4' }]}>
     <View style={[styles.nutritionIcon, { backgroundColor: color + '20' }]}>
       <Icon color={color} size={18} />
     </View>
-    <Text style={[styles.nutritionItemLabel, { color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary, fontSize: sp(11) }]}>
+    <Text
+      style={[
+        styles.nutritionItemLabel,
+        { color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary, fontSize: sp(11) },
+      ]}
+    >
       {label}
     </Text>
-    <Text style={[styles.nutritionItemValue, { color: isDark ? '#FFFFFF' : AppColors.textPrimary, fontSize: sp(20) }]}>
-      {value}{unit}
+    <Text
+      style={[
+        styles.nutritionItemValue,
+        { color: isDark ? '#FFFFFF' : AppColors.textPrimary, fontSize: sp(20) },
+      ]}
+    >
+      {value}
+      {unit}
     </Text>
   </View>
 );

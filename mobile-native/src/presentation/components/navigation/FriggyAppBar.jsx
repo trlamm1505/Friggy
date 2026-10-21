@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { Bell, ChevronLeft, Leaf } from 'lucide-react-native';
 import { useTheme } from '../../theme/ThemeContext';
@@ -6,21 +6,28 @@ import { AppColors } from '../../theme/colors';
 import { sp } from '../../utils/responsive';
 import { FontWeights, FontFamily } from '../../theme/typography';
 import { useNavigation } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Routes } from '../../../shared/constants/routes';
 import notificationsMock from '../../../shared/mocks/notifications.json';
 
-export const FriggyAppBar = ({ showBackButton = false, onBackTap, onNotificationTap, backgroundColor, unreadCount: propUnread }) => {
+export const FriggyAppBar = ({
+  showBackButton = false,
+  onBackTap,
+  onNotificationTap,
+  backgroundColor,
+  unreadCount: propUnread,
+}) => {
   const { isDark } = useTheme();
   const navigation = useNavigation();
-  const [unreadCount, setUnreadCount] = useState(propUnread ?? 0);
+  const insets = useSafeAreaInsets();
 
-  useEffect(() => {
-    if (propUnread === undefined) {
-      setUnreadCount(notificationsMock.notifications.filter((n) => !n.read).length);
-    } else {
-      setUnreadCount(propUnread);
-    }
-  }, [propUnread]);
+  // unreadCount được SUY RA thay vì giữ state + effect:
+  // - nếu caller truyền propUnread -> dùng prop
+  // - nếu không -> đếm từ mock notifications
+  // localUnread chỉ dùng để ghi đè sau khi bấm chuông (đọc lại mock).
+  const mockUnread = notificationsMock.notifications.filter((n) => !n.read).length;
+  const [localUnread, setLocalUnread] = useState(null);
+  const unreadCount = localUnread ?? (propUnread !== undefined ? propUnread : mockUnread);
 
   const handleNotification = async () => {
     if (onNotificationTap) {
@@ -28,11 +35,21 @@ export const FriggyAppBar = ({ showBackButton = false, onBackTap, onNotification
     } else {
       await navigation.navigate(Routes.Notifications);
     }
-    setUnreadCount(notificationsMock.notifications.filter((n) => !n.read).length);
+    setLocalUnread(mockUnread);
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: backgroundColor || 'transparent' }]}>
+    <View
+      style={[
+        styles.container,
+        {
+          backgroundColor: backgroundColor || 'transparent',
+          // P0.7.2: chừa chỗ cho status bar + notch (insets.top > 0 trên iPhone/Android
+          // có tai thỏ). Trước đây cứng 4px nên header tràn lên dưới status bar.
+          paddingTop: Math.max(insets.top, sp(8)) + sp(4),
+        },
+      ]}
+    >
       <View style={styles.row}>
         <View style={styles.left}>
           {showBackButton ? (
@@ -41,10 +58,7 @@ export const FriggyAppBar = ({ showBackButton = false, onBackTap, onNotification
               style={styles.backButton}
               hitSlop={8}
             >
-              <ChevronLeft
-                color={isDark ? '#FFFFFF' : AppColors.textPrimary}
-                size={28}
-              />
+              <ChevronLeft color={isDark ? '#FFFFFF' : AppColors.textPrimary} size={28} />
             </Pressable>
           ) : null}
           <View style={styles.logoRow}>
@@ -58,7 +72,9 @@ export const FriggyAppBar = ({ showBackButton = false, onBackTap, onNotification
               ]}
             >
               <Text style={{ color: isDark ? '#FFFFFF' : AppColors.textPrimary }}>Fri</Text>
-              <Text style={{ color: isDark ? AppColors.primaryLight : AppColors.primary }}>ggy</Text>
+              <Text style={{ color: isDark ? AppColors.primaryLight : AppColors.primary }}>
+                ggy
+              </Text>
             </Text>
             <View
               style={[
@@ -81,10 +97,7 @@ export const FriggyAppBar = ({ showBackButton = false, onBackTap, onNotification
               },
             ]}
           >
-            <Bell
-              color={isDark ? AppColors.primaryLight : '#2E7D32'}
-              size={22}
-            />
+            <Bell color={isDark ? AppColors.primaryLight : '#2E7D32'} size={22} />
             {unreadCount > 0 ? (
               <View
                 style={[
@@ -107,8 +120,8 @@ export const FriggyAppBar = ({ showBackButton = false, onBackTap, onNotification
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 16,
-    paddingVertical: 4,
+    paddingHorizontal: sp(16),
+    paddingBottom: sp(4),
   },
   row: {
     flexDirection: 'row',

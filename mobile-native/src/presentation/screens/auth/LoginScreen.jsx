@@ -25,7 +25,8 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../theme/ThemeContext';
 import { AppColors } from '../../theme/colors';
-import { sp, sw, sh } from '../../utils/responsive';
+import { AppGradients } from '../../theme/gradients';
+import { sp } from '../../utils/responsive';
 import { FontWeights, FontFamily } from '../../theme/typography';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
@@ -126,14 +127,10 @@ export const LoginScreen = () => {
         {/* Top gradient header */}
         <View style={styles.headerWrap}>
           <LinearGradient
-            colors={
-              isDark
-                ? ['#0E1611', '#142017', '#1B2E21']
-                : ['#FFFFFF', '#F5FCF4', '#C7EFC2', '#86D978']
-            }
-            stops={isDark ? [0.0, 0.5, 1.0] : [0.0, 0.3, 0.7, 1.0]}
-            start={{ x: 0.5, y: 0 }}
-            end={{ x: 0.5, y: 1 }}
+            colors={AppGradients.getBackground(isDark).colors}
+            locations={AppGradients.getBackground(isDark).locations}
+            start={AppGradients.getBackground(isDark).start}
+            end={AppGradients.getBackground(isDark).end}
             style={[StyleSheet.absoluteFillObject, { height: topHeaderHeight + 60 }]}
           />
           <View style={[styles.mascotWrap, { top: topPadding + 55, height: topHeaderHeight - 35 }]}>
@@ -144,17 +141,13 @@ export const LoginScreen = () => {
             />
           </View>
           <View style={[styles.topBar, { top: topPadding + 12, left: 16 }]}>
-            <Pressable
-              onPress={() => navigation.goBack()}
-              style={styles.backRow}
-            >
-              <ChevronLeft
-                color={isDark ? '#FFFFFF' : AppColors.textPrimary}
-                size={18}
-              />
+            <Pressable onPress={() => navigation.goBack()} style={styles.backRow}>
+              <ChevronLeft color={isDark ? '#FFFFFF' : AppColors.textPrimary} size={18} />
               <Text style={[styles.brand, { fontSize: sp(26), marginLeft: 4 }]}>
                 <Text style={{ color: isDark ? '#FFFFFF' : AppColors.textPrimary }}>Fri</Text>
-                <Text style={{ color: isDark ? AppColors.primaryLight : AppColors.primary }}>ggy</Text>
+                <Text style={{ color: isDark ? AppColors.primaryLight : AppColors.primary }}>
+                  ggy
+                </Text>
               </Text>
             </Pressable>
           </View>
@@ -191,7 +184,9 @@ export const LoginScreen = () => {
               onChangeText={setEmail}
               keyboardType="email-address"
               error={errors.email}
-              prefixIcon={(props) => <Mail {...props} color={isDark ? AppColors.primaryLight : '#8C9890'} size={22} />}
+              prefixIcon={(props) => (
+                <Mail {...props} color={isDark ? AppColors.primaryLight : '#8C9890'} size={22} />
+              )}
             />
           </View>
           <View style={{ marginTop: 12 }}>
@@ -201,7 +196,9 @@ export const LoginScreen = () => {
               onChangeText={setPassword}
               secureTextEntry={isSecure}
               error={errors.password}
-              prefixIcon={(props) => <Lock {...props} color={isDark ? AppColors.primaryLight : '#8C9890'} size={22} />}
+              prefixIcon={(props) => (
+                <Lock {...props} color={isDark ? AppColors.primaryLight : '#8C9890'} size={22} />
+              )}
               suffixIcon={
                 <Pressable onPress={() => setIsSecure(!isSecure)} hitSlop={8}>
                   {isSecure ? (

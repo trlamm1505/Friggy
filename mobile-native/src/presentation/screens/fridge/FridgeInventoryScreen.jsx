@@ -13,17 +13,11 @@
  */
 
 import React, { useState, useMemo, useCallback } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  Pressable,
-  RefreshControl,
-} from 'react-native';
+import { View, Text, StyleSheet, FlatList, Pressable, RefreshControl } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../theme/ThemeContext';
-import { AppColors, AppGradients } from '../../theme/colors';
+import { AppColors } from '../../theme/colors';
+import { AppGradients } from '../../theme/gradients';
 import { sp } from '../../utils/responsive';
 import { FontWeights, FontFamily } from '../../theme/typography';
 import { useTranslation } from 'react-i18next';
@@ -140,16 +134,46 @@ export const FridgeInventoryScreen = ({ fridge, isEmbedded = false, onRename }) 
 
   const statusOptions = [
     { key: STATUS_KEYS.ALL, label: t('home.all'), count: statusCounts.all },
-    { key: STATUS_KEYS.FRESH, label: t('home.filterFresh'), count: statusCounts.fresh, color: AppColors.primary },
-    { key: STATUS_KEYS.EXPIRING, label: t('home.filterExpiring'), count: statusCounts.expiring, color: '#FF9800' },
+    {
+      key: STATUS_KEYS.FRESH,
+      label: t('home.filterFresh'),
+      count: statusCounts.fresh,
+      color: AppColors.primary,
+    },
+    {
+      key: STATUS_KEYS.EXPIRING,
+      label: t('home.filterExpiring'),
+      count: statusCounts.expiring,
+      color: '#FF9800',
+    },
   ];
 
   const categoryOptions = [
     { key: CATEGORY_KEYS.ALL, label: t('home.categoryAll'), count: categoryCounts.all },
-    { key: CATEGORY_KEYS.VEGETABLE, label: t('home.categoryVegetable'), count: categoryCounts.vegetable, color: '#4CAF50' },
-    { key: CATEGORY_KEYS.MEAT, label: t('home.categoryMeat'), count: categoryCounts.meat, color: '#E57373' },
-    { key: CATEGORY_KEYS.DAIRY, label: t('home.categoryDairy'), count: categoryCounts.dairy, color: '#FFB300' },
-    { key: CATEGORY_KEYS.FRUIT, label: t('home.categoryFruit'), count: categoryCounts.fruit, color: '#FF7043' },
+    {
+      key: CATEGORY_KEYS.VEGETABLE,
+      label: t('home.categoryVegetable'),
+      count: categoryCounts.vegetable,
+      color: '#4CAF50',
+    },
+    {
+      key: CATEGORY_KEYS.MEAT,
+      label: t('home.categoryMeat'),
+      count: categoryCounts.meat,
+      color: '#E57373',
+    },
+    {
+      key: CATEGORY_KEYS.DAIRY,
+      label: t('home.categoryDairy'),
+      count: categoryCounts.dairy,
+      color: '#FFB300',
+    },
+    {
+      key: CATEGORY_KEYS.FRUIT,
+      label: t('home.categoryFruit'),
+      count: categoryCounts.fruit,
+      color: '#FF7043',
+    },
   ];
 
   const sortOptions = [
@@ -173,23 +197,24 @@ export const FridgeInventoryScreen = ({ fridge, isEmbedded = false, onRename }) 
   // Loading state lần đầu
   if (loading && !items) {
     return (
-      <View style={[styles.container, { backgroundColor: isDark ? '#0E1611' : '#F4FAF2' }]}>
+      <View style={styles.container}>
         <LinearGradient
           colors={AppGradients.getBackground(isDark).colors}
           locations={AppGradients.getBackground(isDark).locations}
-          start={{ x: 0.5, y: 0 }}
-          end={{ x: 0.5, y: 1 }}
+          start={AppGradients.getBackground(isDark).start}
+          end={AppGradients.getBackground(isDark).end}
           style={StyleSheet.absoluteFillObject}
         />
         {!isEmbedded && <FriggyAppBar showBackButton onBackTap={() => navigation.goBack()} />}
-        <View style={styles.header}>
-          <View style={{ flex: 1 }}>
-            <Skeleton width="60%" height={sp(20)} style={{ marginBottom: sp(8) }} />
-            <Skeleton width="40%" height={sp(13)} />
-          </View>
-        </View>
-        <View style={{ paddingHorizontal: sp(20), gap: sp(10) }}>
-          <Skeleton width="100%" height={sp(42)} borderRadius={sp(12)} style={{ marginBottom: sp(8) }} />
+        <View style={{ paddingHorizontal: sp(20), gap: sp(10), marginTop: sp(8) }}>
+          <Skeleton width="60%" height={sp(20)} style={{ marginBottom: sp(8) }} />
+          <Skeleton width="40%" height={sp(13)} />
+          <Skeleton
+            width="100%"
+            height={sp(42)}
+            borderRadius={sp(12)}
+            style={{ marginTop: sp(8), marginBottom: sp(8) }}
+          />
           {[0, 1, 2, 3, 4].map((i) => (
             <Skeleton key={i} width="100%" height={sp(72)} borderRadius={sp(14)} />
           ))}
@@ -201,12 +226,12 @@ export const FridgeInventoryScreen = ({ fridge, isEmbedded = false, onRename }) 
   // Error state
   if (error && !items) {
     return (
-      <View style={[styles.container, { backgroundColor: isDark ? '#0E1611' : '#F4FAF2' }]}>
+      <View style={styles.container}>
         <LinearGradient
           colors={AppGradients.getBackground(isDark).colors}
           locations={AppGradients.getBackground(isDark).locations}
-          start={{ x: 0.5, y: 0 }}
-          end={{ x: 0.5, y: 1 }}
+          start={AppGradients.getBackground(isDark).start}
+          end={AppGradients.getBackground(isDark).end}
           style={StyleSheet.absoluteFillObject}
         />
         {!isEmbedded && <FriggyAppBar showBackButton onBackTap={() => navigation.goBack()} />}
@@ -215,20 +240,21 @@ export const FridgeInventoryScreen = ({ fridge, isEmbedded = false, onRename }) 
     );
   }
 
-  const hasFilters = search || statusFilter !== STATUS_KEYS.ALL || categoryFilter !== CATEGORY_KEYS.ALL;
+  const hasFilters =
+    search || statusFilter !== STATUS_KEYS.ALL || categoryFilter !== CATEGORY_KEYS.ALL;
 
   return (
-    <View style={[styles.container, { backgroundColor: isDark ? '#0E1611' : '#F4FAF2' }]}>
+    <View style={styles.container}>
       <LinearGradient
         colors={AppGradients.getBackground(isDark).colors}
         locations={AppGradients.getBackground(isDark).locations}
-        start={{ x: 0.5, y: 0 }}
-        end={{ x: 0.5, y: 1 }}
+        start={AppGradients.getBackground(isDark).start}
+        end={AppGradients.getBackground(isDark).end}
         style={StyleSheet.absoluteFillObject}
       />
       {!isEmbedded && <FriggyAppBar showBackButton onBackTap={() => navigation.goBack()} />}
 
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: sp(8) }]}>
         <View style={{ flex: 1 }}>
           <View style={styles.titleRow}>
             <Refrigerator
@@ -236,10 +262,7 @@ export const FridgeInventoryScreen = ({ fridge, isEmbedded = false, onRename }) 
               size={22}
             />
             <Text
-              style={[
-                styles.title,
-                { color: isDark ? '#FFFFFF' : '#0D4314', fontSize: sp(22) },
-              ]}
+              style={[styles.title, { color: isDark ? '#FFFFFF' : '#0D4314', fontSize: sp(22) }]}
               numberOfLines={1}
             >
               {fridge?.name || t('home.myFridge')}
@@ -248,7 +271,10 @@ export const FridgeInventoryScreen = ({ fridge, isEmbedded = false, onRename }) 
           <Text
             style={[
               styles.subtitle,
-              { color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary, fontSize: sp(13) },
+              {
+                color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                fontSize: sp(13),
+              },
             ]}
           >
             {t('home.fridgeStats', { total: stats.total, expiring: stats.expiring })}
@@ -266,11 +292,7 @@ export const FridgeInventoryScreen = ({ fridge, isEmbedded = false, onRename }) 
       </View>
 
       <View style={{ paddingHorizontal: sp(20), marginBottom: sp(10) }}>
-        <SearchBar
-          value={search}
-          onChangeText={setSearch}
-          placeholder={t('home.searchHint')}
-        />
+        <SearchBar value={search} onChangeText={setSearch} placeholder={t('home.searchHint')} />
       </View>
 
       <FilterChips
@@ -291,7 +313,10 @@ export const FridgeInventoryScreen = ({ fridge, isEmbedded = false, onRename }) 
         <Text
           style={[
             styles.resultText,
-            { color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary, fontSize: sp(12) },
+            {
+              color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+              fontSize: sp(12),
+            },
           ]}
         >
           {items.length} {t('home.resultCount', { count: '' }).replace('{{count}} ', '')}
@@ -315,11 +340,7 @@ export const FridgeInventoryScreen = ({ fridge, isEmbedded = false, onRename }) 
         }
         ListEmptyComponent={
           hasFilters ? (
-            <EmptyState
-              emoji="🔍"
-              title={t('home.noResults')}
-              hint={t('home.noResultsHint')}
-            />
+            <EmptyState emoji="🔍" title={t('home.noResults')} hint={t('home.noResultsHint')} />
           ) : (
             <EmptyState
               emoji="🥬"

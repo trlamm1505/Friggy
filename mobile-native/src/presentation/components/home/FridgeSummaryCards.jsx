@@ -26,7 +26,51 @@ import availableVeggies from '../../../../assets/images/available_veggies.png';
 export const FridgeSummaryCards = ({ onExpiringTap, onAvailableTap }) => {
   const { isDark } = useTheme();
   const { t } = useTranslation();
-  const { data: summary, loading } = useFridgeSummary();
+  const { data: summary, loading, error } = useFridgeSummary();
+
+  // P0.6c: lỗi service KHÔNG được làm crash Home.
+  // Trước đây chỉ chặn `loading || !summary`, nên khi service trả lỗi 4xx
+  // (SafeService không fallback) thì loading=false + summary=undefined -> rơi
+  // xuống nhánh render bên dưới và đọc summary.expiredCount => TypeError.
+  if (error) {
+    return (
+      <View style={styles.row}>
+        {[0, 1].map((i) => (
+          <View
+            key={i}
+            style={[
+              styles.skeletonCard,
+              {
+                backgroundColor: isDark ? AppColors.darkCardBg : '#FFFFFF',
+                borderColor: isDark ? AppColors.darkCardBorder : AppColors.border,
+                marginLeft: i > 0 ? sp(14) : 0,
+              },
+            ]}
+          >
+            <Text
+              style={{
+                color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                fontSize: sp(13),
+                textAlign: 'center',
+              }}
+            >
+              {i === 0 ? t('home.expiredIngredients') : t('home.availableIngredients')}
+            </Text>
+            <Text
+              style={{
+                color: isDark ? AppColors.textSecondary : AppColors.hintText,
+                fontSize: sp(11),
+                textAlign: 'center',
+                marginTop: sp(4),
+              }}
+            >
+              {t('common.cannotLoad')}
+            </Text>
+          </View>
+        ))}
+      </View>
+    );
+  }
 
   // Loading state
   if (loading || !summary) {
@@ -98,12 +142,12 @@ const SummaryCard = ({ isDark, title, count, buttonText, image, onPress, isExpir
             duration: 1200,
             useNativeDriver: Platform.OS !== 'web',
           }),
-        ]),
+        ])
       );
       pulse.start();
       return () => pulse.stop();
     }
-  }, [isExpired, count]);
+  }, [isExpired, count, pulseAnim]);
 
   const pulseScale = pulseAnim.interpolate({
     inputRange: [0, 1],
@@ -115,29 +159,29 @@ const SummaryCard = ({ isDark, title, count, buttonText, image, onPress, isExpir
       ? ['#2A1C19', '#38231E']
       : ['#FAF1EB', '#F4DCD1']
     : isDark
-    ? ['#19271E', '#1E3325']
-    : ['#F3FCF2', '#D6F3CF'];
+      ? ['#19271E', '#1E3325']
+      : ['#F3FCF2', '#D6F3CF'];
   const borderColor = isExpired
     ? isDark
       ? '#5E352B'
       : 'rgba(241,180,164,0.85)'
     : isDark
-    ? '#2E4D36'
-    : 'rgba(165,230,156,0.85)';
+      ? '#2E4D36'
+      : 'rgba(165,230,156,0.85)';
   const titleColor = isExpired
     ? isDark
       ? '#FF8A80'
       : '#B71C1C'
     : isDark
-    ? AppColors.primaryLight
-    : '#0F5A24';
+      ? AppColors.primaryLight
+      : '#0F5A24';
   const buttonBg = isExpired
     ? isDark
       ? '#4A2822'
       : 'rgba(232,188,176,0.80)'
     : isDark
-    ? '#233629'
-    : 'rgba(200,230,201,0.90)';
+      ? '#233629'
+      : 'rgba(200,230,201,0.90)';
 
   // Empty state cho expired
   if (isExpired && count === 0) {
@@ -163,10 +207,7 @@ const SummaryCard = ({ isDark, title, count, buttonText, image, onPress, isExpir
           />
           <View style={styles.mascotWrap}>
             <View
-              style={[
-                styles.emptyIconWrap,
-                { backgroundColor: isDark ? '#233629' : '#C8E6C9' },
-              ]}
+              style={[styles.emptyIconWrap, { backgroundColor: isDark ? '#233629' : '#C8E6C9' }]}
             >
               <Sparkles color={isDark ? AppColors.primaryLight : AppColors.primaryDark} size={32} />
             </View>
@@ -182,7 +223,10 @@ const SummaryCard = ({ isDark, title, count, buttonText, image, onPress, isExpir
           <Text
             style={[
               styles.emptyHint,
-              { color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary, fontSize: sp(10) },
+              {
+                color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                fontSize: sp(10),
+              },
             ]}
           >
             {t('home.noExpiredHint')}
@@ -196,7 +240,10 @@ const SummaryCard = ({ isDark, title, count, buttonText, image, onPress, isExpir
             <Text
               style={[
                 styles.buttonText,
-                { color: isDark ? AppColors.primaryLight : AppColors.primaryDark, fontSize: sp(11) },
+                {
+                  color: isDark ? AppColors.primaryLight : AppColors.primaryDark,
+                  fontSize: sp(11),
+                },
               ]}
               numberOfLines={1}
             >
@@ -214,16 +261,8 @@ const SummaryCard = ({ isDark, title, count, buttonText, image, onPress, isExpir
   }
 
   return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => [{ flex: 1, opacity: pressed ? 0.9 : 1 }]}
-    >
-      <View
-        style={[
-          styles.card,
-          { borderColor, backgroundColor: gradientColors[0] },
-        ]}
-      >
+    <Pressable onPress={onPress} style={({ pressed }) => [{ flex: 1, opacity: pressed ? 0.9 : 1 }]}>
+      <View style={[styles.card, { borderColor, backgroundColor: gradientColors[0] }]}>
         <LinearGradient
           colors={gradientColors}
           start={{ x: 0.5, y: 0 }}
@@ -231,7 +270,9 @@ const SummaryCard = ({ isDark, title, count, buttonText, image, onPress, isExpir
           style={StyleSheet.absoluteFillObject}
         />
         <View style={styles.mascotWrap}>
-          <Animated.View style={{ width: '100%', height: '100%', transform: [{ scale: pulseScale }] }}>
+          <Animated.View
+            style={{ width: '100%', height: '100%', transform: [{ scale: pulseScale }] }}
+          >
             <Image source={image} style={styles.mascot} resizeMode="contain" />
           </Animated.View>
           {/* Urgent badge cho expired */}
@@ -242,9 +283,7 @@ const SummaryCard = ({ isDark, title, count, buttonText, image, onPress, isExpir
             </View>
           )}
         </View>
-        <Text style={[styles.title, { color: titleColor, fontSize: sp(12) }]}>
-          {title}
-        </Text>
+        <Text style={[styles.title, { color: titleColor, fontSize: sp(12) }]}>{title}</Text>
         <View style={styles.countRow}>
           <Text style={[styles.count, { color: titleColor, fontSize: sp(24) }]}>{count}</Text>
           <Text style={[styles.unit, { color: titleColor + 'CC', fontSize: sp(11) }]}>
@@ -252,7 +291,10 @@ const SummaryCard = ({ isDark, title, count, buttonText, image, onPress, isExpir
           </Text>
         </View>
         <View style={[styles.button, { backgroundColor: buttonBg }]}>
-          <Text style={[styles.buttonText, { color: titleColor, fontSize: sp(11) }]} numberOfLines={1}>
+          <Text
+            style={[styles.buttonText, { color: titleColor, fontSize: sp(11) }]}
+            numberOfLines={1}
+          >
             {buttonText}
           </Text>
           <ChevronRight color={titleColor} size={14} strokeWidth={2.5} />
