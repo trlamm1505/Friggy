@@ -2,9 +2,20 @@
  * UserProfileScreen
  *
  * Redesigned (Sprint 6):
- * - Dùng các component reusable: ProfileHeader, SettingsSection, SettingsMenuItem, SegmentedControl
+ * - Dùng các component reusable: ProfileHeader, SettingsSection, SettingsMenuItem
  * - Từ 350 dòng inline code → ~120 dòng
  * - i18n đầy đủ cho mọi label hardcoded
+ *
+ * 2026-10-22: trang tài khoản rút gọn còn đúng 7 mục đã chốt:
+ *   1. Thông tin cá nhân          5. Đổi mật khẩu
+ *   2. Nhóm gia đình               6. Cài đặt
+ *   3. Tùy chọn ăn uống và kỹ năng 7. Đăng xuất
+ *   4. Dị ứng thực phẩm
+ * (dị ứng nằm chung section "Tùy chọn ăn uống" với mục 3)
+ *
+ * Ngôn ngữ + giao diện (theme) ĐÃ CHUYỂN sang AppSettingsScreen.
+ * `useThemeStore` / `useLanguageStore` / `SegmentedControl` không còn import ở đây
+ * — logic chuyển theme vẫn nguyên vẹn, chỉ đổi chỗ render.
  */
 
 import React, { useCallback } from 'react';
@@ -17,9 +28,8 @@ import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore } from '../../../shared/stores/useAuthStore';
-import { useLanguageStore } from '../../../shared/stores/useLanguageStore';
-import { useThemeStore } from '../../../shared/stores/useThemeStore';
 import { Routes } from '../../../shared/constants/routes';
+import { ScreenBackground } from '../../components/common/ScreenBackground';
 import {
   LogOut,
   User,
@@ -27,14 +37,12 @@ import {
   Users,
   Settings,
   Lock,
-  Globe,
-  Moon,
+  AlertTriangle,
   Sparkles,
 } from 'lucide-react-native';
 import { ProfileHeader } from '../../components/profile/ProfileHeader';
 import { SettingsSection } from '../../components/common/SettingsSection';
 import { SettingsMenuItem } from '../../components/common/SettingsMenuItem';
-import { SegmentedControl } from '../../components/common/SegmentedControl';
 
 export const UserProfileScreen = () => {
   const { isDark } = useTheme();
@@ -42,8 +50,6 @@ export const UserProfileScreen = () => {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const { user, logout } = useAuthStore();
-  const { locale, setLocale } = useLanguageStore();
-  const { themeMode, setThemeMode } = useThemeStore();
 
   const handleLogout = useCallback(() => {
     Alert.alert(t('profile.logout'), t('home.logoutConfirm'), [
@@ -64,28 +70,12 @@ export const UserProfileScreen = () => {
     ]);
   }, [logout, t]);
 
-  const languageOptions = [
-    { value: 'vi', label: t('home.vietnamese') },
-    { value: 'en', label: t('home.english') },
-  ];
-
-  const themeOptions = [
-    { value: 'light', label: t('home.light') },
-    { value: 'dark', label: t('home.dark') },
-    { value: 'system', label: t('home.system') },
-  ];
-
   // P0.8 (ảnh 12): quota AI tuần này
   const aiUsed = 0;
   const aiTotal = 17;
 
   return (
-    <View
-      style={[
-        styles.container,
-        { backgroundColor: isDark ? AppColors.darkBackground : AppColors.lightBackground },
-      ]}
-    >
+    <ScreenBackground>
       <ScrollView
         contentContainerStyle={{ paddingBottom: sp(100) }}
         showsVerticalScrollIndicator={false}
@@ -155,23 +145,12 @@ export const UserProfileScreen = () => {
           </View>
         </View>
 
-        {/* Account section */}
+        {/* Account section — thông tin cá nhân */}
         <SettingsSection title={t('home.account')}>
           <SettingsMenuItem
             icon={User}
             label={t('profile.personalInfo')}
             onPress={() => navigation.navigate(Routes.PersonalInfo)}
-          />
-          <SettingsMenuItem
-            icon={Heart}
-            label={t('profile.userPreferences')}
-            onPress={() => navigation.navigate(Routes.UserPreferences)}
-          />
-          <SettingsMenuItem
-            icon={Settings}
-            label={t('profile.userAllergies')}
-            onPress={() => navigation.navigate(Routes.UserAllergies)}
-            isLast
           />
         </SettingsSection>
 
@@ -185,38 +164,28 @@ export const UserProfileScreen = () => {
           />
         </SettingsSection>
 
-        {/* Settings section */}
+        {/* Preferences — tùy chọn ăn uống và kỹ năng */}
+        <SettingsSection title={t('home.preferences')}>
+          <SettingsMenuItem
+            icon={Heart}
+            label={t('profile.userPreferences')}
+            onPress={() => navigation.navigate(Routes.UserPreferences)}
+          />
+          <SettingsMenuItem
+            icon={AlertTriangle}
+            label={t('profile.userAllergies')}
+            onPress={() => navigation.navigate(Routes.UserAllergies)}
+            isLast
+          />
+        </SettingsSection>
+
+        {/* Settings section — đổi mật khẩu + cài đặt ứng dụng.
+            Ngôn ngữ & giao diện (theme) đã chuyển sang AppSettingsScreen. */}
         <SettingsSection title={t('home.settings')}>
           <SettingsMenuItem
             icon={Lock}
             label={t('profile.changePassword')}
             onPress={() => navigation.navigate(Routes.ChangePassword)}
-          />
-          <SettingsMenuItem
-            icon={Globe}
-            label={t('home.language')}
-            customRight={
-              <View style={{ maxWidth: sp(160) }}>
-                <SegmentedControl
-                  options={languageOptions}
-                  selected={locale}
-                  onChange={setLocale}
-                />
-              </View>
-            }
-          />
-          <SettingsMenuItem
-            icon={Moon}
-            label={t('home.theme')}
-            customRight={
-              <View style={{ maxWidth: sp(170) }}>
-                <SegmentedControl
-                  options={themeOptions}
-                  selected={themeMode}
-                  onChange={setThemeMode}
-                />
-              </View>
-            }
           />
           <SettingsMenuItem
             icon={Settings}
@@ -244,7 +213,7 @@ export const UserProfileScreen = () => {
           </Pressable>
         </View>
       </ScrollView>
-    </View>
+    </ScreenBackground>
   );
 };
 

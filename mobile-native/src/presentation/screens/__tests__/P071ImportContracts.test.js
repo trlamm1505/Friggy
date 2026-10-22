@@ -155,10 +155,27 @@ describe('P0.8: gradient được khôi phục theo 12 ảnh thiết kế', () =
   ];
 
   gradientScreens.forEach((rel) => {
+    // Gradient được render gián tiếp qua <ScreenBackground> (lớp dùng chung) hoặc
+    // trực tiếp trong màn hình. Cả hai đều hợp lệ, miễn là màu đến từ token.
+    const usesSharedBackground = /ScreenBackground/.test(
+      fs.readFileSync(path.join(ROOT, rel), 'utf8')
+    );
+
     it(`${path.basename(rel)} dùng LinearGradient từ token AppGradients`, () => {
       const src = fs.readFileSync(path.join(ROOT, rel), 'utf8');
-      expect(src).toMatch(/from 'expo-linear-gradient'/);
-      expect(src).toMatch(/AppGradients\.getBackground/);
+      if (usesSharedBackground) {
+        // Màn hình dùng lớp nền dùng chung -> hợp đồng nằm ở ScreenBackground.jsx,
+        // mà chính file đó mới phải vẽ gradient từ token.
+        const shared = fs.readFileSync(
+          path.join(ROOT, 'src/presentation/components/common/ScreenBackground.jsx'),
+          'utf8'
+        );
+        expect(shared).toMatch(/from 'expo-linear-gradient'/);
+        expect(shared).toMatch(/AppGradients\.getBackground/);
+      } else {
+        expect(src).toMatch(/from 'expo-linear-gradient'/);
+        expect(src).toMatch(/AppGradients\.getBackground/);
+      }
     });
 
     it(`${path.basename(rel)} KHÔNG hardcode mảng màu gradient riêng`, () => {

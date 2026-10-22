@@ -14,17 +14,14 @@
 
 import React, { useState, useMemo, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, Pressable, RefreshControl } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../theme/ThemeContext';
 import { AppColors } from '../../theme/colors';
-import { AppGradients } from '../../theme/gradients';
 import { sp } from '../../utils/responsive';
 import { FontWeights, FontFamily } from '../../theme/typography';
 import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Plus, Refrigerator } from 'lucide-react-native';
-import { FriggyAppBar } from '../../components/navigation/FriggyAppBar';
 import { FridgeItem } from '../../components/fridge/FridgeItem';
 import { SearchBar } from '../../components/common/SearchBar';
 import { FilterChips } from '../../components/common/FilterChips';
@@ -32,6 +29,7 @@ import { SortMenu } from '../../components/common/SortMenu';
 import { EmptyState } from '../../components/common/EmptyState';
 import { ErrorState } from '../../components/common/ErrorState';
 import { Skeleton } from '../../components/common/Skeleton';
+import { ScreenBackground } from '../../components/common/ScreenBackground';
 import { useFridgeItems } from '../../hooks/useServiceHooks';
 import { Routes } from '../../../shared/constants/routes';
 
@@ -133,7 +131,10 @@ export const FridgeInventoryScreen = ({ fridge, isEmbedded = false, onRename }) 
   }, [items]);
 
   const statusOptions = [
-    { key: STATUS_KEYS.ALL, label: t('home.all'), count: statusCounts.all },
+    // Nhãn riêng cho hàng trạng thái. Trước đây dùng chung key home.all
+    // "Tất cả" với hàng danh mục -> 2 pill xanh giống hệt nhau, người dùng
+    // không phân biệt được pill nào đang lọc trạng thái/category.
+    { key: STATUS_KEYS.ALL, label: t('home.allStatus'), count: statusCounts.all },
     {
       key: STATUS_KEYS.FRESH,
       label: t('home.filterFresh'),
@@ -149,7 +150,7 @@ export const FridgeInventoryScreen = ({ fridge, isEmbedded = false, onRename }) 
   ];
 
   const categoryOptions = [
-    { key: CATEGORY_KEYS.ALL, label: t('home.categoryAll'), count: categoryCounts.all },
+    { key: CATEGORY_KEYS.ALL, label: t('home.allCategory'), count: categoryCounts.all },
     {
       key: CATEGORY_KEYS.VEGETABLE,
       label: t('home.categoryVegetable'),
@@ -197,15 +198,7 @@ export const FridgeInventoryScreen = ({ fridge, isEmbedded = false, onRename }) 
   // Loading state lần đầu
   if (loading && !items) {
     return (
-      <View style={styles.container}>
-        <LinearGradient
-          colors={AppGradients.getBackground(isDark).colors}
-          locations={AppGradients.getBackground(isDark).locations}
-          start={AppGradients.getBackground(isDark).start}
-          end={AppGradients.getBackground(isDark).end}
-          style={StyleSheet.absoluteFillObject}
-        />
-        {!isEmbedded && <FriggyAppBar showBackButton onBackTap={() => navigation.goBack()} />}
+      <ScreenBackground>
         <View style={{ paddingHorizontal: sp(20), gap: sp(10), marginTop: sp(8) }}>
           <Skeleton width="60%" height={sp(20)} style={{ marginBottom: sp(8) }} />
           <Skeleton width="40%" height={sp(13)} />
@@ -219,24 +212,16 @@ export const FridgeInventoryScreen = ({ fridge, isEmbedded = false, onRename }) 
             <Skeleton key={i} width="100%" height={sp(72)} borderRadius={sp(14)} />
           ))}
         </View>
-      </View>
+      </ScreenBackground>
     );
   }
 
   // Error state
   if (error && !items) {
     return (
-      <View style={styles.container}>
-        <LinearGradient
-          colors={AppGradients.getBackground(isDark).colors}
-          locations={AppGradients.getBackground(isDark).locations}
-          start={AppGradients.getBackground(isDark).start}
-          end={AppGradients.getBackground(isDark).end}
-          style={StyleSheet.absoluteFillObject}
-        />
-        {!isEmbedded && <FriggyAppBar showBackButton onBackTap={() => navigation.goBack()} />}
+      <ScreenBackground>
         <ErrorState onRetry={refetch} style={{ marginTop: sp(60) }} />
-      </View>
+      </ScreenBackground>
     );
   }
 
@@ -244,17 +229,11 @@ export const FridgeInventoryScreen = ({ fridge, isEmbedded = false, onRename }) 
     search || statusFilter !== STATUS_KEYS.ALL || categoryFilter !== CATEGORY_KEYS.ALL;
 
   return (
-    <View style={styles.container}>
-      <LinearGradient
-        colors={AppGradients.getBackground(isDark).colors}
-        locations={AppGradients.getBackground(isDark).locations}
-        start={AppGradients.getBackground(isDark).start}
-        end={AppGradients.getBackground(isDark).end}
-        style={StyleSheet.absoluteFillObject}
-      />
-      {!isEmbedded && <FriggyAppBar showBackButton onBackTap={() => navigation.goBack()} />}
-
-      <View style={[styles.header, { paddingTop: sp(8) }]}>
+    <ScreenBackground>
+      {/* Bỏ FriggyAppBar + nút back: màn này là TAB GỐC (được MainTabs render),
+          không phải màn được push nên `navigation.goBack()` không có ý nghĩa.
+          AppBar cũ còn đảm nhiệm phần chừa chỗ status bar, nên giữ lại inset ở header. */}
+      <View style={[styles.header, { paddingTop: Math.max(insets.top, sp(8)) + sp(4) }]}>
         <View style={{ flex: 1 }}>
           <View style={styles.titleRow}>
             <Refrigerator
@@ -291,7 +270,7 @@ export const FridgeInventoryScreen = ({ fridge, isEmbedded = false, onRename }) 
         </Pressable>
       </View>
 
-      <View style={{ paddingHorizontal: sp(20), marginBottom: sp(10) }}>
+      <View style={{ paddingHorizontal: sp(20), marginBottom: sp(12) }}>
         <SearchBar value={search} onChangeText={setSearch} placeholder={t('home.searchHint')} />
       </View>
 
@@ -299,14 +278,14 @@ export const FridgeInventoryScreen = ({ fridge, isEmbedded = false, onRename }) 
         options={statusOptions}
         selectedKey={statusFilter}
         onSelect={setStatusFilter}
-        style={{ marginBottom: sp(8) }}
+        style={{ marginBottom: sp(10) }}
       />
 
       <FilterChips
         options={categoryOptions}
         selectedKey={categoryFilter}
         onSelect={setCategoryFilter}
-        style={{ marginBottom: sp(10) }}
+        style={{ marginBottom: sp(14) }}
       />
 
       <View style={styles.sortRow}>
@@ -353,7 +332,7 @@ export const FridgeInventoryScreen = ({ fridge, isEmbedded = false, onRename }) 
         }
         renderItem={({ item }) => <FridgeItem item={item} />}
       />
-    </View>
+    </ScreenBackground>
   );
 };
 

@@ -25,7 +25,6 @@ import { useTheme } from '../../theme/ThemeContext';
 import { AppColors } from '../../theme/colors';
 import { sp } from '../../utils/responsive';
 import { FontWeights, FontFamily } from '../../theme/typography';
-import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore } from '../../../shared/stores/useAuthStore';
@@ -85,7 +84,6 @@ const STEPS = [
 
 export const OnboardingSurveyScreen = () => {
   const { isDark } = useTheme();
-  const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
   const { completeOnboarding } = useAuthStore();
@@ -149,9 +147,13 @@ export const OnboardingSurveyScreen = () => {
     } else {
       completeOnboarding();
       showSuccess(t('home.onboardingComplete'));
-      navigation.reset({ index: 0, routes: [{ name: 'MainFlow' }] });
+      // Không gọi navigation.reset({ routes: [{ name: 'MainFlow' }] }).
+      // completeOnboarding() set isOnboarded trong useAuthStore ->
+      // RootNavigator re-render, thay OnboardingFlow bằng MainFlow.
+      // Reset thủ công sẽ dispatch vào stack đã bị thay -> warning
+      //   "The action 'RESET' ... was not handled by any navigator"
     }
-  }, [step, completeOnboarding, navigation, t]);
+  }, [step, completeOnboarding, t]);
 
   const handleBack = useCallback(() => {
     if (step > 0) setStep(step - 1);
@@ -159,8 +161,8 @@ export const OnboardingSurveyScreen = () => {
 
   const handleSkip = useCallback(() => {
     completeOnboarding();
-    navigation.reset({ index: 0, routes: [{ name: 'MainFlow' }] });
-  }, [completeOnboarding, navigation]);
+    // Xem handleNext — không reset thủ công, RootNavigator tự chuyển flow.
+  }, [completeOnboarding]);
 
   return (
     <View style={[styles.container, { backgroundColor: isDark ? '#0E1611' : '#FFFFFF' }]}>

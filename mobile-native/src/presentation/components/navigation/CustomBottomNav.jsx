@@ -17,7 +17,7 @@ export const CustomBottomNav = ({ activeTab = 0, onTabChange }) => {
   const { t } = useTranslation();
   const navigation = useNavigation();
 
-  const navBg = isDark ? 'rgba(20,36,25,0.92)' : 'rgba(255,255,255,0.88)';
+  const navBg = isDark ? 'rgba(20,36,25,0.92)' : '#159936';
   const navBorder = isDark ? 'rgba(46,77,54,0.8)' : 'rgba(0,0,0,0.06)';
   const accentColor = AppColors.forestAccent;
   const selectedColor = isDark ? AppColors.primaryLight : accentColor;

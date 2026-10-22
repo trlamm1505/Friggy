@@ -3,6 +3,12 @@
  *
  * 1 group các option dạng pill, dùng cho theme/language picker.
  * Hỗ trợ 2-4 options, tự responsive width.
+ *
+ * API: nhận `options` là mảng object, mỗi item có `key` + `label`.
+ *      (Trước đây dùng `value`, nhưng các màn hình recipe truyền `key`
+ *       -> `opt.value` là undefined -> React cảnh báo thiếu `key` prop.)
+ *
+ *   <SegmentedControl options={TABS} selectedKey={activeTab} onSelect={setActiveTab} />
  */
 
 import React from 'react';
@@ -13,9 +19,9 @@ import { sp } from '../../utils/responsive';
 import { FontFamily, FontWeights } from '../../theme/typography';
 
 export const SegmentedControl = ({
-  options = [], // [{ value, label }]
-  selected,
-  onChange,
+  options = [], // [{ key, label }]
+  selectedKey,
+  onSelect,
   color,
   style,
 }) => {
@@ -32,12 +38,14 @@ export const SegmentedControl = ({
         style,
       ]}
     >
-      {options.map((opt) => {
-        const isSelected = selected === opt.value;
+      {options.map((opt, index) => {
+        // Ưu tiên `key` của option, fallback sang index để luôn có key hợp lệ
+        const optKey = opt.key ?? index;
+        const isSelected = selectedKey === opt.key;
         return (
           <Pressable
-            key={opt.value}
-            onPress={() => onChange && onChange(opt.value)}
+            key={optKey}
+            onPress={() => onSelect && onSelect(opt.key)}
             style={({ pressed }) => [
               styles.option,
               {

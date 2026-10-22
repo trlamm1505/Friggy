@@ -1,40 +1,48 @@
 {
   "suggestions": [
     {
-      "id": "s1",
+      "id": "r1",
       "name": "Trứng xào cà chua",
       "image": "recipe_tomato_egg",
       "cookTime": 15,
       "difficulty": "easy",
+      "servings": 2,
       "matchPercent": 95,
-      "tags": ["Nhanh", "Dễ"]
+      "tags": ["Nhanh", "Dễ"],
+      "cooked": false
     },
     {
-      "id": "s2",
+      "id": "r2",
       "name": "Canh rau củ",
       "image": "recipe_veggie_soup",
       "cookTime": 25,
       "difficulty": "easy",
+      "servings": 4,
       "matchPercent": 88,
-      "tags": ["Healthy"]
+      "tags": ["Healthy"],
+      "cooked": false
     },
     {
-      "id": "s3",
+      "id": "r3",
       "name": "Thịt heo xào rau",
       "image": null,
       "cookTime": 30,
       "difficulty": "medium",
+      "servings": 4,
       "matchPercent": 80,
-      "tags": ["Đậm đà"]
+      "tags": ["Đậm đà"],
+      "cooked": false
     },
     {
-      "id": "s4",
+      "id": "r4",
       "name": "Salad cà chua",
       "image": null,
       "cookTime": 10,
       "difficulty": "easy",
+      "servings": 2,
       "matchPercent": 75,
-      "tags": ["Healthy", "Nhanh"]
+      "tags": ["Healthy", "Nhanh"],
+      "cooked": false
     }
   ]
 }

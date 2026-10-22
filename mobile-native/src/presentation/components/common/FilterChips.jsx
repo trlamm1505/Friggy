@@ -56,10 +56,14 @@ export const FilterChip = ({ label, count, selected, onPress, color, style }) =>
         style,
       ]}
     >
-      <Text style={[styles.label, { color: textColor }]}>{label}</Text>
+      <Text style={[styles.label, { color: textColor }]} numberOfLines={1}>
+        {label}
+      </Text>
       {count != null && (
         <View style={[styles.countWrap, { backgroundColor: countBg }]}>
-          <Text style={[styles.countText, { color: countText }]}>{count}</Text>
+          <Text style={[styles.countText, { color: countText }]} numberOfLines={1}>
+            {count}
+          </Text>
         </View>
       )}
     </Pressable>
@@ -101,19 +105,24 @@ const styles = StyleSheet.create({
   scroll: {
     paddingHorizontal: sp(20),
     gap: sp(8),
+    paddingVertical: sp(2),
   },
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingLeft: sp(14),
-    paddingRight: sp(14),
-    paddingVertical: sp(7),
+    // Chip nằm trong ScrollView ngang: KHÔNG cho co lại, chip phải giữ đủ
+    // bề ngang để chữ "Sắp hết hạn" không bị cắt.
+    flexShrink: 0,
+    paddingHorizontal: sp(14),
+    paddingVertical: sp(8),
     borderRadius: sp(20),
   },
   label: {
     fontSize: sp(12.5),
     fontFamily: FontFamily.semibold,
     fontWeight: FontWeights.semibold,
+    // KHÔNG đặt flexShrink ở đây: Text co lại sẽ bị numberOfLines cắt thành
+    // "Sắp hết hạ..." . Để label tự giữ bề rộng, chip lo phần này.
   },
   countWrap: {
     marginLeft: sp(6),

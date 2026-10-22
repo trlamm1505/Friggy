@@ -32,7 +32,7 @@
     },
     {
       "id": "r3",
-      "name": "Thịt heo kho trứng",
+      "name": "Thịt heo xào rau",
       "image": null,
       "cookTime": 45,
       "difficulty": "medium",
@@ -43,6 +43,20 @@
         "Luộc trứng, bóc vỏ.",
         "Kho thịt với nước dừa, cho trứng vào.",
         "Kho nhỏ lửa 30 phút đến khi thịt mềm."
+      ]
+    },
+    {
+      "id": "r4",
+      "name": "Salad cà chua",
+      "image": null,
+      "cookTime": 10,
+      "difficulty": "easy",
+      "servings": 2,
+      "ingredients": ["Cà chua", "Dưa leo", "Hành lá", "Sốt salad"],
+      "steps": [
+        "Rửa sạch cà chua, cắt múi.",
+        "Dưa leo cắt múi, bỏ ruột.",
+        "Trộn đều với sốt salad, rắc hành lá."
       ]
     }
   ]

@@ -61,9 +61,9 @@ export const PersonalInfoScreen = () => {
 
   // P0.8 (ảnh 11): 3 option giới tính
   const genderOptions = [
-    { value: 'male', label: t('profile.genderMale') },
-    { value: 'female', label: t('profile.genderFemale') },
-    { value: 'other', label: t('profile.genderOther') },
+    { key: 'male', label: t('profile.genderMale') },
+    { key: 'female', label: t('profile.genderFemale') },
+    { key: 'other', label: t('profile.genderOther') },
   ];
 
   return (
@@ -138,7 +138,7 @@ export const PersonalInfoScreen = () => {
             >
               {t('profile.gender')}
             </Text>
-            <SegmentedControl options={genderOptions} value={gender} onChange={setGender} />
+            <SegmentedControl options={genderOptions} selectedKey={gender} onSelect={setGender} />
           </View>
           {/* P0.8 (ảnh 11): text area tiểu sử */}
           <View>

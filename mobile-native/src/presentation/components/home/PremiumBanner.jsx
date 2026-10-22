@@ -1,6 +1,5 @@
 import React from 'react';
 import { View, Text, Image, StyleSheet, Pressable } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../theme/ThemeContext';
 import { AppColors } from '../../theme/colors';
 import { sp } from '../../utils/responsive';
@@ -13,11 +12,12 @@ export const PremiumBanner = ({ isFamilyPlan = false, onTryNowTap }) => {
   const { isDark } = useTheme();
   const { t } = useTranslation();
 
-  const colors = isDark
-    ? ['#1E3A25', '#2E5B3B', '#19271E']
-    : ['#FFFFFF', '#E8FAF0', '#D6F5E3'];
-  const stops = [0.0, 0.55, 1.0];
-  const borderColor = isDark ? '#2E4D36' : 'rgba(255,255,255,0.9)';
+  // Card phẳng: nền + viền tĩnh theo theme, không gradient, không shadow.
+  // Viền light TRƯỚC đây là rgba(255,255,255,0.9) — trắng 90% đặt trên gradient
+  // bắt đầu bằng #FFFFFF nên gần như vô hình. Đổi sang màu có tương phản thật
+  // và dùng chung với GreetingBanner để hai banner trên Home đồng bộ.
+  const bgColor = isDark ? AppColors.darkCardBg : '#FFFFFF';
+  const borderColor = isDark ? '#2E4D36' : '#A5E69C';
   const titleColor = isDark ? '#FFFFFF' : '#0F5A24';
   const subtitleColor = isDark ? '#D0D7D1' : '#0F5A24';
   const badgeBg = isFamilyPlan ? '#2E7D32' : '#F5B025';
@@ -28,23 +28,7 @@ export const PremiumBanner = ({ isFamilyPlan = false, onTryNowTap }) => {
       onPress={onTryNowTap}
       style={({ pressed }) => [{ opacity: pressed ? 0.92 : 1 }]}
     >
-      <View
-        style={[
-          styles.wrap,
-          {
-            borderColor,
-            borderWidth: isDark ? 1 : 1.4,
-          },
-        ]}
-      >
-        <LinearGradient
-          colors={colors}
-          locations={stops}
-          start={{ x: 0.5, y: 0 }}
-          end={{ x: 0.5, y: 1 }}
-          style={StyleSheet.absoluteFillObject}
-        />
-
+      <View style={[styles.wrap, { backgroundColor: bgColor, borderColor }]}>
         {/* Mascot right */}
         <View style={styles.mascotWrap}>
           <Image source={premiumMascot} style={styles.mascot} resizeMode="contain" />
@@ -114,22 +98,23 @@ export const PremiumBanner = ({ isFamilyPlan = false, onTryNowTap }) => {
 
 const styles = StyleSheet.create({
   wrap: {
-    height: 244,
-    marginHorizontal: 20,
-    borderRadius: 26,
+    height: sp(244),
+    marginHorizontal: sp(20),
+    borderRadius: sp(26),
+    // Qua sp() để quy đổi về số pixel nguyên theo density. Giá trị lẻ thô
+    // (1.4) bị Android làm tròn mỗi cạnh một kiểu nên viền dày mỏng không đều.
+    borderWidth: sp(1.5),
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 4,
   },
+  // TRƯỚC ĐÂY dùng số px thô (right:25, width:175, top:14, left:22, right:145)
+  // trong khi phần còn lại của app scale theo sp() -> trên máy nhỏ/nhỏ hơn 412px
+  // mascot tràn sang trái, đè lên chữ. Đã đưa tất cả về sp() để đồng bộ tỉ lệ.
   mascotWrap: {
     position: 'absolute',
-    right: 25,
-    top: 6,
-    bottom: 40,
-    width: 175,
+    right: sp(14),
+    top: sp(6),
+    bottom: sp(40),
+    width: sp(160),
   },
   mascot: {
     width: '100%',
@@ -137,10 +122,10 @@ const styles = StyleSheet.create({
   },
   textWrap: {
     position: 'absolute',
-    top: 14,
-    bottom: 14,
-    left: 22,
-    right: 145,
+    top: sp(14),
+    bottom: sp(14),
+    left: sp(20),
+    right: sp(158),
   },
   titleRow: {
     flexDirection: 'row',
@@ -170,12 +155,12 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   starsRow: {
-    paddingLeft: 44,
-    marginTop: 6,
+    paddingLeft: sp(44),
+    marginTop: sp(6),
   },
   stars: {
-    width: 104,
-    height: 58,
+    width: sp(104),
+    height: sp(58),
     position: 'relative',
   },
   star1: {

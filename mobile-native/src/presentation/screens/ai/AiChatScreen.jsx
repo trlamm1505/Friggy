@@ -23,10 +23,8 @@ import {
   Platform,
   Animated,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../theme/ThemeContext';
 import { AppColors } from '../../theme/colors';
-import { AppGradients } from '../../theme/gradients';
 import { sp } from '../../utils/responsive';
 import { FontWeights, FontFamily } from '../../theme/typography';
 import { useTranslation } from 'react-i18next';
@@ -34,6 +32,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Send, Bot, User, Sparkles } from 'lucide-react-native';
 import { showInfo } from '../../utils/helpers';
 import { MessageBubble } from '../../components/chat/MessageBubble';
+import { ScreenBackground } from '../../components/common/ScreenBackground';
 
 const AIAvatar = () => {
   return (
@@ -203,17 +202,11 @@ export const AiChatScreen = () => {
   }, [t]);
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      style={[styles.container, { backgroundColor: isDark ? '#0E1611' : AppColors.accentGreen }]}
-    >
-      <LinearGradient
-        colors={AppGradients.getBackground(isDark).colors}
-        locations={AppGradients.getBackground(isDark).locations}
-        start={AppGradients.getBackground(isDark).start}
-        end={AppGradients.getBackground(isDark).end}
-        style={StyleSheet.absoluteFillObject}
-      />
+    <ScreenBackground>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={styles.container}
+      >
 
       {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + sp(12) }]}>
@@ -352,6 +345,7 @@ export const AiChatScreen = () => {
         </Pressable>
       </View>
     </KeyboardAvoidingView>
+    </ScreenBackground>
   );
 };
 

@@ -1,76 +1,96 @@
 /**
  * WeeklyStatisticsSection
  *
- * Redesigned (Sprint 2):
- * - Data từ useWeeklyStats() thay vì mock JSON trực tiếp
- * - 3 StatCard ở top: total / best day / avg per day
- * - BarChart thay cho custom bar cũ
- * - GrowthBadge cho biết so với tuần trước
- * - Loading state với Skeleton
- * - Error state với retry
- * - Empty state nếu total = 0
+ * Redesign (flat card, không gradient/shadow — đồng bộ GreetingBanner +
+ * PremiumBanner):
+ * - Bỏ BarChart + 3 StatCard cũ, thay bằng 2 stat card nằm ngang
+ * - Mỗi card có ảnh minh hoạ ở đầu, số liệu to, nhãn phụ
+ * - Header có link "Xem chi tiết >" trỏ sang trang thống kê chi tiết
+ * - Loading skeleton / Error / Empty giữ nguyên pattern cũ
+ *
+ * Ảnh minh hoạ để trống (null) — cấu trúc layout đã sẵn sàng, chờ thay ảnh.
  */
 
 import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View, Text, Image, StyleSheet, Pressable } from 'react-native';
 import { useTheme } from '../../theme/ThemeContext';
 import { AppColors } from '../../theme/colors';
 import { sp } from '../../utils/responsive';
 import { FontFamily, FontWeights } from '../../theme/typography';
-import { TrendingUp, Lightbulb, ShoppingCart, ChevronRight, Calendar, Flame, BarChart3 } from 'lucide-react-native';
+import { ChevronRight } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { useWeeklyStats } from '../../hooks/useServiceHooks';
-import { BarChart } from '../charts/BarChart';
-import { StatCard } from '../common/StatCard';
-import { GrowthBadge } from '../common/GrowthBadge';
 import { Skeleton } from '../common/Skeleton';
 import { EmptyState } from '../common/EmptyState';
 import { ErrorState } from '../common/ErrorState';
 
-export const WeeklyStatisticsSection = ({
-  onDetailTap,
-  onMealSuggestionsTap,
-  onShoppingReminderTap,
-}) => {
+// Ảnh minh hoạ. Để null trước khi có asset — ô ảnh vẫn giữ đúng kích thước
+// để layout không nhảy khi thay ảnh sau này.
+const COOKED_ART = null; // bữa đã nấu
+const ATTENTION_ART = null; // cần chú ý
+
+export const WeeklyStatisticsSection = ({ onDetailTap }) => {
   const { isDark } = useTheme();
   const { t } = useTranslation();
   const { data: stats, loading, error, refetch } = useWeeklyStats();
 
-  const computed = useMemo(() => {
-    if (!stats || !stats.data || stats.data.length === 0) {
-      return null;
-    }
-    const maxValue = Math.max(...stats.data.map((d) => d.count), 0);
-    const avg = stats.total / stats.data.length;
-    const bestEntry = stats.data.reduce(
-      (best, cur) => (cur.count > best.count ? cur : best),
-      { count: 0, day: '—' },
-    );
-    const growth =
-      stats.previousWeek > 0
-        ? Math.round(((stats.total - stats.previousWeek) / stats.previousWeek) * 100)
-        : stats.total > 0
-        ? 100
-        : 0;
-    return { maxValue, avg: Math.round(avg * 10) / 10, bestEntry, growth };
+  const cookedCount = useMemo(() => {
+    if (!stats?.data?.length) return 0;
+    return stats.data.reduce((sum, d) => sum + (d.count || 0), 0);
   }, [stats]);
+
+  const attentionCount = useMemo(() => {
+    if (!stats?.data?.length) return 0;
+    return stats.data.filter((d) => (d.count || 0) === 0).length;
+  }, [stats]);
+
+  const hasData = cookedCount > 0 || attentionCount > 0;
+
+  const surfaceColor = isDark ? '#19271E' : '#FFFFFF';
+  const borderColor = isDark ? '#2E4D36' : '#A5E69C';
+  const textPrimary = isDark ? '#FFFFFF' : AppColors.textPrimary;
+
+  const renderHeader = (withLink) => (
+    <View style={styles.headerRow}>
+      <Text style={[styles.title, { color: textPrimary }]}>{t('home.weeklyStats')}</Text>
+      {withLink && (
+        <Pressable
+          onPress={onDetailTap}
+          style={({ pressed }) => [styles.detailLink, { opacity: pressed ? 0.6 : 1 }]}
+        >
+          <Text style={[styles.detailLinkText, { color: isDark ? AppColors.primaryLight : AppColors.primary }]}>
+            {t('recipe.viewDetail')}
+          </Text>
+          <ChevronRight
+            color={isDark ? AppColors.primaryLight : AppColors.primary}
+            size={14}
+            strokeWidth={2.5}
+          />
+        </Pressable>
+      )}
+    </View>
+  );
 
   // Loading state
   if (loading) {
     return (
-      <View style={[styles.wrap, themedWrap(isDark)]}>
-        <View style={styles.headerRow}>
-          <View style={{ flex: 1 }}>
-            <Skeleton width="60%" height={sp(18)} />
-            <Skeleton width="40%" height={sp(12)} style={{ marginTop: sp(8) }} />
+      <View style={styles.wrap}>
+        <View style={[styles.surface, { backgroundColor: surfaceColor, borderColor }]}>
+          {renderHeader(false)}
+          <View style={styles.statRow}>
+            {[0, 1].map((i) => (
+              <View
+                key={i}
+                style={[styles.statCard, { backgroundColor: surfaceColor, borderColor }]}
+              >
+                <Skeleton width="100%" height={sp(56)} borderRadius={sp(10)} />
+                <Skeleton width="70%" height={sp(11)} style={{ marginTop: sp(8) }} />
+                <Skeleton width="55%" height={sp(10)} />
+                <Skeleton width="45%" height={sp(22)} style={{ marginTop: sp(6) }} />
+              </View>
+            ))}
           </View>
         </View>
-        <View style={[styles.statRow, { marginVertical: sp(16) }]}>
-          <Skeleton width="32%" height={sp(72)} borderRadius={sp(14)} />
-          <Skeleton width="32%" height={sp(72)} borderRadius={sp(14)} />
-          <Skeleton width="32%" height={sp(72)} borderRadius={sp(14)} />
-        </View>
-        <Skeleton width="100%" height={sp(120)} borderRadius={sp(12)} />
       </View>
     );
   }
@@ -78,269 +98,194 @@ export const WeeklyStatisticsSection = ({
   // Error state
   if (error) {
     return (
-      <View style={[styles.wrap, themedWrap(isDark)]}>
-        <View style={styles.headerRow}>
-          <View style={styles.titleRow}>
-            <BarChart3
-              color={isDark ? AppColors.primaryLight : AppColors.forestAccent}
-              size={20}
-            />
-            <Text
-              style={[
-                styles.title,
-                { color: isDark ? '#FFFFFF' : AppColors.textPrimary, marginLeft: sp(8) },
-              ]}
-            >
-              {t('home.weeklyStats')}
-            </Text>
-          </View>
+      <View style={styles.wrap}>
+        <View style={[styles.surface, { backgroundColor: surfaceColor, borderColor }]}>
+          {renderHeader(false)}
+          <ErrorState onRetry={refetch} />
         </View>
-        <ErrorState onRetry={refetch} />
       </View>
     );
   }
 
   // Empty state (no data)
-  if (!computed || stats.total === 0) {
+  if (!hasData) {
     return (
-      <View style={[styles.wrap, themedWrap(isDark)]}>
-        <View style={styles.headerRow}>
-          <View style={styles.titleRow}>
-            <BarChart3
-              color={isDark ? AppColors.primaryLight : AppColors.forestAccent}
-              size={20}
-            />
-            <Text
-              style={[
-                styles.title,
-                { color: isDark ? '#FFFFFF' : AppColors.textPrimary, marginLeft: sp(8) },
-              ]}
-            >
-              {t('home.weeklyStats')}
-            </Text>
-          </View>
+      <View style={styles.wrap}>
+        <View style={[styles.surface, { backgroundColor: surfaceColor, borderColor }]}>
+          {renderHeader(false)}
+          <EmptyState emoji="📊" title={t('home.noData')} hint={t('home.tipUseExpired')} />
         </View>
-        <EmptyState
-          emoji="📊"
-          title={t('home.noData')}
-          hint={t('home.tipUseExpired')}
-        />
       </View>
     );
   }
 
-  const chartData = stats.data.map((d) => ({ label: d.day, value: d.count }));
-
   return (
-    <View style={[styles.wrap, themedWrap(isDark)]}>
-      {/* Header */}
-      <View style={styles.headerRow}>
-        <View style={{ flex: 1 }}>
-          <View style={styles.titleRow}>
-            <BarChart3
-              color={isDark ? AppColors.primaryLight : AppColors.forestAccent}
-              size={20}
-            />
-            <Text
-              style={[
-                styles.title,
-                { color: isDark ? '#FFFFFF' : AppColors.textPrimary, marginLeft: sp(8) },
-              ]}
-            >
-              {t('home.weeklyStats')}
-            </Text>
-          </View>
-          <Text
-            style={[
-              styles.subtitle,
-              { color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary },
-            ]}
-          >
-            {t('home.statsSubtitle')}
-          </Text>
-        </View>
-        <GrowthBadge value={computed.growth} suffix="%" size="large" />
-      </View>
+    <View style={styles.wrap}>
+      <View style={[styles.surface, { backgroundColor: surfaceColor, borderColor }]}>
+        {renderHeader(true)}
 
-      {/* 3 stat cards */}
-      <View style={styles.statRow}>
-        <StatCard
-          layout="column"
-          icon={Flame}
-          value={stats.total}
-          label={t('home.ingredientsCount')}
-          sublabel={t('home.thisWeek')}
-        />
-        <StatCard
-          layout="column"
-          icon={Calendar}
-          value={computed.bestEntry.count}
-          label={computed.bestEntry.day}
-          sublabel={t('home.bestDay')}
-        />
-        <StatCard
-          layout="column"
-          icon={TrendingUp}
-          value={computed.avg}
-          label={t('home.averagePerDay')}
-        />
-      </View>
-
-      {/* Chart */}
-      <View style={styles.chartWrap}>
-        <BarChart data={chartData} highlightLast />
-      </View>
-
-      {/* Action rows */}
-      <Pressable
-        onPress={onMealSuggestionsTap}
-        style={[styles.actionRow, { borderTopColor: isDark ? '#2E4D36' : '#E3E8E4' }]}
-      >
-        <View
-          style={[
-            styles.actionIcon,
-            { backgroundColor: isDark ? '#233629' : '#E8F5E9' },
-          ]}
-        >
-          <Lightbulb
-            color={isDark ? AppColors.primaryLight : AppColors.forestAccent}
-            size={18}
+        <View style={styles.statRow}>
+          <StatBlock
+            isDark={isDark}
+            art={COOKED_ART}
+            tone="green"
+            title={t('home.weeklyStatsCooked')}
+            sub={t('home.weeklyStatsCookedSub')}
+            value={cookedCount}
+            unit={t('common.items')}
+          />
+          <StatBlock
+            isDark={isDark}
+            art={ATTENTION_ART}
+            tone="red"
+            title={t('home.weeklyStatsAttention')}
+            sub={t('home.weeklyStatsAttentionSub')}
+            value={attentionCount}
+            unit={t('common.items')}
           />
         </View>
-        <Text
-          style={[
-            styles.actionText,
-            { color: isDark ? '#FFFFFF' : AppColors.textPrimary },
-          ]}
-        >
-          {t('home.mealSuggestions')}
-        </Text>
-        <ChevronRight
-          color={isDark ? AppColors.darkTextSecondary : AppColors.hintText}
-          size={18}
-        />
-      </Pressable>
-
-      <Pressable
-        onPress={onShoppingReminderTap}
-        style={[styles.actionRow, { borderTopColor: isDark ? '#2E4D36' : '#E3E8E4' }]}
-      >
-        <View
-          style={[
-            styles.actionIcon,
-            { backgroundColor: isDark ? '#233629' : '#E8F5E9' },
-          ]}
-        >
-          <ShoppingCart
-            color={isDark ? AppColors.primaryLight : AppColors.forestAccent}
-            size={18}
-          />
-        </View>
-        <Text
-          style={[
-            styles.actionText,
-            { color: isDark ? '#FFFFFF' : AppColors.textPrimary },
-          ]}
-        >
-          {t('home.shoppingReminder')}
-        </Text>
-        <ChevronRight
-          color={isDark ? AppColors.darkTextSecondary : AppColors.hintText}
-          size={18}
-        />
-      </Pressable>
-
-      <Pressable
-        onPress={onDetailTap}
-        style={[styles.detailBtn, { borderTopColor: isDark ? '#2E4D36' : '#E3E8E4' }]}
-      >
-        <Text
-          style={[
-            styles.detailText,
-            { color: isDark ? AppColors.primaryLight : AppColors.primary },
-          ]}
-        >
-          {t('common.seeMore')}
-        </Text>
-      </Pressable>
+      </View>
     </View>
   );
 };
 
-const themedWrap = (isDark) => ({
-  backgroundColor: isDark ? '#19271E' : '#FFFFFF',
-  borderColor: isDark ? '#2E4D36' : '#A5E69C',
-});
+const StatBlock = ({ isDark, art, tone, title, sub, value, unit }) => (
+  <View
+    style={[
+      styles.statCard,
+      {
+        backgroundColor: isDark ? '#19271E' : '#FFFFFF',
+        borderColor: isDark ? '#2E4D36' : '#A5E69C',
+      },
+    ]}
+  >
+    <View style={styles.artWrap}>
+      {art ? (
+        <Image source={art} style={styles.art} resizeMode="contain" />
+      ) : (
+        <View
+          style={[styles.artPlaceholder, { borderColor: isDark ? '#2E4D36' : '#A5E69C' }]}
+        />
+      )}
+    </View>
+    <Text
+      style={[
+        styles.statTitle,
+        { color: tone === 'red' ? AppColors.error : AppColors.primary },
+      ]}
+    >
+      {title}
+    </Text>
+    <Text
+      style={[
+        styles.statSub,
+        { color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary },
+      ]}
+    >
+      {sub}
+    </Text>
+    <View style={styles.statValueRow}>
+      <Text style={[styles.statValue, { color: isDark ? '#FFFFFF' : AppColors.textPrimary }]}>
+        {value}
+      </Text>
+      <Text
+        style={[
+          styles.statUnit,
+          { color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary },
+        ]}
+      >
+        {unit}
+      </Text>
+    </View>
+  </View>
+);
 
 const styles = StyleSheet.create({
   wrap: {
     marginHorizontal: sp(20),
+  },
+  // Card lớn bọc ngoài: nền + viền tĩnh, KHÔNG shadow (đồng bộ 2 banner trên).
+  surface: {
     borderRadius: sp(20),
-    borderWidth: 1,
+    borderWidth: sp(1.5),
     padding: sp(16),
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
   },
   headerRow: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: sp(16),
-  },
-  titleRow: {
-    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: sp(14),
   },
   title: {
     fontFamily: FontFamily.bold,
     fontWeight: FontWeights.bold,
     fontSize: sp(16),
   },
-  subtitle: {
-    fontFamily: FontFamily.medium,
-    fontWeight: FontWeights.medium,
+  detailLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: sp(2),
+  },
+  detailLinkText: {
+    fontFamily: FontFamily.semibold,
+    fontWeight: FontWeights.semibold,
     fontSize: sp(12),
-    marginTop: sp(4),
-    marginLeft: sp(28),
   },
   statRow: {
     flexDirection: 'row',
-    gap: sp(8),
-    marginBottom: sp(12),
+    gap: sp(10),
   },
-  chartWrap: {
-    marginVertical: sp(8),
-  },
-  actionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: sp(12),
-    borderTopWidth: 1,
-  },
-  actionIcon: {
-    width: sp(32),
-    height: sp(32),
+  // 2 card nằm ngang, mỗi card co giãn đều nhau.
+  statCard: {
+    flex: 1,
     borderRadius: sp(16),
+    borderWidth: 1,
+    padding: sp(12),
+  },
+  artWrap: {
+    width: '100%',
+    height: sp(56),
     alignItems: 'center',
     justifyContent: 'center',
   },
-  actionText: {
-    flex: 1,
+  art: {
+    width: '100%',
+    height: '100%',
+  },
+  // Chỗ trống chờ ảnh — viền mờ để vẫn thấy vùng ảnh sắp thay.
+  artPlaceholder: {
+    width: '100%',
+    height: '100%',
+    borderRadius: sp(10),
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    opacity: 0.35,
+  },
+  statTitle: {
+    fontFamily: FontFamily.bold,
+    fontWeight: FontWeights.bold,
+    fontSize: sp(12),
+    marginTop: sp(8),
+  },
+  statSub: {
+    fontFamily: FontFamily.regular,
+    fontSize: sp(10.5),
+    marginTop: sp(1),
+  },
+  statValueRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    marginTop: sp(6),
+    gap: sp(3),
+  },
+  statValue: {
+    fontFamily: FontFamily.black,
+    fontWeight: FontWeights.black,
+    fontSize: sp(26),
+  },
+  statUnit: {
     fontFamily: FontFamily.medium,
     fontWeight: FontWeights.medium,
-    fontSize: sp(14),
-    marginLeft: sp(12),
-  },
-  detailBtn: {
-    paddingVertical: sp(12),
-    alignItems: 'center',
-    borderTopWidth: 1,
-  },
-  detailText: {
-    fontFamily: FontFamily.semibold,
-    fontWeight: FontWeights.semibold,
-    fontSize: sp(13),
+    fontSize: sp(11),
   },
 });

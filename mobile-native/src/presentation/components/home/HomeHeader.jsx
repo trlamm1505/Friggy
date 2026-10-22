@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TextInput, StyleSheet, Pressable } from 'react-native';
+import { View, TextInput, StyleSheet, Pressable } from 'react-native';
 import { useTheme } from '../../theme/ThemeContext';
 import { AppColors } from '../../theme/colors';
 import { sp } from '../../utils/responsive';
@@ -48,19 +48,22 @@ export const HomeHeader = ({ onNotificationTap, onFilterTap, searchValue, onSear
 };
 
 const styles = StyleSheet.create({
+  // Trước đây toàn bộ giá trị ở đây là px thô (20/12/16/52/14/18/8) trong khi
+  // phần còn lại của app dùng sp() -> header lệch tỉ lệ với GreetingBanner ngay
+  // dưới nó. Đã chuyển hết về sp() để khoảng cách dọc đều nhau.
   wrap: {
-    paddingHorizontal: 20,
-    paddingVertical: 12,
+    paddingHorizontal: sp(20),
+    paddingVertical: sp(12),
   },
   searchRow: {
-    marginTop: 16,
+    marginTop: sp(14),
   },
   searchBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: 52,
-    paddingHorizontal: 14,
-    borderRadius: 18,
+    height: sp(52),
+    paddingHorizontal: sp(14),
+    borderRadius: sp(18),
     borderWidth: 0.8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 3 },
@@ -72,10 +75,10 @@ const styles = StyleSheet.create({
     flex: 1,
     fontFamily: FontFamily.semibold,
     fontWeight: FontWeights.semibold,
-    paddingVertical: 14,
-    paddingHorizontal: 8,
+    paddingVertical: sp(14),
+    paddingHorizontal: sp(8),
   },
   filterBtn: {
-    padding: 4,
+    padding: sp(4),
   },
 });

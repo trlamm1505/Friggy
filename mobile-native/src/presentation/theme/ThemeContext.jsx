@@ -6,7 +6,9 @@ import { useThemeStore } from '../../shared/stores/useThemeStore';
 const ThemeContext = createContext({
   isDark: false,
   colors: AppColors,
-  themeMode: 'system',
+  // Khớp với mặc định trong useThemeStore (themeMode: 'light') để render đầu
+  // tiên không nháy sang dark rồi mới về light.
+  themeMode: 'light',
   toggleTheme: () => {},
   setTheme: () => {},
 });

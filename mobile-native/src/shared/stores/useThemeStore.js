@@ -1,6 +1,5 @@
 // Map ThemeProvider trong Flutter
 import { create } from 'zustand';
-import { Appearance } from 'react-native';
 
 const STORAGE_KEY = 'themeMode';
 
@@ -20,18 +19,21 @@ try {
 }
 
 export const useThemeStore = create((set) => ({
-  themeMode: 'system', // 'light' | 'dark' | 'system'
+  // Mặc định 'light': thiết kế gradient nền (AppGradients) được dựng cho nền
+  // sáng trước. 'system' khiến máy đang ở dark mode mở app ra là tối ngay,
+  // không đúng ý đồ sản phẩm. Người dùng vẫn đổi được trong App Settings.
+  themeMode: 'light', // 'light' | 'dark' | 'system'
   initTheme: () => {
     try {
       const saved = mmkv.getString(STORAGE_KEY);
       if (saved) {
         set({ themeMode: saved });
       } else {
-        const sys = Appearance.getColorScheme();
-        set({ themeMode: sys === 'dark' ? 'dark' : 'light' });
+        // Không có lựa chọn đã lưu -> dùng mặc định sáng.
+        set({ themeMode: 'light' });
       }
     } catch (e) {
-      // fallback
+      set({ themeMode: 'light' });
     }
   },
   setThemeMode: (mode) => {

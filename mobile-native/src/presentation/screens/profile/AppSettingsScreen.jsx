@@ -4,7 +4,15 @@
  * Redesigned (Sprint 7):
  * - SettingsSection + SettingsMenuItem + ToggleRow
  * - i18n đầy đủ
- * - Group: Notifications (3 toggles) / Sound (2 toggles) / Data (clear cache + version)
+ * - Group: Appearance (theme) / Language (locale) / Notifications (3 toggles) /
+ *   Sound (2 toggles) / Data (clear cache + version)
+ *
+ * Ghi chú (2026-10-22): 2 control chuyển từ UserProfileScreen sang đây để trang
+ * tài khoản chỉ còn 7 mục đã chốt (profile / family / preferences / allergies /
+ * change password / settings / logout):
+ *   - home.theme     -> t('home.settingsAppearance')
+ *   - home.language  -> t('home.settingsLanguage')
+ * Logic (useThemeStore + useLanguageStore) giữ nguyên, chỉ đổi chỗ render.
  */
 
 import React, { useState, useCallback } from 'react';
@@ -20,6 +28,9 @@ import { BackCircleButton } from '../../components/common/BackCircleButton';
 import { SettingsSection } from '../../components/common/SettingsSection';
 import { SettingsMenuItem } from '../../components/common/SettingsMenuItem';
 import { ToggleRow } from '../../components/common/ToggleRow';
+import { SegmentedControl } from '../../components/common/SegmentedControl';
+import { useThemeStore } from '../../../shared/stores/useThemeStore';
+import { useLanguageStore } from '../../../shared/stores/useLanguageStore';
 import {
   Bell,
   Mail,
@@ -30,6 +41,8 @@ import {
   FileText,
   Shield,
   Github,
+  Moon,
+  Globe,
 } from 'lucide-react-native';
 
 export const AppSettingsScreen = () => {
@@ -38,10 +51,24 @@ export const AppSettingsScreen = () => {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
 
+  const { themeMode, setThemeMode } = useThemeStore();
+  const { locale, setLocale } = useLanguageStore();
+
   const [pushEnabled, setPushEnabled] = useState(true);
   const [emailEnabled, setEmailEnabled] = useState(false);
   const [vibrationEnabled, setVibrationEnabled] = useState(true);
   const [soundEnabled, setSoundEnabled] = useState(true);
+
+  const themeOptions = [
+    { key: 'light', label: t('home.light') },
+    { key: 'dark', label: t('home.dark') },
+    { key: 'system', label: t('home.system') },
+  ];
+
+  const languageOptions = [
+    { key: 'vi', label: t('home.vietnamese') },
+    { key: 'en', label: t('home.english') },
+  ];
 
   const handleClearCache = useCallback(() => {
     Alert.alert(
@@ -80,6 +107,42 @@ export const AppSettingsScreen = () => {
         >
           {t('home.appSettings')}
         </Text>
+
+        {/* Appearance — chuyển theme (light / dark / system) */}
+        <SettingsSection title={t('home.settingsAppearance')}>
+          <SettingsMenuItem
+            icon={Moon}
+            label={t('home.theme')}
+            customRight={
+              <View style={{ maxWidth: sp(170) }}>
+                <SegmentedControl
+                  options={themeOptions}
+                  selectedKey={themeMode}
+                  onSelect={setThemeMode}
+                />
+              </View>
+            }
+            isLast
+          />
+        </SettingsSection>
+
+        {/* Language */}
+        <SettingsSection title={t('home.settingsLanguage')}>
+          <SettingsMenuItem
+            icon={Globe}
+            label={t('home.language')}
+            customRight={
+              <View style={{ maxWidth: sp(160) }}>
+                <SegmentedControl
+                  options={languageOptions}
+                  selectedKey={locale}
+                  onSelect={setLocale}
+                />
+              </View>
+            }
+            isLast
+          />
+        </SettingsSection>
 
         {/* Notifications */}
         <SettingsSection title={t('home.settingsNotifications')}>

@@ -102,7 +102,14 @@ export const RecipeDetailScreen = () => {
   const [isFavorite, setIsFavorite] = useState(false);
   const [servings, setServings] = useState(2);
 
-  const recipe = routeRecipe || fetchedRecipe || FALLBACK_RECIPE;
+  // Mock suggestions chỉ có id/name/cookTime/matchPercent, KHÔNG có
+  // ingredients/steps. Khi bấm "Xem công thức" từ Home, route params truyền
+  // nguyên suggestion đó — ta phải dùng id để fetch full recipe từ service.
+  // Ưu tiên: fetchedRecipe (đầy đủ) > routeRecipe (chỉ khi có ingredients) > FALLBACK.
+  const recipe =
+    fetchedRecipe ||
+    (routeRecipe?.ingredients ? routeRecipe : null) ||
+    FALLBACK_RECIPE;
 
   // servings là "derived state" từ recipe.servings, nhưng người dùng có thể
   // chỉnh bằng Stepper -> cần giữ state cục bộ.
@@ -187,8 +194,8 @@ export const RecipeDetailScreen = () => {
   };
   const imageSource = recipe.image && imageMap[recipe.image] ? imageMap[recipe.image] : null;
 
-  // Loading
-  if (loading && !routeRecipe) {
+  // Loading — chỉ hiện skeleton khi chưa có dữ liệu nào để hiển thị.
+  if (loading && !recipe?.ingredients) {
     return (
       <View style={styles.container}>
         <Skeleton width="100%" height={sp(280)} borderRadius={0} />
@@ -201,7 +208,7 @@ export const RecipeDetailScreen = () => {
     );
   }
 
-  if (error && !routeRecipe && !fetchedRecipe) {
+  if (error && !fetchedRecipe && !routeRecipe?.ingredients) {
     return (
       <View style={[styles.container, { backgroundColor: isDark ? '#0E1611' : '#FFFFFF' }]}>
         <ErrorState onRetry={refetch} style={{ marginTop: sp(80) }} />

@@ -1,21 +1,19 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
-  StyleSheet,
   ScrollView,
   Animated,
   Easing,
   Platform,
   RefreshControl,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../theme/ThemeContext';
 import { AppColors } from '../../theme/colors';
-import { AppGradients } from '../../theme/gradients';
 import { sp } from '../../utils/responsive';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ScreenBackground } from '../../components/common/ScreenBackground';
 import { HomeHeader } from '../../components/home/HomeHeader';
 import { GreetingBanner } from '../../components/home/GreetingBanner';
 import { FridgeSummaryCards } from '../../components/home/FridgeSummaryCards';
@@ -101,16 +99,10 @@ export const HomeScreen = () => {
   }, [animController]);
 
   return (
-    <View style={styles.container}>
-      {/* P0.8: gradient phủ toàn bộ màn (ảnh 5/8) - header trong suốt để
-          gradient liền mạch, bottom nav trắng mờ nổi phía trên. */}
-      <LinearGradient
-        colors={AppGradients.getBackground(isDark).colors}
-        locations={AppGradients.getBackground(isDark).locations}
-        start={AppGradients.getBackground(isDark).start}
-        end={AppGradients.getBackground(isDark).end}
-        style={StyleSheet.absoluteFillObject}
-      />
+    <ScreenBackground>
+      {/* P0.8: gradient + nền phẳng theo theme do ScreenBackground lo, nên
+          header/bottom nav trong suốt và gradient liền mạch, không lộ
+          màu trắng mặc định của NavigationContainer ở dark mode. */}
       <Animated.View style={{ opacity: headerFade, transform: [{ translateY: headerSlide }] }}>
         <HomeHeader
           searchValue={searchValue}
@@ -124,7 +116,7 @@ export const HomeScreen = () => {
         <ScrollView
           style={{ flex: 1 }}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 100 + insets.bottom }}
+          contentContainerStyle={{ paddingBottom: sp(100) + insets.bottom }}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
@@ -135,7 +127,7 @@ export const HomeScreen = () => {
             />
           }
         >
-          <View style={{ marginTop: sp(16) }}>
+          <View style={{ marginTop: sp(18) }}>
             <GreetingBanner />
           </View>
 
@@ -146,7 +138,7 @@ export const HomeScreen = () => {
             />
           </View>
 
-          <View style={{ marginTop: sp(20) }}>
+          <View style={{ marginTop: sp(18) }}>
             <PremiumBanner
               isFamilyPlan={isFamilyPlan}
               onTryNowTap={() => {
@@ -162,23 +154,15 @@ export const HomeScreen = () => {
           <View style={{ marginTop: sp(20) }}>
             <WeeklyStatisticsSection
               onDetailTap={() => navigation.navigate(Routes.IngredientStatistics)}
-              onMealSuggestionsTap={() => navigation.navigate(Routes.NextWeekSuggestions)}
-              onShoppingReminderTap={() => navigation.navigate(Routes.ShoppingReminder)}
             />
           </View>
 
           <CookingSuggestionsSection
             onRecipeTap={(recipe) => navigation.navigate(Routes.RecipeDetail, { recipe })}
-            onUpgradeTap={() => showInfo(t('home.upgradeTapped'))}
+            onSwapTap={() => showInfo(t('home.filterTapped'))}
           />
         </ScrollView>
       </Animated.View>
-    </View>
+    </ScreenBackground>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-});
