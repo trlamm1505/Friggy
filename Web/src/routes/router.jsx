@@ -16,6 +16,18 @@ import RecipeManagement from '../pages/Admin/RecipeManagement/RecipeManagement';
 import PaymentTransactionsManagement from '../pages/Admin/PaymentTransactions/PaymentTransactionsManagement';
 import FamilyInviteAction from '../pages/Guest/FamilyInviteAction';
 
+// Manager Portal Components
+import ManagerLayout from '../pages/Manager/ManagerLayout';
+import ManagerDashboard from '../pages/Manager/Dashboard/ManagerDashboard';
+import ManagerIngredientManagement from '../pages/Manager/IngredientManagement/IngredientManagement';
+import ManagerRecipeManagement from '../pages/Manager/RecipeManagement/RecipeManagement';
+import ManagerUserManagement from '../pages/Manager/UserManagement/UserManagement';
+import ManagerPaymentTransactionsManagement from '../pages/Manager/PaymentTransactions/PaymentTransactionsManagement';
+import ManagerSponsorManagement from '../pages/Manager/SponsorManagement/SponsorManagement';
+import ManagerPackageManagement from '../pages/Manager/PackageManagement/PackageManagement';
+import ManagerProfile from '../pages/Manager/Profile/ManagerProfile';
+import ManagerSettings from '../pages/Manager/Settings/ManagerSettings';
+
 const enableAdminLogin =
   import.meta.env.VITE_ENABLE_ADMIN_LOGIN === 'true' ||
   import.meta.env.VITE_ENABLE_ADMIN_LOGIN === true;
@@ -30,6 +42,8 @@ function Router() {
       {enableAdminLogin ? (
         <>
           <Route path="login" element={<Login />} />
+          
+          {/* Admin Routes */}
           <Route path="admin" element={<AdminLayout />}>
             <Route path="" element={<AdminDashboard />} />
             <Route path="dashboard" element={<AdminDashboard />} />
@@ -44,11 +58,26 @@ function Router() {
             <Route path="profile" element={<AdminProfile />} />
             <Route path="settings" element={<AdminSettings />} />
           </Route>
+
+          {/* Manager Routes */}
+          <Route path="manager" element={<ManagerLayout />}>
+            <Route path="" element={<ManagerDashboard />} />
+            <Route path="dashboard" element={<ManagerDashboard />} />
+            <Route path="ingredients" element={<ManagerIngredientManagement />} />
+            <Route path="recipes" element={<ManagerRecipeManagement />} />
+            <Route path="users" element={<ManagerUserManagement />} />
+            <Route path="transactions" element={<ManagerPaymentTransactionsManagement />} />
+            <Route path="sponsors" element={<ManagerSponsorManagement />} />
+            <Route path="packages" element={<ManagerPackageManagement />} />
+            <Route path="profile" element={<ManagerProfile />} />
+            <Route path="settings" element={<ManagerSettings />} />
+          </Route>
         </>
       ) : (
         <>
           <Route path="login" element={<Navigate to="/" replace />} />
           <Route path="admin/*" element={<Navigate to="/" replace />} />
+          <Route path="manager/*" element={<Navigate to="/" replace />} />
         </>
       )}
 

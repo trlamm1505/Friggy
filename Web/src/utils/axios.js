@@ -39,8 +39,33 @@ const toFriendlyError = (error, fallback = 'Có lỗi xảy ra, vui lòng thử 
   return err;
 };
 
+// Kiểm tra xem phiên đăng nhập hiện tại có phải là tài khoản Mock (dev/test offline) không
+const isMockSession = () => {
+  if (localStorage.getItem('is_mock_user') === 'true') return true;
+  const token =
+    localStorage.getItem('friggy_access_token') ||
+    localStorage.getItem('accessToken') ||
+    '';
+  if (token.startsWith('mock_token_')) return true;
+  try {
+    const userStr =
+      localStorage.getItem('friggy_user') || localStorage.getItem('user');
+    if (userStr) {
+      const u = JSON.parse(userStr);
+      if (u.username === 'manager' || u.username === '0854340045') return true;
+    }
+  } catch (e) {}
+  return false;
+};
+
 // Xóa Token & chuyển về trang chủ Guest khi Refresh Token hết hạn
 const handleSessionExpired = () => {
+  // Nếu đang dùng tài khoản Mock demo, không tự động đăng xuất để tiện kiểm thử giao diện
+  if (isMockSession()) {
+    console.warn('[Axios] Mock mode 401: Bỏ qua hết hạn phiên đăng nhập để giữ giao diện demo.');
+    return;
+  }
+
   localStorage.removeItem('friggy_access_token');
   localStorage.removeItem('friggy_refresh_token');
   localStorage.removeItem('friggy_user');
@@ -81,6 +106,11 @@ axiosClient.interceptors.response.use(
 
     // Nếu lỗi 401 Unauthorized và chưa thử retry request này
     if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
+      // Nếu đang dùng tài khoản Mock demo, trả lỗi êm dịu, không gọi refresh hay sessionExpired
+      if (isMockSession()) {
+        return Promise.reject(toFriendlyError(error, 'Chế độ xem demo: Không có phiên backend thật.'));
+      }
+
       // API xác thực (login/google/refresh/logout) bị 401 -> trả lỗi của backend, không refresh
       if (isAuthEndpoint(originalRequest.url)) {
         return Promise.reject(toFriendlyError(error, 'Thông tin đăng nhập không hợp lệ!'));
