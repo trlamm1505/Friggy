@@ -12,8 +12,9 @@ SET FOREIGN_KEY_CHECKS = 0;
 -- [1] ROLES
 -- ============================================================
 INSERT IGNORE INTO `roles` (`id`, `name`, `description`, `createdAt`) VALUES
-  (1, 'admin', 'Ban quản trị hệ thống — toàn quyền truy cập Admin Dashboard', NOW()),
-  (2, 'user',  'Người dùng cuối — sử dụng ứng dụng quản lý tủ lạnh',          NOW());
+  (1, 'admin',   'Ban quản trị hệ thống — toàn quyền truy cập Admin Dashboard', NOW()),
+  (2, 'user',    'Người dùng cuối — sử dụng ứng dụng quản lý tủ lạnh',          NOW()),
+  (3, 'manager', 'Quản lý vận hành — quản lý nội dung, người dùng, giao dịch', NOW());
 
 -- ============================================================
 -- [1b] ADMIN ACCOUNT
@@ -33,7 +34,24 @@ INSERT IGNORE INTO `user_profiles` (`id`, `userId`, `displayName`, `updatedAt`) 
    'Friggy Admin', NOW());
 
 -- ============================================================
--- [1c] TEST USER ACCOUNT
+-- [1c] MANAGER ACCOUNT
+-- Email   : manager@friggy.vn
+-- Password: Friggy@Manager2026  (bcrypt hash rounds=10)
+-- ⚠️ Dùng quản lý vận hành nội dung & kinh doanh
+-- ============================================================
+INSERT IGNORE INTO `users` (`id`, `email`, `passwordHash`, `authProvider`, `status`, `roleId`, `isOnboardingCompleted`, `name`, `createdAt`, `updatedAt`) VALUES
+  ('00000000-0000-0000-0000-000000000003',
+   'manager@friggy.vn',
+   '$2b$10$ufMDqXnGkTPZg5RNZ8wr6.XsE56LNWN0h8dZtWJCGHs.fWQ18U7q6',
+   'email', 'active', 3, 1, 'Friggy Manager', NOW(), NOW());
+
+INSERT IGNORE INTO `user_profiles` (`id`, `userId`, `displayName`, `updatedAt`) VALUES
+  ('00000000-0000-0000-0000-000000000003',
+   '00000000-0000-0000-0000-000000000003',
+   'Friggy Manager', NOW());
+
+-- ============================================================
+-- [1d] TEST USER ACCOUNT
 -- Email   : user@friggy.vn
 -- Password: User@12345  (bcrypt rounds=10)
 -- ⚠️ Chỉ dùng cho môi trường dev/test
