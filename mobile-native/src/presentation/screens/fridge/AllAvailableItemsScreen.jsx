@@ -8,23 +8,11 @@
 
 import React from 'react';
 import { FridgeListScreen } from './FridgeListScreen';
+import { isItemAvailable } from '../../utils/fridgeDates';
 
-const CATEGORY_KEYS = {
-  ALL: 'all',
-  VEGETABLE: 'vegetable',
-  MEAT: 'meat',
-  DAIRY: 'dairy',
-  FRUIT: 'fruit',
-  OTHER: 'other',
-};
-
-const getDaysToExpiry = (expiryDate) => {
-  const expiry = new Date(expiryDate);
-  const now = new Date();
-  now.setHours(0, 0, 0, 0);
-  expiry.setHours(0, 0, 0, 0);
-  return Math.ceil((expiry - now) / (1000 * 60 * 60 * 24));
-};
+// KHÔNG còn CATEGORY_KEYS: chip category đã bị tắt (categoryChips: null) vì
+// BE không trả field `category` cho từng item. Giữ lại hằng số chỉ là code chết
+// -> ESLint no-unused-vars. Xem chú thích ở `categoryChips` bên dưới.
 
 const SORT_OPTIONS = {
   EXPIRY_ASC: 'expiry_asc',
@@ -35,10 +23,10 @@ const SORT_OPTIONS = {
 
 const AVAILABLE_CONFIG = {
   titleKey: 'home.availableIngredients',
-  baseFilter: (item) => {
-    const days = getDaysToExpiry(item.expiryDate);
-    return item.status !== 'expired' && days >= 0;
-  },
+  // Chỉ hiện nguyên liệu CÒN hạn (kể cả hết hạn HÔM NAY).
+  // `isItemAvailable` xử lý cả case không có hạn dùng (`expiresAt: null`) —
+  // xem `fridgeDateUtils.js` vì sao KHÔNG được dùng `days >= 0` trực tiếp.
+  baseFilter: isItemAvailable,
   statusChips: [
     { key: 'all', labelKey: 'home.all', color: undefined },
     { key: 'fresh', labelKey: 'home.filterFresh', color: '#4CAF50' },
@@ -49,13 +37,14 @@ const AVAILABLE_CONFIG = {
     if (filterKey === 'all') return true;
     return item.status === filterKey;
   },
-  categoryChips: [
-    { key: 'all', labelKey: 'home.categoryAll' },
-    { key: 'vegetable', labelKey: 'home.categoryVegetable', color: '#4CAF50' },
-    { key: 'meat', labelKey: 'home.categoryMeat', color: '#E57373' },
-    { key: 'dairy', labelKey: 'home.categoryDairy', color: '#FFB300' },
-  ],
-  categoryFilterDefault: 'all',
+  // KHÔNG còn hàng chip category: `FridgeItemResponseDto` của BE không trả field
+  // `category` cho từng item, nên mọi item đều có `category === undefined`:
+  //   - count của 3 chip luôn = 0 (giống "All" -> vô nghĩa),
+  //   - bấm chip -> `it.category === 'vegetable'` false hết -> list RỖNG.
+  // Nên đây không phải sửa UI cho đẹp mà là fix bug: filter này không bao giờ cho
+  // kết quả đúng. `FridgeListScreen` đã bỏ hẳn nhánh xử lý category.
+  // Quyết định: DEV_B_ONBOARDING_PROMPT.md mục 5.2 (chốt 23/10).
+  // Muốn lọc theo danh mục thì cần BE trả `category` — thuộc ngoài phạm DEV B.
   sortOptions: SORT_OPTIONS,
   sortOptionsArray: [
     { key: SORT_OPTIONS.EXPIRY_ASC, labelKey: 'home.sortExpiryAsc' },

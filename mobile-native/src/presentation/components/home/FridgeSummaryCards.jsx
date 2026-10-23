@@ -7,6 +7,12 @@
  * - Empty state nếu expired = 0
  * - Hiển thị số món + alert badge
  * - Animation khi số expired > 0
+ *
+ * B1 — ghi chú: component này KHÔNG cần sửa logic.
+ * `useFridgeSummary()` -> `fridgeService.getSummary()` -> khi `USE_MOCKS=false`
+ * đã gọi BE thật (`GET /fridge/stats` + `GET /fridge`) qua `RealFridgeService`.
+ * Nhánh `error` bên dưới chính là nơi nhận lỗi 4xx (401) mà không làm vỡ Home —
+ * nhờ vậy B1 không cần đụng file này.
  */
 
 import React, { useEffect, useRef } from 'react';

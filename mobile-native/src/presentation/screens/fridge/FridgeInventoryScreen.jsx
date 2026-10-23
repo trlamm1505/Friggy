@@ -4,22 +4,35 @@
  * Redesigned (Sprint 5):
  * - Dùng useFridgeItems với search/sort/filter qua service layer
  * - Search bar live
- * - Filter chips: All / Fresh / Expiring + Category chips
+ * - Filter chips: All / Fresh / Expiring + 4 pill storage (Ngăn mát/đông/khô/tất cả)
  * - Sort menu: Expiry / Name / Quantity / Category
  * - FridgeItem component (đã làm ở Sprint 4)
  * - Pull-to-refresh
  * - Loading / empty / error states
  * - Compact stats header
+ *
+ * NGUỒN SỰ THẬT (mục 5.1 + 5.2 của DEV_B_ONBOARDING_PROMPT.md):
+ * 1. BỎ hàng chip category (rau/thịt/sữa/trái cây), thay bằng 4 pill storage.
+ *    ✅ ĐÃ CHỐT 23/10 (prompt mục 5.2) — không phải quyết định tại thời điểm code.
+ *    Lý do: BE không trả `category` theo item, mọi item có `category === undefined`
+ *    -> pill luôn hiện 0 và bấm vào lọc ra list rỗng. Xem
+ *    RealFridgeService.js mục "BA SAI LẦM ĐÃ BIẾT" số 2.
+ *    Thay bằng 4 pill storage vì `storageLocation` là filter SERVER-SIDE thật sự
+ *    (ListFridgeQueryDto nhận `storageLocation`, ingredients.service.ts:34).
+ * 2. Search DEBOUNCE 300ms (prompt mục 5.1) — trước đó mỗi ký tự gọi lại
+ *    `useFridgeItems` (deps = JSON.stringify(filters)) -> 1 request/ke, dễ giật
+ *    và tốn băng thông. List đã nằm trong RAM nên không gọi API mới.
+ * 3. `compartment` (tên UI) -> `storageLocation` (tên BE) do _buildListQuery dịch.
  */
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, FlatList, Pressable, RefreshControl } from 'react-native';
 import { useTheme } from '../../theme/ThemeContext';
 import { AppColors } from '../../theme/colors';
 import { sp } from '../../utils/responsive';
 import { FontWeights, FontFamily } from '../../theme/typography';
 import { useTranslation } from 'react-i18next';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Plus, Refrigerator } from 'lucide-react-native';
 import { FridgeItem } from '../../components/fridge/FridgeItem';
@@ -31,6 +44,7 @@ import { ErrorState } from '../../components/common/ErrorState';
 import { Skeleton } from '../../components/common/Skeleton';
 import { ScreenBackground } from '../../components/common/ScreenBackground';
 import { useFridgeItems } from '../../hooks/useServiceHooks';
+import { COMPARTMENT_LABEL } from '../../../data/services/real/RealFridgeService';
 import { Routes } from '../../../shared/constants/routes';
 
 const STATUS_KEYS = {
@@ -39,12 +53,16 @@ const STATUS_KEYS = {
   EXPIRING: 'expiring',
 };
 
-const CATEGORY_KEYS = {
+// 4 pill storage — thay cho 5 chip category cũ.
+// Key trùng `storageLocation` của BE (fridge|freezer|pantry). Mục 0 BƯỚC 3:
+// ưu tiên nội dung BE đã trả, dịch nhãn theo cách Flutter hiển thị
+// (Mobile/lib/screens/fridge_inventory_screen.dart:990-993).
+// Nhãn lấy từ COMPARTMENT_LABEL trong RealFridgeService để 1 nguồn duy nhất.
+const STORAGE_KEYS = {
   ALL: 'all',
-  VEGETABLE: 'vegetable',
-  MEAT: 'meat',
-  DAIRY: 'dairy',
-  FRUIT: 'fruit',
+  FRIDGE: 'fridge',
+  FREEZER: 'freezer',
+  PANTRY: 'pantry',
 };
 
 const SORT_KEYS = {
@@ -62,18 +80,39 @@ export const FridgeInventoryScreen = ({ fridge, isEmbedded = false, onRename }) 
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
 
-  const [search, setSearch] = useState('');
+  // `searchInput` = ký tự người dùng vừa gõ (cập nhật tức thì cho SearchBar).
+  // `debouncedSearch` = giá trị ĐÃ debounce, đưa vào serviceFilters.
+  // Không gộp 1 biến sẽ khiến mỗi ký tự gọi lại API (deps = JSON.stringify(filters)).
+  //
+  // Xoá hết từ khoá KHÔNG setState trong effect (react-hooks/set-state-in-effect):
+  // thay bằng derived value `search` bên dưới -> rỗng ngay, không cần render lại.
+  const [searchInput, setSearchInput] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState(STATUS_KEYS.ALL);
-  const [categoryFilter, setCategoryFilter] = useState(CATEGORY_KEYS.ALL);
+  const [storageFilter, setStorageFilter] = useState(STORAGE_KEYS.ALL);
   const [sort, setSort] = useState(SORT_KEYS.EXPIRY_ASC);
   const [refreshing, setRefreshing] = useState(false);
+
+  // Debounce 300ms cho search. setState nằm trong callback của timer (không phải
+  // thân effect) nên không vi phạm quy tắc cascading render.
+  // Timer clear ở cleanup -> không setState sau khi unmount.
+  useEffect(() => {
+    const q = searchInput.trim();
+    if (!q) return undefined;
+    const timer = setTimeout(() => setDebouncedSearch(q), 300);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
+
+  // Ô search rỗng -> không lọc, KHÔNG chờ debounce (UI phản hồi tức thì).
+  const search = searchInput.trim() ? debouncedSearch : '';
 
   // Build service filters
   const serviceFilters = useMemo(() => {
     const f = {};
-    if (search.trim()) f.search = search.trim();
+    if (search) f.search = search;
     if (statusFilter !== STATUS_KEYS.ALL) f.status = statusFilter;
-    if (categoryFilter !== CATEGORY_KEYS.ALL) f.category = categoryFilter;
+    // `compartment` là tên UI; _buildListQuery dịch sang `storageLocation` của BE.
+    if (storageFilter !== STORAGE_KEYS.ALL) f.compartment = storageFilter;
     if (sort === SORT_KEYS.EXPIRY_ASC) {
       f.sortBy = 'expiry';
       f.sortDir = 'asc';
@@ -94,7 +133,7 @@ export const FridgeInventoryScreen = ({ fridge, isEmbedded = false, onRename }) 
       f.sortDir = 'desc';
     }
     return f;
-  }, [search, statusFilter, categoryFilter, sort]);
+  }, [search, statusFilter, storageFilter, sort]);
 
   const { data: items, loading, error, refetch } = useFridgeItems(serviceFilters);
 
@@ -108,15 +147,16 @@ export const FridgeInventoryScreen = ({ fridge, isEmbedded = false, onRename }) 
     };
   }, [items]);
 
-  // Category counts (tính từ items đang hiển thị - đã filter status nhưng chưa filter category)
-  const categoryCounts = useMemo(() => {
-    if (!items) return { all: 0, vegetable: 0, meat: 0, dairy: 0, fruit: 0 };
+  // Storage counts — đếm trên `items` ĐANG hiển thị (đã lọc status nhưng chưa lọc storage).
+  // Cùng cách đếm cũ với category, nhưng dùng `compartment` (BE trả) thay vì
+  // `category` (BE không trả) -> số luôn thật.
+  const storageCounts = useMemo(() => {
+    if (!items) return { all: 0, fridge: 0, freezer: 0, pantry: 0 };
     return {
       all: items.length,
-      vegetable: items.filter((it) => it.category === 'vegetable').length,
-      meat: items.filter((it) => it.category === 'meat').length,
-      dairy: items.filter((it) => it.category === 'dairy').length,
-      fruit: items.filter((it) => it.category === 'fruit').length,
+      fridge: items.filter((it) => it.compartment === 'fridge').length,
+      freezer: items.filter((it) => it.compartment === 'freezer').length,
+      pantry: items.filter((it) => it.compartment === 'pantry').length,
     };
   }, [items]);
 
@@ -149,31 +189,30 @@ export const FridgeInventoryScreen = ({ fridge, isEmbedded = false, onRename }) 
     },
   ];
 
-  const categoryOptions = [
-    { key: CATEGORY_KEYS.ALL, label: t('home.allCategory'), count: categoryCounts.all },
+  // 4 pill storage. Nhãn lấy từ COMPARTMENT_LABEL (nguồn duy nhất, khớp mapper ở
+  // RealFridgeService) — không hardcode lần 2 để tránh lệch nhãn.
+  // Nhãn "Tất cả" lấy `home.categoryAll` ("Tất cả"), KHÔNG dùng
+  // `home.allCategory` ("Tất cả danh mục") — từ "danh mục" sai vì pill này
+  // lọc theo ngăn lưu trữ, không theo danh mục nguyên liệu.
+  const storageOptions = [
+    { key: STORAGE_KEYS.ALL, label: t('home.categoryAll'), count: storageCounts.all },
     {
-      key: CATEGORY_KEYS.VEGETABLE,
-      label: t('home.categoryVegetable'),
-      count: categoryCounts.vegetable,
+      key: STORAGE_KEYS.FRIDGE,
+      label: COMPARTMENT_LABEL.fridge,
+      count: storageCounts.fridge,
       color: '#4CAF50',
     },
     {
-      key: CATEGORY_KEYS.MEAT,
-      label: t('home.categoryMeat'),
-      count: categoryCounts.meat,
-      color: '#E57373',
+      key: STORAGE_KEYS.FREEZER,
+      label: COMPARTMENT_LABEL.freezer,
+      count: storageCounts.freezer,
+      color: '#29B6F6',
     },
     {
-      key: CATEGORY_KEYS.DAIRY,
-      label: t('home.categoryDairy'),
-      count: categoryCounts.dairy,
+      key: STORAGE_KEYS.PANTRY,
+      label: COMPARTMENT_LABEL.pantry,
+      count: storageCounts.pantry,
       color: '#FFB300',
-    },
-    {
-      key: CATEGORY_KEYS.FRUIT,
-      label: t('home.categoryFruit'),
-      count: categoryCounts.fruit,
-      color: '#FF7043',
     },
   ];
 
@@ -194,6 +233,30 @@ export const FridgeInventoryScreen = ({ fridge, isEmbedded = false, onRename }) 
       setTimeout(() => setRefreshing(false), 400);
     }
   }, [refetch]);
+
+  // Refetch mỗi lần màn được focus lại (trừ lần đầu).
+  //
+  // `native-stack` GIỮ screen mounted sau khi push -> `useFridgeItems` không tự
+  // chạy lại (deps không đổi) -> sau khi thêm nguyên liệu ở
+  // `ManualAddIngredientScreen`, quay lại màn này vẫn thấy list CŨ.
+  //
+  // Flutter xử lý bằng `Navigator.pop(context, true)` rồi màn trước đọc kết quả
+  // để reload (manual_add_ingredient_screen.dart:644). Ở RN không có "kết quả
+  // trả về" theo cách đó, nên chuẩn là `useFocusEffect`.
+  //
+  // Lần focus ĐẦU bỏ qua: `useAsyncData` đã gọi fetch lúc mount, gọi thêm ở đây
+  // là 1 request thừa. `isFirstFocus` là ref nên không cần nằm trong deps.
+  const isFirstFocus = useRef(true);
+  useFocusEffect(
+    useCallback(() => {
+      if (isFirstFocus.current) {
+        isFirstFocus.current = false;
+        return undefined;
+      }
+      refetch();
+      return undefined;
+    }, [refetch])
+  );
 
   // Loading state lần đầu
   if (loading && !items) {
@@ -226,7 +289,7 @@ export const FridgeInventoryScreen = ({ fridge, isEmbedded = false, onRename }) 
   }
 
   const hasFilters =
-    search || statusFilter !== STATUS_KEYS.ALL || categoryFilter !== CATEGORY_KEYS.ALL;
+    !!search || statusFilter !== STATUS_KEYS.ALL || storageFilter !== STORAGE_KEYS.ALL;
 
   return (
     <ScreenBackground>
@@ -271,7 +334,11 @@ export const FridgeInventoryScreen = ({ fridge, isEmbedded = false, onRename }) 
       </View>
 
       <View style={{ paddingHorizontal: sp(20), marginBottom: sp(12) }}>
-        <SearchBar value={search} onChangeText={setSearch} placeholder={t('home.searchHint')} />
+        <SearchBar
+          value={searchInput}
+          onChangeText={setSearchInput}
+          placeholder={t('home.searchHint')}
+        />
       </View>
 
       <FilterChips
@@ -282,9 +349,9 @@ export const FridgeInventoryScreen = ({ fridge, isEmbedded = false, onRename }) 
       />
 
       <FilterChips
-        options={categoryOptions}
-        selectedKey={categoryFilter}
-        onSelect={setCategoryFilter}
+        options={storageOptions}
+        selectedKey={storageFilter}
+        onSelect={setStorageFilter}
         style={{ marginBottom: sp(14) }}
       />
 

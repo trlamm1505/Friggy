@@ -16,6 +16,7 @@ import { sp } from '../../utils/responsive';
 import { FontFamily, FontWeights } from '../../theme/typography';
 import { AlertCircle, Carrot, Beef, Egg, Apple, Leaf } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
+import { getDaysToExpiry } from '../../utils/fridgeDates';
 
 const CATEGORY_ICON = {
   vegetable: Carrot,
@@ -39,15 +40,10 @@ const STATUS_COLOR = {
   expired: { bg: '#FFEBEE', fg: '#B71C1C', darkBg: '#3D1F1A', darkFg: '#FF8A80' },
 };
 
-const getDaysToExpiry = (expiryDate) => {
-  const expiry = new Date(expiryDate);
-  const now = new Date();
-  now.setHours(0, 0, 0, 0);
-  expiry.setHours(0, 0, 0, 0);
-  return Math.ceil((expiry - now) / (1000 * 60 * 60 * 24));
-};
-
 const formatExpiry = (days, isEn) => {
+  // `days === null` = không có hạn dùng (BE trả `expiresAt: null`, hoặc mock
+  // chưa gán). Không phải là "Đã hết hạn" -> hiện "Không rõ hạn" cho đúng.
+  if (days === null) return isEn ? 'No expiry' : 'Không rõ hạn';
   if (days < 0) return isEn ? 'Expired' : 'Đã hết hạn';
   if (days === 0) return isEn ? 'Today' : 'Hôm nay';
   if (days === 1) return isEn ? 'Tomorrow' : 'Ngày mai';
@@ -69,7 +65,10 @@ export const FridgeItem = ({ item, onPress, style }) => {
   const Icon = CATEGORY_ICON[item.category] || Leaf;
   const iconColor = CATEGORY_COLOR[item.category] || CATEGORY_COLOR.other;
   const days = getDaysToExpiry(item.expiryDate);
-  const status = item.status || (days < 0 ? 'expired' : days <= 3 ? 'expiring' : 'fresh');
+  // `days === null` (không có hạn dùng) -> coi như còn tươi, không phải expired.
+  const status =
+    item.status ||
+    (days === null ? 'fresh' : days < 0 ? 'expired' : days <= 3 ? 'expiring' : 'fresh');
   const colorScheme = STATUS_COLOR[status];
   const badgeBg = isDark ? colorScheme.darkBg : colorScheme.bg;
   const badgeFg = isDark ? colorScheme.darkFg : colorScheme.fg;
