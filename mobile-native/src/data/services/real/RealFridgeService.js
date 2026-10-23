@@ -122,14 +122,19 @@ export class RealFridgeService {
 
   /** BE `FridgeStatsResponseDto` -> shape UI của `useFridgeSummary()`. */
   _toSummary(stats, items) {
-    // BE KHÔNG có endpoint trả { expiredCount, availableCount }.
-    // Suy ra từ `expiringSoonCount` + `totalItems`:
-    //   available = tổng - sắp hết hạn  (chưa tính phần đã quá hạn)
-    //   expired   = không có con số riêng -> dùng client-side khi có list items
+    // ⚠️ B1 — phân biệt "tủ RỖNG" với "không lấy được số liệu".
+    // Nếu cả `stats` và `items` đều null (BE lỗi cả 2 endpoint, hoặc BE đổi
+    // contract) -> KHÔNG được trả {0, 0}. Số 0 là một lời nói dối: user thấy
+    // "0 món" và tưởng tủ trống. Ném lỗi để UI rơi vào ErrorState, đúng P0.6c.
+    if (!stats && !items) {
+      throw new Error('Không lấy được số liệu tủ lạnh từ máy chủ');
+    }
+
+    // Ưu tiên đếm từ list (chính xác tuyệt đối cho `expiredCount` vì BE không có
+    // endpoint nào trả riêng số đã quá hạn). Chỉ khi list rỗng mới dùng `stats`.
     const total = stats?.totalItems ?? items?.length ?? 0;
     const expiring = stats?.expiringSoonCount ?? 0;
 
-    // Nếu có list items thì đếm chính xác (BE không trả số đã quá hạn).
     let expiredCount = 0;
     let availableCount = Math.max(0, total - expiring);
     if (Array.isArray(items) && items.length > 0) {
@@ -229,15 +234,26 @@ export class RealFridgeService {
    *
    * BE `GET /fridge/stats` trả { totalSpentThisMonth, wastePercent, mealsCooked,
    * expiringSoonCount, totalItems } — KHÔNG có expiredCount/availableCount.
-   * => Gọi song song `/fridge/stats` + `/fridge` để có cả 2 phía trong 1 lần round-trip mỗi cái.
+   * => Cần gọi song song `/fridge/stats` + `/fridge`.
    *
-   * @returns {Promise<{expiredCount: number, availableCount: number}>}
+   * ⚠️ B1 — SỬA LỖI "nuốt lỗi 401 rồi trả 0":
+   * Bản đầu `.catch(() => null)` trên CẢ HAI request. Hệ quả: khi token hết hạn
+   * (401), cả hai trả `null` -> `_toSummary(null, null)` -> `{expiredCount: 0,
+   * availableCount: 0}` -> `FridgeSummaryCards` hiện "0 món" như thật.
+   * Đây đúng là "giấu lỗi bằng data giả", trái SafeService (mục 2: 4xx KHÔNG
+   * fallback) và trái P0.6c. Người dùng tưởng tủ trống thay vì thấy "Phiên
+   * đăng nhập đã hết hạn".
+   *
+   * Sửa: `/fridge` là BẮT BUỘC (chỉ nó mới biết `expiredCount`) -> không catch,
+   * để lỗi 4xx ném lên UI. `/fridge/stats` là TUỲ CHỌN -> catch được, thiếu
+   * thì suy ra từ list vẫn ra 2 con số.
    */
   async getSummary() {
-    const [stats, list] = await Promise.all([
-      this.client.get('/fridge/stats').catch(() => null),
-      this.client.get('/fridge').catch(() => null),
-    ]);
+    const listPromise = this.client.get('/fridge');
+    // `stats` chỉ để đối chiếu chéo; hỏng thì không chặn kết quả.
+    const statsPromise = this.client.get('/fridge/stats').catch(() => null);
+
+    const [list, stats] = await Promise.all([listPromise, statsPromise]);
     const items = Array.isArray(list) ? list.map((dto) => this._toFridgeItem(dto)) : null;
     return this._toSummary(stats, items);
   }

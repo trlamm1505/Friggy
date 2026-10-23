@@ -400,6 +400,46 @@ describe('7. getSummary — suy ra từ stats + list', () => {
     const s = await svc.getSummary();
     expect(s.expiredCount).toBe(1);
   });
+
+  // ─── B1: KHÔNG được nuốt 401 rồi trả "0 món" ───
+  // Bản đầu `.catch(() => null)` trên cả 2 request -> 401 ra {0,0} -> UI hiện
+  // "0 món" như thật, user tưởng tủ trống. Phải ném lỗi 4xx lên UI.
+
+  it('list trả 401 -> NÉM LÊN, KHÔNG trả {0,0} (tránh giấu lỗi bằng data rỗng)', async () => {
+    api.get.mockImplementation((url) => {
+      if (url === '/fridge')
+        return Promise.reject(
+          new ApiException('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!', {
+            statusCode: 401,
+          })
+        );
+      return Promise.resolve({ expiringSoonCount: 0, totalItems: 0 });
+    });
+
+    await expect(svc.getSummary()).rejects.toThrow('Phiên đăng nhập đã hết hạn');
+  });
+
+  it('/fridge lỗi 500 -> ném nguyên lỗi lên (SafeService sẽ tự fallback)', async () => {
+    api.get.mockImplementation(() => Promise.reject(new ApiException('boom', { statusCode: 500 })));
+    await expect(svc.getSummary()).rejects.toThrow('boom');
+  });
+
+  it('BE trả shape lạ ở CẢ 2 endpoint -> ném lỗi thay vì báo tủ trống', async () => {
+    // Không phải lỗi mạng, mà là contract đổi: cả 2 endpoint trả `null`.
+    // `_toSummary` phải ném chứ không được trả {0,0} — "0 món" là lời nói dối.
+    api.get.mockResolvedValue(null);
+    await expect(svc.getSummary()).rejects.toThrow('Không lấy được số liệu tủ lạnh');
+  });
+
+  it('tủ thật sự RỖNG (list rỗng + stats totalItems=0) -> trả {0,0}, KHÔNG ném lỗi', async () => {
+    api.get.mockImplementation((url) => {
+      if (url === '/fridge/stats') return Promise.resolve({ expiringSoonCount: 0, totalItems: 0 });
+      return Promise.resolve([]);
+    });
+
+    const s = await svc.getSummary();
+    expect(s).toEqual({ expiredCount: 0, availableCount: 0 });
+  });
 });
 
 // ═══════════════ 8. INGREDIENT PICKER — searchIngredients ═══════════════
