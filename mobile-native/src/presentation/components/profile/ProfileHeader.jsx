@@ -5,18 +5,24 @@
  */
 
 import React from 'react';
-import { View, Text, Image, Pressable, StyleSheet } from 'react-native';
+import { View, Text, Image, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
 import { useTheme } from '../../theme/ThemeContext';
 import { AppColors } from '../../theme/colors';
 import { sp } from '../../utils/responsive';
 import { FontFamily, FontWeights } from '../../theme/typography';
-import { Edit3 } from 'lucide-react-native';
+import { Edit3, Camera } from 'lucide-react-native';
 
+/**
+ * `onAvatarPress` / `avatarBusy` phục vụ upload avatar (Sprint A2).
+ * Cả hai là optional: màn hình chỉ hiện avatar vẫn dùng được như cũ.
+ */
 export const ProfileHeader = ({
   name,
   email,
   avatarUrl,
   onEdit,
+  onAvatarPress,
+  avatarBusy = false,
   size = 'large',
   style,
 }) => {
@@ -33,33 +39,74 @@ export const ProfileHeader = ({
   return (
     <View style={[styles.container, style]}>
       <View style={styles.avatarWrap}>
-        <View
-          style={[
-            styles.avatar,
-            {
-              backgroundColor: isDark ? '#233629' : AppColors.accentGreen,
-              width: s.avatar,
-              height: s.avatar,
-              borderRadius: s.avatar / 2,
-            },
-          ]}
+        {/* Bọc Pressable khi có onAvatarPress để bấm vào ảnh mở thư viện ảnh.
+            Vẫn giữ phần tử hình tròn cũ bên trong để không đổi layout. */}
+        <Pressable
+          onPress={onAvatarPress}
+          disabled={!onAvatarPress || avatarBusy}
+          style={({ pressed }) => (onAvatarPress ? { opacity: pressed ? 0.85 : 1 } : null)}
         >
-          {avatarUrl ? (
-            <Image source={{ uri: avatarUrl }} style={{ width: s.avatar, height: s.avatar, borderRadius: s.avatar / 2 }} />
-          ) : (
-            <Text
-              style={[
-                styles.avatarText,
-                {
-                  color: isDark ? AppColors.primaryLight : AppColors.forestAccent,
-                  fontSize: s.fontSize + 6,
-                },
-              ]}
-            >
-              {initial}
-            </Text>
-          )}
-        </View>
+          <View
+            style={[
+              styles.avatar,
+              {
+                backgroundColor: isDark ? '#233629' : AppColors.accentGreen,
+                width: s.avatar,
+                height: s.avatar,
+                borderRadius: s.avatar / 2,
+              },
+            ]}
+          >
+            {avatarUrl ? (
+              <Image
+                source={{ uri: avatarUrl }}
+                style={{ width: s.avatar, height: s.avatar, borderRadius: s.avatar / 2 }}
+              />
+            ) : (
+              <Text
+                style={[
+                  styles.avatarText,
+                  {
+                    color: isDark ? AppColors.primaryLight : AppColors.forestAccent,
+                    fontSize: s.fontSize + 6,
+                  },
+                ]}
+              >
+                {initial}
+              </Text>
+            )}
+            {/* Overlay loading khi đang upload — không cho bấm lại. */}
+            {avatarBusy ? (
+              <View
+                style={[
+                  styles.avatarOverlay,
+                  { width: s.avatar, height: s.avatar, borderRadius: s.avatar / 2 },
+                ]}
+              >
+                <ActivityIndicator color="#FFFFFF" />
+              </View>
+            ) : null}
+          </View>
+        </Pressable>
+        {/* Nút camera nhỏ để đổi ảnh — chỉ hiện khi màn hình truyền onAvatarPress. */}
+        {onAvatarPress && !avatarBusy ? (
+          <Pressable
+            onPress={onAvatarPress}
+            style={({ pressed }) => [
+              styles.cameraBtn,
+              {
+                backgroundColor: isDark ? '#233629' : AppColors.primary,
+                width: s.btnSize,
+                height: s.btnSize,
+                borderRadius: s.btnSize / 2,
+                opacity: pressed ? 0.8 : 1,
+              },
+            ]}
+            hitSlop={6}
+          >
+            <Camera color="#FFFFFF" size={s.iconSize} strokeWidth={2.5} />
+          </Pressable>
+        ) : null}
         {onEdit ? (
           <Pressable
             onPress={onEdit}
@@ -129,6 +176,23 @@ const styles = StyleSheet.create({
   avatarText: {
     fontFamily: FontFamily.black,
     fontWeight: FontWeights.black,
+  },
+  avatarOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.45)',
+  },
+  cameraBtn: {
+    position: 'absolute',
+    right: sp(-2),
+    bottom: sp(-2),
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
   },
   editBtn: {
     position: 'absolute',

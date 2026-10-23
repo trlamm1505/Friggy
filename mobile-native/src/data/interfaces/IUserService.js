@@ -53,9 +53,10 @@
 
 /**
  * @typedef {Object} NotificationSettings
- * @property {boolean} pushEnabled
- * @property {boolean} expiryAlertEnabled
- * @property {boolean} shoppingReminderEnabled
+ * Tên field khớp BE `notifications-response.dto.ts:43-45`.
+ * @property {boolean} pushNotifications
+ * @property {boolean} expiryAlert
+ * @property {boolean} shoppingReminder
  */
 
 /**

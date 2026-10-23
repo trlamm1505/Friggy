@@ -296,13 +296,21 @@ export class RealUserService extends IUserService {
   // CÀI ĐẶT THÔNG BÁO
   // ══════════════════════════════════════════════════════════════
 
-  /** GET /users/me/notification-settings */
+  /**
+   * GET /users/me/notification-settings
+   *
+   * TÊN FIELD PHẢI KHỚP BE (`notifications-response.dto.ts:43-45`):
+   *   `pushNotifications` / `expiryAlert` / `shoppingReminder`.
+   * Trước đây map nhầm thành `pushEnabled` / `expiryAlertEnabled` /
+   * `shoppingReminderEnabled` -> đọc `res?.pushEnabled` luôn undefined nên
+   * `=== true` ra false cho cả 3: UI hiện tắt hết dù user đang bật.
+   */
   async getNotificationSettings() {
     const res = await ApiClient.get('/users/me/notification-settings');
     return {
-      pushEnabled: res?.pushEnabled === true,
-      expiryAlertEnabled: res?.expiryAlertEnabled === true,
-      shoppingReminderEnabled: res?.shoppingReminderEnabled === true,
+      pushNotifications: res?.pushNotifications === true,
+      expiryAlert: res?.expiryAlert === true,
+      shoppingReminder: res?.shoppingReminder === true,
     };
   }
 
@@ -311,15 +319,15 @@ export class RealUserService extends IUserService {
     const res = await ApiClient.patch(
       '/users/me/notification-settings',
       omitEmpty({
-        pushEnabled: settings?.pushEnabled,
-        expiryAlertEnabled: settings?.expiryAlertEnabled,
-        shoppingReminderEnabled: settings?.shoppingReminderEnabled,
+        pushNotifications: settings?.pushNotifications,
+        expiryAlert: settings?.expiryAlert,
+        shoppingReminder: settings?.shoppingReminder,
       })
     );
     return {
-      pushEnabled: res?.pushEnabled === true,
-      expiryAlertEnabled: res?.expiryAlertEnabled === true,
-      shoppingReminderEnabled: res?.shoppingReminderEnabled === true,
+      pushNotifications: res?.pushNotifications === true,
+      expiryAlert: res?.expiryAlert === true,
+      shoppingReminder: res?.shoppingReminder === true,
     };
   }
 

@@ -15,7 +15,7 @@
  * Logic (useThemeStore + useLanguageStore) giữ nguyên, chỉ đổi chỗ render.
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
 import { useTheme } from '../../theme/ThemeContext';
 import { AppColors } from '../../theme/colors';
@@ -31,6 +31,8 @@ import { ToggleRow } from '../../components/common/ToggleRow';
 import { SegmentedControl } from '../../components/common/SegmentedControl';
 import { useThemeStore } from '../../../shared/stores/useThemeStore';
 import { useLanguageStore } from '../../../shared/stores/useLanguageStore';
+import { useServices } from '../../../data/ServiceProvider';
+import { showError } from '../../utils/helpers';
 import {
   Bell,
   Mail,
@@ -53,11 +55,59 @@ export const AppSettingsScreen = () => {
 
   const { themeMode, setThemeMode } = useThemeStore();
   const { locale, setLocale } = useLanguageStore();
+  const { userService } = useServices();
 
-  const [pushEnabled, setPushEnabled] = useState(true);
+  // A2: 3 toggle này có thật ở BE (`GET/PATCH /users/me/notification-settings`),
+  // map đúng tên field: pushNotifications / expiryAlert / shoppingReminder.
+  const [pushNotifications, setPushNotifications] = useState(true);
+  const [expiryAlert, setExpiryAlert] = useState(true);
+  const [shoppingReminder, setShoppingReminder] = useState(false);
+
+  // KHÔNG có endpoint tương ứng ở BE (kiểm tra `notifications-response.dto.ts`
+  // chỉ có 3 field trên). Flutter cũng không gọi API cho các toggle này ->
+  // giữ local, đánh dấu rõ để không ai tưởng là đã lưu lên server.
   const [emailEnabled, setEmailEnabled] = useState(false);
   const [vibrationEnabled, setVibrationEnabled] = useState(true);
   const [soundEnabled, setSoundEnabled] = useState(true);
+
+  // Nạp cài đặt thật từ BE khi mở màn hình. Lỗi mạng -> giữ mặc định.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const s = await userService.getNotificationSettings();
+        if (cancelled || !s) return;
+        setPushNotifications(s.pushNotifications);
+        setExpiryAlert(s.expiryAlert);
+        setShoppingReminder(s.shoppingReminder);
+      } catch (_e) {
+        // Offline -> giữ mặc định.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [userService]);
+
+  // Ghi 1 field, optimistic; lỗi thì rollback về giá trị cũ + báo lỗi thật.
+  const updateNotif = useCallback(
+    async (key, value) => {
+      const prev = { pushNotifications, expiryAlert, shoppingReminder };
+      const next = { ...prev, [key]: value };
+      setPushNotifications(next.pushNotifications);
+      setExpiryAlert(next.expiryAlert);
+      setShoppingReminder(next.shoppingReminder);
+      try {
+        await userService.updateNotificationSettings({ [key]: value });
+      } catch (e) {
+        setPushNotifications(prev.pushNotifications);
+        setExpiryAlert(prev.expiryAlert);
+        setShoppingReminder(prev.shoppingReminder);
+        showError(e?.message || 'Không thể lưu cài đặt thông báo');
+      }
+    },
+    [userService, pushNotifications, expiryAlert, shoppingReminder]
+  );
 
   const themeOptions = [
     { key: 'light', label: t('home.light') },
@@ -149,9 +199,25 @@ export const AppSettingsScreen = () => {
           <ToggleRow
             icon={Bell}
             label={t('home.settingsPushNotifications')}
-            value={pushEnabled}
-            onChange={setPushEnabled}
+            value={pushNotifications}
+            onChange={(v) => updateNotif('pushNotifications', v)}
           />
+          {/* Cảnh báo hết hạn + nhắc mua sắm — 2 field còn lại của BE
+              (notifications-response.dto.ts:44-45). */}
+          <ToggleRow
+            icon={Bell}
+            label={t('home.settingsExpiryAlert')}
+            value={expiryAlert}
+            onChange={(v) => updateNotif('expiryAlert', v)}
+          />
+          <ToggleRow
+            icon={Bell}
+            label={t('home.settingsShoppingReminder')}
+            value={shoppingReminder}
+            onChange={(v) => updateNotif('shoppingReminder', v)}
+          />
+          {/* Email KHÔNG có endpoint ở BE -> chỉ lưu cục bộ, không giả vờ
+              đã đồng bộ lên server (giống Flutter không gọi API cho toggle này). */}
           <ToggleRow
             icon={Mail}
             label={t('home.settingsEmailNotifications')}

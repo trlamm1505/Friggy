@@ -33,9 +33,9 @@ let preferences = { ...preferencesMock.preferences };
 let allergies = JSON.parse(JSON.stringify(allergiesMock.allergies));
 let family = JSON.parse(JSON.stringify(familyMock));
 let notificationSettings = {
-  pushEnabled: true,
-  expiryAlertEnabled: true,
-  shoppingReminderEnabled: false,
+  pushNotifications: true,
+  expiryAlert: true,
+  shoppingReminder: false,
 };
 
 export class MockUserService extends IUserService {

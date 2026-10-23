@@ -18,7 +18,7 @@
  * — logic chuyển theme vẫn nguyên vẹn, chỉ đổi chỗ render.
  */
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { View, ScrollView, Alert, Pressable, Text, StyleSheet } from 'react-native';
 import { useTheme } from '../../theme/ThemeContext';
 import { AppColors } from '../../theme/colors';
@@ -28,6 +28,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore } from '../../../shared/stores/useAuthStore';
+import { useServices } from '../../../data/ServiceProvider';
 import { Routes } from '../../../shared/constants/routes';
 import { ScreenBackground } from '../../components/common/ScreenBackground';
 import {
@@ -50,6 +51,27 @@ export const UserProfileScreen = () => {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const { user, logout } = useAuthStore();
+  const { userService } = useServices();
+
+  // A2: avatar lấy từ `GET /users/me` (`profile.avatarUrl`) thay vì `user.avatar`
+  // trong store. Store chỉ được set lúc login nên sẽ cũ sau khi user đổi ảnh.
+  // Fallback về store để không mất ảnh khi offline.
+  const [avatarUrl, setAvatarUrl] = useState(user?.avatar || null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const p = await userService.getProfile();
+        if (!cancelled && p?.avatar) setAvatarUrl(p.avatar);
+      } catch (_e) {
+        // Offline -> giữ avatar từ store.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [userService]);
 
   const handleLogout = useCallback(() => {
     Alert.alert(t('profile.logout'), t('home.logoutConfirm'), [
@@ -84,6 +106,7 @@ export const UserProfileScreen = () => {
           <ProfileHeader
             name={user?.name}
             email={user?.email}
+            avatarUrl={avatarUrl}
             onEdit={() => navigation.navigate(Routes.PersonalInfo)}
           />
         </View>

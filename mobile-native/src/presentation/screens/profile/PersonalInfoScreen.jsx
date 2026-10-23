@@ -35,6 +35,7 @@ import { useAuthStore } from '../../../shared/stores/useAuthStore';
 import { useServices } from '../../../data/ServiceProvider';
 import { showSuccess, showError } from '../../utils/helpers';
 import { Mail, Phone, User, Calendar } from 'lucide-react-native';
+import * as ImagePicker from 'expo-image-picker';
 
 /**
  * Ô ngày sinh nhập theo DD/MM/YYYY (đúng thiết kế) nhưng BE validate
@@ -72,6 +73,9 @@ export const PersonalInfoScreen = () => {
   const [gender, setGender] = useState('male');
   const [bio, setBio] = useState('Yêu nấu ăn và chia sẻ công thức với gia đình.');
   const [isSaving, setIsSaving] = useState(false);
+  // Avatar: URL đã qua appConfig.getImageUrl() trong service, hiển thị thẳng.
+  const [avatarUrl, setAvatarUrl] = useState(user?.avatar || null);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -81,6 +85,7 @@ export const PersonalInfoScreen = () => {
         if (cancelled || !p) return;
         setName(p.name ?? '');
         setEmail(p.email ?? '');
+        setAvatarUrl(p.avatar ?? null);
         setBirthday(isoToDisplay(p.birthday));
         setGender(p.gender ?? 'male');
         setBio(p.bio ?? '');
@@ -94,6 +99,46 @@ export const PersonalInfoScreen = () => {
       cancelled = true;
     };
   }, [userService]);
+
+  /**
+   * Chọn ảnh rồi upload NGAY — không preview tạm, không đợi bấm Lưu.
+   * Giống hệt Flutter `personal_info_screen.dart:191-203`.
+   * Resize 512x512 / quality 85 để khớp, BE giới hạn 5MB.
+   *
+   * RN không có offline queue như Flutter (mục 9 backlog) -> lỗi thì báo
+   * thật, KHÔNG hiện ảnh giả cho user tưởng đã lưu.
+   */
+  const handlePickAvatar = useCallback(async () => {
+    try {
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) {
+        showError('Cần cấp quyền truy cập thư viện ảnh để đổi avatar');
+        return;
+      }
+      const picked = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        // Flutter dùng ImagePicker cho scan ảnh, RN dùng expo-image-picker
+        // nên chỉ hỗ trợ 'images' chứ không phải ImagePicker.MediaType.images.
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.85,
+      });
+      const asset = picked?.canceled ? null : picked?.assets?.[0];
+      if (!asset?.uri) return;
+
+      setIsUploadingAvatar(true);
+      const res = await userService.uploadAvatar(asset.uri);
+      const newUrl = res?.url ?? null;
+      setAvatarUrl(newUrl);
+      // Đồng bộ store để UserProfileScreen hiện avatar mới ngay khi quay lại.
+      setUser({ ...user, ...(newUrl ? { avatar: newUrl } : {}) });
+      showSuccess(t('profile.avatarUpdated'));
+    } catch (e) {
+      showError(e?.message || 'Không thể tải ảnh đại diện');
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  }, [userService, user, setUser, t]);
 
   /**
    * PATCH /users/me/profile.
@@ -149,7 +194,14 @@ export const PersonalInfoScreen = () => {
         showsVerticalScrollIndicator={false}
       >
         <View style={{ marginTop: sp(4) }}>
-          <ProfileHeader name={name} email={email} size="medium" />
+          <ProfileHeader
+            name={name}
+            email={email}
+            avatarUrl={avatarUrl}
+            size="medium"
+            onAvatarPress={isUploadingAvatar ? undefined : handlePickAvatar}
+            avatarBusy={isUploadingAvatar}
+          />
         </View>
 
         <Text
