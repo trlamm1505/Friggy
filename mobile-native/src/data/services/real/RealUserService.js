@@ -17,6 +17,8 @@ import { ApiClient } from '../../api/ApiClient';
 import { ApiException } from '../../api/ApiException';
 import { appConfig } from '../../../shared/config/appConfig';
 import { registerService } from '../../api/ServiceRegistry';
+import { RealSubscriptionService } from './RealSubscriptionService';
+import { RealFamilyService } from './RealFamilyService';
 
 // ─────────────────────────────────────────────────────────────
 // ENUM — lấy từ `be/src/modules-api/users/dto/users.dto.ts`
@@ -62,6 +64,19 @@ const omitEmpty = (obj) =>
   Object.fromEntries(Object.entries(obj).filter(([, v]) => v !== undefined && v !== null));
 
 export class RealUserService extends IUserService {
+  /**
+   * Service gói dịch vụ + gia đình (Sprint A3).
+   *
+   * Compose thay vì đăng ký key riêng - xem giải thích ở mục "SPRINT A3 - GÓI DỊCH VỤ"
+   * bên dưới. Tách file để dễ đọc, nhưng vẫn 1 key `userService` để giữ nguyên
+   * cơ chế fallback của `SafeService.withFallback`.
+   */
+  constructor() {
+    super();
+    this.subscriptionService = new RealSubscriptionService();
+    this.familyService = new RealFamilyService();
+  }
+
   // ══════════════════════════════════════════════════════════════
   // MAPPER
   // ══════════════════════════════════════════════════════════════
@@ -370,7 +385,100 @@ export class RealUserService extends IUserService {
       // Ngày hết hạn: null = gói free vĩnh viễn.
       endDate: res?.endDate ?? null,
       autoRenew: res?.autoRenew === true,
+      // Trạng thái gói: 'active' | 'pending' | 'cancelled' | 'expired'.
+      // CẦN để `HomeScreen` phân biệt "đang có family" với "đang pending family".
+      // Flutter KHÔNG check (`home_screen.dart:152-162`) -> bug: user bấm mua
+      // family chưa thanh toán vẫn thấy banner "Gia đình đang hoạt động".
+      status: res?.status ?? 'expired',
     };
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  // SPRINT A3 - GÓI DỊCH VỤ (compose từ RealSubscriptionService)
+  // ══════════════════════════════════════════════════════════════
+  //
+  // VÌ SAO COMPOSE THAY VÌ ĐĂNG KÝ KEY RIÊNG (user chốt 23/10):
+  //   `ServiceProvider.jsx` là file IMMUTABLE (P0.5) với 5 key cố định.
+  //   `resolveServices()` chỉ duyệt key có trong mock -> domain mới sẽ không bao
+  //   giờ được trả về qua `useServices()`.
+  //   Flutter cũng gộp family + subscription vào cùng 1 class `ApiService`
+  //   (`Mobile/lib/data/services/api_service.dart:613-806`) -> theo Flutter.
+  //   Cách này giữ nguyên fallback 5xx/network của `withFallback` (mock đã có
+  //   sẵn trong `MockUserService`) và KHÔNG đụng file immutable.
+  //
+  // Chi tiết lý do + so sánh 3 phương án: plan mục "A3 - DA DOI CHIEU FLUTTER vs BE".
+
+  /** GET /subscriptions/plans (public) → danh sách gói. */
+  async getAvailablePackages() {
+    return this.subscriptionService.getPackages();
+  }
+
+  /** GET /subscriptions/me → gói hiện tại (đầy đủ, có `status`). */
+  async getMySubscription() {
+    return this.subscriptionService.getMySubscription();
+  }
+
+  /** POST /subscriptions/subscribe → QR PayOS. */
+  async subscribe(planId) {
+    return this.subscriptionService.subscribe(planId);
+  }
+
+  /** POST /subscriptions/renew → QR PayOS gia hạn. */
+  async renewSubscription() {
+    return this.subscriptionService.renew();
+  }
+
+  /** DELETE /subscriptions/me/auto-renewal → hủy gia hạn tự động. */
+  async cancelAutoRenewal() {
+    return this.subscriptionService.cancelAutoRenewal();
+  }
+
+  /** GET /payment-transactions/me/:ref → trạng thái giao dịch (poll thanh toán). */
+  async getPaymentStatus(paymentRef) {
+    return this.subscriptionService.getPaymentStatus(paymentRef);
+  }
+
+  /**
+   * Đã lên đúng gói vừa mua chưa? (chống bug poll báo thành công sớm của Flutter)
+   *
+   * @param {string} targetPlanName - tên gói đang mua (vd 'family').
+   */
+  async isSubscribedTo(targetPlanName) {
+    return this.subscriptionService.isSubscribedTo(targetPlanName);
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  // SPRINT A3 - GIA ĐÌNH (compose từ RealFamilyService)
+  // ══════════════════════════════════════════════════════════════
+
+  /** GET /family/me → `{ role, group }` đã map. */
+  async getFamilyInfo() {
+    return this.familyService.getFamily();
+  }
+
+  /** POST /family/invite → gửi lời mời qua email. */
+  async inviteFamilyMember(email) {
+    return this.familyService.inviteMember(email);
+  }
+
+  /** POST /family/accept → chấp nhận lời mời bằng token từ email. */
+  async acceptFamilyInvite(token) {
+    return this.familyService.acceptInvite(token);
+  }
+
+  /** POST /family/reject → từ chối lời mời bằng token từ email. */
+  async rejectFamilyInvite(token) {
+    return this.familyService.rejectInvite(token);
+  }
+
+  /** DELETE /family/members/:id → xoá thành viên (owner only). */
+  async removeFamilyMember(memberId) {
+    return this.familyService.removeMember(memberId);
+  }
+
+  /** DELETE /family/groups → giải tán gia đình (owner only). */
+  async dissolveFamilyGroup() {
+    return this.familyService.dissolveGroup();
   }
 }
 

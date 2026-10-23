@@ -359,3 +359,91 @@ describe('RealUserService - getCurrentPlan', () => {
     expect(plan.features).toEqual([]);
   });
 });
+
+// ═══════════════ Cài đặt thông báo ═══════════════
+// Bug A2 (sửa 23/10): service đọc `pushEnabled` / `expiryAlertEnabled` /
+// `shoppingReminderEnabled`, nhưng BE thật trả `pushNotifications` /
+// `expiryAlert` / `shoppingReminder` (`notifications-response.dto.ts:43-45`).
+// Vì so sánh `=== true` với `undefined` ra false -> UI hiện TẮT hết dù user
+// đang bật. Test dưới đây chốt lại tên field để lỗi này không tái diễn.
+
+describe('RealUserService - notification settings', () => {
+  /** `NotificationSettingsResponseDto` — đúng tên field BE. */
+  const beNotifSettings = (overrides = {}) => ({
+    pushNotifications: true,
+    expiryAlert: true,
+    shoppingReminder: false,
+    ...overrides,
+  });
+
+  it('get đọc đúng tên field BE (không phải `*Enabled`)', async () => {
+    ApiClient.get.mockResolvedValue(beNotifSettings());
+
+    const settings = await service.getNotificationSettings();
+
+    expect(ApiClient.get).toHaveBeenCalledWith('/users/me/notification-settings');
+    expect(settings).toEqual({
+      pushNotifications: true,
+      expiryAlert: true,
+      shoppingReminder: false,
+    });
+  });
+
+  it('BE trả `true` thì service trả `true` — KHÔNG rơi về false do đọc sai tên', async () => {
+    // Chốt đúng bug: trước đây đọc `res.pushEnabled` (undefined) -> false.
+    ApiClient.get.mockResolvedValue({
+      pushNotifications: true,
+      expiryAlert: true,
+      shoppingReminder: true,
+    });
+
+    const settings = await service.getNotificationSettings();
+
+    expect(settings.pushNotifications).toBe(true);
+    expect(settings.expiryAlert).toBe(true);
+    expect(settings.shoppingReminder).toBe(true);
+  });
+
+  it('update gửi đúng tên field lên BE', async () => {
+    ApiClient.patch.mockResolvedValue(beNotifSettings({ shoppingReminder: true }));
+
+    await service.updateNotificationSettings({
+      pushNotifications: false,
+      expiryAlert: true,
+      shoppingReminder: true,
+    });
+
+    const [url, payload] = ApiClient.patch.mock.calls[0];
+    expect(url).toBe('/users/me/notification-settings');
+    expect(payload).toEqual({
+      pushNotifications: false,
+      expiryAlert: true,
+      shoppingReminder: true,
+    });
+    // Tên field cũ KHÔNG được gửi lên (BE sẽ bỏ qua -> user tưởng đã lưu).
+    expect('pushEnabled' in payload).toBe(false);
+    expect('expiryAlertEnabled' in payload).toBe(false);
+    expect('shoppingReminderEnabled' in payload).toBe(false);
+  });
+
+  it('update chỉ gửi field được đổi, bỏ field null/undefined', async () => {
+    ApiClient.patch.mockResolvedValue(beNotifSettings());
+
+    await service.updateNotificationSettings({ pushNotifications: false });
+
+    const payload = ApiClient.patch.mock.calls[0][1];
+    expect(payload).toEqual({ pushNotifications: false });
+    expect('expiryAlert' in payload).toBe(false);
+    expect('shoppingReminder' in payload).toBe(false);
+  });
+
+  it('BE trả thiếu field -> trả false, không trả undefined (UI toggle cần boolean)', async () => {
+    ApiClient.get.mockResolvedValue({});
+
+    const settings = await service.getNotificationSettings();
+
+    expect(settings.pushNotifications).toBe(false);
+    expect(settings.expiryAlert).toBe(false);
+    expect(settings.shoppingReminder).toBe(false);
+  });
+});

@@ -18,6 +18,7 @@ import { HomeHeader } from '../../components/home/HomeHeader';
 import { GreetingBanner } from '../../components/home/GreetingBanner';
 import { FridgeSummaryCards } from '../../components/home/FridgeSummaryCards';
 import { PremiumBanner } from '../../components/home/PremiumBanner';
+import { FamilyPlanModal } from '../../components/home/FamilyPlanModal';
 import { WeeklyStatisticsSection } from '../../components/home/WeeklyStatisticsSection';
 import { CookingSuggestionsSection } from '../../components/home/CookingSuggestionsSection';
 import { Routes } from '../../../shared/constants/routes';
@@ -45,10 +46,18 @@ export const HomeScreen = () => {
 
   const [searchValue, setSearchValue] = useState('');
   const [refreshing, setRefreshing] = useState(false);
+  const [planModalOpen, setPlanModalOpen] = useState(false);
 
+  // Gói Family ĐANG HOẠT ĐỘNG = plan tên 'family' + status 'active'.
+  //
+  // SỬA BUG SO VỚT FLUTTER (23/10): Flutter `home_screen.dart:152-162` chỉ check
+  // `plan.name` mà BỎ QUA `status` -> user bấm mua Gói Family chưa thanh toán
+  // (BE trả `status: 'pending'`) vẫn thấy banner "Gia đình đang hoạt động".
+  // => RN kiểm CẢ 2.
   const isFamilyPlan =
-    plan?.name?.toLowerCase().includes('family') ||
-    plan?.displayName?.toLowerCase().includes('gia đình');
+    plan?.status === 'active' &&
+    (plan?.name?.toLowerCase().includes('family') ||
+      plan?.displayName?.toLowerCase().includes('gia đình'));
 
   // Pull-to-refresh: gọi tất cả các refetch cùng lúc
   const onRefresh = useCallback(async () => {
@@ -145,7 +154,8 @@ export const HomeScreen = () => {
                 if (isFamilyPlan) {
                   navigation.navigate(Routes.PackageManagement);
                 } else {
-                  showInfo('Mở modal đăng ký gói Family');
+                  // Mở paywall Gói Gia đình (QR PayOS + nhập token lời mời).
+                  setPlanModalOpen(true);
                 }
               }}
             />
