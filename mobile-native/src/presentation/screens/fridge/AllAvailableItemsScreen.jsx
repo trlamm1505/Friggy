@@ -9,14 +9,9 @@
 import React from 'react';
 import { FridgeListScreen } from './FridgeListScreen';
 
-const CATEGORY_KEYS = {
-  ALL: 'all',
-  VEGETABLE: 'vegetable',
-  MEAT: 'meat',
-  DAIRY: 'dairy',
-  FRUIT: 'fruit',
-  OTHER: 'other',
-};
+// KHÔNG còn CATEGORY_KEYS: chip category đã bị tắt (categoryChips: null) vì
+// BE không trả field `category` cho từng item. Giữ lại hằng số chỉ là code chết
+// -> ESLint no-unused-vars. Xem chú thích ở `categoryChips` bên dưới.
 
 const getDaysToExpiry = (expiryDate) => {
   const expiry = new Date(expiryDate);
@@ -49,12 +44,16 @@ const AVAILABLE_CONFIG = {
     if (filterKey === 'all') return true;
     return item.status === filterKey;
   },
-  categoryChips: [
-    { key: 'all', labelKey: 'home.categoryAll' },
-    { key: 'vegetable', labelKey: 'home.categoryVegetable', color: '#4CAF50' },
-    { key: 'meat', labelKey: 'home.categoryMeat', color: '#E57373' },
-    { key: 'dairy', labelKey: 'home.categoryDairy', color: '#FFB300' },
-  ],
+  // TẮT chip category (B1 — mục 5.2 của DEV_B_ONBOARDING_PROMPT.md).
+  // ✅ ĐÃ CHỐT 23/10 — không phải quyết định tại thời điểm code.
+  // Lý do: `FridgeItemResponseDto` KHÔNG trả field `category`, nên mọi item đều có
+  // `item.category === undefined`:
+  //   - count của 3 chip luôn = 0 (giống "All" -> vô nghĩa),
+  //   - bấm chip -> `it.category === 'vegetable'` false hết -> list RỖNG.
+  // Nên đây không phải UI sửa cho đẹp mà là fix bug: filter này không bao giờ cho kết quả đúng.
+  // Xem RealFridgeService.js mục "BA SAI LẦM ĐÃ BIẾT" số 2.
+  // Muốn lọc theo danh mục thì cần BE trả `category` trước — thuộc ngoài phạm DEV B.
+  categoryChips: null,
   categoryFilterDefault: 'all',
   sortOptions: SORT_OPTIONS,
   sortOptionsArray: [
