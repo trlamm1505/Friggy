@@ -99,8 +99,6 @@ export const ManagerHeader = ({ activeTab, setMobileOpen, onExitManager }) => {
         return { title: 'Thông Tin Gói Cước Dịch Vụ', sub: 'Xem bảng giá, tính năng và quyền lợi của các gói cước' };
       case 'profile':
         return { title: 'Thông Tin Cá Nhân Manager', sub: 'Cập nhật hồ sơ cá nhân và đổi mật khẩu quản lý' };
-      case 'settings':
-        return { title: 'Cài Đặt Vận Hành', sub: 'Tùy chọn hiển thị, ứng dụng di động và kênh hỗ trợ' };
       default:
         return { title: 'Manager Portal', sub: 'Cổng quản lý vận hành Friggy' };
     }

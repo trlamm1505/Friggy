@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { X, User, Mail, Phone, Shield, Save } from 'lucide-react';
+import { X, User, Mail, Shield, Save } from 'lucide-react';
 
 export const UserEditModal = ({ user, packages = [], onClose, onSave }) => {
   const [formData, setFormData] = useState({
     name: '',
     username: '',
     email: '',
-    phone: '',
     role: 'User',
     package: '',
     status: 'Active',
@@ -18,7 +17,6 @@ export const UserEditModal = ({ user, packages = [], onClose, onSave }) => {
         name: user.name || '',
         username: user.username || '',
         email: user.email || user.googleEmail || '',
-        phone: user.phone || '',
         role: user.role || 'User',
         package: user.package || 'Miễn Phí',
         status: user.status === 'suspended' ? 'Banned' : 'Active',
@@ -81,34 +79,6 @@ export const UserEditModal = ({ user, packages = [], onClose, onSave }) => {
               required
               className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-teal-500 focus:bg-white focus:ring-4 focus:ring-teal-500/10 transition-all"
             />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
-                Username
-              </label>
-              <input
-                type="text"
-                name="username"
-                value={formData.username}
-                onChange={handleChange}
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-teal-500 focus:bg-white focus:ring-4 focus:ring-teal-500/10 transition-all"
-              />
-            </div>
-
-            <div className="space-y-1">
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
-                Số Điện Thoại
-              </label>
-              <input
-                type="text"
-                name="phone"
-                value={formData.phone}
-                onChange={handleChange}
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-teal-500 focus:bg-white focus:ring-4 focus:ring-teal-500/10 transition-all"
-              />
-            </div>
           </div>
 
           <div className="space-y-1">

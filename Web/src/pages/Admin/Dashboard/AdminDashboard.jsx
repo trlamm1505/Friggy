@@ -34,6 +34,7 @@ export const AdminDashboard = (props) => {
   const [subscriptionData, setSubscriptionData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [aiDays, setAiDays] = useState(7);
+  const [revenueMode, setRevenueMode] = useState('month'); // 'month' | 'total'
 
   const onNavigateTab = props.onNavigateTab || ((tab) => navigate(`/admin/${tab}`));
 
@@ -183,6 +184,7 @@ export const AdminDashboard = (props) => {
   const newUsersThisMonth = overviewData?.newUsersThisMonth ?? 0;
   const activeSubscriptions = overviewData?.activeSubscriptions ?? 0;
   const revenueThisMonthVnd = overviewData?.revenueThisMonthVnd ?? 0;
+  const totalRevenueVnd = overviewData?.totalRevenueVnd ?? 0;
 
   const statCards = [
     {
@@ -206,15 +208,19 @@ export const AdminDashboard = (props) => {
       subtext: 'Tài khoản đang có gói đăng ký active',
     },
     {
-      title: 'DOANH THU THÁNG NÀY',
-      numericValue: revenueThisMonthVnd,
+      title: 'DOANH THU FRIGGY',
+      isRevenueCard: true,
+      numericValue: revenueMode === 'month' ? revenueThisMonthVnd : totalRevenueVnd,
       isCurrency: true,
-      growth: 'Tháng hiện tại',
+      growth: revenueMode === 'month' ? 'Tháng này' : 'Toàn thời gian',
       icon: DollarSign,
       bgColor: 'bg-green-50',
       textColor: 'text-green-600',
       borderColor: 'border-green-200',
-      subtext: 'Doanh thu từ các gói đăng ký active',
+      subtext:
+        revenueMode === 'month'
+          ? 'Doanh thu phát sinh trong tháng'
+          : 'Tổng doanh thu toàn thời gian',
     },
     {
       title: 'USER MỚI THÁNG NÀY',
@@ -301,10 +307,38 @@ export const AdminDashboard = (props) => {
                   >
                     <IconComponent className="w-6 h-6" />
                   </div>
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-black border border-emerald-200">
-                    <TrendingUp className="w-3 h-3" />
-                    {card.growth}
-                  </span>
+
+                  {card.isRevenueCard ? (
+                    <div className="inline-flex items-center p-0.5 rounded-full bg-emerald-50 border border-emerald-200 shadow-2xs">
+                      <button
+                        type="button"
+                        onClick={() => setRevenueMode('month')}
+                        className={`px-2.5 py-0.5 rounded-full text-xs font-black transition-all cursor-pointer ${
+                          revenueMode === 'month'
+                            ? 'bg-emerald-600 text-white shadow-xs'
+                            : 'text-emerald-700 hover:text-emerald-900'
+                        }`}
+                      >
+                        Tháng
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setRevenueMode('total')}
+                        className={`px-2.5 py-0.5 rounded-full text-xs font-black transition-all cursor-pointer ${
+                          revenueMode === 'total'
+                            ? 'bg-emerald-600 text-white shadow-xs'
+                            : 'text-emerald-700 hover:text-emerald-900'
+                        }`}
+                      >
+                        Tổng
+                      </button>
+                    </div>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-black border border-emerald-200">
+                      <TrendingUp className="w-3 h-3" />
+                      {card.growth}
+                    </span>
+                  )}
                 </div>
 
                 <p className="text-[11px] font-extrabold text-slate-400 tracking-wider uppercase">
@@ -315,7 +349,7 @@ export const AdminDashboard = (props) => {
                   {card.isCurrency ? (
                     <AnimatedCounter
                       end={card.numericValue}
-                      duration={2}
+                      duration={1.5}
                       separator="."
                       suffix=" ₫"
                     />

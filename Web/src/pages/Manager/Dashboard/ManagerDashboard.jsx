@@ -4,30 +4,28 @@ import {
   Users,
   DollarSign,
   TrendingUp,
-  PackageCheck,
   Calendar,
   ChevronRight,
   Utensils,
   ChefHat,
   CreditCard,
-  Building2,
-  Sparkles,
 } from 'lucide-react';
 import goodMorningImg from '../../../assets/images/goodmorning-Photoroom.png';
 import goodAfternoonImg from '../../../assets/images/goodafternoon-Photoroom.png';
 import goodEveningImg from '../../../assets/images/goodevening-Photoroom.png';
-import {
-  getAdminStatsOverviewApi,
-  getAdminStatsSubscriptionsApi,
-} from '../../../services/adminService';
+import { getAdminStatsOverviewApi } from '../../../services/adminService';
+import { getIngredientsApi } from '../../../services/ingredientService';
+import { getRecipesApi } from '../../../services/recipeService';
 import AnimatedCounter from '../../../components/common/AnimatedCounter';
 
 export const ManagerDashboard = (props) => {
   const navigate = useNavigate();
 
   const [overviewData, setOverviewData] = useState(null);
-  const [subscriptionData, setSubscriptionData] = useState(null);
+  const [totalIngredients, setTotalIngredients] = useState(0);
+  const [totalRecipes, setTotalRecipes] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [revenueMode, setRevenueMode] = useState('month'); // 'month' | 'total'
 
   const onNavigateTab = props.onNavigateTab || ((tab) => navigate(`/manager/${tab}`));
 
@@ -88,16 +86,25 @@ export const ManagerDashboard = (props) => {
     const fetchStats = async () => {
       setLoading(true);
       try {
-        const [overviewRes, subRes] = await Promise.allSettled([
+        const [overviewRes, ingredientsRes, recipesRes] = await Promise.allSettled([
           getAdminStatsOverviewApi(),
-          getAdminStatsSubscriptionsApi(),
+          getIngredientsApi({ limit: 1 }),
+          getRecipesApi({ limit: 1 }),
         ]);
 
-        if (overviewRes.status === 'fulfilled' && overviewRes.value?.data) {
-          setOverviewData(overviewRes.value.data);
+        if (overviewRes.status === 'fulfilled') {
+          const val = overviewRes.value;
+          setOverviewData(val?.data || val || {});
         }
-        if (subRes.status === 'fulfilled' && subRes.value?.data) {
-          setSubscriptionData(subRes.value.data);
+        if (ingredientsRes.status === 'fulfilled') {
+          const val = ingredientsRes.value;
+          const resData = val?.data || val;
+          setTotalIngredients(resData?.total ?? 0);
+        }
+        if (recipesRes.status === 'fulfilled') {
+          const val = recipesRes.value;
+          const resData = val?.data || val;
+          setTotalRecipes(resData?.total ?? 0);
         }
       } catch (err) {
         console.error('Error fetching manager stats:', err);
@@ -111,146 +118,201 @@ export const ManagerDashboard = (props) => {
 
   const getGreetingData = () => {
     const hour = new Date().getHours();
+    const namePart = managerName ? `, ${managerName}` : '';
     if (hour >= 5 && hour < 12) {
       return {
-        text: 'Chào Buổi Sáng',
+        title: `Chào buổi sáng${namePart}! ☀️`,
         sub: 'Chúc bạn một ngày làm việc hiệu quả và tràn đầy năng lượng!',
         img: goodMorningImg,
-        gradient: 'from-amber-500/10 via-emerald-500/10 to-teal-500/10',
-        badge: 'Buổi Sáng Tươi Mới ☀️',
       };
     } else if (hour >= 12 && hour < 18) {
       return {
-        text: 'Chào Buổi Chiều',
+        title: `Chào buổi chiều${namePart}! 🌤️`,
         sub: 'Cùng kiểm tra tiến độ vận hành và tình hình kho thực phẩm hôm nay.',
         img: goodAfternoonImg,
-        gradient: 'from-emerald-500/10 via-teal-500/10 to-cyan-500/10',
-        badge: 'Buổi Chiều Năng Động 🌤️',
       };
     } else {
       return {
-        text: 'Chào Buổi Tối',
+        title: `Chào buổi tối${namePart}! 🌙`,
         sub: 'Tổng kết hoạt động hệ thống và chuẩn bị cho ngày làm việc tiếp theo.',
         img: goodEveningImg,
-        gradient: 'from-teal-500/10 via-emerald-500/10 to-slate-800/10',
-        badge: 'Buổi Tối Bình Yên 🌙',
       };
     }
   };
 
   const greeting = getGreetingData();
 
-  // Chỉ lấy và hiển thị số liệu thực từ API, không dùng mock data
-  const totalUsersCount = overviewData?.users?.total ?? 0;
-  const activeUsersCount = overviewData?.users?.active ?? 0;
-  const totalRevenueVnd = overviewData?.revenue?.totalVnd ?? 0;
-  const totalSubsCount = overviewData?.subscriptions?.active ?? 0;
+  // Đọc chính xác các trường trả về từ API backend /admin/stats/overview
+  const totalUsers = overviewData?.totalUsers ?? overviewData?.users?.total ?? 0;
+  const activeUsers = overviewData?.activeUsers ?? overviewData?.users?.active ?? 0;
+  const suspendedUsers = overviewData?.suspendedUsers ?? 0;
+  const revenueThisMonthVnd =
+    overviewData?.revenueThisMonthVnd ?? overviewData?.revenue?.thisMonthVnd ?? 0;
+  const totalRevenueVnd =
+    overviewData?.totalRevenueVnd ?? overviewData?.revenue?.totalVnd ?? 0;
+
+  const statCards = [
+    {
+      title: 'TỔNG NGƯỜI DÙNG',
+      numericValue: totalUsers,
+      growth: `Active: ${activeUsers}`,
+      icon: Users,
+      bgColor: 'bg-emerald-50',
+      textColor: 'text-emerald-600',
+      borderColor: 'border-emerald-200',
+      subtext: `Hoạt động: ${activeUsers} • Bị khóa: ${suspendedUsers}`,
+    },
+    {
+      title: 'KHO NGUYÊN LIỆU',
+      numericValue: totalIngredients,
+      growth: 'Nguyên liệu',
+      icon: Utensils,
+      bgColor: 'bg-teal-50',
+      textColor: 'text-teal-600',
+      borderColor: 'border-teal-200',
+      subtext: 'Tổng số nguyên liệu trong kho hệ thống',
+    },
+    {
+      title: 'DOANH THU FRIGGY',
+      isRevenueCard: true,
+      numericValue: revenueMode === 'month' ? revenueThisMonthVnd : totalRevenueVnd,
+      isCurrency: true,
+      growth: revenueMode === 'month' ? 'Tháng này' : 'Toàn thời gian',
+      icon: DollarSign,
+      bgColor: 'bg-green-50',
+      textColor: 'text-green-600',
+      borderColor: 'border-green-200',
+      subtext:
+        revenueMode === 'month'
+          ? 'Doanh thu phát sinh trong tháng'
+          : 'Tổng doanh thu toàn thời gian',
+    },
+    {
+      title: 'CÔNG THỨC MÓN ĂN',
+      numericValue: totalRecipes,
+      growth: 'Món ăn',
+      icon: ChefHat,
+      bgColor: 'bg-emerald-50',
+      textColor: 'text-emerald-600',
+      borderColor: 'border-emerald-200',
+      subtext: 'Công thức nấu ăn & gợi ý AI',
+    },
+  ];
 
   return (
     <div className="space-y-6 sm:space-y-8 animate__animated animate__fadeIn">
-      {/* ── Top Hero Greeting Banner ─────────────────────────────────── */}
-      <div className={`relative overflow-hidden rounded-[32px] bg-gradient-to-r ${greeting.gradient} bg-white border border-emerald-100 p-6 sm:p-8 lg:p-10 shadow-sm`}>
-        <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="space-y-2.5 text-center md:text-left max-w-xl">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-teal-100 text-teal-800 text-xs font-bold border border-teal-200">
-              <Sparkles className="w-3.5 h-3.5" />
-              {greeting.badge}
-            </span>
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-slate-900 tracking-tight">
-              {greeting.text}, {managerName || 'Quản Lý'}! 👋
+      {/* ── Top Hero Greeting Banner (Matches Admin style) ──────────────── */}
+      <div className="p-6 sm:p-8 lg:p-10 rounded-[32px] bg-gradient-to-r from-[#dcfce7] via-[#eaf6ef] to-[#d1fae5] text-emerald-950 relative overflow-hidden shadow-xs border border-emerald-200/90 animate__animated animate__fadeInDown">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-400/20 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="space-y-3 max-w-2xl text-left">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-emerald-600/10 border border-emerald-600/20 text-emerald-800 text-xs font-bold">
+              <Calendar className="w-3.5 h-3.5 text-emerald-600" />
+              <span>
+                {new Date().toLocaleDateString('vi-VN', {
+                  weekday: 'long',
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                })}
+              </span>
+            </div>
+
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-emerald-950 animate__animated animate__fadeInLeft">
+              {greeting.title}
             </h2>
-            <p className="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed">
+
+            <p className="text-xs sm:text-sm text-emerald-900/75 font-semibold leading-relaxed">
               {greeting.sub} Dưới đây là các chỉ số vận hành và tương tác người dùng trong hệ sinh thái Friggy.
             </p>
           </div>
 
-          <div className="relative flex-shrink-0">
-            <div className="w-32 sm:w-40 h-32 sm:h-40 relative flex items-center justify-center">
-              <img
-                src={greeting.img}
-                alt="Friggy Greeting Mascot"
-                className="w-full h-full object-contain filter drop-shadow-lg animate__animated animate__pulse animate__infinite animate__slower"
-              />
-            </div>
+          {/* Time-of-day dynamic mascot image (Large size matching Admin) */}
+          <div className="flex items-center justify-center md:justify-end shrink-0">
+            <img
+              src={greeting.img}
+              alt="Friggy Greeting Mascot"
+              className="w-52 h-52 sm:w-64 sm:h-64 md:w-72 md:h-72 lg:w-80 lg:h-80 -my-3 lg:-my-6 object-contain drop-shadow-lg relative z-10 animate__animated animate__zoomIn"
+            />
           </div>
         </div>
       </div>
 
-      {/* ── Key Operational Metrics ─────────────────────────────────── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-        {/* Metric 1: Total Users */}
-        <div className="bg-white rounded-3xl p-6 border border-emerald-100 shadow-2xs hover:shadow-md transition-all group">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Người Dùng</span>
-            <div className="w-10 h-10 rounded-2xl bg-teal-50 text-teal-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-              <Users className="w-5 h-5" />
-            </div>
-          </div>
-          <div className="mt-4">
-            <h3 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-              <AnimatedCounter target={totalUsersCount} />
-            </h3>
-            <p className="text-xs text-teal-600 font-semibold mt-1 flex items-center gap-1">
-              <TrendingUp className="w-3.5 h-3.5" />
-              <span>{activeUsersCount} đang hoạt động</span>
-            </p>
-          </div>
-        </div>
+      {/* ── Key Operational Metrics (Identical to Admin card design) ──── */}
+      <div className="space-y-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          {statCards.map((card) => {
+            const IconComponent = card.icon;
+            return (
+              <div
+                key={card.title}
+                className="p-6 rounded-[28px] bg-white border border-slate-100 shadow-md hover:shadow-xl transition-all duration-300 group relative overflow-hidden animate__animated animate__fadeInUp"
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <div
+                    className={`w-12 h-12 rounded-2xl ${card.bgColor} ${card.textColor} border ${card.borderColor} flex items-center justify-center shadow-xs group-hover:scale-110 transition-transform`}
+                  >
+                    <IconComponent className="w-6 h-6" />
+                  </div>
 
-        {/* Metric 2: Revenue */}
-        <div className="bg-white rounded-3xl p-6 border border-emerald-100 shadow-2xs hover:shadow-md transition-all group">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Doanh Thu PayOS</span>
-            <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-              <DollarSign className="w-5 h-5" />
-            </div>
-          </div>
-          <div className="mt-4">
-            <h3 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-              <AnimatedCounter target={totalRevenueVnd} formatter={(v) => `${Number(v).toLocaleString('vi-VN')} đ`} />
-            </h3>
-            <p className="text-xs text-emerald-600 font-semibold mt-1 flex items-center gap-1">
-              <TrendingUp className="w-3.5 h-3.5" />
-              <span>Cập nhật thời gian thực</span>
-            </p>
-          </div>
-        </div>
+                  {card.isRevenueCard ? (
+                    <div className="inline-flex items-center p-0.5 rounded-full bg-emerald-50 border border-emerald-200 shadow-2xs">
+                      <button
+                        type="button"
+                        onClick={() => setRevenueMode('month')}
+                        className={`px-2.5 py-0.5 rounded-full text-xs font-black transition-all cursor-pointer ${
+                          revenueMode === 'month'
+                            ? 'bg-emerald-600 text-white shadow-xs'
+                            : 'text-emerald-700 hover:text-emerald-900'
+                        }`}
+                      >
+                        Tháng
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setRevenueMode('total')}
+                        className={`px-2.5 py-0.5 rounded-full text-xs font-black transition-all cursor-pointer ${
+                          revenueMode === 'total'
+                            ? 'bg-emerald-600 text-white shadow-xs'
+                            : 'text-emerald-700 hover:text-emerald-900'
+                        }`}
+                      >
+                        Tổng
+                      </button>
+                    </div>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-black border border-emerald-200">
+                      <TrendingUp className="w-3 h-3" />
+                      {card.growth}
+                    </span>
+                  )}
+                </div>
 
-        {/* Metric 3: Active Packages */}
-        <div className="bg-white rounded-3xl p-6 border border-emerald-100 shadow-2xs hover:shadow-md transition-all group">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Thuê Bao Active</span>
-            <div className="w-10 h-10 rounded-2xl bg-cyan-50 text-cyan-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-              <PackageCheck className="w-5 h-5" />
-            </div>
-          </div>
-          <div className="mt-4">
-            <h3 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-              <AnimatedCounter target={totalSubsCount} />
-            </h3>
-            <p className="text-xs text-cyan-600 font-semibold mt-1">
-              Gói Pro & Gia Đình
-            </p>
-          </div>
-        </div>
+                <p className="text-[11px] font-extrabold text-slate-400 tracking-wider uppercase">
+                  {card.title}
+                </p>
 
-        {/* Metric 4: Operational Status */}
-        <div className="bg-white rounded-3xl p-6 border border-emerald-100 shadow-2xs hover:shadow-md transition-all group">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Trạng Thái Hệ Thống</span>
-            <div className="w-10 h-10 rounded-2xl bg-green-50 text-green-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-              <Calendar className="w-5 h-5" />
-            </div>
-          </div>
-          <div className="mt-4">
-            <div className="flex items-center gap-2">
-              <span className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></span>
-              <span className="text-lg sm:text-xl font-black text-emerald-700">Hoạt Động Tốt</span>
-            </div>
-            <p className="text-xs text-slate-500 font-medium mt-1">
-              Sẵn sàng phục vụ người dùng
-            </p>
-          </div>
+                <h3 className="text-2xl font-black text-slate-900 my-1 tracking-tight flex items-center">
+                  {card.isCurrency ? (
+                    <AnimatedCounter
+                      end={card.numericValue}
+                      duration={1.5}
+                      separator="."
+                      suffix=" ₫"
+                    />
+                  ) : (
+                    <AnimatedCounter
+                      end={card.numericValue}
+                      duration={1.8}
+                      separator="."
+                    />
+                  )}
+                </h3>
+                <p className="text-[11px] text-slate-500 font-semibold">{card.subtext}</p>
+              </div>
+            );
+          })}
         </div>
       </div>
 
@@ -333,7 +395,7 @@ export const ManagerDashboard = (props) => {
               Lịch Sử Thanh Toán
             </h4>
             <p className="text-xs text-slate-500 mt-1">
-              Tra cứu đơn hàng mua gói và trạng thái PayOS
+              Tra cứu đơn hàng mua gói và trạng thái giao dịch Friggy
             </p>
             <div className="mt-3 flex items-center text-xs font-bold text-green-600 gap-1">
               <span>Xem chi tiết</span>

@@ -4,7 +4,6 @@ import ManagerHeader from './Header/ManagerHeader';
 import ManagerDashboard from './Dashboard/ManagerDashboard';
 import UserManagement from './UserManagement/UserManagement';
 import PackageManagement from './PackageManagement/PackageManagement';
-import ManagerSettings from './Settings/ManagerSettings';
 export const ManagerPage = ({ onExitManager }) => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -54,8 +53,6 @@ export const ManagerPage = ({ onExitManager }) => {
               setPackages={setPackages}
             />
           )}
-
-          {activeTab === 'settings' && <ManagerSettings />}
         </main>
       </div>
     </div>
