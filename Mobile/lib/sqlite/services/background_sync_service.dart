@@ -133,6 +133,10 @@ class BackgroundSyncService {
 
       debugPrint('[BackgroundSync] Found ${pending.length} pending fridge items to sync...');
       for (final item in pending) {
+        // Chỉ thêm mới nếu đây là item offline mới tạo (id bắt đầu bằng 'local_')
+        if (!item.id.startsWith('local_')) {
+          continue;
+        }
         try {
           await _api.addFridgeItem({
             if (item.ingredientId > 0) 'ingredientId': item.ingredientId,
@@ -629,8 +633,16 @@ class BackgroundSyncService {
             case FridgeOpAction.update:
               final qty = (op['quantity'] as num?)?.toDouble() ?? 1.0;
               final unit = op['unit'] as String? ?? '';
-              await _api.updateFridgeItem(itemId, {'quantity': qty, 'unit': unit});
-              debugPrint('[BackgroundSync] ✓ Fridge update synced: $itemId ($qty $unit)');
+              final expiresAt = op['expires_at'] as String?;
+              final updatePayload = <String, dynamic>{
+                'quantity': qty,
+                'unit': unit,
+              };
+              if (expiresAt != null && expiresAt.isNotEmpty) {
+                updatePayload['expiresAt'] = expiresAt;
+              }
+              await _api.updateFridgeItem(itemId, updatePayload);
+              debugPrint('[BackgroundSync] ✓ Fridge update synced: $itemId ($qty $unit $expiresAt)');
               break;
             case FridgeOpAction.consume:
               await _api.consumeFridgeItem(itemId);

@@ -13,6 +13,7 @@ import '../theme/app_theme.dart';
 import '../sqlite/services/ingredient_local_service.dart';
 import '../sqlite/services/fridge_ops_local_service.dart';
 import '../sqlite/helpers/database_helper.dart';
+import '../sqlite/helpers/sync_helper.dart';
 import '../sqlite/models/local_ingredient_model.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 
@@ -73,7 +74,7 @@ class FridgeInventoryScreenState extends State<FridgeInventoryScreen> {
           quantity: double.tryParse(item.quantity.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 1.0,
           unit: item.unit,
           storageLocation: item.storageArea,
-          expiresAt: null,
+          expiresAt: item.expiresAt,
           daysUntilExpiry: item.daysUntilExpiry,
           imagePath: item.imagePath,
           updatedAt: DateTime.now().millisecondsSinceEpoch,
@@ -152,6 +153,7 @@ class FridgeInventoryScreenState extends State<FridgeInventoryScreen> {
             imagePath: item.imagePath ?? '',
             badgeBgColor: resolveBgColor(days),
             badgeTextColor: resolveTextColor(days),
+            expiresAt: item.expiresAt,
           );
         }).toList();
 
@@ -187,20 +189,27 @@ class FridgeInventoryScreenState extends State<FridgeInventoryScreen> {
   }
 
   /// Cập nhật quantity + unit của ingredient trong SQLite local ngay (dùng khi offline)
-  Future<void> _applyLocalFridgeUpdate(String itemId, double quantity, String unit) async {
+  Future<void> _applyLocalFridgeUpdate(String itemId, double quantity, String unit, [String? expiresAt, int? daysUntilExpiry]) async {
     try {
       final db = await DatabaseHelper.instance.database;
+      final updateData = <String, dynamic>{
+        'quantity': quantity,
+        'unit': unit,
+        'updated_at': DateTime.now().millisecondsSinceEpoch,
+      };
+      if (expiresAt != null) {
+        updateData['expires_at'] = expiresAt;
+      }
+      if (daysUntilExpiry != null) {
+        updateData['days_until_expiry'] = daysUntilExpiry;
+      }
       await db.update(
         'local_ingredients',
-        {
-          'quantity': quantity,
-          'unit': unit,
-          'updated_at': DateTime.now().millisecondsSinceEpoch,
-        },
+        updateData,
         where: 'id = ?',
         whereArgs: [itemId],
       );
-      debugPrint('[FridgeInventoryScreen] Local ingredient $itemId updated offline: $quantity $unit');
+      debugPrint('[FridgeInventoryScreen] Local ingredient $itemId updated offline: $quantity $unit $expiresAt $daysUntilExpiry');
     } catch (e) {
       debugPrint('[FridgeInventoryScreen] Error updating local ingredient: $e');
     }
@@ -246,6 +255,11 @@ class FridgeInventoryScreenState extends State<FridgeInventoryScreen> {
     if (!availableUnits.contains(selectedUnit)) {
       availableUnits.insert(0, selectedUnit);
     }
+
+    int currentDays = item.daysUntilExpiry != 999
+        ? item.daysUntilExpiry
+        : 7;
+    final daysController = TextEditingController(text: currentDays.toString());
 
     showModalBottomSheet(
       context: context,
@@ -481,7 +495,155 @@ class FridgeInventoryScreenState extends State<FridgeInventoryScreen> {
                       ),
                     ),
 
-                    SizedBox(height: 24.h),
+                    SizedBox(height: 18.h),
+
+                    // Expiration Days Stepper & Input Card
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF233629) : const Color(0xFFF1F8E9),
+                        borderRadius: BorderRadius.circular(16.r),
+                        border: Border.all(
+                          color: isDark ? const Color(0xFF2E4D36) : const Color(0xFFC8E6C9),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: EdgeInsets.all(8.w),
+                            decoration: BoxDecoration(
+                              color: (isDark ? const Color(0xFF81C784) : const Color(0xFF008435)).withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(10.r),
+                            ),
+                            child: Icon(
+                              Icons.hourglass_bottom_rounded,
+                              size: 20,
+                              color: isDark ? const Color(0xFF81C784) : const Color(0xFF008435),
+                            ),
+                          ),
+                          SizedBox(width: 12.w),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  isEn ? 'Expiry Days' : 'Hạn sử dụng',
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 12.sp,
+                                    fontWeight: FontWeight.w600,
+                                    color: isDark ? const Color(0xFF9DA8A0) : const Color(0xFF6B786F),
+                                  ),
+                                ),
+                                SizedBox(height: 2.h),
+                                Text(
+                                  currentDays == 0
+                                      ? (isEn ? 'Expires today' : 'Hết hạn hôm nay')
+                                      : (isEn ? 'Expires in $currentDays days' : 'Còn $currentDays ngày'),
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 14.5.sp,
+                                    fontWeight: FontWeight.w700,
+                                    color: isDark ? const Color(0xFF81C784) : const Color(0xFF008435),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          // Minus Days Button
+                          GestureDetector(
+                            onTap: () {
+                              if (currentDays > 1) {
+                                setModalState(() {
+                                  currentDays -= 1;
+                                  daysController.text = currentDays.toString();
+                                });
+                              }
+                            },
+                            child: Container(
+                              width: 36,
+                              height: 36,
+                              decoration: BoxDecoration(
+                                color: isDark ? const Color(0xFF19271E) : Colors.white,
+                                borderRadius: BorderRadius.circular(10.r),
+                                border: Border.all(
+                                  color: isDark ? const Color(0xFF2E4D36) : const Color(0xFFC8E6C9),
+                                ),
+                              ),
+                              child: Icon(
+                                Icons.remove_rounded,
+                                size: 18,
+                                color: isDark ? const Color(0xFF81C784) : const Color(0xFF008435),
+                              ),
+                            ),
+                          ),
+                          SizedBox(width: 8.w),
+                          // Days Input Box
+                          SizedBox(
+                            width: 62,
+                            height: 38,
+                            child: TextField(
+                              controller: daysController,
+                              keyboardType: TextInputType.number,
+                              textAlign: TextAlign.center,
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 15.sp,
+                                fontWeight: FontWeight.w800,
+                                color: isDark ? Colors.white : const Color(0xFF006428),
+                              ),
+                              onChanged: (val) {
+                                final parsed = int.tryParse(val);
+                                if (parsed != null && parsed >= 0) {
+                                  setModalState(() {
+                                    currentDays = parsed;
+                                  });
+                                }
+                              },
+                              decoration: InputDecoration(
+                                isDense: true,
+                                contentPadding: EdgeInsets.symmetric(vertical: 8),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10.r),
+                                  borderSide: BorderSide(
+                                    color: isDark ? const Color(0xFF2E4D36) : const Color(0xFF81C784),
+                                  ),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10.r),
+                                  borderSide: BorderSide(
+                                    color: isDark ? const Color(0xFF81C784) : const Color(0xFF008435),
+                                    width: 1.5,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          SizedBox(width: 8.w),
+                          // Plus Days Button
+                          GestureDetector(
+                            onTap: () {
+                              setModalState(() {
+                                currentDays += 1;
+                                daysController.text = currentDays.toString();
+                              });
+                            },
+                            child: Container(
+                              width: 36,
+                              height: 36,
+                              decoration: BoxDecoration(
+                                color: isDark ? const Color(0xFF81C784) : const Color(0xFF008435),
+                                borderRadius: BorderRadius.circular(10.r),
+                              ),
+                              child: Icon(
+                                Icons.add_rounded,
+                                size: 18,
+                                color: isDark ? const Color(0xFF0E1611) : Colors.white,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    SizedBox(height: 20.h),
 
                     // Save Button
                     SizedBox(
@@ -498,39 +660,102 @@ class FridgeInventoryScreenState extends State<FridgeInventoryScreen> {
                         ),
                         onPressed: () async {
                           final valStr = qtyNumberController.text.trim();
-                          if (valStr.isNotEmpty) {
-                            final numVal = double.tryParse(valStr) ?? 1.0;
+                          if (valStr.isEmpty) return;
 
-                            // Kiểm tra kết nối
-                            final connectivity = await Connectivity().checkConnectivity();
-                            final isOnline = connectivity.contains(ConnectivityResult.wifi) ||
-                                connectivity.contains(ConnectivityResult.mobile) ||
-                                connectivity.contains(ConnectivityResult.ethernet);
+                          final numVal = double.tryParse(valStr) ?? 1.0;
+                          final daysVal = int.tryParse(daysController.text.trim()) ?? currentDays;
+                          final targetDate = DateTime.now().toUtc().add(Duration(days: daysVal));
+                          final expiresAtStr = targetDate.toIso8601String();
 
-                            if (isOnline) {
-                              // ONLINE: gọi API
-                              try {
-                                await _apiService.updateFridgeItem(item.id, {
-                                  'quantity': numVal,
-                                  'unit': selectedUnit,
-                                });
-                              } catch (e) {
-                                debugPrint('API Update quantity error: $e');
+                          final updateData = <String, dynamic>{
+                            'quantity': numVal,
+                            'unit': selectedUnit,
+                            'expiresAt': expiresAtStr,
+                          };
+
+                          // Đóng bottom sheet ngay để UI phản hồi mượt mà
+                          if (context.mounted) Navigator.pop(context);
+
+                          // Kiểm tra kết nối mạng
+                          final isOnline = await SyncHelper.instance.checkCurrentConnection();
+
+                          if (isOnline) {
+                            // ─── KHI ONLINE ───
+                            // 1. Gọi API cập nhật
+                            try {
+                              setState(() => _isLoading = true);
+                              await _apiService.updateFridgeItem(item.id, updateData);
+                              
+                              // 2. Gọi API để lấy lên số ngày đúng với database xong thì mới lưu vào sqlite
+                              await _loadIngredients();
+
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(isEn ? 'Updated successfully' : 'Cập nhật thành công'),
+                                    backgroundColor: const Color(0xFF008435),
+                                    duration: const Duration(seconds: 2),
+                                  ),
+                                );
                               }
-                              _loadIngredients();
-                            } else {
-                              // OFFLINE: lưu pending + cập nhật local ngay
+                            } catch (e) {
+                              debugPrint('[FridgeInventoryScreen] Online update error: $e, falling back to local pending op');
+                              // Nếu API lỗi (mất mạng đột ngột / timeout) -> fallback lưu vào SQLite và tạo pending op
+                              await _applyLocalFridgeUpdate(item.id, numVal, selectedUnit, expiresAtStr, daysVal);
                               await _fridgeOpsSvc.savePendingOp(
                                 itemId: item.id,
                                 action: FridgeOpAction.update,
                                 quantity: numVal,
                                 unit: selectedUnit,
+                                expiresAt: expiresAtStr,
                               );
-                              await _applyLocalFridgeUpdate(item.id, numVal, selectedUnit);
-                              _loadIngredients();
+                              if (mounted) {
+                                setState(() {
+                                  _isLoading = false;
+                                  final idx = _ingredients.indexWhere((ing) => ing.id == item.id);
+                                  if (idx != -1) {
+                                    _ingredients[idx] = _ingredients[idx].copyWith(
+                                      quantity: '$numVal $selectedUnit',
+                                      unit: selectedUnit,
+                                      daysUntilExpiry: daysVal,
+                                      expiryText: daysVal == 0
+                                          ? 'Hết hạn hôm nay'
+                                          : (daysVal < 0 ? 'Quá hạn ${daysVal.abs()} ngày' : 'Còn $daysVal ngày'),
+                                      expiresAt: expiresAtStr,
+                                    );
+                                  }
+                                });
+                              }
+                            }
+                          } else {
+                            // ─── KHI OFFLINE ───
+                            // Lưu vào SQLite và đánh dấu pending op để khi online sẽ sync lên server
+                            await _applyLocalFridgeUpdate(item.id, numVal, selectedUnit, expiresAtStr, daysVal);
+                            await _fridgeOpsSvc.savePendingOp(
+                              itemId: item.id,
+                              action: FridgeOpAction.update,
+                              quantity: numVal,
+                              unit: selectedUnit,
+                              expiresAt: expiresAtStr,
+                            );
+
+                            if (mounted) {
+                              setState(() {
+                                final idx = _ingredients.indexWhere((ing) => ing.id == item.id);
+                                if (idx != -1) {
+                                  _ingredients[idx] = _ingredients[idx].copyWith(
+                                    quantity: '$numVal $selectedUnit',
+                                    unit: selectedUnit,
+                                    daysUntilExpiry: daysVal,
+                                    expiryText: daysVal == 0
+                                        ? 'Hết hạn hôm nay'
+                                        : (daysVal < 0 ? 'Quá hạn ${daysVal.abs()} ngày' : 'Còn $daysVal ngày'),
+                                    expiresAt: expiresAtStr,
+                                  );
+                                }
+                              });
                             }
                           }
-                          if (context.mounted) Navigator.pop(context);
                         },
                         child: Text(
                           isEn ? 'Save' : 'Lưu thay đổi',

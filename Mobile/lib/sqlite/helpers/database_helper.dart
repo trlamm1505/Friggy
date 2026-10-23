@@ -58,9 +58,13 @@ class DatabaseHelper {
         action TEXT NOT NULL,
         quantity REAL,
         unit TEXT,
+        expires_at TEXT,
         created_at INTEGER NOT NULL
       )
     ''');
+    try {
+      await db.execute('ALTER TABLE local_pending_fridge_ops ADD COLUMN expires_at TEXT');
+    } catch (_) {}
 
     // 4 bảng mở rộng (có method riêng)
     await _createUserProfileTable(db);
