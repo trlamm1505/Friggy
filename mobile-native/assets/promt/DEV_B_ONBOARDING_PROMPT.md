@@ -524,7 +524,7 @@ Suy ra từ đó:
 Khi plan, Swagger và code BE không khớp nhau, theo thứ tự ưu tiên này:
 
 1. **BE thực tế thắng** — đọc `be/src/modules-api/<module>/dto/*.dto.ts` là nguồn chân lý
-2. **Swagger production** xác nhận: `https://api.friggy.io.vn/api/docs-json`
+2. **Swagger production** xác nhận: `https://api.io.vn/api/docs-json`
 3. **Flutter đã chạy production** làm mẫu UX — `Mobile/lib/...`
 4. **Plan** — nếu sai so với 1–2 thì plan cần sửa
 
