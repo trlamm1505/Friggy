@@ -8,7 +8,7 @@
  * Sau này AllAvailableItemsScreen và AllExpiredItemsScreen chỉ cần pass config.
  */
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, Text, StyleSheet, FlatList } from 'react-native';
 import { useTheme } from '../../theme/ThemeContext';
 import { AppColors } from '../../theme/colors';
@@ -25,14 +25,7 @@ import { EmptyState } from '../../components/common/EmptyState';
 import { ErrorState } from '../../components/common/ErrorState';
 import { Skeleton } from '../../components/common/Skeleton';
 import { SortMenu } from '../../components/common/SortMenu';
-
-const getDaysToExpiry = (expiryDate) => {
-  const expiry = new Date(expiryDate);
-  const now = new Date();
-  now.setHours(0, 0, 0, 0);
-  expiry.setHours(0, 0, 0, 0);
-  return Math.ceil((expiry - now) / (1000 * 60 * 60 * 24));
-};
+import { getDaysToExpiry } from '../../utils/fridgeDates';
 
 const sortItems = (items, sortKey, sortOptions) => {
   return [...items].sort((a, b) => {
@@ -48,9 +41,12 @@ const sortItems = (items, sortKey, sortOptions) => {
       case sortOptions.URGENT_FIRST: {
         const aDays = getDaysToExpiry(a.expiryDate);
         const bDays = getDaysToExpiry(b.expiryDate);
-        if (aDays < 0 && bDays >= 0) return -1;
-        if (aDays >= 0 && bDays < 0) return 1;
-        return aDays - bDays;
+        // `null` = không có hạn dùng -> coi như còn hạn, đứng CUỐI.
+        const aVal = aDays === null ? Number.MAX_SAFE_INTEGER : aDays;
+        const bVal = bDays === null ? Number.MAX_SAFE_INTEGER : bDays;
+        if (aVal < 0 && bVal >= 0) return -1;
+        if (aVal >= 0 && bVal < 0) return 1;
+        return aVal - bVal;
       }
       default:
         return 0;
@@ -58,9 +54,7 @@ const sortItems = (items, sortKey, sortOptions) => {
   });
 };
 
-export const FridgeListScreen = ({
-  config,
-}) => {
+export const FridgeListScreen = ({ config }) => {
   const { isDark } = useTheme();
   const { t } = useTranslation();
   const navigation = useNavigation();
@@ -68,7 +62,6 @@ export const FridgeListScreen = ({
 
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState(config.statusFilterDefault || 'all');
-  const [categoryFilter, setCategoryFilter] = useState(config.categoryFilterDefault || 'all');
   const [sort, setSort] = useState(config.defaultSort);
 
   // Bước 1: Lọc theo điều kiện tiên quyết (chỉ fresh+expiring, hoặc expiring+expired)
@@ -86,23 +79,21 @@ export const FridgeListScreen = ({
     return baseItems.filter((it) => it.status === statusFilter);
   }, [baseItems, statusFilter, config]);
 
-  // Bước 3: Filter theo category
-  const categoryFiltered = useMemo(() => {
-    if (categoryFilter === 'all') return statusFiltered;
-    return statusFiltered.filter((it) => it.category === categoryFilter);
-  }, [statusFiltered, categoryFilter]);
-
-  // Bước 4: Search
+  // Bước 3: Search
+  //
+  // KHÔNG còn bước lọc theo category: `FridgeItemResponseDto` của BE không trả
+  // field `category` -> mọi item có `category === undefined` -> filter luôn ra
+  // list rỗng. Quyết định bỏ: DEV_B_ONBOARDING_PROMPT.md mục 5.2 (chốt 23/10).
   const searched = useMemo(() => {
-    if (!search.trim()) return categoryFiltered;
+    if (!search.trim()) return statusFiltered;
     const q = search.toLowerCase().trim();
-    return categoryFiltered.filter((it) => it.name.toLowerCase().includes(q));
-  }, [categoryFiltered, search]);
+    return statusFiltered.filter((it) => it.name.toLowerCase().includes(q));
+  }, [statusFiltered, search]);
 
   // Bước 5: Sort
   const filteredItems = useMemo(
     () => sortItems(searched, sort, config.sortOptions),
-    [searched, sort, config.sortOptions],
+    [searched, sort, config.sortOptions]
   );
 
   // Counts
@@ -111,12 +102,6 @@ export const FridgeListScreen = ({
     config.statusChips.forEach((chip) => {
       c[chip.key] = baseItems.filter((it) => config.statusFilterFn(it, chip.key)).length;
     });
-    if (config.categoryChips) {
-      config.categoryChips.forEach((chip) => {
-        if (chip.key === 'all') return;
-        c[chip.key] = baseItems.filter((it) => it.category === chip.key).length;
-      });
-    }
     return c;
   }, [baseItems, config]);
 
@@ -127,19 +112,7 @@ export const FridgeListScreen = ({
         label: t(chip.labelKey, { defaultValue: chip.labelKey }),
         count: counts[chip.key] || 0,
       })),
-    [config.statusChips, counts, t],
-  );
-
-  const categoryChips = useMemo(
-    () =>
-      config.categoryChips
-        ? config.categoryChips.map((chip) => ({
-            ...chip,
-            label: t(chip.labelKey, { defaultValue: chip.labelKey }),
-            count: counts[chip.key] || 0,
-          }))
-        : null,
-    [config.categoryChips, counts, t],
+    [config.statusChips, counts, t]
   );
 
   const sortOptions = useMemo(
@@ -148,12 +121,12 @@ export const FridgeListScreen = ({
         key: opt.key,
         label: t(opt.labelKey, { defaultValue: opt.labelKey }),
       })),
-    [config.sortOptionsArray, t],
+    [config.sortOptionsArray, t]
   );
 
   const currentSortLabel = useMemo(
     () => sortOptions.find((o) => o.key === sort)?.label || '',
-    [sortOptions, sort],
+    [sortOptions, sort]
   );
 
   // Loading state
@@ -172,7 +145,12 @@ export const FridgeListScreen = ({
           </Text>
         </View>
         <View style={{ paddingHorizontal: sp(20), gap: sp(10) }}>
-          <Skeleton width="100%" height={sp(42)} borderRadius={sp(12)} style={{ marginBottom: sp(8) }} />
+          <Skeleton
+            width="100%"
+            height={sp(42)}
+            borderRadius={sp(12)}
+            style={{ marginBottom: sp(8) }}
+          />
           {[0, 1, 2, 3, 4].map((i) => (
             <Skeleton key={i} width="100%" height={sp(72)} borderRadius={sp(14)} />
           ))}
@@ -191,7 +169,7 @@ export const FridgeListScreen = ({
     );
   }
 
-  const hasFilters = !!search || statusFilter !== 'all' || (categoryFilter !== 'all' && categoryChips);
+  const hasFilters = !!search || statusFilter !== 'all';
 
   return (
     <View style={[styles.container, { backgroundColor: isDark ? '#0E1611' : '#FFFFFF' }]}>
@@ -210,7 +188,10 @@ export const FridgeListScreen = ({
           <Text
             style={[
               styles.subtitle,
-              { color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary, fontSize: sp(13) },
+              {
+                color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                fontSize: sp(13),
+              },
             ]}
           >
             {filteredItems.length > 0
@@ -229,30 +210,15 @@ export const FridgeListScreen = ({
       </View>
 
       <View style={{ paddingHorizontal: sp(20), marginBottom: sp(12) }}>
-        <SearchBar
-          value={search}
-          onChangeText={setSearch}
-          placeholder={t('home.searchHint')}
-        />
+        <SearchBar value={search} onChangeText={setSearch} placeholder={t('home.searchHint')} />
       </View>
 
       <FilterChips
         options={statusChips}
         selectedKey={statusFilter}
         onSelect={setStatusFilter}
-        style={{ marginBottom: sp(8) }}
+        style={{ marginBottom: sp(12) }}
       />
-
-      {categoryChips ? (
-        <FilterChips
-          options={categoryChips}
-          selectedKey={categoryFilter}
-          onSelect={setCategoryFilter}
-          style={{ marginBottom: sp(12) }}
-        />
-      ) : (
-        <View style={{ height: sp(4) }} />
-      )}
 
       <FlatList
         data={filteredItems}
@@ -267,11 +233,7 @@ export const FridgeListScreen = ({
               hint={t(config.emptyHintKey, { defaultValue: config.emptyHintKey })}
             />
           ) : hasFilters ? (
-            <EmptyState
-              emoji="🔍"
-              title={t('home.noResults')}
-              hint={t('home.noResultsHint')}
-            />
+            <EmptyState emoji="🔍" title={t('home.noResults')} hint={t('home.noResultsHint')} />
           ) : null
         }
         renderItem={({ item }) => <FridgeItem item={item} />}

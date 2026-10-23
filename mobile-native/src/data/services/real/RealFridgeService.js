@@ -321,6 +321,65 @@ export class RealFridgeService {
     const list = Array.isArray(data) ? data : [];
     return list.map((dto) => this._toFridgeItem(dto)).filter(Boolean);
   }
+
+  // ═══════════════ Danh mục nguyên liệu (ingredient picker) ═══════════════
+
+  /**
+   * Tìm nguyên liệu trong danh mục — dùng cho picker ở `ManualAddIngredientScreen`.
+   *
+   * BẮT BUỘC: `AddFridgeItemDto` có cả `ingredientId` lẫn `name` đều optional,
+   * nhưng `fridge.service.ts:141` throw BadRequest nếu không resolve được nguyên
+   * liệu trong danh mục. UI nhập tên tự do -> lỗi 400. Nên picker BẮT BUỘC
+   * chọn được 1 mục trong danh mục rồi gửi `ingredientId`.
+   *
+   * BE `GET /ingredients` trả PAGINATED: { data, total, page, limit, totalPages }.
+   * Nhưng `ApiClient` đã unwrap envelope `{ success, data }` -> còn lại 1 lớp
+   * `data` của chính pagination. Vì vậy phải đọc `payload.data`, không phải
+   * coi response là mảng.
+   *
+   * @param {string} query - từ khoá tìm kiếm (rỗng -> lấy danh sách đầu)
+   * @param {number} [limit=20] - BE tối đa 100
+   * @returns {Promise<Array<{id:number,name:string,defaultUnit:string,image:string|null}>>}
+   */
+  async searchIngredients(query = '', limit = 20) {
+    const params = { limit };
+    const q = (query || '').trim();
+    if (q) params.search = q;
+
+    const payload = await this.client.get('/ingredients', { params });
+
+    // BE trả { data, total, page, limit, totalPages }. ApiClient đã bỏ envelope
+    // ngoài cùng -> đây chính là object pagination.
+    const list = Array.isArray(payload)
+      ? payload
+      : Array.isArray(payload?.data)
+        ? payload.data
+        : [];
+
+    return list.map((dto) => ({
+      id: dto.id,
+      name: dto.name,
+      defaultUnit: dto.defaultUnit ?? null,
+      // R2: ảnh phải qua getImageUrl — `imagePath` là đường dẫn tương đối.
+      image: appConfig.getImageUrl(dto.imagePath) ?? null,
+      categoryName: dto.categoryName ?? '',
+    }));
+  }
+
+  // ═══════════════ Biểu đồ thống kê ═══════════════
+
+  /**
+   * `GET /fridge/stats/chart?period=week|month` — dữ liệu biểu đồ chi tiêu + lãng phí.
+   *
+   * BE trả: { period, labels: string[], spending: number[], wasteItems: number[] }
+   * (fridge-response.dto.ts:57-62). Giữ nguyên shape — màn biểu đồ ở B4 sẽ dùng,
+   * không map sang shape khác để tránh phải dịch 2 lần.
+   *
+   * @param {'week'|'month'} [period='week']
+   */
+  async getStatsChart(period = 'week') {
+    return this.client.get('/fridge/stats/chart', { params: { period } });
+  }
 }
 
 // ══════════════════════════════════════════════════════════════════

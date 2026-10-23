@@ -25,14 +25,14 @@
  * 3. `compartment` (tên UI) -> `storageLocation` (tên BE) do _buildListQuery dịch.
  */
 
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, FlatList, Pressable, RefreshControl } from 'react-native';
 import { useTheme } from '../../theme/ThemeContext';
 import { AppColors } from '../../theme/colors';
 import { sp } from '../../utils/responsive';
 import { FontWeights, FontFamily } from '../../theme/typography';
 import { useTranslation } from 'react-i18next';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Plus, Refrigerator } from 'lucide-react-native';
 import { FridgeItem } from '../../components/fridge/FridgeItem';
@@ -233,6 +233,30 @@ export const FridgeInventoryScreen = ({ fridge, isEmbedded = false, onRename }) 
       setTimeout(() => setRefreshing(false), 400);
     }
   }, [refetch]);
+
+  // Refetch mỗi lần màn được focus lại (trừ lần đầu).
+  //
+  // `native-stack` GIỮ screen mounted sau khi push -> `useFridgeItems` không tự
+  // chạy lại (deps không đổi) -> sau khi thêm nguyên liệu ở
+  // `ManualAddIngredientScreen`, quay lại màn này vẫn thấy list CŨ.
+  //
+  // Flutter xử lý bằng `Navigator.pop(context, true)` rồi màn trước đọc kết quả
+  // để reload (manual_add_ingredient_screen.dart:644). Ở RN không có "kết quả
+  // trả về" theo cách đó, nên chuẩn là `useFocusEffect`.
+  //
+  // Lần focus ĐẦU bỏ qua: `useAsyncData` đã gọi fetch lúc mount, gọi thêm ở đây
+  // là 1 request thừa. `isFirstFocus` là ref nên không cần nằm trong deps.
+  const isFirstFocus = useRef(true);
+  useFocusEffect(
+    useCallback(() => {
+      if (isFirstFocus.current) {
+        isFirstFocus.current = false;
+        return undefined;
+      }
+      refetch();
+      return undefined;
+    }, [refetch])
+  );
 
   // Loading state lần đầu
   if (loading && !items) {

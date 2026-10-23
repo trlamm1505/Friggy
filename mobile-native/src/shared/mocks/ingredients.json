@@ -1,0 +1,58 @@
+[
+  { "id": 1, "name": "Cà chua", "defaultUnit": "quả", "image": null, "categoryName": "Rau củ quả" },
+  { "id": 2, "name": "Cà rốt", "defaultUnit": "củ", "image": null, "categoryName": "Rau củ quả" },
+  { "id": 3, "name": "Hành tây", "defaultUnit": "củ", "image": null, "categoryName": "Rau củ quả" },
+  {
+    "id": 4,
+    "name": "Ớt chuông",
+    "defaultUnit": "quả",
+    "image": null,
+    "categoryName": "Rau củ quả"
+  },
+  {
+    "id": 5,
+    "name": "Cải bó xôi",
+    "defaultUnit": "bó",
+    "image": null,
+    "categoryName": "Rau lá xanh"
+  },
+  {
+    "id": 6,
+    "name": "Sữa tươi",
+    "defaultUnit": "hộp",
+    "image": null,
+    "categoryName": "Sữa & Trứng"
+  },
+  {
+    "id": 7,
+    "name": "Trứng gà",
+    "defaultUnit": "quả",
+    "image": null,
+    "categoryName": "Sữa & Trứng"
+  },
+  {
+    "id": 8,
+    "name": "Phô mai",
+    "defaultUnit": "hộp",
+    "image": null,
+    "categoryName": "Sữa & Trứng"
+  },
+  { "id": 9, "name": "Thịt heo", "defaultUnit": "kg", "image": null, "categoryName": "Thịt" },
+  { "id": 10, "name": "Thịt bò", "defaultUnit": "kg", "image": null, "categoryName": "Thịt" },
+  { "id": 11, "name": "Cá hồi", "defaultUnit": "con", "image": null, "categoryName": "Hải sản" },
+  { "id": 12, "name": "Tôm", "defaultUnit": "con", "image": null, "categoryName": "Hải sản" },
+  { "id": 13, "name": "Táo đỏ", "defaultUnit": "quả", "image": null, "categoryName": "Trái cây" },
+  { "id": 14, "name": "Chuối", "defaultUnit": "quả", "image": null, "categoryName": "Trái cây" },
+  { "id": 15, "name": "Cam", "defaultUnit": "quả", "image": null, "categoryName": "Trái cây" },
+  {
+    "id": 16,
+    "name": "Bánh mì",
+    "defaultUnit": "gói",
+    "image": null,
+    "categoryName": "Thực phẩm khô"
+  },
+  { "id": 17, "name": "Gạo", "defaultUnit": "kg", "image": null, "categoryName": "Thực phẩm khô" },
+  { "id": 18, "name": "Dầu ăn", "defaultUnit": "chai", "image": null, "categoryName": "Gia vị" },
+  { "id": 19, "name": "Nước mắm", "defaultUnit": "chai", "image": null, "categoryName": "Gia vị" },
+  { "id": 20, "name": "Bột ngọt", "defaultUnit": "gói", "image": null, "categoryName": "Gia vị" }
+]

@@ -8,14 +8,7 @@
 
 import React from 'react';
 import { FridgeListScreen } from './FridgeListScreen';
-
-const getDaysToExpiry = (expiryDate) => {
-  const expiry = new Date(expiryDate);
-  const now = new Date();
-  now.setHours(0, 0, 0, 0);
-  expiry.setHours(0, 0, 0, 0);
-  return Math.ceil((expiry - now) / (1000 * 60 * 60 * 24));
-};
+import { getDaysToExpiry } from '../../utils/fridgeDates';
 
 const SORT_OPTIONS = {
   URGENT_FIRST: 'urgent_first',
@@ -25,9 +18,12 @@ const SORT_OPTIONS = {
 
 const EXPIRED_CONFIG = {
   titleKey: 'home.expiredIngredients',
+  // Màn này gom "sắp hết hạn" + "đã hết hạn" (days <= 3), khác hẳn màn
+  // "Nguyên liệu sẵn có" (chỉ còn hạn). Item KHÔNG có hạn dùng không thuộc
+  // nhóm này -> `days === null` loại.
   baseFilter: (item) => {
     const days = getDaysToExpiry(item.expiryDate);
-    return days <= 3;
+    return days !== null && days <= 3;
   },
   statusChips: [
     { key: 'all', labelKey: 'home.all' },
@@ -36,13 +32,14 @@ const EXPIRED_CONFIG = {
   ],
   statusFilterDefault: 'all',
   statusFilterFn: (item, filterKey) => {
-    const days = getDaysToExpiry(item.expiryDate);
     if (filterKey === 'all') return true;
-    if (filterKey === 'expiring') return days >= 0 && item.status === 'expiring';
-    if (filterKey === 'expired') return days < 0;
+    const days = getDaysToExpiry(item.expiryDate);
+    if (filterKey === 'expiring') return days !== null && days >= 0 && item.status === 'expiring';
+    if (filterKey === 'expired') return days !== null && days < 0;
     return false;
   },
-  categoryChips: null, // Expired screen không cần filter theo category
+  // KHÔNG có `categoryChips` — BE không trả field `category` cho từng item nên
+  // filter theo danh mục luôn ra list rỗng (mục 5.2, chốt 23/10).
   sortOptions: SORT_OPTIONS,
   sortOptionsArray: [
     { key: SORT_OPTIONS.URGENT_FIRST, labelKey: 'home.sortUrgent' },

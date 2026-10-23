@@ -51,6 +51,20 @@ import { initAppShell } from './src/data/appInit';
 //    ("Unable to resolve module"), kể cả khi USE_MOCKS=true.
 //    Phase 0 chưa có Real*Service nào (tạo ở A1/B1 trở đi) nên vùng này
 //    để trống là đúng.
+//
+// ──────────────────────────────────────────────────────────────────
+// B1 — Fridge CRUD (đã tạo file, đăng ký key 'fridgeService')
+//
+// ⚠️ VÌ SAO IMPORT Ở ĐÂY MÀ KHÔNG Ở SERVICE PROVIDER:
+// `ServiceProvider.jsx` là file IMMUTABLE từ P0.5 (không sửa được).
+// Cơ chế registry yêu cầu side-effect import ở entry point.
+//
+// TÁC DỤNG:
+//   USE_MOCKS=false -> `resolveServices()` bọc `RealFridgeService` trong
+//   `withFallback()` -> domain 'fridgeService' gọi BE thật.
+//   USE_MOCKS=true  -> vẫn là mock (không đổi hành vi UI design).
+// ──────────────────────────────────────────────────────────────────
+import './src/data/services/real/RealFridgeService';
 // ══════════════════════════════════════════════════════════════════
 
 export default function App() {

@@ -401,3 +401,101 @@ describe('7. getSummary — suy ra từ stats + list', () => {
     expect(s.expiredCount).toBe(1);
   });
 });
+
+// ═══════════════ 8. INGREDIENT PICKER — searchIngredients ═══════════════
+
+describe('8. searchIngredients — danh mục nguyên liệu (B1 picker)', () => {
+  // BE `GET /ingredients` trả PAGINATED: { data, total, page, limit, totalPages }.
+  // ApiClient đã unwrap envelope ngoài -> còn lại đúng object này.
+  const beIngredient = (over = {}) => ({
+    id: 9,
+    name: 'Cà chua',
+    defaultUnit: 'gram',
+    caloriesPer100g: 18,
+    averagePricePerUnit: 3000,
+    imagePath: '/public/ingredients/ca_chua.jpg',
+    isCommon: true,
+    categoryId: 3,
+    categoryName: 'Rau củ quả',
+    ...over,
+  });
+
+  it('đọc đúng lớp pagination của BE (payload.data)', async () => {
+    api.get.mockResolvedValue({
+      data: [beIngredient()],
+      total: 1,
+      page: 1,
+      limit: 20,
+      totalPages: 1,
+    });
+
+    const result = await svc.searchIngredients('cà');
+
+    expect(api.get).toHaveBeenCalledWith('/ingredients', {
+      params: { limit: 20, search: 'cà' },
+    });
+    expect(result).toHaveLength(1);
+    expect(result[0].id).toBe(9);
+    expect(result[0].name).toBe('Cà chua');
+    expect(result[0].defaultUnit).toBe('gram');
+  });
+
+  it('ảnh đi qua appConfig.getImageUrl — KHÔNG dùng path thô của BE', async () => {
+    api.get.mockResolvedValue({ data: [beIngredient()], total: 1, page: 1, limit: 20 });
+
+    const result = await svc.searchIngredients('cà');
+    // Path tương đối '/public/...' không host được -> phải qua getImageUrl.
+    expect(result[0].image).not.toBe('/public/ingredients/ca_chua.jpg');
+    expect(result[0].image).toContain('ca_chua.jpg');
+  });
+
+  it('không gửi param search khi query rỗng', async () => {
+    api.get.mockResolvedValue({ data: [], total: 0, page: 1, limit: 20 });
+
+    await svc.searchIngredients('');
+
+    expect(api.get).toHaveBeenCalledWith('/ingredients', { params: { limit: 20 } });
+  });
+
+  it('response là mảng thuần (không pagination) vẫn parse được', async () => {
+    api.get.mockResolvedValue([beIngredient()]);
+    const result = await svc.searchIngredients('cà');
+    expect(result).toHaveLength(1);
+  });
+
+  it('payload lỗi -> trả mảng rỗng, KHÔNG ném lỗi lên UI', async () => {
+    api.get.mockResolvedValue({ data: null });
+    expect(await svc.searchIngredients('cà')).toEqual([]);
+  });
+});
+
+// ═══════════════ 9. STATS CHART — getStatsChart ═══════════════
+
+describe('9. getStatsChart — dữ liệu biểu đồ (B1)', () => {
+  it('gọi đúng endpoint + param period', async () => {
+    const chart = {
+      period: 'week',
+      labels: ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'],
+      spending: [120000, 0, 85000, 0, 0, 0, 0],
+      wasteItems: [0, 1, 0, 0, 0, 0, 0],
+    };
+    api.get.mockResolvedValue(chart);
+
+    const result = await svc.getStatsChart('week');
+
+    expect(api.get).toHaveBeenCalledWith('/fridge/stats/chart', { params: { period: 'week' } });
+    expect(result).toEqual(chart);
+  });
+
+  it('mặc định period = week', async () => {
+    api.get.mockResolvedValue({ period: 'week', labels: [], spending: [], wasteItems: [] });
+    await svc.getStatsChart();
+    expect(api.get).toHaveBeenCalledWith('/fridge/stats/chart', { params: { period: 'week' } });
+  });
+
+  it('period=month được truyền nguyên vẹn', async () => {
+    api.get.mockResolvedValue({ period: 'month', labels: [], spending: [], wasteItems: [] });
+    await svc.getStatsChart('month');
+    expect(api.get).toHaveBeenCalledWith('/fridge/stats/chart', { params: { period: 'month' } });
+  });
+});
