@@ -3,7 +3,6 @@ import {
   X,
   User,
   Mail,
-  Phone,
   Calendar,
   Shield,
   Refrigerator,
@@ -151,15 +150,17 @@ export const UserDetailModal = ({ user: initialUser, onClose }) => {
                   <Mail className="w-3.5 h-3.5 text-teal-600" />
                   Địa chỉ Email
                 </span>
-                <p className="text-xs font-bold text-slate-900 truncate">{displayUser.googleEmail || 'Chưa cập nhật'}</p>
+                <p className="text-xs font-bold text-slate-900 truncate">{displayUser.email || displayUser.googleEmail || 'Chưa cập nhật'}</p>
               </div>
 
               <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 space-y-1">
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
-                  <Phone className="w-3.5 h-3.5 text-teal-600" />
-                  Số Điện Thoại
+                  <Shield className="w-3.5 h-3.5 text-teal-600" />
+                  Phương Thức Đăng Nhập
                 </span>
-                <p className="text-xs font-bold text-slate-900">{displayUser.phone || 'Chưa cập nhật'}</p>
+                <p className="text-xs font-bold text-slate-900 capitalize">
+                  {displayUser.authProvider || 'Email / Google'}
+                </p>
               </div>
 
               <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 space-y-1">

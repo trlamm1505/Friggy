@@ -136,7 +136,7 @@ export const UserManagement = () => {
               setSearchTerm(e.target.value);
               setPage(1);
             }}
-            placeholder="Tìm theo Tên, Email hoặc SĐT..."
+            placeholder="Tìm theo Tên hoặc Email..."
             className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-teal-500 focus:bg-white focus:ring-4 focus:ring-teal-500/10 transition-all"
           />
         </div>
@@ -296,8 +296,10 @@ export const UserManagement = () => {
                       {/* Contact Info */}
                       <td className="py-4 px-4">
                         <div>
-                          <p className="font-bold text-slate-800">{u.googleEmail || 'N/A'}</p>
-                          <p className="text-[11px] text-slate-500">{u.phone || 'Chưa cập nhật SĐT'}</p>
+                          <p className="font-bold text-slate-800">{u.email || u.googleEmail || 'N/A'}</p>
+                          {u.googleEmail && u.email && u.googleEmail !== u.email && (
+                            <p className="text-[11px] text-slate-500">{u.googleEmail}</p>
+                          )}
                         </div>
                       </td>
 

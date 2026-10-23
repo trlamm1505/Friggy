@@ -26,7 +26,6 @@ import ManagerPaymentTransactionsManagement from '../pages/Manager/PaymentTransa
 import ManagerSponsorManagement from '../pages/Manager/SponsorManagement/SponsorManagement';
 import ManagerPackageManagement from '../pages/Manager/PackageManagement/PackageManagement';
 import ManagerProfile from '../pages/Manager/Profile/ManagerProfile';
-import ManagerSettings from '../pages/Manager/Settings/ManagerSettings';
 
 const enableAdminLogin =
   import.meta.env.VITE_ENABLE_ADMIN_LOGIN === 'true' ||
@@ -70,7 +69,6 @@ function Router() {
             <Route path="sponsors" element={<ManagerSponsorManagement />} />
             <Route path="packages" element={<ManagerPackageManagement />} />
             <Route path="profile" element={<ManagerProfile />} />
-            <Route path="settings" element={<ManagerSettings />} />
           </Route>
         </>
       ) : (

@@ -6,7 +6,6 @@ import {
   Package,
   Building2,
   User,
-  Settings,
   LogOut,
   X,
   ChevronRight,
@@ -74,12 +73,6 @@ export const ManagerSidebar = ({
       label: 'Thông Tin Cá Nhân',
       icon: User,
     },
-    {
-      id: 'settings',
-      path: '/manager/settings',
-      label: 'Cài Đặt Vận Hành',
-      icon: Settings,
-    },
   ];
 
   return (
@@ -101,7 +94,7 @@ export const ManagerSidebar = ({
         {/* Top Brand Logo Header */}
         <div className="p-6 border-b border-emerald-200/80 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-teal-500 to-emerald-400 p-0.5 shadow-md flex items-center justify-center animate__animated animate__bounceIn">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-emerald-500 to-green-400 p-0.5 shadow-md flex items-center justify-center animate__animated animate__bounceIn">
               <img
                 src={cuteMascotImg}
                 alt="Friggy Manager Logo"
@@ -111,13 +104,13 @@ export const ManagerSidebar = ({
             <div>
               <div className="flex items-center">
                 <span className="text-xl font-extrabold tracking-tight text-emerald-950">Fri</span>
-                <span className="text-xl font-extrabold tracking-tight text-teal-600">ggy</span>
-                <span className="px-1.5 py-0.5 rounded-md bg-teal-200/70 text-teal-900 text-[10px] font-black border border-teal-300 uppercase tracking-wider ml-1.5 flex items-center gap-0.5">
+                <span className="text-xl font-extrabold tracking-tight text-emerald-600">ggy</span>
+                <span className="px-1.5 py-0.5 rounded-md bg-emerald-200/70 text-emerald-800 text-[10px] font-bold border border-emerald-300 uppercase tracking-wider ml-1.5 flex items-center gap-0.5">
                   <Briefcase className="w-2.5 h-2.5" />
                   MANAGER
                 </span>
               </div>
-              <p className="text-[11px] text-teal-800/70 font-semibold">Cổng quản lý vận hành</p>
+              <p className="text-[11px] text-emerald-800/70 font-medium">Cổng quản lý vận hành</p>
             </div>
           </div>
 

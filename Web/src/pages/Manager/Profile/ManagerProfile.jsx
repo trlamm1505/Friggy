@@ -3,7 +3,6 @@ import {
   User,
   Mail,
   Calendar,
-  Phone,
   ShieldCheck,
   KeyRound,
   Save,
@@ -52,7 +51,6 @@ export const ManagerProfile = () => {
 
   const [profileData, setProfileData] = useState({
     name: '',
-    phone: '',
     email: '',
     gender: 'male',
     dob: '',
@@ -82,7 +80,6 @@ export const ManagerProfile = () => {
 
         setProfileData({
           name: me.name || me.profile?.name || '',
-          phone: me.profile?.phone || me.phone || '',
           email: me.email || me.googleEmail || '',
           gender: me.profile?.gender || 'male',
           dob: me.profile?.birthDate ? me.profile.birthDate.split('T')[0] : '',
@@ -97,7 +94,6 @@ export const ManagerProfile = () => {
           const user = JSON.parse(cached);
           setProfileData({
             name: user.name || '',
-            phone: user.phone || '',
             email: user.email || user.googleEmail || '',
             gender: 'male',
             dob: '',
@@ -167,7 +163,6 @@ export const ManagerProfile = () => {
     try {
       const payload = {
         name: profileData.name.trim(),
-        phone: profileData.phone.trim() || undefined,
         gender: profileData.gender || undefined,
         birthDate: profileData.dob ? new Date(profileData.dob).toISOString() : undefined,
         bio: profileData.bio ? profileData.bio.trim() : undefined,
@@ -304,29 +299,15 @@ export const ManagerProfile = () => {
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <label className="font-bold text-slate-700 block">Email</label>
-                <input
-                  type="email"
-                  name="email"
-                  value={profileData.email}
-                  disabled
-                  className="w-full px-4 py-2.5 rounded-2xl bg-slate-100 border border-slate-200 text-slate-500 text-xs sm:text-sm font-semibold outline-hidden cursor-not-allowed"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="font-bold text-slate-700 block">Số điện thoại</label>
-                <input
-                  type="text"
-                  name="phone"
-                  value={profileData.phone}
-                  onChange={handleProfileChange}
-                  placeholder="0912345678"
-                  className="w-full px-4 py-2.5 rounded-2xl bg-slate-50 border border-slate-200 focus:border-teal-500 focus:bg-white text-xs sm:text-sm font-semibold outline-hidden transition-all"
-                />
-              </div>
+            <div className="space-y-1">
+              <label className="font-bold text-slate-700 block">Email</label>
+              <input
+                type="email"
+                name="email"
+                value={profileData.email}
+                disabled
+                className="w-full px-4 py-2.5 rounded-2xl bg-slate-100 border border-slate-200 text-slate-500 text-xs sm:text-sm font-semibold outline-hidden cursor-not-allowed"
+              />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

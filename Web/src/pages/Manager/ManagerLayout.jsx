@@ -23,7 +23,6 @@ export const ManagerLayout = () => {
     if (location.pathname.includes('/manager/sponsors')) return 'sponsors';
     if (location.pathname.includes('/manager/packages')) return 'packages';
     if (location.pathname.includes('/manager/profile')) return 'profile';
-    if (location.pathname.includes('/manager/settings')) return 'settings';
     return 'dashboard';
   };
 
