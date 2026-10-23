@@ -38,9 +38,9 @@ import { CustomDivider } from '../../components/common/CustomDivider';
 import { SocialButton } from '../../components/common/SocialButton';
 import { Routes } from '../../../shared/constants/routes';
 import { isValidEmail, isValidPassword } from '../../utils/validators';
-import { useAuthStore } from '../../../shared/stores/useAuthStore';
-import { showSuccess } from '../../utils/helpers';
-import userMock from '../../../shared/mocks/user.json';
+import { useAuthActions } from '../../../shared/stores/useAuthStore';
+import { showSuccess, showError } from '../../utils/helpers';
+import { getGoogleIdToken } from '../../utils/googleAuth';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -48,10 +48,10 @@ export const LoginScreen = () => {
   const { isDark } = useTheme();
   const navigation = useNavigation();
   const { t } = useTranslation();
-  const { login } = useAuthStore();
+  const { signIn, signInWithGoogle } = useAuthActions();
 
-  const [email, setEmail] = useState('lam@example.com');
-  const [password, setPassword] = useState('123456');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [isSecure, setIsSecure] = useState(true);
   const [remember, setRemember] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
@@ -71,7 +71,7 @@ export const LoginScreen = () => {
     }).start();
   }, [cardAnim]);
 
-  const handleLogin = useCallback(() => {
+  const handleLogin = useCallback(async () => {
     const newErrors = {};
     if (!email.trim()) newErrors.email = t('home.enterEmail');
     else if (!isValidEmail(email)) newErrors.email = t('home.invalidEmail');
@@ -84,29 +84,43 @@ export const LoginScreen = () => {
     }
     setErrors({});
     setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-      login(userMock);
+    try {
+      await signIn({ email: email.trim(), password });
       showSuccess(t('home.loginSuccess'));
-      navigation.reset({
-        index: 0,
-        routes: [{ name: Routes.LoginSuccessVideo }],
-      });
-    }, 800);
-  }, [email, password, login, navigation, t]);
-
-  const handleGoogleLogin = useCallback(() => {
-    setIsLoading(true);
-    setTimeout(() => {
+      // KHÔNG navigation.reset: signIn đã set isAuthenticated ->
+      // RootNavigator tự đổi sang Onboarding/Main.
+    } catch (e) {
+      // ApiException đã chuẩn hoá message (lỗi mạng vs lỗi server khác nhau).
+      // Lỗi 401 ở endpoint login = sai mật khẩu, KHÔNG phải hết phiên ->
+      // ApiClient không refresh, không logout nhầm (BẮT BUỘC 6).
+      const message = e?.message || 'Đăng nhập thất bại, vui lòng thử lại';
+      setErrors({ email: message });
+      showError(message);
+    } finally {
       setIsLoading(false);
-      login(userMock);
+    }
+  }, [email, password, signIn, t]);
+
+  const handleGoogleLogin = useCallback(async () => {
+    setErrors({});
+    setIsLoading(true);
+    try {
+      const idToken = await getGoogleIdToken();
+      if (!idToken) {
+        showError('Không lấy được Google ID Token');
+        return;
+      }
+      await signInWithGoogle(idToken);
       showSuccess(t('home.googleLoginSuccess'));
-      navigation.reset({
-        index: 0,
-        routes: [{ name: Routes.LoginSuccessVideo }],
-      });
-    }, 600);
-  }, [login, navigation, t]);
+      // KHÔNG navigation.reset: signInWithGoogle đã set isAuthenticated ->
+      // RootNavigator tự đổi sang Onboarding/Main.
+    } catch (e) {
+      const message = e?.message || 'Đăng nhập Google thất bại';
+      showError(message);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [signInWithGoogle, t]);
 
   const cardTranslateY = cardAnim.interpolate({
     inputRange: [0, 1],

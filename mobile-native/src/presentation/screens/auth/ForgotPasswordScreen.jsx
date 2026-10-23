@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -16,24 +16,57 @@ import { sp } from '../../utils/responsive';
 import { FontWeights, FontFamily } from '../../theme/typography';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
-import { ChevronLeft, Mail, Check } from 'lucide-react-native';
+import { ChevronLeft, Mail, Check, Lock } from 'lucide-react-native';
 import { CustomTextField } from '../../components/common/CustomTextField';
 import { CustomButton } from '../../components/common/CustomButton';
 import { isValidEmail } from '../../utils/validators';
-import { showSuccess } from '../../utils/helpers';
+import { showSuccess, showError } from '../../utils/helpers';
+import { useAuthActions } from '../../../shared/stores/useAuthStore';
 import { Routes } from '../../../shared/constants/routes';
 
 export const ForgotPasswordScreen = () => {
   const { isDark } = useTheme();
   const navigation = useNavigation();
   const { t } = useTranslation();
+  const { sendResetOtp, resetPassword } = useAuthActions();
 
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
-  const [sent, setSent] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSend = () => {
+  // ── Bước 2: nhập OTP + mật khẩu mới ──
+  // `expiresIn` đọc từ BE (config động), KHÔNG hardcode 300s.
+  const [step, setStep] = useState('email'); // 'email' | 'otp'
+  const [otp, setOtp] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isSecure, setIsSecure] = useState(true);
+  const [otpExpiresIn, setOtpExpiresIn] = useState(0);
+  const [otpError, setOtpError] = useState('');
+
+  // Đếm ngược hết hạn OTP
+  useEffect(() => {
+    if (step !== 'otp' || otpExpiresIn <= 0) return undefined;
+    const timer = setInterval(() => {
+      setOtpExpiresIn((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [step, otpExpiresIn]);
+
+  const formatCountdown = (seconds) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${String(s).padStart(2, '0')}`;
+  };
+
+  /** Bước 1: gửi OTP đặt lại mật khẩu. */
+  const handleSend = useCallback(async () => {
     if (!email.trim()) {
       setError(t('auth.enterEmail'));
       return;
@@ -44,12 +77,54 @@ export const ForgotPasswordScreen = () => {
     }
     setError('');
     setIsLoading(true);
-    setTimeout(() => {
+    try {
+      const res = await sendResetOtp(email.trim());
+      setOtpExpiresIn(res?.expiresIn || 0);
+      setOtp('');
+      setOtpError('');
+      setStep('otp');
+      showSuccess('Đã gửi mã OTP đặt lại mật khẩu');
+    } catch (e) {
+      const message = e?.message || 'Không gửi được mã OTP';
+      setError(message);
+      showError(message);
+    } finally {
       setIsLoading(false);
-      setSent(true);
-      showSuccess('Đã gửi liên kết đặt lại');
-    }, 800);
-  };
+    }
+  }, [email, sendResetOtp, t]);
+
+  /** Bước 2: xác nhận OTP + đặt mật khẩu mới. */
+  const handleReset = useCallback(async () => {
+    if (!/^\d{6}$/.test(otp.trim())) {
+      setOtpError('Mã OTP phải gồm đúng 6 chữ số');
+      return;
+    }
+    if (newPassword.length < 8) {
+      setOtpError('Mật khẩu mới phải có ít nhất 8 ký tự');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setOtpError('Mật khẩu xác nhận không khớp');
+      return;
+    }
+    setOtpError('');
+    setIsLoading(true);
+    try {
+      await resetPassword({
+        email: email.trim(),
+        otpCode: otp.trim(),
+        newPassword,
+      });
+      showSuccess('Đặt lại mật khẩu thành công');
+      navigation.navigate(Routes.Login);
+    } catch (e) {
+      const message = e?.message || 'Không đặt lại được mật khẩu';
+      setOtpError(message);
+      showError(message);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [otp, newPassword, confirmPassword, email, resetPassword, navigation]);
 
   return (
     <KeyboardAvoidingView
@@ -74,7 +149,7 @@ export const ForgotPasswordScreen = () => {
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-        {!sent ? (
+        {step === 'email' ? (
           <>
             <Text
               style={[
@@ -108,29 +183,18 @@ export const ForgotPasswordScreen = () => {
               />
             </View>
             <View style={{ marginTop: 24 }}>
-              <CustomButton
-                title={t('auth.sendResetLink')}
-                onPress={handleSend}
-                loading={isLoading}
-              />
+              <CustomButton title="Gửi mã OTP" onPress={handleSend} loading={isLoading} />
             </View>
           </>
         ) : (
-          <View style={styles.successBlock}>
-            <View style={[styles.checkCircle, { backgroundColor: AppColors.primary }]}>
-              <Check color="#FFFFFF" size={32} strokeWidth={3} />
-            </View>
+          <>
             <Text
               style={[
                 styles.title,
-                {
-                  color: isDark ? '#FFFFFF' : AppColors.textPrimary,
-                  fontSize: sp(28),
-                  textAlign: 'center',
-                },
+                { color: isDark ? '#FFFFFF' : AppColors.textPrimary, fontSize: sp(28) },
               ]}
             >
-              {t('auth.checkYourEmail')}
+              Đặt lại mật khẩu
             </Text>
             <Text
               style={[
@@ -138,19 +202,90 @@ export const ForgotPasswordScreen = () => {
                 {
                   color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
                   fontSize: sp(15),
-                  textAlign: 'center',
                 },
               ]}
             >
-              {t('auth.emailSentDesc')}
+              Mã OTP đã được gửi tới {email}. Nhập mã OTP và mật khẩu mới để tiếp tục.
             </Text>
-            <View style={{ marginTop: 24, width: '100%' }}>
-              <CustomButton
-                title={t('auth.backToLogin')}
-                onPress={() => navigation.navigate(Routes.Login)}
+
+            <View style={{ marginTop: 28 }}>
+              <CustomTextField
+                placeholder="Mã OTP 6 chữ số"
+                value={otp}
+                onChangeText={(v) => {
+                  const clean = v.replace(/[^0-9]/g, '').slice(0, 6);
+                  setOtp(clean);
+                  if (otpError) setOtpError('');
+                }}
+                keyboardType="number-pad"
+                error={otpError}
+                maxLength={6}
+                prefixIcon={(props) => (
+                  <Lock {...props} color={isDark ? AppColors.primaryLight : '#8C9890'} size={22} />
+                )}
               />
             </View>
-          </View>
+
+            {otpExpiresIn > 0 && (
+              <Text
+                style={[
+                  styles.countdownText,
+                  { color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary },
+                ]}
+              >
+                Mã OTP hết hạn sau {formatCountdown(otpExpiresIn)}
+              </Text>
+            )}
+
+            <View style={{ marginTop: 18 }}>
+              <CustomTextField
+                placeholder="Mật khẩu mới"
+                value={newPassword}
+                onChangeText={setNewPassword}
+                secureTextEntry={isSecure}
+                prefixIcon={(props) => (
+                  <Lock {...props} color={isDark ? AppColors.primaryLight : '#8C9890'} size={22} />
+                )}
+                suffixIcon={
+                  <Pressable onPress={() => setIsSecure(!isSecure)} hitSlop={8}>
+                    {isSecure ? (
+                      <Check color={AppColors.hintText} size={22} />
+                    ) : (
+                      <Check color={AppColors.primary} size={22} />
+                    )}
+                  </Pressable>
+                }
+              />
+            </View>
+
+            <View style={{ marginTop: 14 }}>
+              <CustomTextField
+                placeholder="Xác nhận mật khẩu mới"
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                secureTextEntry={isSecure}
+                prefixIcon={(props) => (
+                  <Lock {...props} color={isDark ? AppColors.primaryLight : '#8C9890'} size={22} />
+                )}
+              />
+            </View>
+
+            <View style={{ marginTop: 24 }}>
+              <CustomButton title="Đặt lại mật khẩu" onPress={handleReset} loading={isLoading} />
+            </View>
+
+            <View style={{ marginTop: 14 }}>
+              <CustomButton
+                title="Quay lại"
+                onPress={() => {
+                  setStep('email');
+                  setOtp('');
+                  setOtpError('');
+                }}
+                variant="text"
+              />
+            </View>
+          </>
         )}
       </ScrollView>
     </KeyboardAvoidingView>
@@ -184,6 +319,13 @@ const styles = StyleSheet.create({
   },
   successBlock: {
     alignItems: 'center',
+  },
+  countdownText: {
+    fontFamily: FontFamily.medium,
+    fontWeight: FontWeights.medium,
+    marginTop: 10,
+    marginLeft: 4,
+    fontSize: 12,
   },
   checkCircle: {
     width: 80,

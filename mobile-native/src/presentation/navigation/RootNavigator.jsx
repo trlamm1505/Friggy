@@ -6,14 +6,18 @@ import { SplashScreen } from '../screens/auth/SplashScreen';
 import { LoginScreen } from '../screens/auth/LoginScreen';
 import { RegisterScreen } from '../screens/auth/RegisterScreen';
 import { ForgotPasswordScreen } from '../screens/auth/ForgotPasswordScreen';
-import { LoginSuccessVideoScreen } from '../screens/auth/LoginSuccessVideoScreen';
 import { MainScreens } from './MainScreens';
 import { useAuthStore } from '../../shared/stores/useAuthStore';
 import { OnboardingSurveyScreen } from '../screens/onboarding/OnboardingSurveyScreen';
 
 const Stack = createNativeStackNavigator();
 
-// Auth flow: Login, Register, ForgotPassword, LoginSuccessVideo, Splash (entry marketing screen)
+// Auth flow: Login, Register, ForgotPassword, Splash (entry marketing screen)
+//
+// KHÔNG có màn hình "Đăng nhập thành công" (LoginSuccessVideo):
+//   Video không phát được trên Expo Go và đã gỡ. Đăng nhập xong ->
+//   useAuthStore.login() set isAuthenticated -> RootNavigator tự chuyển
+//   sang Onboarding/Main, không cần màn hình trung gian.
 const AuthScreens = () => (
   <Stack.Navigator
     initialRouteName={Routes.Splash}
@@ -23,7 +27,6 @@ const AuthScreens = () => (
     <Stack.Screen name={Routes.Login} component={LoginScreen} />
     <Stack.Screen name={Routes.Register} component={RegisterScreen} />
     <Stack.Screen name={Routes.ForgotPassword} component={ForgotPasswordScreen} />
-    <Stack.Screen name={Routes.LoginSuccessVideo} component={LoginSuccessVideoScreen} />
   </Stack.Navigator>
 );
 

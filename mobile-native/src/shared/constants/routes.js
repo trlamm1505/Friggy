@@ -8,7 +8,6 @@ export const Routes = {
   Login: 'Login',
   Register: 'Register',
   ForgotPassword: 'ForgotPassword',
-  LoginSuccessVideo: 'LoginSuccessVideo',
 
   // Onboarding
   OnboardingSurvey: 'OnboardingSurvey',

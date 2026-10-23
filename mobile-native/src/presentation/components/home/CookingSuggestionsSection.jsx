@@ -139,7 +139,7 @@ const MealCard = ({ isDark, t, recipe, slot, index, onRecipeTap, onSwapTap }) =>
   const textPrimary = isDark ? '#FFFFFF' : AppColors.textPrimary;
   const textSecondary = isDark ? AppColors.darkTextSecondary : AppColors.textSecondary;
   const tint = isDark ? '#233629' : AppColors.accentGreen;
-  const fg = isDark ? AppColors.primaryLight : AppColors.forestAccent;
+  const fg = isDark ? AppColors.primaryLight : AppColors.primaryLight;
 
   return (
     <View style={[styles.mealCard, { backgroundColor: surfaceColor, borderColor }]}>
@@ -165,15 +165,7 @@ const MealCard = ({ isDark, t, recipe, slot, index, onRecipeTap, onSwapTap }) =>
         )}
       </View>
 
-      {/* Hàng 2: ảnh + tên món + chú thích */}
       <View style={styles.mealMainRow}>
-        <View style={styles.mealArtWrap}>
-          {MEAL_ART ? (
-            <Image source={MEAL_ART} style={styles.mealArt} resizeMode="cover" />
-          ) : (
-            <View style={[styles.mealArtPlaceholder, { borderColor }]} />
-          )}
-        </View>
         <View style={styles.mealInfo}>
           <Text style={[styles.mealName, { color: textPrimary }]} numberOfLines={2}>
             {recipe.name}
@@ -191,10 +183,23 @@ const MealCard = ({ isDark, t, recipe, slot, index, onRecipeTap, onSwapTap }) =>
         </View>
       </View>
 
-      {/* Hàng 3: 2 button */}
       <View style={styles.mealBtnRow}>
         <Pressable
           onPress={() => onRecipeTap && onRecipeTap(recipe, index)}
+          style={({ pressed }) => [
+            styles.mealBtn,
+            styles.mealBtnGhost,
+            { borderColor, opacity: pressed ? 0.7 : 1 },
+          ]}
+        >
+          <Text style={[styles.mealBtnGhostText, { color: fg }]} numberOfLines={1}>
+            {t('home.viewRecipe')}
+          </Text>
+          <ChevronRight color={isDark ? '#ffff' : '#4CAF50'} size={14} strokeWidth={2.5} />
+        </Pressable>
+
+        <Pressable
+          onPress={() => onSwapTap && onSwapTap(recipe, index)}
           style={({ pressed }) => [
             styles.mealBtn,
             {
@@ -203,22 +208,8 @@ const MealCard = ({ isDark, t, recipe, slot, index, onRecipeTap, onSwapTap }) =>
             },
           ]}
         >
-          <Text style={[styles.mealBtnText, { color: isDark ? '#0E1611' : '#FFFFFF' }]}>
-            {t('home.viewRecipe')}
-          </Text>
-          <ChevronRight color={isDark ? '#0E1611' : '#FFFFFF'} size={14} strokeWidth={2.5} />
-        </Pressable>
-
-        <Pressable
-          onPress={() => onSwapTap && onSwapTap(recipe, index)}
-          style={({ pressed }) => [
-            styles.mealBtn,
-            styles.mealBtnGhost,
-            { borderColor, opacity: pressed ? 0.7 : 1 },
-          ]}
-        >
           <Sparkles color={fg} size={13} strokeWidth={2.5} />
-          <Text style={[styles.mealBtnGhostText, { color: fg }]} numberOfLines={1}>
+          <Text style={[styles.mealBtnText, { color: isDark ? '#0E1611' : '#FFFFFF' }]}>
             {t('home.swapWithAI')}
           </Text>
         </Pressable>
@@ -295,24 +286,6 @@ const styles = StyleSheet.create({
   mealMainRow: {
     flexDirection: 'row',
     alignItems: 'center',
-  },
-  mealArtWrap: {
-    width: sp(64),
-    height: sp(64),
-    borderRadius: sp(12),
-    overflow: 'hidden',
-  },
-  mealArt: {
-    width: '100%',
-    height: '100%',
-  },
-  mealArtPlaceholder: {
-    width: '100%',
-    height: '100%',
-    borderRadius: sp(12),
-    borderWidth: 1,
-    borderStyle: 'dashed',
-    opacity: 0.35,
   },
   mealInfo: {
     flex: 1,

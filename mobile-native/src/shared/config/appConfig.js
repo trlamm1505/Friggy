@@ -88,6 +88,14 @@ export const appConfig = {
   // App info
   APP_NAME: 'Friggy',
   APP_VERSION: '1.0.0',
+  /**
+   * URI scheme của app. PHẢI khớp với `expo.scheme` trong app.json.
+   *
+   * Vì sao cần: `AuthSession.makeRedirectUri()` dùng scheme này để Google
+   * redirect về đúng app. Nếu lệch với app.json, Google báo
+   * "Error 400: redirect_uri_mismatch".
+   */
+  APP_SCHEME: 'friggy',
   GOOGLE_CLIENT_ID:
     process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID ||
     process.env.GOOGLE_CLIENT_ID ||

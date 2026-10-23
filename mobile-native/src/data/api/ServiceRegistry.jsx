@@ -113,6 +113,17 @@ export const clearRegistry = () => {
 /** Test/debug: đã có real cho key này chưa. */
 export const hasRealService = (key) => realServices.has(key);
 
+/**
+ * Lấy instance real đã đăng ký (CHƯA wrap fallback).
+ *
+ * Dùng cho `useAuthStore.initAuth()` - cần gọi `GET /users/me` thật để validate
+ * token khi mở app, mà không đi qua `useServices()` (hook React, store không gọi được).
+ *
+ * @param {string} key
+ * @returns {object|null}
+ */
+export const getRegisteredService = (key) => realServices.get(key) || null;
+
 /** Test/debug: liệt kê các domain đã đăng ký real. */
 export const listRegisteredServices = () => Array.from(realServices.keys());
 
@@ -144,6 +155,20 @@ export const resolveServices = (mockServices = {}) => {
       out[key] = mock;
       continue;
     }
+
+    // ══════════════════════════════════════════════════════════════
+    // Sprint A1 - DOMAIN NHẠY CẢM: KHÔNG BAO GIỜ FALLBACK SANG MOCK
+    // ══════════════════════════════════════════════════════════════
+    // Auth đánh dấu `criticalAuth = true`. Nếu đăng nhập hỏng mà fallback
+    // sang mock, app sẽ "đăng nhập thành công" bằng user giả -> user tưởng
+    // đã vào tài khoản thật, mọi thao tác sau đó ghi vào tài khoản giả.
+    // Đây là loại bug nguy hiểm hơn nhiều so với việc app hiện lỗi.
+    // => Domain critical trả thẳng real, KHÔNG bọc withFallback.
+    if (real.criticalAuth === true) {
+      out[key] = real;
+      continue;
+    }
+
     out[key] = withFallback(real, mock, {
       label: key.replace(/Service$/, ''),
       enabled: appConfig.SAFE_FALLBACK,

@@ -26,8 +26,8 @@ import { ErrorState } from '../common/ErrorState';
 
 // Ảnh minh hoạ. Để null trước khi có asset — ô ảnh vẫn giữ đúng kích thước
 // để layout không nhảy khi thay ảnh sau này.
-const COOKED_ART = null; // bữa đã nấu
-const ATTENTION_ART = null; // cần chú ý
+const COOKED_ART = require('../../../../assets/images/left.png'); // bữa đã nấu
+const ATTENTION_ART = require('../../../../assets/images/right.png');// cần chú ý
 
 export const WeeklyStatisticsSection = ({ onDetailTap }) => {
   const { isDark } = useTheme();

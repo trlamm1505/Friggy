@@ -33,8 +33,9 @@ import { CustomButton } from '../../components/common/CustomButton';
 import { CustomDivider } from '../../components/common/CustomDivider';
 import { SocialButton } from '../../components/common/SocialButton';
 import { isValidEmail, isValidPassword } from '../../utils/validators';
-import userMock from '../../../shared/mocks/user.json';
-import { useAuthStore } from '../../../shared/stores/useAuthStore';
+import { useAuthActions } from '../../../shared/stores/useAuthStore';
+import { showSuccess, showError } from '../../utils/helpers';
+import { getGoogleIdToken } from '../../utils/googleAuth';
 import { Routes } from '../../../shared/constants/routes';
 
 const PasswordRule = ({ ok, label }) => {
@@ -44,11 +45,17 @@ const PasswordRule = ({ ok, label }) => {
       <View
         style={[
           styles.ruleIcon,
-          { backgroundColor: ok ? (isDark ? '#1B3324' : '#E8F5E9') : (isDark ? '#3D1F1A' : '#FFEBEE') },
+          {
+            backgroundColor: ok ? (isDark ? '#1B3324' : '#E8F5E9') : isDark ? '#3D1F1A' : '#FFEBEE',
+          },
         ]}
       >
         {ok ? (
-          <Check color={isDark ? AppColors.primaryLight : AppColors.primaryDark} size={10} strokeWidth={3} />
+          <Check
+            color={isDark ? AppColors.primaryLight : AppColors.primaryDark}
+            size={10}
+            strokeWidth={3}
+          />
         ) : (
           <X color={isDark ? '#FF8A80' : '#B71C1C'} size={10} strokeWidth={3} />
         )}
@@ -58,8 +65,12 @@ const PasswordRule = ({ ok, label }) => {
           styles.ruleText,
           {
             color: ok
-              ? isDark ? AppColors.primaryLight : AppColors.primaryDark
-              : isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+              ? isDark
+                ? AppColors.primaryLight
+                : AppColors.primaryDark
+              : isDark
+                ? AppColors.darkTextSecondary
+                : AppColors.textSecondary,
             fontSize: sp(11),
           },
         ]}
@@ -74,7 +85,7 @@ export const RegisterScreen = () => {
   const { isDark } = useTheme();
   const navigation = useNavigation();
   const { t } = useTranslation();
-  const { login } = useAuthStore();
+  const { sendRegisterOtp, verifyRegisterOtp, signInWithGoogle } = useAuthActions();
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -83,6 +94,50 @@ export const RegisterScreen = () => {
   const [isSecure, setIsSecure] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
+
+  // ── Bước 2: nhập OTP ──
+  // BE yêu cầu 2 bước: POST /auth/email/register (gửi OTP) -> POST /auth/email/verify-otp.
+  // `expiresIn` đọc từ BE (config động), KHÔNG hardcode 300s.
+  const [step, setStep] = useState('form'); // 'form' | 'otp'
+  const [otp, setOtp] = useState('');
+  const [otpExpiresIn, setOtpExpiresIn] = useState(0);
+  const [otpError, setOtpError] = useState('');
+  const [resendDisabled, setResendDisabled] = useState(false);
+
+  // Đếm ngược đặt lại mã OTP
+  useEffect(() => {
+    if (step !== 'otp' || otpExpiresIn <= 0) return undefined;
+    const timer = setInterval(() => {
+      setOtpExpiresIn((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [step, otpExpiresIn]);
+
+  // Chặn bấm gửi lại OTP quá 3 lần / 10 phút (BE cũng có chặn, đây là chặn phía UI)
+  const resendCountRef = useRef(0);
+  useEffect(() => {
+    if (step !== 'otp') return undefined;
+    if (resendCountRef.current >= 3) {
+      setResendDisabled(true);
+      return undefined;
+    }
+    const timer = setTimeout(() => {
+      resendCountRef.current += 1;
+    }, 10000);
+    return () => clearTimeout(timer);
+  }, [step]);
+
+  const formatCountdown = (seconds) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${String(s).padStart(2, '0')}`;
+  };
 
   // Password rules
   const passwordRules = useMemo(() => {
@@ -95,7 +150,7 @@ export const RegisterScreen = () => {
 
   const passwordsMatch = useMemo(
     () => confirm.length > 0 && password === confirm,
-    [password, confirm],
+    [password, confirm]
   );
 
   // Entry animation
@@ -109,7 +164,7 @@ export const RegisterScreen = () => {
     }).start();
   }, [formAnim]);
 
-  const handleRegister = useCallback(() => {
+  const handleRegister = useCallback(async () => {
     const newErrors = {};
     if (!name.trim()) newErrors.name = t('home.enterName');
     if (!email.trim()) newErrors.email = t('home.enterEmail');
@@ -124,12 +179,89 @@ export const RegisterScreen = () => {
     }
     setErrors({});
     setIsLoading(true);
-    setTimeout(() => {
+    try {
+      // Bước 1: gửi OTP. `expiresIn` từ BE (động theo config admin).
+      const res = await sendRegisterOtp(email.trim());
+      setOtpExpiresIn(res?.expiresIn || 0);
+      setOtp('');
+      setOtpError('');
+      setStep('otp');
+    } catch (e) {
+      const message = e?.message || 'Không gửi được mã OTP';
+      setErrors({ email: message });
+      showError(message);
+    } finally {
       setIsLoading(false);
-      login({ ...userMock, name: name || userMock.name });
-      navigation.reset({ index: 0, routes: [{ name: Routes.LoginSuccessVideo }] });
-    }, 800);
-  }, [name, email, password, confirm, login, navigation, t]);
+    }
+  }, [name, email, password, confirm, sendRegisterOtp, t]);
+
+  /** Bước 2: xác nhận OTP -> tạo tài khoản + đăng nhập. */
+  const handleVerifyOtp = useCallback(async () => {
+    if (!/^\d{6}$/.test(otp.trim())) {
+      setOtpError('Mã OTP phải gồm đúng 6 chữ số');
+      return;
+    }
+    setOtpError('');
+    setIsLoading(true);
+    try {
+      await verifyRegisterOtp({
+        email: email.trim(),
+        otpCode: otp.trim(),
+        password,
+        name: name.trim(),
+      });
+      showSuccess(t('home.loginSuccess'));
+      // KHÔNG navigation.reset: verifyRegisterOtp đã set isAuthenticated ->
+      // RootNavigator tự đổi sang Onboarding/Main.
+    } catch (e) {
+      // BE trả "OTP đã vượt quá số lần thử..." -> xoá form OTP, yêu cầu OTP mới.
+      const message = e?.message || 'Mã OTP không chính xác';
+      if (/vượt quá số lần thử/i.test(message)) {
+        setStep('form');
+        setOtp('');
+        resendCountRef.current = 0;
+      }
+      setOtpError(message);
+      showError(message);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [otp, email, password, name, verifyRegisterOtp, t]);
+
+  /** Gửi lại OTP. BE chặn tối đa 3 lần / 10 phút. */
+  const handleResendOtp = useCallback(async () => {
+    if (resendDisabled) return;
+    setIsLoading(true);
+    try {
+      const res = await sendRegisterOtp(email.trim());
+      setOtpExpiresIn(res?.expiresIn || 0);
+      setOtp('');
+      setOtpError('');
+      showSuccess('Đã gửi lại mã OTP');
+    } catch (e) {
+      const message = e?.message || 'Không gửi lại được mã OTP';
+      setOtpError(message);
+      showError(message);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [resendDisabled, email, sendRegisterOtp]);
+
+  const handleGoogleLogin = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const idToken = await getGoogleIdToken();
+      if (!idToken) return;
+      await signInWithGoogle(idToken);
+      showSuccess(t('home.googleLoginSuccess'));
+      // KHÔNG navigation.reset: signInWithGoogle đã set isAuthenticated ->
+      // RootNavigator tự đổi sang Onboarding/Main.
+    } catch (e) {
+      showError(e?.message || 'Đăng nhập Google thất bại');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [signInWithGoogle, t]);
 
   const formTranslateY = formAnim.interpolate({
     inputRange: [0, 1],
@@ -143,21 +275,17 @@ export const RegisterScreen = () => {
     >
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
       <LinearGradient
-        colors={isDark ? ['#0E1611', '#142017', '#1B2E21'] : ['#FFFFFF', '#F5FCF4', '#C7EFC2', '#86D978']}
+        colors={
+          isDark ? ['#0E1611', '#142017', '#1B2E21'] : ['#FFFFFF', '#F5FCF4', '#C7EFC2', '#86D978']
+        }
         start={{ x: 0.5, y: 0 }}
         end={{ x: 0.5, y: 1 }}
         style={StyleSheet.absoluteFillObject}
       />
 
       <View style={styles.topBar}>
-        <Pressable
-          onPress={() => navigation.goBack()}
-          style={styles.backRow}
-        >
-          <ChevronLeft
-            color={isDark ? '#FFFFFF' : AppColors.textPrimary}
-            size={20}
-          />
+        <Pressable onPress={() => navigation.goBack()} style={styles.backRow}>
+          <ChevronLeft color={isDark ? '#FFFFFF' : AppColors.textPrimary} size={20} />
         </Pressable>
       </View>
 
@@ -179,125 +307,191 @@ export const RegisterScreen = () => {
                 { color: isDark ? '#FFFFFF' : AppColors.textPrimary, fontSize: sp(30) },
               ]}
             >
-              {t('home.createAccount')}
+              {step === 'form' ? t('home.createAccount') : 'Nhập mã OTP'}
             </Text>
             <Text
               style={[
                 styles.subtitle,
-                { color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary, fontSize: sp(14) },
+                {
+                  color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                  fontSize: sp(14),
+                },
               ]}
             >
-              {t('home.joinFriggy')}
+              {step === 'form'
+                ? t('home.joinFriggy')
+                : `Mã OTP đã được gửi tới ${email}. Vui lòng nhập mã 6 chữ số để hoàn tất đăng ký.`}
             </Text>
           </View>
 
-          <View style={styles.form}>
-            <CustomTextField
-              placeholder={t('home.fullName')}
-              value={name}
-              onChangeText={setName}
-              error={errors.name}
-              prefixIcon={(props) => <User {...props} color={isDark ? AppColors.primaryLight : '#8C9890'} size={22} />}
-            />
-            <View style={{ height: 12 }} />
-            <CustomTextField
-              placeholder={t('home.email')}
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              error={errors.email}
-              prefixIcon={(props) => <Mail {...props} color={isDark ? AppColors.primaryLight : '#8C9890'} size={22} />}
-            />
-            <View style={{ height: 12 }} />
-            <CustomTextField
-              placeholder={t('home.password')}
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry={isSecure}
-              error={errors.password}
-              prefixIcon={(props) => <Lock {...props} color={isDark ? AppColors.primaryLight : '#8C9890'} size={22} />}
-              suffixIcon={
-                <Pressable onPress={() => setIsSecure(!isSecure)} hitSlop={8}>
-                  {isSecure ? (
-                    <EyeOff color={AppColors.hintText} size={22} />
-                  ) : (
-                    <Eye color={AppColors.hintText} size={22} />
-                  )}
-                </Pressable>
-              }
-            />
-
-            {/* Password rules hint */}
-            {password.length > 0 && (
-              <View style={styles.rulesWrap}>
-                {passwordRules.map((rule, i) => (
-                  <PasswordRule key={i} ok={rule.ok} label={rule.label} />
-                ))}
-              </View>
-            )}
-
-            <View style={{ height: 12 }} />
-            <CustomTextField
-              placeholder={t('home.confirmNewPassword')}
-              value={confirm}
-              onChangeText={setConfirm}
-              secureTextEntry={isSecure}
-              error={errors.confirm}
-              prefixIcon={(props) => <Lock {...props} color={isDark ? AppColors.primaryLight : '#8C9890'} size={22} />}
-              suffixIcon={
-                passwordsMatch ? (
-                  <Check color={AppColors.primary} size={22} />
-                ) : null
-              }
-            />
-
-            <View style={{ marginTop: 24 }}>
-              <CustomButton title={t('home.register')} onPress={handleRegister} loading={isLoading} />
-            </View>
-
-            <View style={{ marginTop: 20 }}>
-              <CustomDivider text={t('home.orContinueWith')} />
-            </View>
-
-            <View style={{ marginTop: 18 }}>
-              <SocialButton
-                type="google"
-                onPress={() => {
-                  setIsLoading(true);
-                  setTimeout(() => {
-                    setIsLoading(false);
-                    login(userMock);
-                    navigation.reset({
-                      index: 0,
-                      routes: [{ name: Routes.LoginSuccessVideo }],
-                    });
-                  }, 600);
-                }}
+          {step === 'form' ? (
+            <View style={styles.form}>
+              <CustomTextField
+                placeholder={t('home.fullName')}
+                value={name}
+                onChangeText={setName}
+                error={errors.name}
+                prefixIcon={(props) => (
+                  <User {...props} color={isDark ? AppColors.primaryLight : '#8C9890'} size={22} />
+                )}
               />
-            </View>
+              <View style={{ height: 12 }} />
+              <CustomTextField
+                placeholder={t('home.email')}
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                error={errors.email}
+                prefixIcon={(props) => (
+                  <Mail {...props} color={isDark ? AppColors.primaryLight : '#8C9890'} size={22} />
+                )}
+              />
+              <View style={{ height: 12 }} />
+              <CustomTextField
+                placeholder={t('home.password')}
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={isSecure}
+                error={errors.password}
+                prefixIcon={(props) => (
+                  <Lock {...props} color={isDark ? AppColors.primaryLight : '#8C9890'} size={22} />
+                )}
+                suffixIcon={
+                  <Pressable onPress={() => setIsSecure(!isSecure)} hitSlop={8}>
+                    {isSecure ? (
+                      <EyeOff color={AppColors.hintText} size={22} />
+                    ) : (
+                      <Eye color={AppColors.hintText} size={22} />
+                    )}
+                  </Pressable>
+                }
+              />
 
-            <View style={styles.footer}>
-              <Text
-                style={[
-                  styles.footerText,
-                  { color: isDark ? AppColors.hintText : '#6B786F', fontSize: sp(14) },
-                ]}
-              >
-                {t('home.haveAccount')}
-              </Text>
-              <Pressable onPress={() => navigation.navigate(Routes.Login)}>
+              {/* Password rules hint */}
+              {password.length > 0 && (
+                <View style={styles.rulesWrap}>
+                  {passwordRules.map((rule, i) => (
+                    <PasswordRule key={i} ok={rule.ok} label={rule.label} />
+                  ))}
+                </View>
+              )}
+
+              <View style={{ height: 12 }} />
+              <CustomTextField
+                placeholder={t('home.confirmNewPassword')}
+                value={confirm}
+                onChangeText={setConfirm}
+                secureTextEntry={isSecure}
+                error={errors.confirm}
+                prefixIcon={(props) => (
+                  <Lock {...props} color={isDark ? AppColors.primaryLight : '#8C9890'} size={22} />
+                )}
+                suffixIcon={passwordsMatch ? <Check color={AppColors.primary} size={22} /> : null}
+              />
+
+              <View style={{ marginTop: 24 }}>
+                <CustomButton
+                  title={t('home.register')}
+                  onPress={handleRegister}
+                  loading={isLoading}
+                />
+              </View>
+
+              <View style={{ marginTop: 20 }}>
+                <CustomDivider text={t('home.orContinueWith')} />
+              </View>
+
+              <View style={{ marginTop: 18 }}>
+                <SocialButton type="google" onPress={handleGoogleLogin} />
+              </View>
+
+              <View style={styles.footer}>
                 <Text
                   style={[
-                    styles.footerLink,
-                    { color: isDark ? AppColors.primaryLight : AppColors.primary, fontSize: sp(14) },
+                    styles.footerText,
+                    { color: isDark ? AppColors.hintText : '#6B786F', fontSize: sp(14) },
                   ]}
                 >
-                  {t('home.login')}
+                  {t('home.haveAccount')}
                 </Text>
-              </Pressable>
+                <Pressable onPress={() => navigation.navigate(Routes.Login)}>
+                  <Text
+                    style={[
+                      styles.footerLink,
+                      {
+                        color: isDark ? AppColors.primaryLight : AppColors.primary,
+                        fontSize: sp(14),
+                      },
+                    ]}
+                  >
+                    {t('home.login')}
+                  </Text>
+                </Pressable>
+              </View>
             </View>
-            <View style={{ height: 60 }} />
-          </View>
+          ) : (
+            // ── Bước 2: nhập OTP ──
+            <View style={styles.form}>
+              <CustomTextField
+                placeholder="6 chữ số"
+                value={otp}
+                onChangeText={(v) => {
+                  // Chỉ nhận số, tối đa 6 ký tự
+                  const clean = v.replace(/[^0-9]/g, '').slice(0, 6);
+                  setOtp(clean);
+                  if (otpError) setOtpError('');
+                }}
+                keyboardType="number-pad"
+                error={otpError}
+                maxLength={6}
+                prefixIcon={(props) => (
+                  <Lock {...props} color={isDark ? AppColors.primaryLight : '#8C9890'} size={22} />
+                )}
+              />
+
+              {otpExpiresIn > 0 && (
+                <Text
+                  style={[
+                    styles.countdownText,
+                    { color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary },
+                  ]}
+                >
+                  Mã OTP hết hạn sau {formatCountdown(otpExpiresIn)}
+                </Text>
+              )}
+
+              <View style={{ marginTop: 24 }}>
+                <CustomButton
+                  title="Xác nhận OTP"
+                  onPress={handleVerifyOtp}
+                  loading={isLoading}
+                  disabled={otp.length !== 6}
+                />
+              </View>
+
+              <View style={{ marginTop: 14 }}>
+                <CustomButton
+                  title={resendDisabled ? 'Đã gửi quá 3 lần' : 'Gửi lại mã OTP'}
+                  onPress={handleResendOtp}
+                  variant="outline"
+                  loading={isLoading}
+                  disabled={resendDisabled}
+                />
+              </View>
+
+              <View style={{ marginTop: 14 }}>
+                <CustomButton
+                  title="Quay lại"
+                  onPress={() => {
+                    setStep('form');
+                    setOtp('');
+                    setOtpError('');
+                  }}
+                  variant="text"
+                />
+              </View>
+            </View>
+          )}
         </Animated.View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -353,6 +547,13 @@ const styles = StyleSheet.create({
     fontFamily: FontFamily.medium,
     fontWeight: FontWeights.medium,
     marginLeft: 6,
+  },
+  countdownText: {
+    fontFamily: FontFamily.medium,
+    fontWeight: FontWeights.medium,
+    marginTop: 10,
+    marginLeft: 4,
+    fontSize: 12,
   },
   footer: {
     flexDirection: 'row',

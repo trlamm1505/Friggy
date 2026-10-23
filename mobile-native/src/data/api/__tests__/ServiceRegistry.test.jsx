@@ -206,6 +206,48 @@ describe('resolveServices - contract quan trọng', () => {
 
     expect(mocks.authService.tag).toBe('mock-auth');
   });
+
+  // ═══════════════ Sprint A1: domain NHẠY CẢM không fallback mock ═══════════════
+
+  it('service đánh dấu criticalAuth -> KHÔNG bọc withFallback (trả thẳng real)', () => {
+    // Auth lỗi mà fallback mock = "đăng nhập thành công" bằng user giả.
+    // => Domain critical phải trả thẳng real để lỗi ném lên UI.
+    const criticalReal = {
+      tag: 'critical-real',
+      criticalAuth: true,
+      login: () => Promise.reject(new Error('boom')),
+    };
+    registerService('authService', criticalReal);
+
+    const out = resolveServices(mockMap());
+
+    // Không có wrapper -> method trả về đúng instance gốc
+    expect(out.authService).toBe(criticalReal);
+    expect(out.authService.tag).toBe('critical-real');
+  });
+
+  it('service KHÔNG đánh dấu criticalAuth -> vẫn bọc withFallback như cũ', () => {
+    registerService('fridgeService', { tag: 'real-fridge' });
+
+    const out = resolveServices(mockMap());
+
+    // Có wrapper -> không phải instance gốc
+    expect(out.fridgeService).not.toBe(realFridge);
+    expect(out.fridgeService.tag).toBe('real-fridge');
+  });
+
+  it('criticalAuth: lỗi 5xx ném lên UI thay vì trả dữ liệu giả', async () => {
+    const criticalReal = {
+      tag: 'critical-real',
+      criticalAuth: true,
+      getItems: jest.fn().mockRejectedValue({ statusCode: 500, message: 'Server lỗi' }),
+    };
+    registerService('fridgeService', criticalReal);
+
+    const out = resolveServices(mockMap());
+
+    await expect(out.fridgeService.getItems()).rejects.toBeDefined();
+  });
 });
 
 // ═══════════════ ServiceRegistryProvider + useServices ═══════════════

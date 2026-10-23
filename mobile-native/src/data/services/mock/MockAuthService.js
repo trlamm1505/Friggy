@@ -53,6 +53,71 @@ export class MockAuthService extends IAuthService {
     mockUser = null;
   }
 
+  /**
+   * Sprint A1 - đăng nhập Google (mock).
+   * Trả về user giả để UI chạy được ở chế độ USE_MOCKS=true.
+   */
+  async loginWithGoogle() {
+    await sleep(MOCK_DELAY);
+    mockToken = `mock-token-${Date.now()}`;
+    mockUser = { ...userMock, email: 'lam@gmail.com' };
+    return { user: mockUser, token: mockToken };
+  }
+
+  /**
+   * Sprint A1 - bước 1 đăng ký: gửi OTP.
+   * Mock trả `expiresIn` giả (120s) để UI đếm ngược được.
+   */
+  async sendRegisterOtp(email) {
+    await sleep(MOCK_DELAY);
+    if (!email) {
+      throw new Error('Email không được để trống');
+    }
+    return { message: `Mã OTP đã được gửi tới ${email}`, expiresIn: 120 };
+  }
+
+  /**
+   * Sprint A1 - bước 2 đăng ký: xác nhận OTP.
+   * Mock chấp nhận mọi OTP 6 chữ số.
+   */
+  async verifyRegisterOtp({ email, otpCode, password, name }) {
+    await sleep(MOCK_DELAY);
+    if (!email || !password) {
+      throw new Error('Vui lòng điền đầy đủ thông tin');
+    }
+    if (!/^\d{6}$/.test(String(otpCode || ''))) {
+      throw new Error('Mã OTP phải gồm đúng 6 chữ số');
+    }
+    mockToken = `mock-token-${Date.now()}`;
+    mockUser = { ...userMock, ...(name ? { name } : {}), email };
+    return { user: mockUser, token: mockToken, isNewUser: true };
+  }
+
+  /**
+   * Sprint A1 - bước 1 quên mật khẩu: gửi OTP reset.
+   */
+  async sendResetOtp(email) {
+    await sleep(MOCK_DELAY);
+    if (!email) {
+      throw new Error('Email không được để trống');
+    }
+    return { message: `Mã OTP đặt lại mật khẩu đã được gửi tới ${email}`, expiresIn: 120 };
+  }
+
+  /**
+   * Sprint A1 - bước 2 quên mật khẩu: đặt mật khẩu mới bằng OTP.
+   */
+  async resetPassword({ email, otpCode, newPassword }) {
+    await sleep(MOCK_DELAY);
+    if (!email || !newPassword) {
+      throw new Error('Vui lòng điền đầy đủ thông tin');
+    }
+    if (!/^\d{6}$/.test(String(otpCode || ''))) {
+      throw new Error('Mã OTP phải gồm đúng 6 chữ số');
+    }
+    return { message: 'Đặt lại mật khẩu thành công' };
+  }
+
   async refreshToken() {
     await sleep(MOCK_DELAY);
     if (!mockToken) {
