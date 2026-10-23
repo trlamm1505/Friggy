@@ -9,7 +9,7 @@
  * - Address field có prefix icon MapPin
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -32,8 +32,26 @@ import { CustomTextField } from '../../components/common/CustomTextField';
 import { CustomButton } from '../../components/common/CustomButton';
 import { SegmentedControl } from '../../components/common/SegmentedControl';
 import { useAuthStore } from '../../../shared/stores/useAuthStore';
-import { showSuccess } from '../../utils/helpers';
+import { useServices } from '../../../data/ServiceProvider';
+import { showSuccess, showError } from '../../utils/helpers';
 import { Mail, Phone, User, Calendar } from 'lucide-react-native';
+
+/**
+ * Ô ngày sinh nhập theo DD/MM/YYYY (đúng thiết kế) nhưng BE validate
+ * `@IsISO8601()` cho `dateOfBirth`. Chuyển đổi ở biên UI ↔ service:
+ *   - hiển thị: ISO -> DD/MM/YYYY
+ *   - lưu:     DD/MM/YYYY -> ISO (bỏ qua nếu người dùng gõ sai định dạng)
+ */
+const isoToDisplay = (iso) => {
+  if (!iso || !/^\d{4}-\d{2}-\d{2}/.test(iso)) return '';
+  const [y, m, d] = iso.slice(0, 10).split('-');
+  return `${d}/${m}/${y}`;
+};
+
+const displayToIso = (text) => {
+  const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec((text || '').trim());
+  return m ? `${m[3]}-${m[2]}-${m[1]}` : undefined;
+};
 
 export const PersonalInfoScreen = () => {
   const { isDark } = useTheme();
@@ -41,19 +59,67 @@ export const PersonalInfoScreen = () => {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const { user, setUser } = useAuthStore();
+  const { userService } = useServices();
 
+  // Nạp profile thật từ BE (GET /users/me). Fallback về store khi lỗi mạng.
+  // isLoading chặn lưu: bấm lưu lúc đang tải sẽ ghi đè dữ liệu BE bằng giá trị mặc định.
+  const [isLoading, setIsLoading] = useState(true);
   const [name, setName] = useState(user?.name || 'Trần Quốc Lâm');
   const [email, setEmail] = useState(user?.email || 'lam@example.com');
   const [phone, setPhone] = useState('0901234567');
+  // State giữ định dạng hiển thị DD/MM/yyyy; convert sang ISO ngay khi lưu.
   const [birthday, setBirthday] = useState('01/01/1995');
   const [gender, setGender] = useState('male');
   const [bio, setBio] = useState('Yêu nấu ăn và chia sẻ công thức với gia đình.');
+  const [isSaving, setIsSaving] = useState(false);
 
-  const handleSave = useCallback(() => {
-    setUser({ ...user, name, email });
-    showSuccess(t('profile.saveChanges'));
-    navigation.goBack();
-  }, [user, setUser, name, email, navigation, t]);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const p = await userService.getProfile();
+        if (cancelled || !p) return;
+        setName(p.name ?? '');
+        setEmail(p.email ?? '');
+        setBirthday(isoToDisplay(p.birthday));
+        setGender(p.gender ?? 'male');
+        setBio(p.bio ?? '');
+      } catch (_e) {
+        // Offline / lỗi -> giữ giá trị từ store, user vẫn sửa được rồi thử lại.
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [userService]);
+
+  /**
+   * PATCH /users/me/profile.
+   *
+   * `email` KHÔNG gửi: BE `UpdateProfileDto` chỉ nhận name / dateOfBirth /
+   * gender / bio. Ô email hiển thị readonly vì lý do đó, không phải sửa UI.
+   */
+  const handleSave = useCallback(async () => {
+    setIsSaving(true);
+    try {
+      const updated = await userService.updateProfile({
+        name,
+        birthday: displayToIso(birthday),
+        gender,
+        bio,
+      });
+      setUser({ ...user, ...(updated ?? {}) });
+      showSuccess(t('profile.saveChanges'));
+      navigation.goBack();
+    } catch (e) {
+      // 4xx đi thẳng lên đây (BE từ chối dữ liệu) → hiện lỗi thật, KHÔNG báo thành công.
+      showError(e?.message || 'Không thể lưu thông tin');
+    } finally {
+      setIsSaving(false);
+    }
+  }, [userService, name, birthday, gender, bio, user, setUser, navigation, t]);
 
   const iconColor = isDark ? AppColors.primaryLight : '#8C9890';
   const textareaBg = isDark ? AppColors.darkCardBg : AppColors.inputBackground;
@@ -104,10 +170,12 @@ export const PersonalInfoScreen = () => {
             onChangeText={setName}
             prefixIcon={(props) => <User {...props} color={iconColor} size={20} />}
           />
+          {/* Email KHÔNG sửa được: BE `UpdateProfileDto` không có field `email`.
+              Hiện readonly thay vì giả vờ sửa được rồi âm thầm bị bỏ qua. */}
           <CustomTextField
             label={t('auth.email')}
             value={email}
-            onChangeText={setEmail}
+            editable={false}
             keyboardType="email-address"
             prefixIcon={(props) => <Mail {...props} color={iconColor} size={20} />}
           />
@@ -176,7 +244,11 @@ export const PersonalInfoScreen = () => {
         </View>
 
         <View style={{ marginTop: sp(32) }}>
-          <CustomButton title={t('profile.saveChanges')} onPress={handleSave} />
+          <CustomButton
+            title={t('profile.saveChanges')}
+            onPress={handleSave}
+            loading={isLoading || isSaving}
+          />
         </View>
         <View style={{ height: 60 }} />
       </ScrollView>

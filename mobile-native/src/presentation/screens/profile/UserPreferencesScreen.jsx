@@ -1,13 +1,22 @@
 /**
  * UserPreferencesScreen
  *
- * Redesigned (Sprint 6):
- * - Dùng Stepper component cho servings
- * - Dùng SettingsSection pattern
- * - i18n đầy đủ
+ * Sprint A2 — nối thật với `GET/PATCH /users/me/preferences`.
+ *
+ * QUYẾT ĐỊNH ĐỔI UI (23/10): thay nhóm chip "Mức cay" bằng "Mức vận động" +
+ * "Cách AI tư vấn".
+ *
+ * Lý do: BE `UpdatePreferencesDto` (`be/src/modules-api/users/dto/users.dto.ts`)
+ * KHÔNG có `spiceLevel` — nhập mức cay lên sẽ bị 400. Ngược lại BE có
+ * `activityLevel` + `aiPersonalityMode`, mà Flutter đã dùng và gửi lên
+ * (`local_user_preference_model.dart:81-95`). Giữ "Mức cay" nghĩa là giữ 1
+ * trường không lưu được → giống hệt lỗi "UI đẹp, dữ liệu không lưu".
+ *
+ * Toàn bộ state bám đúng tên field của `UserPreferenceResponseDto` (13 field),
+ * `RealUserService` chịu trách nhiệm map về. Không có state tạm ở đây.
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { useTheme } from '../../theme/ThemeContext';
 import { AppColors } from '../../theme/colors';
@@ -19,25 +28,105 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BackCircleButton } from '../../components/common/BackCircleButton';
 import { CustomButton } from '../../components/common/CustomButton';
 import { CustomChip } from '../../components/common/CustomChip';
+import { CustomTextField } from '../../components/common/CustomTextField';
 import { Stepper } from '../../components/common/Stepper';
-import { showSuccess } from '../../utils/helpers';
+import { useServices } from '../../../data/ServiceProvider';
+import { showSuccess, showError } from '../../utils/helpers';
+import { Wallet, Flame, Clock, Ruler, Scale } from 'lucide-react-native';
+
+/** Giá trị mặc định — chỉ dùng cho lần tải đầu, sau đó ghi đè bằng dữ liệu BE. */
+const INITIAL = {
+  primaryGoal: 'save_money',
+  cookingFrequency: 'daily',
+  dietaryStyle: 'omnivore',
+  skillLevel: 'beginner',
+  activityLevel: 'moderate',
+  aiPersonalityMode: 'friendly',
+  householdSize: 2,
+  weeklyBudget: '',
+  dailyCalorieTarget: '',
+  maxCookTimeMinutes: '',
+  height: '',
+  weight: '',
+};
 
 export const UserPreferencesScreen = () => {
   const { isDark } = useTheme();
   const { t } = useTranslation();
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
-  const [diet, setDiet] = useState('none');
-  const [spice, setSpice] = useState('medium');
-  const [goal, setGoal] = useState('balanced');
-  const [priority, setPriority] = useState('health');
-  const [cookingSkill, setCookingSkill] = useState('beginner');
-  const [servings, setServings] = useState(2);
+  const { userService } = useServices();
 
-  const handleSave = useCallback(() => {
-    showSuccess(t('profile.saveChanges'));
-    navigation.goBack();
-  }, [navigation, t]);
+  const [prefs, setPrefs] = useState(INITIAL);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const set = useCallback((key, value) => {
+    setPrefs((prev) => ({ ...prev, [key]: value }));
+  }, []);
+
+  // Nạp preferences thật. Lỗi -> giữ INITIAL để màn hình vẫn dùng được.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const p = await userService.getPreferences();
+        if (cancelled || !p) return;
+        setPrefs({
+          primaryGoal: p.primaryGoal ?? INITIAL.primaryGoal,
+          cookingFrequency: p.cookingFrequency ?? INITIAL.cookingFrequency,
+          dietaryStyle: p.dietaryStyle,
+          skillLevel: p.skillLevel,
+          activityLevel: p.activityLevel,
+          aiPersonalityMode: p.aiPersonalityMode,
+          householdSize: p.householdSize ?? INITIAL.householdSize,
+          // Ô nhập số hiển thị '' khi BE trả null — tránh hiện "null".
+          weeklyBudget: p.weeklyBudget ?? '',
+          dailyCalorieTarget: p.dailyCalorieTarget ?? '',
+          maxCookTimeMinutes: p.maxCookTimeMinutes ?? '',
+          height: p.height ?? '',
+          weight: p.weight ?? '',
+        });
+      } catch (_e) {
+        // Offline -> dùng giá trị mặc định, user vẫn chỉnh và lưu lại được.
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [userService]);
+
+  const handleSave = useCallback(async () => {
+    setIsSaving(true);
+    try {
+      await userService.updatePreferences({
+        primaryGoal: prefs.primaryGoal,
+        cookingFrequency: prefs.cookingFrequency,
+        dietaryStyle: prefs.dietaryStyle,
+        skillLevel: prefs.skillLevel,
+        activityLevel: prefs.activityLevel,
+        aiPersonalityMode: prefs.aiPersonalityMode,
+        householdSize: Number(prefs.householdSize) || 1,
+        weeklyBudget: prefs.weeklyBudget === '' ? null : Number(prefs.weeklyBudget),
+        dailyCalorieTarget:
+          prefs.dailyCalorieTarget === '' ? null : Number(prefs.dailyCalorieTarget),
+        maxCookTimeMinutes:
+          prefs.maxCookTimeMinutes === '' ? null : Number(prefs.maxCookTimeMinutes),
+        height: prefs.height === '' ? null : Number(prefs.height),
+        weight: prefs.weight === '' ? null : Number(prefs.weight),
+      });
+      showSuccess(t('profile.saveChanges'));
+      navigation.goBack();
+    } catch (e) {
+      showError(e?.message || t('profile.saveFailed'));
+    } finally {
+      setIsSaving(false);
+    }
+  }, [userService, prefs, navigation, t]);
+
+  const iconColor = isDark ? AppColors.primaryLight : '#8C9890';
 
   return (
     <View
@@ -56,7 +145,7 @@ export const UserPreferencesScreen = () => {
             { color: isDark ? '#FFFFFF' : AppColors.textPrimary, fontSize: sp(24) },
           ]}
         >
-          {t('home.preferences')}
+          {t('profile.preferences')}
         </Text>
         <Text
           style={[
@@ -70,83 +159,66 @@ export const UserPreferencesScreen = () => {
           Tùy chỉnh chế độ ăn để nhận gợi ý phù hợp hơn
         </Text>
 
-        {/* P0.8 (ảnh 13): Mục tiêu chính */}
+        {/* Mục tiêu chính -> `primaryGoal` */}
         <Section label={t('profile.goal')} isDark={isDark}>
           <View style={styles.chipRow}>
             {[
-              { value: 'balanced', label: t('profile.goalBalanced') },
-              { value: 'lose_weight', label: t('profile.goalLoseWeight') },
-              { value: 'gain_muscle', label: t('profile.goalGainMuscle') },
-              { value: 'save_time', label: t('profile.goalSaveTime') },
+              { value: 'save_money', label: 'Tiết kiệm tiền' },
+              { value: 'reduce_waste', label: 'Giảm lãng phí' },
+              { value: 'eat_healthy', label: 'Ăn lành mạnh' },
+              { value: 'convenience', label: 'Nấu nhanh tiện lợi' },
             ].map((g) => (
               <CustomChip
                 key={g.value}
                 label={g.label}
-                selected={goal === g.value}
-                onPress={() => setGoal(g.value)}
+                selected={prefs.primaryGoal === g.value}
+                onPress={() => set('primaryGoal', g.value)}
               />
             ))}
           </View>
         </Section>
 
-        {/* P0.8 (ảnh 13): Tầm quan trọng khi chọn thực phẩm */}
-        <Section label={t('profile.priority')} isDark={isDark}>
+        {/* Tần suất nấu ăn -> `cookingFrequency` (BE bắt buộc khi onboarding) */}
+        <Section label={t('profile.cookingFrequency')} isDark={isDark}>
           <View style={styles.chipRow}>
             {[
-              { value: 'health', label: t('profile.priorityHealth') },
-              { value: 'taste', label: t('profile.priorityTaste') },
-              { value: 'price', label: t('profile.priorityPrice') },
-              { value: 'speed', label: t('profile.prioritySpeed') },
-            ].map((p) => (
+              { value: 'daily', label: t('profile.freqDaily') },
+              { value: 'few_times_week', label: t('profile.freqFewTimesWeek') },
+              { value: 'weekends', label: t('profile.freqWeekends') },
+              { value: 'rarely', label: t('profile.freqRarely') },
+            ].map((f) => (
               <CustomChip
-                key={p.value}
-                label={p.label}
-                selected={priority === p.value}
-                onPress={() => setPriority(p.value)}
+                key={f.value}
+                label={f.label}
+                selected={prefs.cookingFrequency === f.value}
+                onPress={() => set('cookingFrequency', f.value)}
               />
             ))}
           </View>
         </Section>
 
-        {/* Diet section */}
+        {/* Chế độ ăn -> `dietaryStyle`. BE `DietaryStyleEnum` có `omnivore` + `keto`,
+            mock cũ có `none` (không tồn tại ở BE) -> đã đổi theo enum BE. */}
         <Section label={t('home.diet')} isDark={isDark}>
           <View style={styles.chipRow}>
             {[
-              { value: 'none', label: t('home.dietNormal') },
-              { value: 'vegetarian', label: t('home.dietVegetarian') },
-              { value: 'vegan', label: t('home.dietVegan') },
-              { value: 'halal', label: t('home.dietHalal') },
+              { value: 'omnivore', label: t('profile.dietOmnivore') },
+              { value: 'vegetarian', label: t('profile.vegetarian') },
+              { value: 'vegan', label: t('profile.vegan') },
+              { value: 'keto', label: t('profile.dietKeto') },
+              { value: 'halal', label: t('profile.halal') },
             ].map((d) => (
               <CustomChip
                 key={d.value}
                 label={d.label}
-                selected={diet === d.value}
-                onPress={() => setDiet(d.value)}
+                selected={prefs.dietaryStyle === d.value}
+                onPress={() => set('dietaryStyle', d.value)}
               />
             ))}
           </View>
         </Section>
 
-        {/* Spice section */}
-        <Section label={t('home.spice')} isDark={isDark}>
-          <View style={styles.chipRow}>
-            {[
-              { value: 'none', label: t('home.spiceNone') },
-              { value: 'mild', label: t('home.spiceMild') },
-              { value: 'medium', label: t('home.spiceMedium') },
-              { value: 'hot', label: t('home.spiceHot') },
-            ].map((s) => (
-              <CustomChip
-                key={s.value}
-                label={s.label}
-                selected={spice === s.value}
-                onPress={() => setSpice(s.value)}
-              />
-            ))}
-          </View>
-        </Section>
-
-        {/* P0.8 (ảnh 13): Kỹ năng nấu ăn */}
+        {/* Kỹ năng nấu ăn -> `skillLevel` */}
         <Section label={t('profile.cookingSkill')} isDark={isDark}>
           <View style={styles.chipRow}>
             {[
@@ -157,22 +229,121 @@ export const UserPreferencesScreen = () => {
               <CustomChip
                 key={c.value}
                 label={c.label}
-                selected={cookingSkill === c.value}
-                onPress={() => setCookingSkill(c.value)}
+                selected={prefs.skillLevel === c.value}
+                onPress={() => set('skillLevel', c.value)}
               />
             ))}
           </View>
         </Section>
 
-        {/* Servings section */}
-        <Section label={t('home.servingsLabel', { count: servings })} isDark={isDark}>
-          <View style={styles.stepperWrap}>
-            <Stepper value={servings} onChange={setServings} min={1} max={12} />
+        {/* Mức vận động -> `activityLevel` (THAY cho "Mức cay" — BE không có spiceLevel) */}
+        <Section label={t('profile.activityLevel')} isDark={isDark}>
+          <View style={styles.chipRow}>
+            {[
+              { value: 'sedentary', label: t('profile.activitySedentary') },
+              { value: 'light', label: t('profile.activityLight') },
+              { value: 'moderate', label: t('profile.activityModerate') },
+              { value: 'active', label: t('profile.activityActive') },
+            ].map((a) => (
+              <CustomChip
+                key={a.value}
+                label={a.label}
+                selected={prefs.activityLevel === a.value}
+                onPress={() => set('activityLevel', a.value)}
+              />
+            ))}
           </View>
         </Section>
 
+        {/* Cách AI tư vấn -> `aiPersonalityMode` */}
+        <Section label={t('profile.aiPersonalityMode')} isDark={isDark}>
+          <View style={styles.chipRow}>
+            {[
+              { value: 'friendly', label: t('profile.aiFriendly') },
+              { value: 'professional', label: t('profile.aiProfessional') },
+              { value: 'coach', label: t('profile.aiCoach') },
+            ].map((m) => (
+              <CustomChip
+                key={m.value}
+                label={m.label}
+                selected={prefs.aiPersonalityMode === m.value}
+                onPress={() => set('aiPersonalityMode', m.value)}
+              />
+            ))}
+          </View>
+        </Section>
+
+        {/* Số người trong nhà -> `householdSize` */}
+        <Section label={t('profile.householdSize')} isDark={isDark}>
+          <View style={styles.stepperWrap}>
+            <Stepper
+              value={prefs.householdSize}
+              onChange={(v) => set('householdSize', v)}
+              min={1}
+              max={12}
+            />
+          </View>
+        </Section>
+
+        {/* Ô nhập số — BE validate Min/Max, gửi sai sẽ bị 400.
+            hint ghi rõ để user biết đơn vị (BE không có `@Min` cho weeklyBudget
+            ngoài 0, nhưng calorie có `@Min(500)`). */}
+        <Section label={t('profile.weeklyBudget')} isDark={isDark}>
+          <CustomTextField
+            value={prefs.weeklyBudget}
+            onChangeText={(v) => set('weeklyBudget', v.replace(/[^0-9]/g, ''))}
+            keyboardType="number-pad"
+            placeholder={t('profile.weeklyBudgetHint')}
+            prefixIcon={(props) => <Wallet {...props} color={iconColor} size={20} />}
+          />
+        </Section>
+
+        <Section label={t('profile.dailyCalorieTarget')} isDark={isDark}>
+          <CustomTextField
+            value={prefs.dailyCalorieTarget}
+            onChangeText={(v) => set('dailyCalorieTarget', v.replace(/[^0-9]/g, ''))}
+            keyboardType="number-pad"
+            placeholder="500 - 10000"
+            prefixIcon={(props) => <Flame {...props} color={iconColor} size={20} />}
+          />
+        </Section>
+
+        <Section label={t('profile.maxCookTime')} isDark={isDark}>
+          <CustomTextField
+            value={prefs.maxCookTimeMinutes}
+            onChangeText={(v) => set('maxCookTimeMinutes', v.replace(/[^0-9]/g, ''))}
+            keyboardType="number-pad"
+            placeholder="30"
+            prefixIcon={(props) => <Clock {...props} color={iconColor} size={20} />}
+          />
+        </Section>
+
+        <Section label={t('profile.height')} isDark={isDark}>
+          <CustomTextField
+            value={prefs.height}
+            onChangeText={(v) => set('height', v.replace(/[^0-9]/g, ''))}
+            keyboardType="number-pad"
+            placeholder="170"
+            prefixIcon={(props) => <Ruler {...props} color={iconColor} size={20} />}
+          />
+        </Section>
+
+        <Section label={t('profile.weight')} isDark={isDark}>
+          <CustomTextField
+            value={prefs.weight}
+            onChangeText={(v) => set('weight', v.replace(/[^0-9]/g, ''))}
+            keyboardType="number-pad"
+            placeholder="65"
+            prefixIcon={(props) => <Scale {...props} color={iconColor} size={20} />}
+          />
+        </Section>
+
         <View style={{ marginTop: sp(32) }}>
-          <CustomButton title={t('profile.saveChanges')} onPress={handleSave} />
+          <CustomButton
+            title={t('profile.saveChanges')}
+            onPress={handleSave}
+            loading={isSaving || isLoading}
+          />
         </View>
         <View style={{ height: 40 }} />
       </ScrollView>

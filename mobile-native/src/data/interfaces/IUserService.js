@@ -29,8 +29,33 @@
 /**
  * @typedef {Object} Allergy
  * @property {string} id
+ * @property {number} ingredientId - ID nguyên liệu trong catalog (BE yêu cầu, KHÔNG phải tên tự do)
  * @property {string} name
- * @property {'low'|'medium'|'high'} severity
+ * @property {string|null} [note]
+ */
+
+/**
+ * @typedef {Object} UserPreferencesFull
+ * @property {number|null} weeklyBudget - Ngân sách tuần (VND)
+ * @property {number|null} dailyCalorieTarget
+ * @property {'omnivore'|'vegetarian'|'vegan'|'keto'|'halal'} dietaryStyle
+ * @property {boolean} preferSimpleRecipes
+ * @property {number|null} maxCookTimeMinutes
+ * @property {'beginner'|'intermediate'|'advanced'} skillLevel
+ * @property {number} householdSize
+ * @property {'friendly'|'professional'|'coach'} aiPersonalityMode
+ * @property {string|null} primaryGoal - save_money | reduce_waste | eat_healthy | convenience
+ * @property {string|null} cookingFrequency - daily | few_times_week | weekends | rarely
+ * @property {number|null} height
+ * @property {number|null} weight
+ * @property {'sedentary'|'light'|'moderate'|'active'} activityLevel
+ */
+
+/**
+ * @typedef {Object} NotificationSettings
+ * @property {boolean} pushEnabled
+ * @property {boolean} expiryAlertEnabled
+ * @property {boolean} shoppingReminderEnabled
  */
 
 /**
@@ -120,11 +145,85 @@ export class IUserService {
 
   /**
    * Cập nhật allergies (thay thế toàn bộ)
+   *
+   * @deprecated Sprint A2 - BE KHÔNG có endpoint thay thế toàn bộ.
+   * Theo `api_service.dart:185-202` (Flutter đã chạy production), allergies được
+   * thêm/xoá TỪNG DÒNG. Giữ lại method này cho mock cũ, code mới dùng
+   * {@link addAllergy} / {@link removeAllergy}.
    * @param {Allergy[]} allergies
    * @returns {Promise<Allergy[]>}
    */
   async updateAllergies(allergies) {
     throw new Error('IUserService.updateAllergies() must be implemented');
+  }
+
+  /**
+   * Thêm 1 dị ứng.
+   *
+   * BE `AddAllergyDto` yêu cầu `ingredientId` (int, >=1) — tham chiếu tới
+   * `GET /ingredients`, KHÔNG phải tên nguyên liệu tự do. Gửi tên sẽ bị 400.
+   *
+   * @param {number} ingredientId
+   * @param {string} [note]
+   * @returns {Promise<Allergy>}
+   */
+  async addAllergy(ingredientId, note) {
+    throw new Error('IUserService.addAllergy() must be implemented');
+  }
+
+  /**
+   * Xoá 1 dị ứng theo id (BE soft-delete, trả 204 No Content).
+   * @param {string} id
+   * @returns {Promise<void>}
+   */
+  async removeAllergy(id) {
+    throw new Error('IUserService.removeAllergy() must be implemented');
+  }
+
+  /**
+   * Tìm nguyên liệu trong catalog — cần cho picker thêm dị ứng.
+   *
+   * BE `AddAllergyDto` nhận `ingredientId` (int), KHÔNG nhận tên tự do, nên UI
+   * bắt buộc phải chọn từ catalog thay vì gõ tay.
+   *
+   * @param {string} search
+   * @param {number} [limit]
+   * @returns {Promise<Array<{id:number, name:string, image?:string|null}>>}
+   */
+  async searchIngredients(search, limit = 20) {
+    throw new Error('IUserService.searchIngredients() must be implemented');
+  }
+
+  /**
+   * Hoàn tất survey onboarding.
+   *
+   * BE `OnboardingDto` BẮT BUỘC `primaryGoal` + `cookingFrequency` (không optional)
+   * — thiếu sẽ 400. Tất cả field khác là optional.
+   *
+   * @param {Object} data
+   * @param {string} data.primaryGoal
+   * @param {string} data.cookingFrequency
+   * @returns {Promise<UserProfile>}
+   */
+  async submitOnboarding(data) {
+    throw new Error('IUserService.submitOnboarding() must be implemented');
+  }
+
+  /**
+   * Cài đặt thông báo.
+   * @returns {Promise<NotificationSettings>}
+   */
+  async getNotificationSettings() {
+    throw new Error('IUserService.getNotificationSettings() must be implemented');
+  }
+
+  /**
+   * Cập nhật cài đặt thông báo.
+   * @param {Partial<NotificationSettings>} settings
+   * @returns {Promise<NotificationSettings>}
+   */
+  async updateNotificationSettings(settings) {
+    throw new Error('IUserService.updateNotificationSettings() must be implemented');
   }
 
   /**

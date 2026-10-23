@@ -1,6 +1,6 @@
 {
   "allergies": [
-    { "id": "1", "name": "Tôm cua", "severity": "high" },
-    { "id": "2", "name": "Đậu phộng", "severity": "medium" }
+    { "id": "1", "ingredientId": 12, "name": "Tôm cua", "note": "Dị ứng nặng" },
+    { "id": "2", "ingredientId": 34, "name": "Đậu phộng", "note": null }
   ]
 }

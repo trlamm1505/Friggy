@@ -44,6 +44,7 @@ import { initAppShell } from './src/data/appInit';
 //
 // CÁCH DÙNG (mỗi sprint thêm ĐÚNG 1 DÒNG, ngay dưới comment này):
 //   Sprint A1:  import './src/data/services/real/RealAuthService';
+//   Sprint A2:  import './src/data/services/real/RealUserService';
 //   Sprint B1:  import './src/data/services/real/realFridge.register';
 //
 // ⚠️ CHỈ import SAU KHI file đó đã được tạo trong src/data/services/real/.
@@ -56,6 +57,9 @@ import { initAppShell } from './src/data/appInit';
 // Sprint A1: đăng ký RealAuthService (side-effect registerService).
 // Auth là domain NHẠY CẢM - không bao giờ fallback sang mock (xem ServiceRegistry).
 import './src/data/services/real/RealAuthService';
+
+// Sprint A2: đăng ký RealUserService (profile / preferences / allergies / onboarding).
+import './src/data/services/real/RealUserService';
 
 export default function App() {
   const [fontsLoaded] = useFonts({

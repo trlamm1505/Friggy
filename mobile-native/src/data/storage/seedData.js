@@ -79,20 +79,34 @@ const seedFridgeStats = async () => {
 
 /**
  * Seed user preferences
+ *
+ * Shape phải khớp `user-preferences.json` — file này đã đổi sang 13 field BE
+ * (`dietaryStyle`, `skillLevel`, `weeklyBudget`...) ở Sprint A2. Đọc tên field cũ
+ * (`diet`/`spice_level`/`cooking_time`/`servings`) sẽ ghi `undefined` xuống SQLite.
+ *
+ * Bảng `user_preferences` vẫn giữ cột cũ: `seedAll()` chỉ chạy khi USE_MOCKS=true
+ * (P0.6 / mục 8b) và đây là dữ liệu mẫu cho chế độ mock, không phải nguồn thật.
  */
 const seedPreferences = async () => {
   if (!(await isTableEmpty('user_preferences'))) return;
+  const p = preferencesMock.preferences;
   await databaseService.insert('user_preferences', {
     id: 1,
-    diet: preferencesMock.preferences.diet,
-    spice_level: preferencesMock.preferences.spiceLevel,
-    cooking_time: preferencesMock.preferences.cookingTime,
-    servings: preferencesMock.preferences.servings,
+    // Cột cũ giữ tên để không phải migrate schema (ngoài phạm vi A2).
+    // `diet` <- `dietaryStyle`, `servings` <- `householdSize` (ý nghĩa gần nhất).
+    diet: p.dietaryStyle ?? null,
+    spice_level: p.activityLevel ?? null,
+    cooking_time: p.maxCookTimeMinutes ?? null,
+    servings: p.householdSize ?? 1,
   });
 };
 
 /**
  * Seed allergies
+ *
+ * `allergies.json` đã đổi sang shape BE ở Sprint A2: có `ingredientId` + `note`,
+ * KHÔNG còn `severity` (BE `AllergyResponseDto` không có field này).
+ * Cột `severity` trong bảng SQLite giữ lại NULL cho khớp DDL.
  */
 const seedAllergies = async () => {
   if (!(await isTableEmpty('allergies'))) return;
@@ -100,7 +114,7 @@ const seedAllergies = async () => {
     await databaseService.insert('allergies', {
       id: a.id,
       name: a.name,
-      severity: a.severity,
+      severity: null,
     });
   }
 };

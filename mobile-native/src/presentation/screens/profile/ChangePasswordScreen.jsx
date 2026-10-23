@@ -32,6 +32,7 @@ import { CustomTextField } from '../../components/common/CustomTextField';
 import { CustomButton } from '../../components/common/CustomButton';
 import { showSuccess } from '../../utils/helpers';
 import { isValidPassword } from '../../utils/validators';
+import { useAuthActions } from '../../../shared/stores/useAuthStore';
 import { Lock, ShieldCheck, KeyRound, Eye, EyeOff } from 'lucide-react-native';
 
 const LockIcon = ({ color = '#8C9890' }) => <Lock color={color} size={20} />;
@@ -41,6 +42,7 @@ export const ChangePasswordScreen = () => {
   const { t } = useTranslation();
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
+  const { changePassword } = useAuthActions();
   const [current, setCurrent] = useState('');
   const [next, setNext] = useState('');
   const [confirm, setConfirm] = useState('');
@@ -48,17 +50,35 @@ export const ChangePasswordScreen = () => {
   const [showNext, setShowNext] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [errors, setErrors] = useState({});
+  const [isSaving, setIsSaving] = useState(false);
 
-  const handleSave = useCallback(() => {
+  /**
+   * POST /auth/email/change-password.
+   *
+   * Dùng `useAuthActions().changePassword` (đã có sẵn từ Sprint A1) → gọi qua
+   * `authService.changePassword()` với đúng method POST + 2 mật khẩu như BE yêu cầu.
+   * Lỗi 400 (mật khẩu cũ sai) ném lên đây để hiện đúng message BE.
+   */
+  const handleSave = useCallback(async () => {
     const e = {};
     if (!current) e.current = t('home.enterCurrentPassword');
     if (!isValidPassword(next)) e.next = t('home.passwordMin');
     if (next !== confirm) e.confirm = t('home.passwordsDoNotMatch');
     setErrors(e);
     if (Object.keys(e).length > 0) return;
-    showSuccess(t('home.passwordChanged'));
-    navigation.goBack();
-  }, [current, next, confirm, t, navigation]);
+
+    setIsSaving(true);
+    try {
+      await changePassword(current, next);
+      showSuccess(t('home.passwordChanged'));
+      navigation.goBack();
+    } catch (err) {
+      // Mật khẩu cũ sai -> BE trả 400 với message cụ thể, hiện nguyên vẹn.
+      setErrors({ current: err?.message || t('profile.saveFailed') });
+    } finally {
+      setIsSaving(false);
+    }
+  }, [current, next, confirm, changePassword, t, navigation]);
 
   // Check password match
   const passwordMatch = useMemo(
@@ -235,7 +255,7 @@ export const ChangePasswordScreen = () => {
         </View>
 
         <View style={{ marginTop: sp(32) }}>
-          <CustomButton title={t('profile.saveChanges')} onPress={handleSave} />
+          <CustomButton title={t('profile.saveChanges')} onPress={handleSave} loading={isSaving} />
         </View>
         <View style={{ height: 60 }} />
       </ScrollView>

@@ -1,8 +1,17 @@
 {
   "preferences": {
-    "diet": "none",
-    "spiceLevel": "medium",
-    "cookingTime": 30,
-    "servings": 2
+    "weeklyBudget": 500000,
+    "dailyCalorieTarget": 2000,
+    "dietaryStyle": "omnivore",
+    "preferSimpleRecipes": false,
+    "maxCookTimeMinutes": 30,
+    "skillLevel": "beginner",
+    "householdSize": 2,
+    "aiPersonalityMode": "friendly",
+    "primaryGoal": "save_money",
+    "cookingFrequency": "daily",
+    "height": 170,
+    "weight": 65,
+    "activityLevel": "moderate"
   }
 }
