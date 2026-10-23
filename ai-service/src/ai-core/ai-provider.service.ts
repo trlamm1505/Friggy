@@ -57,7 +57,7 @@ export class AiProviderService implements OnModuleInit {
    */
   private cache = new Map<number, LlmClient>();
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   /**
    * Khởi động module: pre-warm cache với provider đang active

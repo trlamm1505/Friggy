@@ -22,7 +22,8 @@ class SyncHelper {
     _connectivitySubscription = Connectivity().onConnectivityChanged.listen((results) {
       final hasNet = results.contains(ConnectivityResult.wifi) ||
           results.contains(ConnectivityResult.mobile) ||
-          results.contains(ConnectivityResult.ethernet);
+          results.contains(ConnectivityResult.ethernet) ||
+          results.contains(ConnectivityResult.vpn);
 
       if (hasNet && !_isOnline) {
         debugPrint('[SyncHelper] Device reconnected to internet. Triggering sync...');
@@ -39,7 +40,8 @@ class SyncHelper {
     final results = await Connectivity().checkConnectivity();
     _isOnline = results.contains(ConnectivityResult.wifi) ||
         results.contains(ConnectivityResult.mobile) ||
-        results.contains(ConnectivityResult.ethernet);
+        results.contains(ConnectivityResult.ethernet) ||
+        results.contains(ConnectivityResult.vpn);
     return _isOnline;
   }
 

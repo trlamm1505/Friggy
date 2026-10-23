@@ -15,6 +15,7 @@ class IngredientModel {
   final String imagePath;
   final Color badgeBgColor;
   final Color badgeTextColor;
+  final String? expiresAt;
 
   const IngredientModel({
     required this.id,
@@ -31,6 +32,7 @@ class IngredientModel {
     required this.imagePath,
     required this.badgeBgColor,
     required this.badgeTextColor,
+    this.expiresAt,
   });
 
   bool get isExpired => daysUntilExpiry < 0;
@@ -65,6 +67,7 @@ class IngredientModel {
     String? imagePath,
     Color? badgeBgColor,
     Color? badgeTextColor,
+    String? expiresAt,
   }) {
     return IngredientModel(
       id: id ?? this.id,
@@ -81,6 +84,7 @@ class IngredientModel {
       imagePath: imagePath ?? this.imagePath,
       badgeBgColor: badgeBgColor ?? this.badgeBgColor,
       badgeTextColor: badgeTextColor ?? this.badgeTextColor,
+      expiresAt: expiresAt ?? this.expiresAt,
     );
   }
 
@@ -141,6 +145,7 @@ class IngredientModel {
       imagePath: img,
       badgeBgColor: badgeBgColor,
       badgeTextColor: badgeTextColor,
+      expiresAt: json['expiresAt'] as String?,
     );
   }
 }
