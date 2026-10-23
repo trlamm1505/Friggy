@@ -88,6 +88,7 @@ async function bootstrap() {
     .addTag('Admin / Payment Transactions', '[Admin | Manager] Xem toàn bộ lịch sử giao dịch thanh toán')
     .addTag('Admin / Plans', '[Chỉ Admin] Tạo / Sửa / Xoá gói cước | [Admin | Manager] Xem danh sách gói')
     .addTag('Admin / Recipes', '[Admin | Manager] Quản lý công thức nấu ăn hệ thống')
+    .addTag('Admin / Roles', '[Chỉ Admin] Quản lý danh sách vai trò (roles) & cập nhật mô tả')
     .addTag('Admin / Sponsors', '[Admin | Manager] Quản lý nhà tài trợ & chiến dịch quảng cáo')
     .addTag('Admin / Stats', '[Admin | Manager] Dashboard thống kê — người dùng, doanh thu, AI usage')
     .addTag('Admin / Users', '[Admin | Manager] Quản lý tài khoản & trạng thái người dùng')

@@ -55,6 +55,10 @@ import { AdminActivityLogsService } from './activity-logs/admin-activity-logs.se
 import { AdminBroadcastController } from './broadcast/admin-broadcast.controller';
 import { AdminBroadcastService } from './broadcast/admin-broadcast.service';
 
+// ── Roles ─────────────────────────────────────────────────
+import { AdminRolesController } from './roles/admin-roles.controller';
+import { AdminRolesService } from './roles/admin-roles.service';
+
 @Module({
   imports: [
     PrismaModule,
@@ -65,6 +69,7 @@ import { AdminBroadcastService } from './broadcast/admin-broadcast.service';
     AdminAiController,
     AdminCronController,
     AdminUsersController,
+    AdminRolesController,
     AdminStatsController,
     AdminSponsorsController,
     AdminPlansController,
@@ -81,6 +86,7 @@ import { AdminBroadcastService } from './broadcast/admin-broadcast.service';
     AdminAiService,
     AdminCronService,
     AdminUsersService,
+    AdminRolesService,
     AdminStatsService,
     AdminSponsorsService,
     AdminPlansService,

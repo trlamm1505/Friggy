@@ -13,6 +13,7 @@ export class UserListItemDto {
   @ApiPropertyOptional({ example: 'Nguyễn Văn A' }) name!: string | null;
   @ApiPropertyOptional({ example: 'user@example.com' }) email!: string | null;
   @ApiPropertyOptional({ example: 'user@gmail.com' }) googleEmail!: string | null;
+  @ApiPropertyOptional({ example: 'manager', enum: ['admin', 'manager', 'user'] }) role?: string;
   @ApiProperty({ example: 'email', enum: ['email', 'google'] }) authProvider!: string;
   @ApiProperty({ example: 'active', enum: ['active', 'suspended', 'pending'] }) status!: string;
   @ApiProperty({ example: '2026-09-01T00:00:00Z' }) createdAt!: string;
@@ -46,4 +47,27 @@ export class UserDetailDto extends UserListItemDto {
 
 export class UserActionResponseDto {
   @ApiProperty({ example: 'Đã khóa tài khoản user usr_abc123' }) message!: string;
+}
+
+export class AdminUpdatedUserDto {
+  @ApiProperty({ example: 'usr_abc123' }) id!: string;
+  @ApiPropertyOptional({ example: 'Nguyễn Văn B' }) name!: string | null;
+  @ApiPropertyOptional({ example: 'user@example.com' }) email!: string | null;
+  @ApiProperty({ example: 'manager', enum: ['admin', 'manager', 'user'] }) role!: string;
+  @ApiProperty({ example: 'active', enum: ['active', 'suspended'] }) status!: string;
+}
+
+export class AdminUpdatedUserResponseDto {
+  @ApiProperty({ example: 'Cập nhật thông tin người dùng thành công' }) message!: string;
+  @ApiProperty({ type: AdminUpdatedUserDto }) user!: AdminUpdatedUserDto;
+}
+
+export class AdminCreatedUserResponseDto {
+  @ApiProperty({ example: 'usr_abc123' }) id!: string;
+  @ApiProperty({ example: 'manager@friggy.app' }) email!: string;
+  @ApiPropertyOptional({ example: 'Quản lý kho' }) name!: string | null;
+  @ApiProperty({ example: 'manager', enum: ['admin', 'manager', 'user'] }) role!: string;
+  @ApiProperty({ example: 'active', enum: ['active', 'suspended'] }) status!: string;
+  @ApiProperty({ example: 'email' }) authProvider!: string;
+  @ApiProperty({ example: '2026-10-23T11:15:00.000Z' }) createdAt!: Date;
 }
