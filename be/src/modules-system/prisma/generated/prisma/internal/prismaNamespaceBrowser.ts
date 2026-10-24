@@ -791,6 +791,7 @@ export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
 
 
 export const RoleOrderByRelevanceFieldEnum = {
+  name: 'name',
   description: 'description'
 } as const
 

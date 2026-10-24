@@ -3949,6 +3949,7 @@ export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
 
 
 export const RoleOrderByRelevanceFieldEnum = {
+  name: 'name',
   description: 'description'
 } as const
 
@@ -4381,13 +4382,6 @@ export type SystemConfigOrderByRelevanceFieldEnum = (typeof SystemConfigOrderByR
  * Reference to a field of type 'Int'
  */
 export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int'>
-    
-
-
-/**
- * Reference to a field of type 'RoleName'
- */
-export type EnumRoleNameFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'RoleName'>
     
 
 
