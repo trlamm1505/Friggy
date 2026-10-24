@@ -667,7 +667,14 @@
     "perMonth": "/month",
     "perYear": "/year",
     "subscribeNow": "Subscribe now",
-    "renewPlan": "Renew plan"
+    "renewPlan": "Renew plan",
+    "forever": "forever",
+    "recommended": "Recommended",
+    "defaultPlan": "Default plan",
+    "validUntil": "Valid until {{date}}",
+    "loadFailed": "Could not load plans",
+    "subscribeFailed": "Could not start payment. Please try again.",
+    "qrShown": "Payment QR is ready"
   },
   "familyPlan": {
     "title": "Family plan",

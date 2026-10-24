@@ -223,3 +223,65 @@ describe('RealSubscriptionService - cancelAutoRenewal', () => {
     expect(res.endDate).toBe('2026-10-22');
   });
 });
+
+// ═══════════════ Khôi phục QR đang chờ ═══════════════
+
+describe('RealSubscriptionService - findPendingPayment', () => {
+  /**
+   * BE `PaymentTransactionListResponseDto` - bản LIST KHÔNG có field `qrCode`
+   * (chỉ `PaymentTransactionDetailDto` mới có) -> phải gọi thêm 1 request.
+   */
+  const beTxList = (overrides = {}) => ({
+    data: [
+      {
+        id: 'tx-1',
+        paymentRef: 'FRIGGY-001',
+        type: 'subscribe',
+        planName: 'Gói Gia Đình',
+        amount: 149000,
+        status: 'pending',
+        checkoutUrl: 'https://pay.payos.vn/web/abc',
+        expiredAt: '2026-09-24T02:30:00.000Z',
+        paidAt: null,
+        createdAt: '2026-09-24T02:00:00.000Z',
+      },
+    ],
+    total: 1,
+    page: 1,
+    limit: 10,
+    ...overrides,
+  });
+
+  it('gọi list rồi gọi tiếp detail để lấy `qrCode`', async () => {
+    ApiClient.get.mockResolvedValueOnce(beTxList());
+    ApiClient.get.mockResolvedValueOnce({
+      ...beTxList().data[0],
+      qrCode: 'data:image/png;base64,ABC',
+    });
+
+    const pending = await service.findPendingPayment();
+
+    expect(ApiClient.get).toHaveBeenNthCalledWith(1, '/payment-transactions/me', {
+      params: { page: 1, limit: 10 },
+    });
+    expect(ApiClient.get).toHaveBeenNthCalledWith(2, '/payment-transactions/me/FRIGGY-001');
+    expect(pending.qrCode).toBe('data:image/png;base64,ABC');
+    expect(pending.paymentRef).toBe('FRIGGY-001');
+    expect(pending.amount).toBe(149000);
+    // BE dùng `expiredAt` ở transaction DTO (khác `expireAt` của SubscribeResponseDto).
+    expect(pending.expireAt).toBe('2026-09-24T02:30:00.000Z');
+  });
+
+  it('không có giao dịch pending -> trả null (không tạo giao dịch mới)', async () => {
+    ApiClient.get.mockResolvedValue(beTxList({ data: [], total: 0 }));
+
+    await expect(service.findPendingPayment()).resolves.toBeNull();
+  });
+
+  it('giao dịch pending nhưng detail KHÔNG có `qrCode` -> trả null', async () => {
+    ApiClient.get.mockResolvedValueOnce(beTxList());
+    ApiClient.get.mockResolvedValueOnce({ ...beTxList().data[0], qrCode: null });
+
+    await expect(service.findPendingPayment()).resolves.toBeNull();
+  });
+});

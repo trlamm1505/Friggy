@@ -667,7 +667,14 @@
     "perMonth": "/tháng",
     "perYear": "/năm",
     "subscribeNow": "Đăng ký ngay",
-    "renewPlan": "Gia hạn gói"
+    "renewPlan": "Gia hạn gói",
+    "forever": "mãi mãi",
+    "recommended": "Đề xuất",
+    "defaultPlan": "Gói mặc định",
+    "validUntil": "Hạn đến {{date}}",
+    "loadFailed": "Không thể tải danh sách gói",
+    "subscribeFailed": "Không thể khởi tạo thanh toán. Vui lòng thử lại.",
+    "qrShown": "Mã QR thanh toán đã sẵn sàng"
   },
   "familyPlan": {
     "title": "Gói Gia đình",

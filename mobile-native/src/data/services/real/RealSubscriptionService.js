@@ -167,4 +167,41 @@ export class RealSubscriptionService {
     const sub = await this.getMySubscription();
     return sub.status === 'active' && sub.plan.name === targetPlanName;
   }
+
+  /**
+   * Tìm giao dịch đang CHỜ thanh toán để khôi phục QR.
+   *
+   * Flutter làm việc này (`package_management_screen.dart:252-267`): trước khi
+   * tạo giao dịch mới, kiểm tra có giao dịch pending không -> nếu có thì mở lại
+   * QR cũ thay vì bắt user quét lại. BE trả 409 khi đã có giao dịch pending
+   * (`subscriptions.controller.ts:75`) -> Flutter bắt lỗi rồi tra cứu lại.
+   *
+   * BE `GET /payment-transactions/me` trả `PaymentTransactionListResponseDto` -
+   * **KHÔNG có field `qrCode`** (chỉ `PaymentTransactionDetailDto` mới có).
+   * => Phải gọi tiếp `GET /payment-transactions/me/:paymentRef` để lấy QR.
+   *
+   * @returns {Promise<object|null>} shape checkout, hoặc null nếu không có.
+   */
+  async findPendingPayment() {
+    const list = await ApiClient.get('/payment-transactions/me', {
+      params: { page: 1, limit: 10 },
+    });
+    const rows = Array.isArray(list) ? list : (list?.data ?? []);
+    const pending = rows.find((tx) => tx?.status === 'pending' && tx?.paymentRef);
+    if (!pending) return null;
+
+    // Lấy chi tiết để có `qrCode` (list DTO không có field này).
+    const detail = await ApiClient.get(`/payment-transactions/me/${pending.paymentRef}`);
+    if (!detail?.qrCode) return null;
+
+    return {
+      checkoutUrl: detail.checkoutUrl ?? null,
+      qrCode: detail.qrCode,
+      paymentRef: detail.paymentRef ?? pending.paymentRef,
+      amount: typeof detail.amount === 'number' ? detail.amount : 0,
+      // BE dùng `expiredAt` (không phải `expireAt` như `SubscribeResponseDto`).
+      expireAt: detail.expiredAt ?? null,
+      status: detail.status ?? 'pending',
+    };
+  }
 }

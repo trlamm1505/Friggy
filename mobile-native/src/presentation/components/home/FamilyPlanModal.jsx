@@ -31,7 +31,6 @@ import {
   ActivityIndicator,
   ScrollView,
   TextInput,
-  Alert,
 } from 'react-native';
 import { useTheme } from '../../theme/ThemeContext';
 import { AppColors } from '../../theme/colors';
@@ -97,15 +96,13 @@ export const FamilyPlanModal = ({ visible, onClose, onSuccess }) => {
     setPolling(false);
   }, []);
 
-  // Reset state khi đóng modal.
-  useEffect(() => {
-    if (!visible) {
-      stopPolling();
-      setCheckout(null);
-      setExpired(false);
-      setTokenInput('');
-    }
-  }, [visible, stopPolling]);
+  // KHÔNG có effect reset state ở đây.
+  //
+  // eslint react-hooks/set-state-in-effect cấm setState đồng bộ trong effect.
+  // Cách sạch: component được REMOUNT bằng `key` mỗi khi đóng/mở
+  // (<FamilyPlanModal key={planModalOpen ? 'open' : 'closed'} />) -> state tự về
+  // mặc định, và cleanup effect bên dưới đã clear poll timer khi unmount.
+  // => Không cần effect reset.
 
   /**
    * Poll thanh toán - 2 tầng, giống Flutter nhưng CHẶT HƠN (check plan khớp).
@@ -167,6 +164,17 @@ export const FamilyPlanModal = ({ visible, onClose, onSuccess }) => {
         return;
       }
 
+      // Khôi phục QR đang chờ (nếu có) trước khi tạo giao dịch mới.
+      // BE trả 409 khi đã có giao dịch pending -> Flutter làm đúng vậy
+      // (`package_management_screen.dart:252-267`): tra cứu lại và mở QR cũ.
+      const pending = await userService.findPendingPayment();
+      if (pending?.qrCode) {
+        if (!mountedRef.current) return;
+        setCheckout(pending);
+        startPolling(pending.paymentRef, familyPlan.name, pending.expireAt);
+        return;
+      }
+
       const result = await userService.subscribe(familyPlan.id);
       if (!mountedRef.current) return;
       setCheckout(result);
@@ -205,7 +213,10 @@ export const FamilyPlanModal = ({ visible, onClose, onSuccess }) => {
         <View
           style={[
             styles.sheet,
-            { backgroundColor: isDark ? '#142018' : '#FFFFFF', borderColor: isDark ? '#2E4D36' : '#E0E8E1' },
+            {
+              backgroundColor: isDark ? '#142018' : '#FFFFFF',
+              borderColor: isDark ? '#2E4D36' : '#E0E8E1',
+            },
           ]}
         >
           <View style={styles.header}>
@@ -213,14 +224,31 @@ export const FamilyPlanModal = ({ visible, onClose, onSuccess }) => {
               <Users color="#FFFFFF" size={20} strokeWidth={2.5} />
             </View>
             <View style={{ flex: 1, marginLeft: sp(12) }}>
-              <Text style={[styles.title, { color: isDark ? '#FFFFFF' : AppColors.textPrimary, fontSize: sp(17) }]}>
+              <Text
+                style={[
+                  styles.title,
+                  { color: isDark ? '#FFFFFF' : AppColors.textPrimary, fontSize: sp(17) },
+                ]}
+              >
                 {t('familyPlan.title')}
               </Text>
-              <Text style={[styles.subtitle, { color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary, fontSize: sp(11) }]}>
+              <Text
+                style={[
+                  styles.subtitle,
+                  {
+                    color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                    fontSize: sp(11),
+                  },
+                ]}
+              >
                 {t('familyPlan.subtitle')}
               </Text>
             </View>
-            <Pressable onPress={onClose} hitSlop={10} style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}>
+            <Pressable
+              onPress={onClose}
+              hitSlop={10}
+              style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}
+            >
               <X color={isDark ? '#FFFFFF' : AppColors.textPrimary} size={22} />
             </Pressable>
           </View>
@@ -232,7 +260,12 @@ export const FamilyPlanModal = ({ visible, onClose, onSuccess }) => {
                 {expired ? (
                   <View style={styles.expiredBox}>
                     <AlertCircle color="#B71C1C" size={28} />
-                    <Text style={[styles.expiredText, { color: isDark ? '#FFFFFF' : AppColors.textPrimary, fontSize: sp(13) }]}>
+                    <Text
+                      style={[
+                        styles.expiredText,
+                        { color: isDark ? '#FFFFFF' : AppColors.textPrimary, fontSize: sp(13) },
+                      ]}
+                    >
                       {t('familyPlan.expired')}
                     </Text>
                     <CustomButton
@@ -246,7 +279,12 @@ export const FamilyPlanModal = ({ visible, onClose, onSuccess }) => {
                 ) : qrUri ? (
                   <>
                     <Image source={{ uri: qrUri }} style={styles.qrImage} resizeMode="contain" />
-                    <Text style={[styles.qrHint, { color: isDark ? '#D0D7D1' : AppColors.textSecondary, fontSize: sp(11) }]}>
+                    <Text
+                      style={[
+                        styles.qrHint,
+                        { color: isDark ? '#D0D7D1' : AppColors.textSecondary, fontSize: sp(11) },
+                      ]}
+                    >
                       {t('familyPlan.scanQr')}
                     </Text>
                     {checkout.amount ? (
@@ -257,7 +295,15 @@ export const FamilyPlanModal = ({ visible, onClose, onSuccess }) => {
                     {polling ? (
                       <View style={styles.pollingRow}>
                         <ActivityIndicator size="small" color={AppColors.primary} />
-                        <Text style={[styles.pollingText, { color: isDark ? '#D0D7D1' : AppColors.textSecondary, fontSize: sp(11) }]}>
+                        <Text
+                          style={[
+                            styles.pollingText,
+                            {
+                              color: isDark ? '#D0D7D1' : AppColors.textSecondary,
+                              fontSize: sp(11),
+                            },
+                          ]}
+                        >
                           {t('familyPlan.waitingPayment')}
                         </Text>
                       </View>
@@ -266,7 +312,12 @@ export const FamilyPlanModal = ({ visible, onClose, onSuccess }) => {
                 ) : (
                   <View style={styles.expiredBox}>
                     <AlertCircle color="#B71C1C" size={28} />
-                    <Text style={[styles.expiredText, { color: isDark ? '#FFFFFF' : AppColors.textPrimary, fontSize: sp(13) }]}>
+                    <Text
+                      style={[
+                        styles.expiredText,
+                        { color: isDark ? '#FFFFFF' : AppColors.textPrimary, fontSize: sp(13) },
+                      ]}
+                    >
                       {t('familyPlan.qrUnavailable')}
                     </Text>
                   </View>
@@ -275,20 +326,34 @@ export const FamilyPlanModal = ({ visible, onClose, onSuccess }) => {
             ) : (
               <>
                 {/* ── Danh sách tính năng ── */}
-                {[t('familyPlan.feature1'), t('familyPlan.feature2'), t('familyPlan.feature3')].map((f, i) => (
-                  <View key={i} style={styles.featureRow}>
-                    <View style={[styles.checkWrap, { backgroundColor: AppColors.primary }]}>
-                      <Check color="#FFFFFF" size={12} strokeWidth={3} />
+                {[t('familyPlan.feature1'), t('familyPlan.feature2'), t('familyPlan.feature3')].map(
+                  (f, i) => (
+                    <View key={i} style={styles.featureRow}>
+                      <View style={[styles.checkWrap, { backgroundColor: AppColors.primary }]}>
+                        <Check color="#FFFFFF" size={12} strokeWidth={3} />
+                      </View>
+                      <Text
+                        style={[
+                          styles.featureText,
+                          { color: isDark ? '#FFFFFF' : AppColors.textPrimary, fontSize: sp(13) },
+                        ]}
+                      >
+                        {f}
+                      </Text>
                     </View>
-                    <Text style={[styles.featureText, { color: isDark ? '#FFFFFF' : AppColors.textPrimary, fontSize: sp(13) }]}>
-                      {f}
-                    </Text>
-                  </View>
-                ))}
+                  )
+                )}
 
                 {/* ── Nhập token lời mời ── */}
-                <View style={[styles.tokenBox, { backgroundColor: isDark ? '#1E3A25' : '#F4F7F4' }]}>
-                  <Text style={[styles.tokenLabel, { color: isDark ? '#FFFFFF' : AppColors.textPrimary, fontSize: sp(13) }]}>
+                <View
+                  style={[styles.tokenBox, { backgroundColor: isDark ? '#1E3A25' : '#F4F7F4' }]}
+                >
+                  <Text
+                    style={[
+                      styles.tokenLabel,
+                      { color: isDark ? '#FFFFFF' : AppColors.textPrimary, fontSize: sp(13) },
+                    ]}
+                  >
                     {t('familyPlan.haveInviteToken')}
                   </Text>
                   <TextInput

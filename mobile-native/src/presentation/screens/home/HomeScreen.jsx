@@ -1,12 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import {
-  View,
-  ScrollView,
-  Animated,
-  Easing,
-  Platform,
-  RefreshControl,
-} from 'react-native';
+import { View, ScrollView, Animated, Easing, Platform, RefreshControl } from 'react-native';
 import { useTheme } from '../../theme/ThemeContext';
 import { AppColors } from '../../theme/colors';
 import { sp } from '../../utils/responsive';
@@ -173,6 +166,17 @@ export const HomeScreen = () => {
           />
         </ScrollView>
       </Animated.View>
+
+      {/* Paywall Gói Gia đình (QR PayOS + nhập token lời mời) - Sprint A3.
+          PHẢI render ở đây thì `setPlanModalOpen(true)` mới mở được modal;
+          nếu chỉ set state mà không render <FamilyPlanModal> thì bấm "Dùng thử
+          ngay" không có gì xảy ra. */}
+      <FamilyPlanModal
+        key={`family-plan-modal-${planModalOpen ? 'open' : 'closed'}`}
+        visible={planModalOpen}
+        onClose={() => setPlanModalOpen(false)}
+        onSuccess={refetchPlan}
+      />
     </ScreenBackground>
   );
 };

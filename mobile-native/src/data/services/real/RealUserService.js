@@ -447,6 +447,11 @@ export class RealUserService extends IUserService {
     return this.subscriptionService.isSubscribedTo(targetPlanName);
   }
 
+  /** Tìm giao dịch đang chờ thanh toán (khôi phục QR cũ) → shape checkout. */
+  async findPendingPayment() {
+    return this.subscriptionService.findPendingPayment();
+  }
+
   // ══════════════════════════════════════════════════════════════
   // SPRINT A3 - GIA ĐÌNH (compose từ RealFamilyService)
   // ══════════════════════════════════════════════════════════════

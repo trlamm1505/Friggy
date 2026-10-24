@@ -1,6 +1,24 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+/**
+ * PackageManagementScreen - danh sách gói + nâng cấp.
+ *
+ * Sprint A3 (23/10): nối BE thật.
+ *   - `GET /subscriptions/plans` (public) -> danh sách gói.
+ *     BE `SubscriptionPlanResponseDto`: `id`(number), `name`, `displayName`,
+ *     `priceVnd`, `billingCycle`, `features`, `aiUsagePerWeek`, `isActive`.
+ *     Mapper `toPackage()` trong `RealSubscriptionService` đã đổi
+ *     `priceVnd`->`price`, `billingCycle`->`period`.
+ *   - `GET /subscriptions/me` -> gói hiện tại + `status`.
+ *   - `POST /subscriptions/subscribe` -> QR PayOS (KHONG mo WebView, giống Flutter).
+ *   - `GET /payment-transactions/me` -> lịch sử giao dịch, dùng khôi phục QR
+ *     đang chờ (Flutter `_checkPendingPaymentTransaction()`).
+ *
+ * BỎ period switcher (monthly/yearly): BE KHÔNG có gói `yearly` - `billingCycle`
+ * chỉ có `forever` | `monthly` (`subscriptions-response.dto.ts:10`). Flutter cũng
+ * không có switcher, chỉ hiện "/tháng" hoặc "Mãi mãi" theo `billingCycle`.
+ */
+
+import React, { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import { useTheme } from '../../theme/ThemeContext';
 import { AppColors } from '../../theme/colors';
 import { sp } from '../../utils/responsive';
@@ -10,8 +28,10 @@ import { useNavigation } from '@react-navigation/native';
 import { FriggyAppBar } from '../../components/navigation/FriggyAppBar';
 import { Check, Crown, Users, Sparkles } from 'lucide-react-native';
 import { CustomButton } from '../../components/common/CustomButton';
-import { showInfo } from '../../utils/helpers';
-import packagesMock from '../../../shared/mocks/packages.json';
+import { showError, showInfo } from '../../utils/helpers';
+import { useServices } from '../../../data/ServiceProvider';
+import { useAsyncData } from '../../hooks/useServiceHooks';
+import { FamilyPlanModal } from '../../components/home/FamilyPlanModal';
 
 const formatVND = (n) => new Intl.NumberFormat('vi-VN').format(n) + ' đ';
 
@@ -19,113 +39,237 @@ export const PackageManagementScreen = () => {
   const { isDark } = useTheme();
   const { t } = useTranslation();
   const navigation = useNavigation();
-  const [period, setPeriod] = useState('monthly');
-  const [packages] = useState(packagesMock.packages);
+  const { userService } = useServices();
+
+  const [subscribingPlanId, setSubscribingPlanId] = useState(null);
+  const [planModalOpen, setPlanModalOpen] = useState(false);
+
+  // `useAsyncData` (hook có sẵn) thay cho `useEffect` + setState - eslint
+  // `react-hooks/set-state-in-effect` cấm setState đồng bộ trong effect.
+  const {
+    data: packages,
+    loading,
+    error,
+    refetch: reloadPackages,
+  } = useAsyncData((s) => s.userService.getAvailablePackages(), [], []);
+  const { data: currentSub, refetch: reloadCurrent } = useAsyncData(
+    (s) => s.userService.getMySubscription(),
+    null,
+    []
+  );
+
+  const currentPlanName = currentSub?.plan?.name ?? 'free';
+
+  /** Mua gói: gọi subscribe -> mở modal QR. */
+  const handleSubscribe = useCallback(
+    async (pkg) => {
+      if (!pkg?.id) return;
+      setSubscribingPlanId(pkg.id);
+      try {
+        const checkout = await userService.subscribe(pkg.id);
+        // Gói family dùng FamilyPlanModal (có thêm ô nhập token lời mời).
+        // Gói khác: hiện QR trực tiếp trong modal này.
+        if (pkg.name === 'family') {
+          setPlanModalOpen(true);
+        } else {
+          showInfo(
+            checkout?.qrCode ? t('subscription.qrShown') : t('subscription.subscribeFailed')
+          );
+        }
+      } catch (e) {
+        showError(e?.message || t('subscription.subscribeFailed'));
+      } finally {
+        setSubscribingPlanId(null);
+      }
+    },
+    [userService, t]
+  );
 
   return (
     <View style={[styles.container, { backgroundColor: isDark ? '#0E1611' : '#FFFFFF' }]}>
       <FriggyAppBar showBackButton onBackTap={() => navigation.goBack()} />
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        <Text style={[styles.title, { color: isDark ? '#FFFFFF' : AppColors.textPrimary, fontSize: sp(24) }]}>
+        <Text
+          style={[
+            styles.title,
+            { color: isDark ? '#FFFFFF' : AppColors.textPrimary, fontSize: sp(24) },
+          ]}
+        >
           {t('subscription.title')}
         </Text>
 
-        {/* Period switcher */}
-        <View style={[styles.periodRow, { backgroundColor: isDark ? '#19271E' : AppColors.accentGreen }]}>
-          {['monthly', 'yearly'].map((p) => (
-            <Pressable
-              key={p}
-              onPress={() => setPeriod(p)}
+        {/* Current plan */}
+        <View
+          style={[
+            styles.currentCard,
+            {
+              backgroundColor: isDark ? '#1E3A25' : AppColors.accentGreen,
+              borderColor: AppColors.primary,
+            },
+          ]}
+        >
+          <View style={styles.currentHeader}>
+            <Sparkles color={AppColors.primary} size={18} />
+            <Text
               style={[
-                styles.periodBtn,
+                styles.currentLabel,
                 {
-                  backgroundColor: period === p ? AppColors.primary : 'transparent',
+                  color: isDark ? AppColors.primaryLight : AppColors.forestAccent,
+                  fontSize: sp(13),
                 },
               ]}
             >
-              <Text
-                style={[
-                  styles.periodText,
-                  { color: period === p ? '#FFFFFF' : isDark ? '#FFFFFF' : AppColors.textPrimary, fontSize: sp(13) },
-                ]}
-              >
-                {p === 'monthly' ? t('subscription.monthly') : t('subscription.yearly')}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
-
-        {/* Current plan */}
-        <View style={[styles.currentCard, { backgroundColor: isDark ? '#1E3A25' : AppColors.accentGreen, borderColor: AppColors.primary }]}>
-          <View style={styles.currentHeader}>
-            <Sparkles color={AppColors.primary} size={18} />
-            <Text style={[styles.currentLabel, { color: isDark ? AppColors.primaryLight : AppColors.forestAccent, fontSize: sp(13) }]}>
               {t('subscription.currentPlan')}
             </Text>
           </View>
-          <Text style={[styles.currentPlan, { color: isDark ? '#FFFFFF' : AppColors.textPrimary, fontSize: sp(18) }]}>
-            {t('subscription.free')}
+          <Text
+            style={[
+              styles.currentPlan,
+              { color: isDark ? '#FFFFFF' : AppColors.textPrimary, fontSize: sp(18) },
+            ]}
+          >
+            {currentSub?.plan?.displayName ?? t('subscription.free')}
           </Text>
-        </View>
-
-        {/* Package cards */}
-        {packages.map((pkg) => {
-          const isFamily = pkg.name.toLowerCase().includes('gia đình') || pkg.name.toLowerCase().includes('family');
-          const Icon = isFamily ? Users : Crown;
-          return (
-            <View
-              key={pkg.id}
+          {currentSub?.endDate ? (
+            <Text
               style={[
-                styles.pkgCard,
+                styles.currentExpiry,
                 {
-                  backgroundColor: isDark ? '#19271E' : '#FFFFFF',
-                  borderColor: isFamily ? AppColors.primary : isDark ? '#2E4D36' : '#A5E69C',
-                  borderWidth: isFamily ? 2 : 1,
+                  color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                  fontSize: sp(11),
                 },
               ]}
             >
-              <View style={styles.pkgHeader}>
-                <View style={[styles.pkgIcon, { backgroundColor: isFamily ? AppColors.primary : '#F5B025' }]}>
-                  <Icon color="#FFFFFF" size={20} />
-                </View>
-                <View style={{ flex: 1, marginLeft: 12 }}>
-                  <Text style={[styles.pkgName, { color: isDark ? '#FFFFFF' : AppColors.textPrimary, fontSize: sp(17) }]}>
-                    {pkg.name}
-                  </Text>
-                  <Text style={[styles.pkgPrice, { color: AppColors.primary, fontSize: sp(20) }]}>
-                    {formatVND(pkg.price)}
-                    <Text style={[styles.pkgUnit, { color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary, fontSize: sp(13) }]}>
-                      {pkg.period === 'monthly' ? t('subscription.perMonth') : t('subscription.perYear')}
-                    </Text>
-                  </Text>
-                </View>
-                {isFamily ? (
-                  <View style={styles.recommendBadge}>
-                    <Text style={styles.recommendText}>Đề xuất</Text>
+              {t('subscription.validUntil', { date: currentSub.endDate })}
+            </Text>
+          ) : null}
+        </View>
+
+        {/* Package cards */}
+        {loading ? (
+          <View style={styles.loadingBox}>
+            <ActivityIndicator size="large" color={AppColors.primary} />
+          </View>
+        ) : error ? (
+          <View style={styles.loadingBox}>
+            <Text style={{ color: isDark ? '#FFFFFF' : AppColors.textPrimary, marginBottom: 12 }}>
+              {t('subscription.loadFailed')}
+            </Text>
+            <CustomButton
+              title={t('home.retry')}
+              onPress={() => {
+                reloadPackages();
+                reloadCurrent();
+              }}
+              width={160}
+              height={46}
+              borderRadius={23}
+            />
+          </View>
+        ) : (
+          packages.map((pkg) => {
+            const isFamily = pkg.name === 'family';
+            const isFree = pkg.price === 0;
+            const isCurrent = pkg.name === currentPlanName && currentSub?.status === 'active';
+            const Icon = isFamily ? Users : Crown;
+            return (
+              <View
+                key={pkg.id}
+                style={[
+                  styles.pkgCard,
+                  {
+                    backgroundColor: isDark ? '#19271E' : '#FFFFFF',
+                    borderColor: isFamily ? AppColors.primary : isDark ? '#2E4D36' : '#A5E69C',
+                    borderWidth: isFamily ? 2 : 1,
+                  },
+                ]}
+              >
+                <View style={styles.pkgHeader}>
+                  <View
+                    style={[
+                      styles.pkgIcon,
+                      { backgroundColor: isFamily ? AppColors.primary : '#F5B025' },
+                    ]}
+                  >
+                    <Icon color="#FFFFFF" size={20} />
                   </View>
-                ) : null}
-              </View>
-              <View style={styles.featuresList}>
-                {pkg.features.map((f, i) => (
-                  <View key={i} style={styles.featureRow}>
-                    <Check color={AppColors.primary} size={16} />
-                    <Text style={[styles.featureText, { color: isDark ? '#FFFFFF' : AppColors.textPrimary, fontSize: sp(13) }]}>
-                      {f}
+                  <View style={{ flex: 1, marginLeft: 12 }}>
+                    <Text
+                      style={[
+                        styles.pkgName,
+                        { color: isDark ? '#FFFFFF' : AppColors.textPrimary, fontSize: sp(17) },
+                      ]}
+                    >
+                      {pkg.displayName || pkg.name}
+                    </Text>
+                    <Text style={[styles.pkgPrice, { color: AppColors.primary, fontSize: sp(20) }]}>
+                      {formatVND(pkg.price)}
+                      <Text
+                        style={[
+                          styles.pkgUnit,
+                          {
+                            color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                            fontSize: sp(13),
+                          },
+                        ]}
+                      >
+                        {pkg.period === 'monthly'
+                          ? t('subscription.perMonth')
+                          : t('subscription.forever')}
+                      </Text>
                     </Text>
                   </View>
-                ))}
+                  {isFamily ? (
+                    <View style={styles.recommendBadge}>
+                      <Text style={styles.recommendText}>{t('subscription.recommended')}</Text>
+                    </View>
+                  ) : null}
+                </View>
+                <View style={styles.featuresList}>
+                  {pkg.features.map((f, i) => (
+                    <View key={i} style={styles.featureRow}>
+                      <Check color={AppColors.primary} size={16} />
+                      <Text
+                        style={[
+                          styles.featureText,
+                          { color: isDark ? '#FFFFFF' : AppColors.textPrimary, fontSize: sp(13) },
+                        ]}
+                      >
+                        {f}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+                <CustomButton
+                  title={
+                    isCurrent
+                      ? t('subscription.currentPlan')
+                      : isFree
+                        ? t('subscription.defaultPlan')
+                        : t('subscription.subscribeNow')
+                  }
+                  onPress={() => (isCurrent || isFree ? undefined : handleSubscribe(pkg))}
+                  loading={subscribingPlanId === pkg.id}
+                  disabled={isCurrent || isFree}
+                  variant={isFamily ? 'primary' : 'outline'}
+                />
               </View>
-              <CustomButton
-                title={t('subscription.subscribeNow')}
-                onPress={() => showInfo('Mở flow thanh toán')}
-                variant={isFamily ? 'primary' : 'outline'}
-              />
-            </View>
-          );
-        })}
+            );
+          })
+        )}
         <View style={{ height: 40 }} />
       </ScrollView>
+
+      <FamilyPlanModal
+        key={`family-plan-modal-${planModalOpen ? 'open' : 'closed'}`}
+        visible={planModalOpen}
+        onClose={() => setPlanModalOpen(false)}
+        onSuccess={() => {
+          reloadPackages();
+          reloadCurrent();
+        }}
+      />
     </View>
   );
 };
@@ -140,22 +284,6 @@ const styles = StyleSheet.create({
   title: {
     fontFamily: FontFamily.black,
     fontWeight: FontWeights.black,
-  },
-  periodRow: {
-    flexDirection: 'row',
-    padding: 4,
-    borderRadius: 24,
-    marginTop: 16,
-  },
-  periodBtn: {
-    flex: 1,
-    paddingVertical: 10,
-    borderRadius: 20,
-    alignItems: 'center',
-  },
-  periodText: {
-    fontFamily: FontFamily.bold,
-    fontWeight: FontWeights.bold,
   },
   currentCard: {
     padding: 16,
@@ -176,6 +304,14 @@ const styles = StyleSheet.create({
     fontFamily: FontFamily.black,
     fontWeight: FontWeights.black,
     marginTop: 6,
+  },
+  currentExpiry: {
+    fontFamily: FontFamily.regular,
+    marginTop: 4,
+  },
+  loadingBox: {
+    alignItems: 'center',
+    paddingVertical: 40,
   },
   pkgCard: {
     padding: 16,
