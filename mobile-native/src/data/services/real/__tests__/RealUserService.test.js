@@ -447,3 +447,57 @@ describe('RealUserService - notification settings', () => {
     expect(settings.shoppingReminder).toBe(false);
   });
 });
+
+// ═══════════════ Gia đình: getFamily theo contract IUserService ═══════════════
+// Bug B1 (sau khi merge dev A 23/10): `IUserService` khai báo `getFamily()`,
+// `MockUserService` implement đúng tên đó, nhưng `RealUserService` chỉ có
+// `getFamilyInfo()` -> `getFamily()` được KẾ THỪA từ base và throw
+// "must be implemented". `SafeService.withFallback` không cứu được (lỗi này
+// không phải 5xx/network) -> màn "Tủ lạnh của tôi" (B1) mất số liệu gia đình.
+
+describe('RealUserService - getFamily (contract IUserService)', () => {
+  /** `FamilyRoleDto` của BE = `{ role, group }`. */
+  const beFamilyRole = (overrides = {}) => ({
+    role: 'owner',
+    group: {
+      id: 'g-1',
+      status: 'active',
+      activeCount: 2,
+      maxMembers: 5,
+      owner: { id: 'u-1', name: 'Chủ gia đình', avatar: null },
+      members: [{ id: 'u-2', name: 'Thành viên', status: 'active', avatar: null }],
+    },
+    ...overrides,
+  });
+
+  it('getFamily() gọi GET /family/me và trả shape đã map', async () => {
+    ApiClient.get.mockResolvedValue(beFamilyRole());
+
+    const family = await service.getFamily();
+
+    expect(ApiClient.get).toHaveBeenCalledWith('/family/me');
+    expect(family.role).toBe('owner');
+    expect(family.activeCount).toBe(2);
+    expect(family.members).toHaveLength(1);
+    expect(family.groupId).toBe('g-1');
+  });
+
+  it('getFamily() và getFamilyInfo() trả CÙNG kết quả (alias)', async () => {
+    ApiClient.get.mockResolvedValue(beFamilyRole());
+
+    const viaContract = await service.getFamily();
+    const viaName = await service.getFamilyInfo();
+
+    expect(viaContract).toEqual(viaName);
+  });
+
+  it('BE không có group -> role "none", KHÔNG crash', async () => {
+    ApiClient.get.mockResolvedValue({ role: 'none', group: null });
+
+    const family = await service.getFamily();
+
+    expect(family.role).toBe('none');
+    expect(family.members).toEqual([]);
+    expect(family.activeCount).toBe(0);
+  });
+});

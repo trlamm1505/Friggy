@@ -57,9 +57,37 @@ const IMAGE_MAP = {
   food_bokchoy: require('../../../../assets/images/food_bokchoy.png'),
 };
 
+/**
+ * Ảnh của 1 item.
+ *
+ * ⚠️ B1 — 2 nguồn ảnh khác nhau, phải phân biệt:
+ *   - MOCK mode: `item.image` là KEY ('food_tomato') -> tra `IMAGE_MAP` ra asset
+ *     đóng gói sẵn trong app.
+ *   - REAL mode: `item.image` là URL TUYỆT ĐỐI do `RealFridgeService` đã đưa
+ *     qua `appConfig.getImageUrl()` (đổi host api. -> file.). Phải render bằng
+ *     `{ uri }`.
+ *
+ * Trước đây chỉ tra `IMAGE_MAP` -> với BE thật, `item.image` là URL nên KHÔNG
+ * match key nào -> `imageSource = null` -> mọi item rơi về icon mặc định `Leaf`.
+ * Tức là ảnh thật của hàng nghìn nguyên liệu trong danh mục BE KHÔNG BAO GIỜ
+ * hiện, dù `RealFridgeService` đã map đúng URL.
+ *
+ * @param {string|null} image
+ * @returns {object|null} source cho <Image>, null = dùng icon
+ */
+const resolveImageSource = (image) => {
+  if (!image || typeof image !== 'string') return null;
+  // URL tuyệt đối từ BE -> render qua { uri }.
+  if (/^https?:\/\//i.test(image)) return { uri: image };
+  // Key của mock -> tra asset đóng gói sẵn.
+  return IMAGE_MAP[image] || null;
+};
+
 export const FridgeItem = ({ item, onPress, style }) => {
   const { isDark } = useTheme();
-  const { t, i18n } = useTranslation();
+  // Chỉ cần `i18n` để biết ngôn ngữ hiện tại (nhãn hạn dùng viết tay trong
+  // `formatExpiry` vì ngắn gọn và phải khớp đúng cách Flutter hiển thị).
+  const { i18n } = useTranslation();
   const isEn = i18n.language === 'en';
 
   const Icon = CATEGORY_ICON[item.category] || Leaf;
@@ -73,7 +101,7 @@ export const FridgeItem = ({ item, onPress, style }) => {
   const badgeBg = isDark ? colorScheme.darkBg : colorScheme.bg;
   const badgeFg = isDark ? colorScheme.darkFg : colorScheme.fg;
 
-  const imageSource = item.image && IMAGE_MAP[item.image] ? IMAGE_MAP[item.image] : null;
+  const imageSource = resolveImageSource(item.image);
 
   return (
     <Pressable
@@ -90,19 +118,12 @@ export const FridgeItem = ({ item, onPress, style }) => {
           styles.row,
           {
             backgroundColor: isDark ? '#19271E' : '#F4F7F4',
-            borderColor: status === 'expiring' || status === 'expired'
-              ? badgeFg
-              : 'transparent',
+            borderColor: status === 'expiring' || status === 'expired' ? badgeFg : 'transparent',
             borderWidth: status === 'expiring' || status === 'expired' ? 1 : 0,
           },
         ]}
       >
-        <View
-          style={[
-            styles.iconWrap,
-            { backgroundColor: iconColor + (isDark ? '33' : '22') },
-          ]}
-        >
+        <View style={[styles.iconWrap, { backgroundColor: iconColor + (isDark ? '33' : '22') }]}>
           {imageSource ? (
             <Image source={imageSource} style={styles.image} resizeMode="contain" />
           ) : (
@@ -111,10 +132,7 @@ export const FridgeItem = ({ item, onPress, style }) => {
         </View>
         <View style={{ flex: 1, marginLeft: sp(12) }}>
           <Text
-            style={[
-              styles.name,
-              { color: isDark ? '#FFFFFF' : AppColors.textPrimary },
-            ]}
+            style={[styles.name, { color: isDark ? '#FFFFFF' : AppColors.textPrimary }]}
             numberOfLines={1}
           >
             {item.name}

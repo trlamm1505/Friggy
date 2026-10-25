@@ -158,10 +158,34 @@ export class MockFridgeService extends IFridgeService {
     }));
   }
 
-  /** `GET /fridge/expiring?days=N` — mock: lọc client-side theo status. */
+  /**
+   * `GET /fridge/expiring?days=N` — mock: lọc client-side theo CỬA SỔ THỜI GIAN.
+   *
+   * ⚠️ VÌ SAO KHÔNG dùng `i.status`:
+   *   `status` trong `inventory.json` là giá trị HARDCODE tại thời điểm tạo
+   *   file -> đã cũ. `getItems()` đã tính lại bằng `_computeStatus()` để tránh
+   *   hiện "sắp hết hạn" cho món đã quá hạn; `getExpiring()` phải dùng CÙNG
+   *   quy tắc, nếu không thì 2 method trả 2 kết quả khác nhau cho cùng dữ liệu.
+   *
+   * ⚠️ VÌ SAO KHÔNG dùng `.slice(0, days)`:
+   *   `days` là KHOẢNG THỜI GIAN (còn <= N ngày thì hết hạn), KHÔNG phải số
+   *   lượng item. `slice(0, 3)` = "lấy 3 món đầu" -> sai hoàn toàn: màn "Sắp
+   *   hết hạn" sẽ hiện 3 món bất kể chúng còn bao nhiêu ngày.
+   *
+   * @param {number} [days=3] - cửa sổ ngày (BE mặc định 3)
+   */
   async getExpiring(days = 3) {
     await sleep(MOCK_DELAY / 2);
-    return items.filter((i) => i.status === 'expiring').slice(0, Math.max(0, days));
+    const window = Number.isFinite(days) ? Math.max(0, days) : 0;
+    return items
+      .filter((i) => {
+        const diffDays = this._daysUntilExpiry(i.expiryDate);
+        // Không có hạn dùng -> không "sắp hết hạn".
+        if (diffDays === null) return false;
+        // Còn hạn (>= 0) và còn <= `days` ngày -> sắp hết hạn.
+        return diffDays >= 0 && diffDays <= window;
+      })
+      .map((i) => ({ ...i, status: this._computeStatus(i.expiryDate) }));
   }
 
   /**
@@ -171,7 +195,11 @@ export class MockFridgeService extends IFridgeService {
   async getFridgeStats() {
     await sleep(MOCK_DELAY / 2);
     const totalItems = items.length;
-    const expiringSoonCount = items.filter((i) => i.status === 'expiring').length;
+    // Tính lại status (xem `getExpiring`) — không dùng giá trị hardcode trong
+    // `inventory.json` để `expiringSoonCount` khớp với những gì UI hiện.
+    const expiringSoonCount = items.filter(
+      (i) => this._computeStatus(i.expiryDate) === 'expiring'
+    ).length;
     return {
       totalSpentThisMonth: 0,
       wastePercent: 0,

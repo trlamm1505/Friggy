@@ -8,7 +8,7 @@
  * Sau này AllAvailableItemsScreen và AllExpiredItemsScreen chỉ cần pass config.
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList } from 'react-native';
 import { useTheme } from '../../theme/ThemeContext';
 import { AppColors } from '../../theme/colors';
@@ -25,35 +25,21 @@ import { EmptyState } from '../../components/common/EmptyState';
 import { ErrorState } from '../../components/common/ErrorState';
 import { Skeleton } from '../../components/common/Skeleton';
 import { SortMenu } from '../../components/common/SortMenu';
-import { getDaysToExpiry } from '../../utils/fridgeDates';
+import { sortFridgeItems } from '../../utils/fridgeItems';
+import { FridgeItemActions } from '../../components/fridge/FridgeItemActions';
 
-const sortItems = (items, sortKey, sortOptions) => {
-  return [...items].sort((a, b) => {
-    switch (sortKey) {
-      case sortOptions.EXPIRY_ASC:
-        return new Date(a.expiryDate) - new Date(b.expiryDate);
-      case sortOptions.EXPIRY_DESC:
-        return new Date(b.expiryDate) - new Date(a.expiryDate);
-      case sortOptions.NAME_ASC:
-        return a.name.localeCompare(b.name);
-      case sortOptions.NAME_DESC:
-        return b.name.localeCompare(a.name);
-      case sortOptions.URGENT_FIRST: {
-        const aDays = getDaysToExpiry(a.expiryDate);
-        const bDays = getDaysToExpiry(b.expiryDate);
-        // `null` = không có hạn dùng -> coi như còn hạn, đứng CUỐI.
-        const aVal = aDays === null ? Number.MAX_SAFE_INTEGER : aDays;
-        const bVal = bDays === null ? Number.MAX_SAFE_INTEGER : bDays;
-        if (aVal < 0 && bVal >= 0) return -1;
-        if (aVal >= 0 && bVal < 0) return 1;
-        return aVal - bVal;
-      }
-      default:
-        return 0;
-    }
-  });
-};
-
+/**
+ * ⚠️ B1 — gộp logic sort về 1 nguồn (`utils/fridgeItems.js`):
+ *   Trước đây `FridgeListScreen` có `sortItems` riêng, còn `FridgeInventoryScreen`
+ *   dùng sort của service. Hai bản khác nhau: bản của list screen dùng
+ *   `new Date(a.expiryDate)` — với `expiryDate` null là `Invalid Date` ->
+ *   comparator trả `NaN` -> thứ tự NGẪU NHIÊN (item không có hạn dùng lung
+ *   tung giữa list). Bản dùng chung xử lý riêng case null (luôn đứng cuối).
+ *
+ *   Key của `config.sortOptionsArray` / `config.defaultSort` đã trùng đúng tên
+ *   key mà `sortFridgeItems` hiểu (`expiry_asc` | `expiry_desc` | `name_asc` |
+ *   `name_desc`), nên truyền thẳng, không cần bảng map.
+ */
 export const FridgeListScreen = ({ config }) => {
   const { isDark } = useTheme();
   const { t } = useTranslation();
@@ -63,6 +49,11 @@ export const FridgeListScreen = ({ config }) => {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState(config.statusFilterDefault || 'all');
   const [sort, setSort] = useState(config.defaultSort);
+  // Item đang mở sheet thao tác (sửa số lượng / dùng hết / xóa). null = đóng.
+  const [actionsItem, setActionsItem] = useState(null);
+
+  const openActions = useCallback((item) => setActionsItem(item), []);
+  const closeActions = useCallback(() => setActionsItem(null), []);
 
   // Bước 1: Lọc theo điều kiện tiên quyết (chỉ fresh+expiring, hoặc expiring+expired)
   const baseItems = useMemo(() => {
@@ -90,11 +81,9 @@ export const FridgeListScreen = ({ config }) => {
     return statusFiltered.filter((it) => it.name.toLowerCase().includes(q));
   }, [statusFiltered, search]);
 
-  // Bước 5: Sort
-  const filteredItems = useMemo(
-    () => sortItems(searched, sort, config.sortOptions),
-    [searched, sort, config.sortOptions]
-  );
+  // Bước 5: Sort — dùng bản sort dùng chung (`fridgeItems.js`) để xử lý đúng
+  // case item KHÔNG có hạn dùng (luôn đứng cuối, không làm thứ tự lung tung).
+  const filteredItems = useMemo(() => sortFridgeItems(searched, sort), [searched, sort]);
 
   // Counts
   const counts = useMemo(() => {
@@ -122,11 +111,6 @@ export const FridgeListScreen = ({ config }) => {
         label: t(opt.labelKey, { defaultValue: opt.labelKey }),
       })),
     [config.sortOptionsArray, t]
-  );
-
-  const currentSortLabel = useMemo(
-    () => sortOptions.find((o) => o.key === sort)?.label || '',
-    [sortOptions, sort]
   );
 
   // Loading state
@@ -200,12 +184,7 @@ export const FridgeListScreen = ({ config }) => {
           </Text>
         </View>
         {config.sortOptionsArray ? (
-          <SortMenu
-            current={sort}
-            options={sortOptions}
-            onSelect={setSort}
-            label={currentSortLabel}
-          />
+          <SortMenu selectedKey={sort} options={sortOptions} onSelect={setSort} />
         ) : null}
       </View>
 
@@ -236,7 +215,19 @@ export const FridgeListScreen = ({ config }) => {
             <EmptyState emoji="🔍" title={t('home.noResults')} hint={t('home.noResultsHint')} />
           ) : null
         }
-        renderItem={({ item }) => <FridgeItem item={item} />}
+        renderItem={({ item }) => <FridgeItem item={item} onPress={openActions} />}
+      />
+
+      {/* Sheet thao tác: sửa số lượng / đánh dấu dùng hết / xóa.
+          `key={actionsItem?.id}` -> mỗi item là 1 instance mới, state trong
+          sheet (số lượng, đơn vị) khởi tạo đúng ngay, không cần setState
+          trong effect. */}
+      <FridgeItemActions
+        key={actionsItem?.id ?? 'none'}
+        item={actionsItem}
+        visible={actionsItem !== null}
+        onClose={closeActions}
+        onChanged={refetch}
       />
     </View>
   );

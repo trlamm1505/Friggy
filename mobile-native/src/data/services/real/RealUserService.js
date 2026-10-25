@@ -456,6 +456,25 @@ export class RealUserService extends IUserService {
     return this.familyService.getFamily();
   }
 
+  /**
+   * `IUserService.getFamily()` — alias của `getFamilyInfo()`.
+   *
+   * ⚠️ B1 — vá lỗi tích hợp sau khi merge dev A (23/10):
+   *   `IUserService` khai báo contract là `getFamily()`, `MockUserService` implement
+   *   đúng tên đó, nhưng `RealUserService` chỉ có `getFamilyInfo()`.
+   *   -> `RealUserService extends IUserService` nên `getFamily()` được kế thừa
+   *      từ base và **throw** `IUserService.getFamily() must be implemented`.
+   *   -> `SafeService.withFallback` KHÔNG fallback lỗi này (không phải 5xx/network)
+   *      -> `MyFridgesScreen` (B1) nuốt lỗi -> mất số liệu gia đình, không có
+   *      invite code, không có số thành viên.
+   *
+   *   Thêm alias ở đây để real khớp contract của interface -> UI không phải
+   *   biết tên method nào là "đúng" của từng tầng.
+   */
+  async getFamily() {
+    return this.getFamilyInfo();
+  }
+
   /** POST /family/invite → gửi lời mời qua email. */
   async inviteFamilyMember(email) {
     return this.familyService.inviteMember(email);
