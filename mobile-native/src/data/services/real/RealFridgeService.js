@@ -37,6 +37,7 @@
  */
 
 import { ApiClient } from '../../api/ApiClient';
+import { ApiException } from '../../api/ApiException';
 import { registerService } from '../../api/ServiceRegistry';
 import { appConfig } from '../../../shared/config/appConfig';
 
@@ -395,6 +396,242 @@ export class RealFridgeService {
    */
   async getStatsChart(period = 'week') {
     return this.client.get('/fridge/stats/chart', { params: { period } });
+  }
+
+  // ═══════════════ Scan AI (Sprint B2) ═══════════════
+  //
+  // LUỒNG THẬT (BE dùng RabbitMQ + ai-service xử lý Vision AI bất đồng bộ):
+  //   1. `POST /fridge/scan/image|receipt|barcode` (multipart `file`)
+  //      -> trả ngay `{ scanId, status: 'pending', detectedItems: [] }`.
+  //      `detectedItems` lúc này LUÔN RỖNG — AI chưa xử lý xong.
+  //   2. Poll `GET /fridge/scan/:scanId` mỗi 2s tới khi `status` là
+  //      `success` (lấy `detectedItems`) hoặc `failed` (đọc `errorMessage`).
+  //   3. User review/sửa -> `POST /fridge/scan/:scanId/confirm` với
+  //      `{ items: [{ ingredientId?, name?, quantity, unit, expiresAt?, storageLocation? }] }`
+  //      -> BE tạo fridge items, trả về list `FridgeItemResponseDto`.
+  //
+  // QUY TẮC AN TOÀN DEMO (mục 6 của plan):
+  //   - Không tạo `MockScanService`. Dữ liệu scan KHÔNG có mock — đây là flow
+  //     AI thật, không "giả vờ" nhận diện.
+  //   - Lỗi 4xx (400 thiếu file, 404 scanId không tồn tại) -> NÉM LÊN cho UI
+  //     hiện lỗi thật. KHÔNG fallback, KHÔNG bịa kết quả scan giả.
+  //   - `SafeService.withFallback` chỉ bọc method có trong prototype của
+  //     `MockFridgeService` — mock phải có 6 method này (throw "chưa hỗ trợ
+  //     ở chế độ mock") thì proxy mới expose được.
+
+  /**
+   * BE `DetectedItemResultDto` -> shape UI `ScanItem` (xem IScanService.js).
+   *
+   * Tên field BE và UI GẦN GIỐNG nhau ở đây (không lệch hoàn toàn như
+   * FridgeItem), nhưng vẫn qua mapper để: chuẩn hoá `null`, ép `quantity`
+   * về số, và tách `errorMessage` ra khỏi item (nó nằm ở cấp scan, không
+   * phải cấp item).
+   *
+   * @param {object} dto - 1 phần tử của `ScanStatusResponseDto.detectedItems`
+   * @returns {object|null} ScanItem cho UI, hoặc null khi dto rỗng
+   */
+  _toScanItem(dto) {
+    if (!dto) return null;
+    return {
+      ingredientId:
+        dto.ingredientId === undefined || dto.ingredientId === null
+          ? null
+          : Number(dto.ingredientId),
+      name: dto.name ?? '',
+      quantity: Number(dto.quantity ?? 0),
+      unit: dto.unit ?? '',
+      confidence: dto.confidence === undefined || dto.confidence === null ? null : dto.confidence,
+      needsConfirm: dto.needsConfirm === true,
+      allergyWarning: dto.allergyWarning === true,
+      estimatedExpiryDays: dto.estimatedExpiryDays ?? null,
+    };
+  }
+
+  /**
+   * BE `ScanStatusResponseDto` -> shape UI `ScanStatusResult`.
+   * `status` giữ nguyên enum thật của BE: `pending` | `success` | `failed`.
+   *
+   * @param {object} dto
+   * @returns {object|null}
+   */
+  _toScanStatus(dto) {
+    if (!dto) return null;
+    const items = Array.isArray(dto.detectedItems)
+      ? dto.detectedItems.map((d) => this._toScanItem(d)).filter(Boolean)
+      : [];
+    return {
+      scanId: dto.scanId,
+      scanType: dto.scanType,
+      status: dto.status,
+      items,
+      errorMessage: dto.errorMessage ?? null,
+      createdAt: dto.createdAt ?? null,
+    };
+  }
+
+  /**
+   * Upload ảnh thực phẩm để AI nhận diện (POST /fridge/scan/image, multipart `file`).
+   *
+   * BE trả ngay `{ scanId, status: 'pending', detectedItems: [] }`.
+   * Caller phải gọi tiếp `pollScanResult(scanId)` để chờ AI xử lý xong.
+   *
+   * @param {string} uri - URI cục bộ của ảnh
+   * @returns {Promise<{scanId:string,scanType:string,status:string}>}
+   */
+  async scanImage(uri) {
+    if (!uri) {
+      throw new ApiException('Vui lòng chọn ảnh để quét', { statusCode: 400 });
+    }
+    return this.client.uploadFile('/fridge/scan/image', uri, 'file');
+  }
+
+  /**
+   * Upload ảnh hoá đơn để AI parse danh sách thực phẩm (POST /fridge/scan/receipt).
+   * @param {string} uri - URI cục bộ của ảnh
+   */
+  async scanReceipt(uri) {
+    if (!uri) {
+      throw new ApiException('Vui lòng chọn ảnh hoá đơn để quét', { statusCode: 400 });
+    }
+    return this.client.uploadFile('/fridge/scan/receipt', uri, 'file');
+  }
+
+  /**
+   * Upload ảnh mã vạch để AI nhận diện sản phẩm (POST /fridge/scan/barcode).
+   *
+   * ⚠️ BE hiện tại chỉ nhận FILE ẢNH (`@UseInterceptors(FileInterceptor('file'))`),
+   * KHÔNG có endpoint nhập chuỗi barcode. Nên param là URI ảnh chụp mã vạch,
+   * không phải chuỗi mã số.
+   *
+   * @param {string} uri - URI cục bộ của ảnh chụp mã vạch
+   */
+  async scanBarcode(uri) {
+    if (!uri) {
+      throw new ApiException('Vui lòng chụp ảnh mã vạch để quét', { statusCode: 400 });
+    }
+    return this.client.uploadFile('/fridge/scan/barcode', uri, 'file');
+  }
+
+  /**
+   * Lấy trạng thái + kết quả scan 1 lần (GET /fridge/scan/:scanId).
+   * @param {string} scanId
+   */
+  async getScanStatus(scanId) {
+    const dto = await this.client.get(`/fridge/scan/${scanId}`);
+    return this._toScanStatus(dto);
+  }
+
+  /**
+   * Poll trạng thái scan tới khi xong.
+   *
+   * - Poll mỗi 2s theo đúng gợi ý của BE (`@ApiOperation`: "FE poll mỗi 2s"),
+   *   exponential backoff (2s -> 4s -> 8s, trần 8s), tổng tối đa 60s.
+   * - Dừng khi `status` là `success` (trả kết quả) hoặc `failed` (ném lỗi với
+   *   `errorMessage` của BE để UI hiện lý do thật).
+   * - Hết 60s vẫn `pending` -> ném lỗi timeout để UI hiện "thử lại".
+   * - Unmount giữa chừng -> truyền `AbortSignal` để dừng poll, không memory leak
+   *   (quy tắc plan mục 5.7: đóng màn hình giữa chừng thì poll phải dừng).
+   *
+   * @param {string} scanId
+   * @param {object} [options]
+   * @param {AbortSignal} [options.signal] - huỷ poll khi màn hình unmount
+   * @returns {Promise<object>} `ScanStatusResult` khi `success`
+   */
+  async pollScanResult(scanId, options = {}) {
+    const { signal } = options;
+    const startedAt = Date.now();
+    const TIMEOUT_MS = 60000;
+    let delayMs = 2000;
+
+    // Lần đầu chờ 2s rồi mới poll — AI cần thời gian xử lý qua RabbitMQ,
+    // gọi ngay lập tức chắc chắn vẫn `pending`, phí 1 request.
+    await this._sleepAbortable(delayMs, signal);
+
+    for (;;) {
+      if (signal?.aborted) {
+        throw new ApiException('Đã huỷ quét', { statusCode: 400 });
+      }
+      if (Date.now() - startedAt > TIMEOUT_MS) {
+        throw new ApiException('AI xử lý quá lâu, vui lòng thử lại', {
+          statusCode: 408,
+          isNetworkError: true,
+        });
+      }
+
+      const result = await this.getScanStatus(scanId);
+
+      if (result.status === 'success') return result;
+      if (result.status === 'failed') {
+        throw new ApiException(result.errorMessage || 'Quét thất bại, vui lòng thử lại', {
+          statusCode: 500,
+        });
+      }
+
+      // Vẫn `pending` -> backoff rồi poll tiếp (trần 8s/lần).
+      await this._sleepAbortable(delayMs, signal);
+      delayMs = Math.min(delayMs * 2, 8000);
+    }
+  }
+
+  /**
+   * `setTimeout` huỷ được bằng `AbortSignal`.
+   * @private
+   */
+  _sleepAbortable(ms, signal) {
+    if (signal?.aborted) return Promise.reject(new Error('Đã huỷ'));
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        signal?.removeEventListener('abort', onAbort);
+        resolve();
+      }, ms);
+      const onAbort = () => {
+        clearTimeout(timer);
+        reject(new Error('Đã huỷ'));
+      };
+      signal?.addEventListener('abort', onAbort, { once: true });
+    });
+  }
+
+  /**
+   * Xác nhận / chỉnh sửa kết quả scan -> thêm vào tủ lạnh
+   * (POST /fridge/scan/:scanId/confirm).
+   *
+   * BE tạo fridge items từ confirmed list và trả về `FridgeItemResponseDto[]`
+   * -> map qua `_toFridgeItem()` để UI dùng thẳng shape `FridgeItem` quen thuộc.
+   *
+   * @param {string} scanId
+   * @param {Array<{ingredientId?:number,name?:string,quantity:number,unit:string,expiresAt?:string,storageLocation?:string}>} items
+   * @returns {Promise<object[]>} items tủ lạnh đã tạo (shape `FridgeItem`)
+   */
+  async confirmScan(scanId, items = []) {
+    const payload = {
+      items: items.map((it) => {
+        const row = {
+          quantity: Number(it.quantity),
+          unit: it.unit,
+        };
+        if (it.ingredientId !== undefined && it.ingredientId !== null) {
+          row.ingredientId = Number(it.ingredientId);
+        }
+        if (it.name) row.name = it.name;
+        if (it.expiresAt) row.expiresAt = it.expiresAt;
+        if (it.storageLocation) row.storageLocation = it.storageLocation;
+        return row;
+      }),
+    };
+    const data = await this.client.post(`/fridge/scan/${scanId}/confirm`, payload);
+    const list = Array.isArray(data) ? data : [];
+    return list.map((dto) => this._toFridgeItem(dto)).filter(Boolean);
+  }
+
+  /**
+   * Lịch sử các lần scan (GET /fridge/scan/history).
+   * Giữ nguyên shape BE `ScanHistoryItemDto` — UI history dùng thẳng.
+   * @returns {Promise<Array<{id:string,scanType:string,status:string,detectedCount:number,confirmedCount:number|null,createdAt:string}>>}
+   */
+  async getScanHistory() {
+    const data = await this.client.get('/fridge/scan/history');
+    return Array.isArray(data) ? data : [];
   }
 }
 
