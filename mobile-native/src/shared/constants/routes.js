@@ -34,6 +34,7 @@ export const Routes = {
   ScanBarcode: 'ScanBarcode',
   CameraPreview: 'CameraPreview',
   ScanResultReview: 'ScanResultReview',
+  ScanHistory: 'ScanHistory',
 
   // Recipe
   RecipeDetail: 'RecipeDetail',

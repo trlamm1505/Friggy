@@ -545,6 +545,7 @@
     "analyzing": "AI đang nhận diện, vui lòng chờ...",
     "analyzingReceipt": "AI đang đọc hóa đơn, vui lòng chờ...",
     "barcodePhotoHint": "Chụp ảnh mã vạch trên sản phẩm để AI nhận diện",
+    "scanHistory": "Lịch sử quét",
     "save": "Lưu"
   },
   "recipe": {

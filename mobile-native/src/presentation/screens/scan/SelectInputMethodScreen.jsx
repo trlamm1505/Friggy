@@ -6,7 +6,7 @@ import { sp } from '../../utils/responsive';
 import { FontWeights, FontFamily } from '../../theme/typography';
 import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@react-navigation/native';
-import { Camera, Receipt, Barcode, Edit3, X } from 'lucide-react-native';
+import { Camera, Receipt, Barcode, Edit3, X, History } from 'lucide-react-native';
 
 export const SelectInputMethodScreen = () => {
   const { isDark } = useTheme();
@@ -45,6 +45,14 @@ export const SelectInputMethodScreen = () => {
       icon: Barcode,
       color: '#9C27B0',
       target: 'ScanBarcode',
+    },
+    {
+      id: 'scan_history',
+      label: t('scan.scanHistory'),
+      desc: 'Xem lại các lần quét trước',
+      icon: History,
+      color: '#607D8B',
+      target: 'ScanHistory',
     },
   ];
 
