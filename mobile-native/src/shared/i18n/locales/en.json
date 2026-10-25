@@ -541,6 +541,10 @@
     "quantity": "Quantity",
     "unit": "Unit",
     "expiryDate": "Expiry date",
+    "uploading": "Uploading photo...",
+    "analyzing": "AI is recognizing, please wait...",
+    "analyzingReceipt": "AI is reading the receipt, please wait...",
+    "barcodePhotoHint": "Take a photo of the product barcode for AI to recognize",
     "save": "Save"
   },
   "recipe": {

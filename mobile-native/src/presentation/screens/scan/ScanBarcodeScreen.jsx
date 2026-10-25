@@ -1,28 +1,69 @@
+/**
+ * ScanBarcodeScreen
+ *
+ * B2 — nối vào BE thật (thay `setTimeout` + Alert giả).
+ *
+ * ⚠️ BE hiện tại chỉ nhận FILE ẢNH (`POST /fridge/scan/barcode`, multipart
+ * `file`), KHÔNG có endpoint nhập chuỗi mã vạch (IScanService.js đã chốt).
+ * Nên:
+ *   - Nút quét -> mở camera/gallery CHỤP ẢNH mã vạch (giống 2 màn scan kia),
+ *     rồi dùng chung `useScanFlow()` để upload + poll.
+ *   - KHÔNG giữ nút "Bắt đầu quét" giả và khung ngắm tĩnh — thay bằng
+ *     preview ảnh đã chụp, đúng khả năng thật của BE.
+ *   - Torch toggle không còn tác dụng camera thật (không dùng CameraView)
+ *     nên bỏ, tránh nút bấm không làm gì.
+ *
+ * Bám Flutter `scan_barcode_screen.dart`: Flutter cũng `_pickImageFromGallery`
+ * rồi `scanBarcodeImage(path)`, và chụp camera bằng ImagePicker.
+ */
+
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Pressable, Alert } from 'react-native';
-import { useTheme } from '../../theme/ThemeContext';
+import { View, Text, StyleSheet, Pressable, Image, ActivityIndicator } from 'react-native';
 import { AppColors } from '../../theme/colors';
 import { sp } from '../../utils/responsive';
 import { FontWeights, FontFamily } from '../../theme/typography';
 import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@react-navigation/native';
-import { ChevronLeft, Barcode, Zap, ZapOff } from 'lucide-react-native';
+import { ChevronLeft, Barcode, Image as ImageIcon, RotateCw } from 'lucide-react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { CustomButton } from '../../components/common/CustomButton';
+import { ErrorState } from '../../components/common/ErrorState';
+import { useScanFlow } from '../../hooks/useScanFlow';
+import { Routes } from '../../../shared/constants/routes';
 
 export const ScanBarcodeScreen = () => {
   const { t } = useTranslation();
   const navigation = useNavigation();
-  const [scanning, setScanning] = useState(false);
-  const [torchOn, setTorchOn] = useState(false);
+  const [imageUri, setImageUri] = useState(null);
+  const { phase, error, startScan, clearError } = useScanFlow();
 
-  const handleStartScan = () => {
-    setScanning(true);
-    setTimeout(() => {
-      setScanning(false);
-      Alert.alert(t('scan.processing'), 'Đã quét được sản phẩm: Sữa tươi Vinamilk 1L', [
-        { text: 'OK', onPress: () => navigation.goBack() },
-      ]);
-    }, 2000);
+  const busy = phase === 'uploading' || phase === 'polling';
+
+  const pickImage = async (fromCamera) => {
+    if (busy) return;
+    const result = fromCamera
+      ? await ImagePicker.launchCameraAsync({ quality: 0.9, allowsEditing: true })
+      : await ImagePicker.launchImageLibraryAsync({ quality: 0.9, allowsEditing: true });
+    if (!result.canceled && result.assets && result.assets[0]) {
+      setImageUri(result.assets[0].uri);
+      clearError();
+    }
+  };
+
+  const handleProcess = async () => {
+    if (!imageUri || busy) return;
+    try {
+      const result = await startScan('barcode', imageUri);
+      // `null` = user rời màn giữa chừng -> bỏ qua, không điều hướng.
+      if (!result) return;
+      navigation.replace(Routes.ScanResultReview, {
+        scanId: result.scanId,
+        scanType: result.scanType,
+        items: result.items,
+      });
+    } catch {
+      // Lỗi đã lưu trong hook -> banner ErrorState bên dưới tự hiện.
+    }
   };
 
   return (
@@ -32,40 +73,66 @@ export const ScanBarcodeScreen = () => {
           <ChevronLeft color="#FFFFFF" size={24} />
         </Pressable>
         <Text style={styles.topTitle}>{t('scan.scanBarcode')}</Text>
-        <Pressable onPress={() => setTorchOn(!torchOn)} hitSlop={8} style={styles.iconBtn}>
-          {torchOn ? (
-            <Zap color="#FFD700" size={22} fill="#FFD700" />
-          ) : (
-            <ZapOff color="#FFFFFF" size={22} />
-          )}
-        </Pressable>
+        <View style={{ width: 36 }} />
       </View>
 
-      <View style={styles.scanArea}>
-        <View style={styles.frame}>
-          <View style={[styles.corner, styles.cornerTL]} />
-          <View style={[styles.corner, styles.cornerTR]} />
-          <View style={[styles.corner, styles.cornerBL]} />
-          <View style={[styles.corner, styles.cornerBR]} />
-          {scanning ? (
-            <View style={styles.scanLine} />
-          ) : (
-            <View style={styles.placeholder}>
-              <Barcode color="rgba(255,255,255,0.5)" size={64} />
-            </View>
-          )}
-        </View>
-        <Text style={styles.hint}>Đặt mã vạch vào khung hình chữ nhật</Text>
+      <View style={styles.previewArea}>
+        {imageUri ? (
+          <Image source={{ uri: imageUri }} style={styles.preview} resizeMode="cover" />
+        ) : (
+          <View style={styles.placeholder}>
+            <Barcode color="rgba(255,255,255,0.5)" size={64} />
+            <Text style={styles.hint}>{t('scan.barcodePhotoHint')}</Text>
+          </View>
+        )}
+        {busy ? (
+          <View style={styles.progressOverlay}>
+            <ActivityIndicator size="large" color="#FFFFFF" />
+            <Text style={styles.progressText}>
+              {phase === 'uploading' ? t('scan.uploading') : t('scan.analyzing')}
+            </Text>
+          </View>
+        ) : null}
       </View>
+
+      {error && !busy ? (
+        <ErrorState message={error?.message} onRetry={handleProcess} style={styles.errorBox} />
+      ) : null}
 
       <View style={styles.bottom}>
-        {scanning ? (
-          <View style={[styles.statusBadge, { backgroundColor: AppColors.primary }]}>
-            <Text style={styles.statusText}>Đang quét...</Text>
+        <View style={styles.actionRow}>
+          <Pressable onPress={() => pickImage(false)} disabled={busy} style={styles.actionBtn} hitSlop={8}>
+            <ImageIcon color="#FFFFFF" size={26} />
+            <Text style={styles.actionLabel}>{t('scan.fromGallery')}</Text>
+          </Pressable>
+
+          <Pressable onPress={() => pickImage(true)} disabled={busy} style={styles.captureBtn} hitSlop={8}>
+            <View style={styles.captureInner} />
+          </Pressable>
+
+          {imageUri ? (
+            <Pressable
+              onPress={() => {
+                if (busy) return;
+                setImageUri(null);
+                clearError();
+              }}
+              style={styles.actionBtn}
+              hitSlop={8}
+            >
+              <RotateCw color="#FFFFFF" size={26} />
+              <Text style={styles.actionLabel}>{t('scan.retake')}</Text>
+            </Pressable>
+          ) : (
+            <View style={styles.actionBtn} />
+          )}
+        </View>
+
+        {imageUri ? (
+          <View style={{ marginTop: 20 }}>
+            <CustomButton title={t('scan.usePhoto')} onPress={handleProcess} loading={busy} />
           </View>
-        ) : (
-          <CustomButton title="Bắt đầu quét" onPress={handleStartScan} />
-        )}
+        ) : null}
       </View>
     </View>
   );
@@ -96,81 +163,83 @@ const styles = StyleSheet.create({
     fontWeight: FontWeights.bold,
     fontSize: 16,
   },
-  scanArea: {
+  previewArea: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 32,
+    backgroundColor: '#1a1a1a',
+    margin: 16,
+    borderRadius: 16,
+    overflow: 'hidden',
   },
-  frame: {
+  preview: {
     width: '100%',
-    aspectRatio: 1.5,
-    position: 'relative',
-  },
-  corner: {
-    position: 'absolute',
-    width: 32,
-    height: 32,
-    borderColor: AppColors.primary,
-  },
-  cornerTL: {
-    top: 0,
-    left: 0,
-    borderTopWidth: 3,
-    borderLeftWidth: 3,
-  },
-  cornerTR: {
-    top: 0,
-    right: 0,
-    borderTopWidth: 3,
-    borderRightWidth: 3,
-  },
-  cornerBL: {
-    bottom: 0,
-    left: 0,
-    borderBottomWidth: 3,
-    borderLeftWidth: 3,
-  },
-  cornerBR: {
-    bottom: 0,
-    right: 0,
-    borderBottomWidth: 3,
-    borderRightWidth: 3,
-  },
-  scanLine: {
-    position: 'absolute',
-    left: 16,
-    right: 16,
-    top: '50%',
-    height: 2,
-    backgroundColor: AppColors.primary,
+    height: '100%',
   },
   placeholder: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingHorizontal: 32,
   },
   hint: {
     color: 'rgba(255,255,255,0.7)',
     fontFamily: FontFamily.medium,
     fontWeight: FontWeights.medium,
-    fontSize: 14,
-    marginTop: 32,
+    fontSize: sp(14),
+    marginTop: 16,
     textAlign: 'center',
+  },
+  progressOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+  },
+  progressText: {
+    color: '#FFFFFF',
+    fontFamily: FontFamily.semibold,
+    fontWeight: FontWeights.semibold,
+    fontSize: sp(14),
+    textAlign: 'center',
+    paddingHorizontal: 32,
+  },
+  errorBox: {
+    marginHorizontal: 16,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderRadius: 12,
   },
   bottom: {
     padding: 24,
     paddingBottom: 32,
   },
-  statusBadge: {
-    paddingVertical: 14,
-    borderRadius: 28,
+  actionRow: {
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-around',
   },
-  statusText: {
+  actionBtn: {
+    alignItems: 'center',
+    width: 80,
+  },
+  actionLabel: {
     color: '#FFFFFF',
-    fontFamily: FontFamily.bold,
-    fontWeight: FontWeights.bold,
-    fontSize: 15,
+    fontFamily: FontFamily.medium,
+    fontWeight: FontWeights.medium,
+    fontSize: 12,
+    marginTop: 6,
+  },
+  captureBtn: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  captureInner: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: AppColors.primary,
   },
 });

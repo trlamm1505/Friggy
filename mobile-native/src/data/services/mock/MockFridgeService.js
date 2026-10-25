@@ -9,6 +9,12 @@
  * Method mới chỉ có trong `RealFridgeService` sẽ KHÔNG đi qua proxy -> UI gọi
  * qua `useServices()` sẽ nhận `undefined` và vỡ. Xem DEV_B_ONBOARDING_PROMPT.md
  * mục 5.1 (ghi chú cuối).
+ *
+ * ⚠️ B2 — thêm 7 stub scan AI (`scanImage`, `scanReceipt`, `scanBarcode`,
+ * `getScanStatus`, `pollScanResult`, `confirmScan`, `getScanHistory`):
+ * scan là flow AI THẬT, mock KHÔNG bịa dữ liệu nhận diện giả — các stub này
+ * chỉ để `SafeService` proxy expose được method (cùng lý do B1), khi gọi ở
+ * chế độ mock sẽ ném lỗi rõ ràng để UI hiện "hãy bật dữ liệu thật".
  */
 
 import { IFridgeService } from '../../interfaces/IFridgeService';
@@ -225,6 +231,40 @@ export class MockFridgeService extends IFridgeService {
       spending: labels.map(() => 0),
       wasteItems: labels.map(() => 0),
     };
+  }
+
+  // ─── B2: stub scan AI — chỉ để SafeService proxy expose được ───
+  //
+  // Scan là flow AI THẬT (RabbitMQ + ai-service), mock KHÔNG bịa dữ liệu
+  // nhận diện giả. Các stub này ném lỗi rõ ràng để UI hiện "hãy bật dữ
+  // liệu thật" khi ai đó gọi ở chế độ mock, thay vì trả mảng rỗng gây
+  // hiểu nhầm là "AI không nhận ra gì".
+  async scanImage() {
+    throw new Error('Quét ảnh chưa hỗ trợ ở chế độ mock — hãy bật dữ liệu thật');
+  }
+
+  async scanReceipt() {
+    throw new Error('Quét hoá đơn chưa hỗ trợ ở chế độ mock — hãy bật dữ liệu thật');
+  }
+
+  async scanBarcode() {
+    throw new Error('Quét mã vạch chưa hỗ trợ ở chế độ mock — hãy bật dữ liệu thật');
+  }
+
+  async getScanStatus() {
+    throw new Error('Trạng thái scan chưa hỗ trợ ở chế độ mock — hãy bật dữ liệu thật');
+  }
+
+  async pollScanResult() {
+    throw new Error('Chờ kết quả scan chưa hỗ trợ ở chế độ mock — hãy bật dữ liệu thật');
+  }
+
+  async confirmScan() {
+    throw new Error('Xác nhận scan chưa hỗ trợ ở chế độ mock — hãy bật dữ liệu thật');
+  }
+
+  async getScanHistory() {
+    throw new Error('Lịch sử scan chưa hỗ trợ ở chế độ mock — hãy bật dữ liệu thật');
   }
 
   /**
