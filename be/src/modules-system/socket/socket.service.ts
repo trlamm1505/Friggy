@@ -1,9 +1,14 @@
 /**
- * SocketService — Trung tâm quản lý Socket.IO server
+ * SocketService — Socket.IO Gateway + Broadcast Service
  *
- * - Giữ reference đến Server instance (được set bởi FamilyGateway.afterInit)
- * - Chứa toàn bộ logic broadcast tới các room gia đình
- * - Được export ra dưới dạng @Global để FridgeService, MealPlanningService, etc. inject trực tiếp
+ * Namespace: /family
+ * Auth: JWT token qua handshake.auth.token hoặc Authorization header
+ * Room: family:{familyGroupId}
+ *
+ * Kết hợp @WebSocketGateway + @Injectable trong 1 class:
+ *   - Xử lý connection lifecycle (auth, join room)
+ *   - Chứa toàn bộ emit methods
+ *   - Được export @Global để FridgeService, FamilyService, MealPlanningService inject
  *
  * Events phát ra (server → clients trong room):
  *   fridge:item_added       — Thêm thực phẩm mới
@@ -13,60 +18,107 @@
  *   meal:slot_completed     — Đánh dấu nấu xong, nguyên liệu đã trừ kho
  *   shopping:item_toggled   — Tick đã mua 1 mặt hàng trong giỏ
  */
+import {
+  OnGatewayConnection,
+  OnGatewayDisconnect,
+  OnGatewayInit,
+  WebSocketGateway,
+  WebSocketServer,
+} from '@nestjs/websockets';
 import { Injectable, Logger } from '@nestjs/common';
-import { Server } from 'socket.io';
+import { JwtService } from '@nestjs/jwt';
+import { Server, Socket } from 'socket.io';
+import { PrismaService } from 'src/modules-system/prisma/prisma.service';
 
 @Injectable()
-export class SocketService {
+@WebSocketGateway({
+  namespace: '/family',
+  cors: { origin: '*' },
+})
+export class SocketService
+  implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
+{
+  @WebSocketServer()
+  server!: Server;
+
   private readonly logger = new Logger(SocketService.name);
-  private server: Server | null = null;
+
+  constructor(
+    private readonly jwtService: JwtService,
+    private readonly prisma: PrismaService,
+  ) {}
 
   // ─────────────────────────────────────────────────────────
-  // Server lifecycle
+  // Lifecycle
   // ─────────────────────────────────────────────────────────
 
-  /** Được gọi từ FamilyGateway.afterInit để đăng ký server instance */
-  setServer(server: Server) {
-    this.server = server;
-    this.logger.log('[SocketService] Server instance registered');
+  afterInit() {
+    this.logger.log('[SocketService] Socket.IO namespace /family initialized');
   }
 
-  /** Kiểm tra server đã sẵn sàng chưa (dùng để guard emit) */
-  isReady(): boolean {
-    return this.server !== null;
+  async handleConnection(client: Socket) {
+    try {
+      const token =
+        (client.handshake.auth?.token as string) ||
+        (client.handshake.headers?.authorization as string)?.replace('Bearer ', '');
+
+      if (!token) {
+        client.disconnect();
+        return;
+      }
+
+      const payload = this.jwtService.verify<{ sub: string }>(token);
+      const userId = payload.sub;
+
+      const familyGroupId = await this.resolveFamilyGroupId(userId);
+
+      if (!familyGroupId) {
+        client.data.userId = userId;
+        this.logger.log(`[SocketService] Connected without family: userId=${userId}`);
+        return;
+      }
+
+      const room = `family:${familyGroupId}`;
+      await client.join(room);
+      client.data.userId = userId;
+      client.data.familyGroupId = familyGroupId;
+
+      this.logger.log(
+        `[SocketService] Connected: userId=${userId}, room=${room}, socketId=${client.id}`,
+      );
+    } catch (err) {
+      this.logger.warn(`[SocketService] Auth failed: ${(err as Error).message}`);
+      client.disconnect();
+    }
+  }
+
+  handleDisconnect(client: Socket) {
+    this.logger.log(
+      `[SocketService] Disconnected: userId=${client.data?.userId}, socketId=${client.id}`,
+    );
   }
 
   // ─────────────────────────────────────────────────────────
   // Core emit
   // ─────────────────────────────────────────────────────────
 
-  /** Phát sự kiện đến tất cả client trong room của một family */
   emitToFamily(familyGroupId: string, event: string, data: Record<string, unknown>) {
-    if (!this.server) {
-      this.logger.warn(`[SocketService] Server not ready, skipped event: ${event}`);
-      return;
-    }
-    this.server.of('/family').to(`family:${familyGroupId}`).emit(event, data);
+    if (!this.server) return;
+    this.server.to(`family:${familyGroupId}`).emit(event, data);
   }
 
   // ─────────────────────────────────────────────────────────
   // Domain events — Fridge
   // ─────────────────────────────────────────────────────────
 
-  /** Thực phẩm mới được thêm vào tủ lạnh gia đình */
   emitFridgeItemAdded(
     familyGroupId: string,
     item: Record<string, unknown>,
     addedByName: string,
   ) {
-    this.emitToFamily(familyGroupId, 'fridge:item_added', {
-      item,
-      addedByName,
-      ts: Date.now(),
-    });
+    this.emitToFamily(familyGroupId, 'fridge:item_added', { item, addedByName, ts: Date.now() });
   }
 
-  /** Thực phẩm trong tủ lạnh được cập nhật (kèm version mới để FE sync Optimistic UI) */
   emitFridgeItemUpdated(
     familyGroupId: string,
     itemId: string,
@@ -75,15 +127,10 @@ export class SocketService {
     updatedByName: string,
   ) {
     this.emitToFamily(familyGroupId, 'fridge:item_updated', {
-      itemId,
-      changes,
-      version,
-      updatedByName,
-      ts: Date.now(),
+      itemId, changes, version, updatedByName, ts: Date.now(),
     });
   }
 
-  /** Thực phẩm bị xóa hoặc dùng hết */
   emitFridgeItemRemoved(
     familyGroupId: string,
     itemId: string,
@@ -91,23 +138,13 @@ export class SocketService {
     removedByName: string,
   ) {
     this.emitToFamily(familyGroupId, 'fridge:item_removed', {
-      itemId,
-      ingredientName,
-      removedByName,
-      ts: Date.now(),
+      itemId, ingredientName, removedByName, ts: Date.now(),
     });
   }
 
-  /** Thành viên mới tham gia & merge đồ cá nhân vào tủ gia đình */
-  emitMemberJoined(
-    familyGroupId: string,
-    memberEmail: string,
-    mergedItemCount: number,
-  ) {
+  emitMemberJoined(familyGroupId: string, memberEmail: string, mergedItemCount: number) {
     this.emitToFamily(familyGroupId, 'fridge:member_joined', {
-      memberEmail,
-      mergedItemCount,
-      ts: Date.now(),
+      memberEmail, mergedItemCount, ts: Date.now(),
     });
   }
 
@@ -115,7 +152,6 @@ export class SocketService {
   // Domain events — Meal Planning
   // ─────────────────────────────────────────────────────────
 
-  /** Một bữa ăn hoàn thành — nguyên liệu đã trừ kho FIFO */
   emitMealSlotCompleted(
     familyGroupId: string,
     slotId: string,
@@ -124,11 +160,7 @@ export class SocketService {
     completedByName: string,
   ) {
     this.emitToFamily(familyGroupId, 'meal:slot_completed', {
-      slotId,
-      recipeTitle,
-      consumedIngredients,
-      completedByName,
-      ts: Date.now(),
+      slotId, recipeTitle, consumedIngredients, completedByName, ts: Date.now(),
     });
   }
 
@@ -136,7 +168,6 @@ export class SocketService {
   // Domain events — Shopping List
   // ─────────────────────────────────────────────────────────
 
-  /** Một item trong danh sách mua sắm được tick / bỏ tick */
   emitShoppingItemToggled(
     familyGroupId: string,
     itemId: number,
@@ -144,10 +175,25 @@ export class SocketService {
     toggledByName: string,
   ) {
     this.emitToFamily(familyGroupId, 'shopping:item_toggled', {
-      itemId,
-      isPurchased,
-      toggledByName,
-      ts: Date.now(),
+      itemId, isPurchased, toggledByName, ts: Date.now(),
     });
+  }
+
+  // ─────────────────────────────────────────────────────────
+  // Private helpers
+  // ─────────────────────────────────────────────────────────
+
+  private async resolveFamilyGroupId(userId: string): Promise<string | null> {
+    const ownedGroup = await this.prisma.familyGroup.findUnique({
+      where: { ownerId: userId },
+      select: { id: true, status: true },
+    });
+    if (ownedGroup?.status === 'active') return ownedGroup.id;
+
+    const membership = await this.prisma.familyMember.findFirst({
+      where: { userId, status: 'active' },
+      select: { familyGroupId: true },
+    });
+    return membership?.familyGroupId ?? null;
   }
 }
