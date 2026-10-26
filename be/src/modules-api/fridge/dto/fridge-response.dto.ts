@@ -15,7 +15,12 @@ export class FridgeItemResponseDto {
   @ApiProperty({ description: 'Số ngày còn đến hạn (âm = đã quá hạn)' })
   daysUntilExpiry!: number | null;
   @ApiProperty() createdAt!: string;
+  @ApiPropertyOptional({ description: 'ID nhóm gia đình — null nếu là item cá nhân' })
+  familyGroupId!: string | null;
+  @ApiProperty({ description: 'Optimistic locking version — dùng khi PATCH để tránh xung đột' })
+  version!: number;
 }
+
 
 export class FridgeStatsResponseDto {
   @ApiProperty({ example: 850000, description: 'Tổng chi tiêu tháng hiện tại (VND)' })

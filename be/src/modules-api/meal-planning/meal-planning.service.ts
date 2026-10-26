@@ -79,11 +79,19 @@ export class MealPlanningService {
   // GET /plans — Danh sách kế hoạch tuần
   // ─────────────────────────────────────────────────────────
   async getPlans(userId: string) {
+    const familyGroupId = await this.resolveFamilyGroupId(userId);
+
+    const where: any = familyGroupId
+      ? { familyGroupId, deletedAt: null }
+      : { userId, familyGroupId: null, deletedAt: null };
+
     const plans = await this.prisma.weeklyPlan.findMany({
-      where: { userId, deletedAt: null },
+      where,
       orderBy: { weekStartDate: 'desc' },
       select: {
         id: true,
+        userId: true,
+        familyGroupId: true,
         weekStartDate: true,
         totalBudget: true,
         actualCost: true,
@@ -99,6 +107,7 @@ export class MealPlanningService {
       createdAt: p.createdAt.toISOString(),
     }));
   }
+
 
   // ─────────────────────────────────────────────────────────
   // GET /plans/:id — Chi tiết kế hoạch tuần (kèm daily + slots)
@@ -709,6 +718,7 @@ export class MealPlanningService {
     });
     return membership?.familyGroupId ?? null;
   }
+
 
   // ─────────────────────────────────────────────────────────
   // Private: Build Map<ingredientId, { quantity, baseUnit }>

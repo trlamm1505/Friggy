@@ -300,6 +300,7 @@ Khi recipeId=null (tự nghĩ): BẮT BUỘC điền ingredients và steps đầ
     if (saveToDb && slots.length > 0) {
       const saveResult = await this.mealPlanTools.saveWeeklyPlan({
         userId: context.userId,
+        familyGroupId: context.familyGroupId ?? null,
         weekStartDate: context.weekStartDate,
         slots: slots
           .filter((s) => s.recipeId !== null) // Chỉ lưu slot có công thức

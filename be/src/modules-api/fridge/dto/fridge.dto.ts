@@ -71,7 +71,15 @@ export class UpdateFridgeItemDto {
   @ApiPropertyOptional({ enum: StorageLocationEnum })
   @IsOptional() @IsEnum(StorageLocationEnum)
   storageLocation?: StorageLocationEnum;
+
+  @ApiProperty({
+    example: 1,
+    description: 'Optimistic locking — version hiện tại của item (lấy từ GET /fridge). Nếu không khớp sẽ trả 409 Conflict.',
+  })
+  @IsInt() @Min(0) @Type(() => Number)
+  version!: number;
 }
+
 
 // ─── Query Params ─────────────────────────────────────────────────────────────
 

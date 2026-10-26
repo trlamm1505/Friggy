@@ -3397,6 +3397,7 @@ export type UserAllergyScalarFieldEnum = (typeof UserAllergyScalarFieldEnum)[key
 export const WeeklyPlanScalarFieldEnum = {
   id: 'id',
   userId: 'userId',
+  familyGroupId: 'familyGroupId',
   weekStartDate: 'weekStartDate',
   totalBudget: 'totalBudget',
   actualCost: 'actualCost',
@@ -3965,6 +3966,7 @@ export type UserAllergyOrderByRelevanceFieldEnum = (typeof UserAllergyOrderByRel
 export const WeeklyPlanOrderByRelevanceFieldEnum = {
   id: 'id',
   userId: 'userId',
+  familyGroupId: 'familyGroupId',
   aiSessionId: 'aiSessionId'
 } as const
 

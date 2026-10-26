@@ -19,6 +19,7 @@ import { FridgeTools } from '../../tools/fridge.tools';
 // ─────────────────────────────────────────────────────────
 export interface SupervisorContext {
   userId: string;
+  familyGroupId: string | null; // null = cá nhân, có giá trị = thuộc gia đình
   weekStartDate: string; // ISO date, ví dụ: '2026-09-15'
   budget: number; // Ngân sách cả tuần (VND)
   userPreferences: {
@@ -64,6 +65,7 @@ export class SupervisorAgent {
 
     const context: SupervisorContext = {
       userId,
+      familyGroupId: null, // sẽ được resolve bởi caller (meal-plan-graph)
       weekStartDate,
       budget,
       userPreferences: {

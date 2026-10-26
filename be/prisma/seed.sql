@@ -61,7 +61,7 @@ INSERT IGNORE INTO `users`
 VALUES
   ('00000000-0000-0000-0000-000000000002',
    'user@friggy.vn',
-   '$2b$10$96ezLLhHcO29v9tjkmdrMeEjEj8QzaaMSTWL.hwrKm9L3pVYkDMW.',
+   '$2b$10$PN2pRKa8gnM3B7smi1VCseyNMWy3KxomJLgApDXEeX5MomJ7X4L2q',
    'email', 'active', 2, 1, 'Test User', NOW(), NOW());
 
 INSERT IGNORE INTO `user_profiles`

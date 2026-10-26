@@ -660,6 +660,8 @@ export class FridgeService {
       consumedAt: item.consumedAt?.toISOString() ?? null,
       daysUntilExpiry,
       createdAt: item.createdAt.toISOString(),
+      familyGroupId: item.familyGroupId ?? null,
+      version: item.version,
     };
   }
 }

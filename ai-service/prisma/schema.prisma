@@ -326,6 +326,7 @@ model UserAllergy {
 model WeeklyPlan {
   id             String            @id @default(uuid()) @db.Char(36)
   userId         String            @db.Char(36)
+  familyGroupId  String?           @db.Char(36)     // null = Cá nhân | có giá trị = Thực đơn gia đình
   weekStartDate  DateTime          @db.Date
   totalBudget    Int
   actualCost     Int?
@@ -339,12 +340,15 @@ model WeeklyPlan {
   dailyPlans     DailyPlan[]
   shoppingLists  ShoppingList[]
   aiSession      ChatSession?      @relation(fields: [aiSessionId], references: [id])
+  familyGroup    FamilyGroup?      @relation("FamilyWeeklyPlans", fields: [familyGroupId], references: [id])
   user           User              @relation(fields: [userId], references: [id])
 
   @@index([userId, weekStartDate])
+  @@index([familyGroupId, weekStartDate])
   @@index([aiSessionId], map: "weekly_plans_aiSessionId_fkey")
   @@map("weekly_plans")
 }
+
 
 model DailyPlan {
   id           String     @id @default(uuid()) @db.Char(36)
@@ -922,8 +926,9 @@ model FamilyGroup {
   updatedAt DateTime       @updatedAt
   deletedAt DateTime?
 
-  owner     User           @relation("FamilyOwner", fields: [ownerId], references: [id])
-  members   FamilyMember[]
+  owner       User           @relation("FamilyOwner", fields: [ownerId], references: [id])
+  members     FamilyMember[]
+  weeklyPlans WeeklyPlan[]   @relation("FamilyWeeklyPlans")
 
   @@index([status])
   @@map("family_groups")

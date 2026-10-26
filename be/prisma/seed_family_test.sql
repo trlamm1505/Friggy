@@ -35,7 +35,7 @@ INSERT IGNORE INTO `users`
 VALUES (
   'fam00001-0000-0000-0000-000000000001',
   'family.owner@test.vn',
-  '$2b$10$96ezLLhHcO29v9tjkmdrMeEjEj8QzaaMSTWL.hwrKm9L3pVYkDMW.',
+  '$2b$10$PN2pRKa8gnM3B7smi1VCseyNMWy3KxomJLgApDXEeX5MomJ7X4L2q',
   'email', 'active', 2, 1, 'Trần Văn Tuấn', NOW(), NOW()
 );
 INSERT IGNORE INTO `user_profiles` (`id`, `userId`, `displayName`, `gender`, `updatedAt`) VALUES
@@ -52,7 +52,7 @@ INSERT IGNORE INTO `users`
 VALUES (
   'fam00002-0000-0000-0000-000000000002',
   'family.member1@test.vn',
-  '$2b$10$96ezLLhHcO29v9tjkmdrMeEjEj8QzaaMSTWL.hwrKm9L3pVYkDMW.',
+  '$2b$10$PN2pRKa8gnM3B7smi1VCseyNMWy3KxomJLgApDXEeX5MomJ7X4L2q',
   'email', 'active', 2, 1, 'Lê Thị Hoa', NOW(), NOW()
 );
 INSERT IGNORE INTO `user_profiles` (`id`, `userId`, `displayName`, `gender`, `updatedAt`) VALUES
@@ -64,7 +64,7 @@ INSERT IGNORE INTO `users`
 VALUES (
   'fam00003-0000-0000-0000-000000000003',
   'family.member2@test.vn',
-  '$2b$10$96ezLLhHcO29v9tjkmdrMeEjEj8QzaaMSTWL.hwrKm9L3pVYkDMW.',
+  '$2b$10$PN2pRKa8gnM3B7smi1VCseyNMWy3KxomJLgApDXEeX5MomJ7X4L2q',
   'email', 'active', 2, 1, 'Phạm Anh Khoa', NOW(), NOW()
 );
 INSERT IGNORE INTO `user_profiles` (`id`, `userId`, `displayName`, `gender`, `updatedAt`) VALUES
