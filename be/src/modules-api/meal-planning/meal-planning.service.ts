@@ -224,8 +224,10 @@ export class MealPlanningService {
 
     // Idempotent guard: chỉ trừ nguyên liệu lần đầu tiên đánh dấu hoàn thành
     // slot.completedAt === null = chưa nấu, dto.completed === true = mới tick xong
-    if (dto.completed === true && !slot.completedAt && slot.recipeId) {
-      await this.consumeIngredientsForSlot(userId, slotId, slot.recipeId, slot.servings);
+    const targetRecipeId = dto.recipeId !== undefined ? dto.recipeId : slot.recipeId;
+    const targetServings = dto.servings !== undefined ? dto.servings : slot.servings;
+    if (dto.completed === true && !slot.completedAt && targetRecipeId) {
+      await this.consumeIngredientsForSlot(userId, slotId, targetRecipeId, targetServings);
     }
 
     return updated;
@@ -662,7 +664,7 @@ export class MealPlanningService {
 
   // ─────────────────────────────────────────────────────────
   // Private: Build Map<ingredientId, { quantity, baseUnit }>
-  // Tổng hợp FridgeItem còn hạn và chưa tiêu thụ
+  // Tổng hợp FridgeItem còn trong tủ và chưa tiêu thụ
   // ─────────────────────────────────────────────────────────
   private async buildFridgeMap(
     userId: string,
@@ -672,7 +674,7 @@ export class MealPlanningService {
         userId,
         deletedAt: null,
         consumedAt: null,
-        OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+        quantity: { gt: 0 },
       },
       select: { ingredientId: true, quantity: true, unit: true },
     });
@@ -702,24 +704,29 @@ export class MealPlanningService {
     const recipe = await this.prisma.recipe.findUnique({
       where: { id: recipeId },
       include: {
-        ingredients: { where: { deletedAt: null, isOptional: false } },
+        ingredients: { where: { deletedAt: null } },
       },
     });
     if (!recipe) return;
 
-    const scale = servings / (recipe.servings || 1);
+    const baseServings = Math.max(1, recipe.servings || 1);
+    const actualServings = Math.max(1, servings || baseServings);
+    const scale = actualServings / baseServings;
 
     for (const ri of recipe.ingredients) {
       const scaledQty = ri.quantity * scale;
       const { quantity: neededNorm, baseUnit: neededUnit } = normalizeToBaseUnit(scaledQty, ri.unit);
+      if (neededNorm <= 0) continue;
 
+      // Lấy tất cả items chưa tiêu thụ của user có ingredientId này
+      // Sắp xếp FIFO: ưu tiên item hết hạn trước (kể cả cận date / hôm nay), sau đó đến createdAt
       const fridgeItems = await this.prisma.fridgeItem.findMany({
         where: {
           userId,
           ingredientId: ri.ingredientId,
           deletedAt: null,
           consumedAt: null,
-          OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+          quantity: { gt: 0 },
         },
         orderBy: [{ expiresAt: 'asc' }, { createdAt: 'asc' }],
       });
@@ -730,35 +737,53 @@ export class MealPlanningService {
         if (remaining <= 0) break;
 
         const { quantity: availNorm, baseUnit: availUnit } = normalizeToBaseUnit(
-          fridgeItem.quantity, fridgeItem.unit,
+          fridgeItem.quantity,
+          fridgeItem.unit,
         );
         if (!canCompare(availUnit, neededUnit)) continue;
 
         if (availNorm <= remaining) {
+          // Tiêu thụ hết cả item
           await this.prisma.fridgeItem.update({
             where: { id: fridgeItem.id },
-            data: { consumedAt: new Date() },
+            data: {
+              consumedAt: new Date(),
+              quantity: 0,
+            },
           });
           remaining -= availNorm;
         } else {
+          // Tiêu thụ một phần item
           const leftNorm = availNorm - remaining;
           const { quantity: factor } = normalizeToBaseUnit(1, fridgeItem.unit);
           const leftOriginal = factor > 0 ? leftNorm / factor : leftNorm;
-          await this.prisma.fridgeItem.update({
-            where: { id: fridgeItem.id },
-            data: { quantity: Math.max(0, Math.round(leftOriginal * 100) / 100) },
-          });
+          const roundedLeft = Math.round(leftOriginal * 100) / 100;
+
+          if (roundedLeft <= 0) {
+            await this.prisma.fridgeItem.update({
+              where: { id: fridgeItem.id },
+              data: {
+                consumedAt: new Date(),
+                quantity: 0,
+              },
+            });
+          } else {
+            await this.prisma.fridgeItem.update({
+              where: { id: fridgeItem.id },
+              data: { quantity: roundedLeft },
+            });
+          }
           remaining = 0;
         }
       }
 
-      if (remaining > 0) {
+      if (remaining > 0 && !ri.isOptional) {
         this.logger.warn(
           `[MealPlanning] Tủ lạnh thiếu ${remaining.toFixed(1)}${neededUnit} ingredientId=${ri.ingredientId} khi nấu slotId=${slotId}`,
         );
       }
     }
 
-    this.logger.log(`[MealPlanning] Đã trừ ng.liệu (FIFO) cho slotId=${slotId}`);
+    this.logger.log(`[MealPlanning] Đã trừ ng.liệu (FIFO) cho slotId=${slotId} recipeId=${recipeId}`);
   }
 }

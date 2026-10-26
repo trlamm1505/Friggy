@@ -48,11 +48,52 @@ const VOLUME_TO_ML: Record<string, number> = {
   cl: 10,
   tbsp: 15,
   tablespoon: 15,
+  'muỗng canh': 15,
+  'thìa canh': 15,
   tsp: 5,
   teaspoon: 5,
+  'muỗng cà phê': 5,
+  'thìa cà phê': 5,
+  'muỗng cafe': 5,
+  'thìa cafe': 5,
   cup: 240,
   'chén': 200,
   'bát': 250,
+};
+
+/** Alias cho các đơn vị đếm tiếng Việt thông dụng */
+const COUNTABLE_UNIT_ALIASES: Record<string, string> = {
+  'trái': 'quả',
+  'trai': 'quả',
+  'qua': 'quả',
+  'muỗng': 'muỗng',
+  'thìa': 'muỗng',
+  'thia': 'muỗng',
+  'muong': 'muỗng',
+  'củ': 'củ',
+  'cu': 'củ',
+  'tép': 'tép',
+  'tep': 'tép',
+  'nhánh': 'nhánh',
+  'nhanh': 'nhánh',
+  'miếng': 'miếng',
+  'mieng': 'miếng',
+  'lát': 'lát',
+  'lat': 'lát',
+  'bó': 'bó',
+  'bo': 'bó',
+  'cây': 'cây',
+  'cay': 'cây',
+  'cọng': 'cọng',
+  'cong': 'cọng',
+  'gói': 'gói',
+  'goi': 'gói',
+  'hộp': 'hộp',
+  'hop': 'hộp',
+  'lon': 'lon',
+  'chai': 'chai',
+  'bịch': 'bịch',
+  'bich': 'bịch',
 };
 
 export interface NormalizedUnit {
@@ -73,7 +114,7 @@ export interface NormalizedUnit {
  *   normalizeToBaseUnit(2, 'quả')  → { quantity: 2,    baseUnit: 'quả' }
  */
 export function normalizeToBaseUnit(quantity: number, unit: string): NormalizedUnit {
-  const u = unit.trim().toLowerCase();
+  const u = (unit || '').trim().toLowerCase();
 
   if (WEIGHT_TO_GRAM[u] !== undefined) {
     return { quantity: quantity * WEIGHT_TO_GRAM[u], baseUnit: 'g' };
@@ -81,6 +122,10 @@ export function normalizeToBaseUnit(quantity: number, unit: string): NormalizedU
 
   if (VOLUME_TO_ML[u] !== undefined) {
     return { quantity: quantity * VOLUME_TO_ML[u], baseUnit: 'ml' };
+  }
+
+  if (COUNTABLE_UNIT_ALIASES[u] !== undefined) {
+    return { quantity, baseUnit: COUNTABLE_UNIT_ALIASES[u] };
   }
 
   // Không convert được (quả, củ, nhánh, lá, miếng, ...)
@@ -92,5 +137,6 @@ export function normalizeToBaseUnit(quantity: number, unit: string): NormalizedU
  * Chỉ compare được nếu khớp chính xác (g vs g, ml vs ml, quả vs quả)
  */
 export function canCompare(baseUnit1: string, baseUnit2: string): boolean {
-  return baseUnit1 === baseUnit2;
+  if (!baseUnit1 || !baseUnit2) return false;
+  return baseUnit1.toLowerCase().trim() === baseUnit2.toLowerCase().trim();
 }
