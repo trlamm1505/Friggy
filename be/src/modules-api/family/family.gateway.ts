@@ -38,7 +38,7 @@ export class FamilyGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
 {
   @WebSocketServer()
-  server: Server;
+  server!: Server;
 
   private readonly logger = new Logger(FamilyGateway.name);
 
