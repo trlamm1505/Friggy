@@ -24,7 +24,7 @@ import { MEAL_PLAN_ROUTING_KEY, AI_SLOT_REGENERATE_ROUTING_KEY, AI_EXPIRING_MEAL
 import { RabbitMqPublisherService } from 'src/modules-system/rabbit-mq/rabbit-mq-publisher.service';
 import { normalizeToBaseUnit, canCompare } from 'src/common/utils/unit.util';
 import { estimateExpiryDate } from 'src/common/utils/expiry-estimator.util';
-import { FamilyGateway } from '../family/family.gateway';
+import { SocketService } from 'src/modules-system/socket/socket.service';
 import type {
   GenerateMealPlanDto,
   UpdateMealPlanDto,
@@ -41,7 +41,7 @@ export class MealPlanningService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly rabbitMq: RabbitMqPublisherService,
-    @Optional() private readonly familyGateway: FamilyGateway,
+    @Optional() private readonly socketService: SocketService,
   ) { }
 
   // ─────────────────────────────────────────────────────────
@@ -242,7 +242,7 @@ export class MealPlanningService {
       );
 
       // Broadcast Socket.IO event nếu thuộc gia đình
-      if (familyGroupId && this.familyGateway) {
+      if (familyGroupId && this.socketService) {
         const userProfile = await this.prisma.userProfile.findUnique({
           where: { userId },
           select: { displayName: true },
@@ -251,7 +251,7 @@ export class MealPlanningService {
           where: { id: targetRecipeId },
           select: { title: true },
         });
-        this.familyGateway.emitMealSlotCompleted(
+        this.socketService.emitMealSlotCompleted(
           familyGroupId,
           slotId,
           recipe?.title ?? 'Bữa ăn',

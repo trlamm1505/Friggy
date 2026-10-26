@@ -1,17 +1,18 @@
 /**
  * SocketModule — Module hệ thống WebSocket (Socket.IO)
  *
- * Không phải @Global vì không export service nào.
- * Chỉ dùng để group các Gateway vào một chỗ nếu cần mở rộng sau này.
+ * @Global: SocketService tự động available trong toàn bộ app,
+ * các module khác không cần import SocketModule thủ công.
  *
- * Hiện tại FamilyGateway được đăng ký trong FamilyModule.
- * SocketIoAdapter được gắn vào app trong main.ts.
- *
- * Cách dùng trong main.ts:
- *   import { SocketIoAdapter } from './modules-system/socket/socket-io.adapter';
- *   app.useWebSocketAdapter(new SocketIoAdapter(app));
+ * FamilyGateway.afterInit() sẽ gọi socketService.setServer(this.server)
+ * để đăng ký Server instance vào SocketService.
  */
-import { Module } from '@nestjs/common';
+import { Global, Module } from '@nestjs/common';
+import { SocketService } from './socket.service';
 
-@Module({})
+@Global()
+@Module({
+  providers: [SocketService],
+  exports: [SocketService],
+})
 export class SocketModule {}

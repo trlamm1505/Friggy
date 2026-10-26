@@ -23,7 +23,7 @@ import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService } from 'src/modules-system/prisma/prisma.service';
 import { v4 as uuid } from 'uuid';
 import type { InviteMemberDto, FamilyGroupDto, FamilyRoleDto } from './dto/family.dto';
-import { FamilyGateway } from './family.gateway';
+import { SocketService } from 'src/modules-system/socket/socket.service';
 
 const MAX_MEMBERS = 5;
 const INVITE_EXPIRE_HOURS = 48;
@@ -35,7 +35,7 @@ export class FamilyService {
   constructor(
     private readonly prisma: PrismaService,
     @Inject('EMAIL_SERVICE') private readonly emailClient: ClientProxy,
-    @Optional() private readonly familyGateway: FamilyGateway,
+    @Optional() private readonly socketService: SocketService,
   ) {}
 
   // ─────────────────────────────────────────────────────────
@@ -251,8 +251,8 @@ export class FamilyService {
     );
 
     // Broadcast Socket.IO event đến tất cả thành viên trong gia đình
-    if (this.familyGateway) {
-      this.familyGateway.emitMemberJoined(
+    if (this.socketService) {
+      this.socketService.emitMemberJoined(
         member.familyGroupId,
         member.invitedEmail,
         mergedItemCount,

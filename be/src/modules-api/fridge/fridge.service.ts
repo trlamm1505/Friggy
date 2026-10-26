@@ -20,7 +20,7 @@ import type {
   FridgeStatsChartResponseDto,
   ScanStatusResponseDto,
 } from './dto/fridge-response.dto';
-import { FamilyGateway } from '../family/family.gateway';
+import { SocketService } from 'src/modules-system/socket/socket.service';
 
 @Injectable()
 export class FridgeService {
@@ -29,7 +29,7 @@ export class FridgeService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly rabbitMq: RabbitMqPublisherService,
-    @Optional() private readonly familyGateway: FamilyGateway,
+    @Optional() private readonly socketService: SocketService,
   ) {}
 
   // ─────────────────────────────────────────────────────────
@@ -210,9 +210,9 @@ export class FridgeService {
     });
 
     // Broadcast event Socket.IO nếu là family
-    if (familyGroupId && this.familyGateway) {
+    if (familyGroupId && this.socketService) {
       const addedByName = await this.getUserDisplayName(userId);
-      this.familyGateway.emitFridgeItemAdded(
+      this.socketService.emitFridgeItemAdded(
         familyGroupId,
         this.mapFridgeItem(item) as any,
         addedByName,
@@ -266,9 +266,9 @@ export class FridgeService {
     });
 
     // Broadcast event Socket.IO nếu là family
-    if (familyGroupId && this.familyGateway) {
+    if (familyGroupId && this.socketService) {
       const updatedByName = await this.getUserDisplayName(userId);
-      this.familyGateway.emitFridgeItemUpdated(
+      this.socketService.emitFridgeItemUpdated(
         familyGroupId,
         itemId,
         changes,
@@ -300,9 +300,9 @@ export class FridgeService {
     });
 
     // Broadcast event Socket.IO nếu là family
-    if (familyGroupId && this.familyGateway) {
+    if (familyGroupId && this.socketService) {
       const removedByName = await this.getUserDisplayName(userId);
-      this.familyGateway.emitFridgeItemRemoved(
+      this.socketService.emitFridgeItemRemoved(
         familyGroupId,
         itemId,
         (item as any).ingredient?.name ?? 'Không rõ',
