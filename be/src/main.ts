@@ -9,9 +9,14 @@ import {
   SWAGGER_PATH,
   APP_URL,
 } from './common/constants/app.constant';
+import { SocketIoAdapter } from './modules-system/socket/socket-io.adapter';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
+
+  // ── Socket.IO Adapter (CORS + transports + ping config) ──────────────────
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  app.useWebSocketAdapter(new SocketIoAdapter() as any);
 
   // ── Global API prefix & versioning ─────────────────────────────────────
   app.setGlobalPrefix('api');
