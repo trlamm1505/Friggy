@@ -5,13 +5,13 @@
  * SocketService vừa là @WebSocketGateway vừa là @Injectable service.
  */
 import { Global, Module } from '@nestjs/common';
-import { JwtModule } from '@nestjs/jwt';
+import { TokensModule } from 'src/modules-system/tokens/tokens.module';
 import { SocketService } from './socket.service';
 
 @Global()
 @Module({
   imports: [
-    JwtModule.register({}), // JwtService để verify token khi connect
+    TokensModule, // TokensService.verifyAccessToken() để xác thực JWT khi connect
   ],
   providers: [SocketService],
   exports: [SocketService],

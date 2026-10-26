@@ -26,9 +26,9 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Injectable, Logger } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
 import { Server, Socket } from 'socket.io';
 import { PrismaService } from 'src/modules-system/prisma/prisma.service';
+import { TokensService } from 'src/modules-system/tokens/tokens.service';
 
 @Injectable()
 @WebSocketGateway({
@@ -44,7 +44,7 @@ export class SocketService
   private readonly logger = new Logger(SocketService.name);
 
   constructor(
-    private readonly jwtService: JwtService,
+    private readonly tokensService: TokensService,
     private readonly prisma: PrismaService,
   ) {}
 
@@ -67,7 +67,11 @@ export class SocketService
         return;
       }
 
-      const payload = this.jwtService.verify<{ sub: string }>(token);
+      const payload = this.tokensService.verifyAccessToken(token);
+      if (!payload) {
+        client.disconnect();
+        return;
+      }
       const userId = payload.sub;
 
       const familyGroupId = await this.resolveFamilyGroupId(userId);
