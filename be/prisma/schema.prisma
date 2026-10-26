@@ -270,7 +270,8 @@ model UserSavedRecipe {
 
 model FridgeItem {
   id              String          @id @default(uuid()) @db.Char(36)
-  userId          String          @db.Char(36)
+  userId          String          @db.Char(36)     // Người thêm món
+  familyGroupId   String?         @db.Char(36)     // null = Cá nhân | có giá trị = Tủ lạnh gia đình
   ingredientId    Int
   quantity        Float
   unit            String          @db.VarChar(30)
@@ -278,14 +279,18 @@ model FridgeItem {
   expiresAt       DateTime?
   storageLocation StorageLocation @default(fridge)
   addedBy         AddedBy         @default(manual)
+  version         Int             @default(1)      // Optimistic Locking chống race condition
+  lastUpdatedById String?         @db.Char(36)     // Người sửa đổi gần nhất
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
   deletedAt       DateTime?
   consumedAt      DateTime?
+  familyGroup     FamilyGroup?    @relation("FamilyFridgeItems", fields: [familyGroupId], references: [id])
   ingredient      Ingredient      @relation(fields: [ingredientId], references: [id])
   user            User            @relation(fields: [userId], references: [id])
 
   @@index([userId, expiresAt])
+  @@index([familyGroupId, expiresAt])
   @@index([ingredientId], map: "fridge_items_ingredientId_fkey")
   @@map("fridge_items")
 }
@@ -329,7 +334,8 @@ model UserAllergy {
 
 model WeeklyPlan {
   id             String            @id @default(uuid()) @db.Char(36)
-  userId         String            @db.Char(36)
+  userId         String            @db.Char(36)     // Người khởi tạo kế hoạch
+  familyGroupId  String?           @db.Char(36)     // null = Cá nhân | có giá trị = Thực đơn gia đình
   weekStartDate  DateTime          @db.Date
   totalBudget    Int
   actualCost     Int?
@@ -343,9 +349,11 @@ model WeeklyPlan {
   dailyPlans     DailyPlan[]
   shoppingLists  ShoppingList[]
   aiSession      ChatSession?      @relation(fields: [aiSessionId], references: [id])
+  familyGroup    FamilyGroup?      @relation("FamilyWeeklyPlans", fields: [familyGroupId], references: [id])
   user           User              @relation(fields: [userId], references: [id])
 
   @@index([userId, weekStartDate])
+  @@index([familyGroupId, weekStartDate])
   @@index([aiSessionId], map: "weekly_plans_aiSessionId_fkey")
   @@map("weekly_plans")
 }
@@ -385,6 +393,7 @@ model MealSlot {
 model ShoppingList {
   id                 String             @id @default(uuid()) @db.Char(36)
   userId             String             @db.Char(36)
+  familyGroupId      String?            @db.Char(36)     // null = Cá nhân | có giá trị = Giỏ đi chợ gia đình
   weeklyPlanId       String?            @db.Char(36)
   title              String             @db.VarChar(150)
   status             ShoppingListStatus @default(draft)
@@ -393,10 +402,12 @@ model ShoppingList {
   updatedAt          DateTime           @updatedAt
   deletedAt          DateTime?
   items              ShoppingListItem[]
+  familyGroup        FamilyGroup?       @relation("FamilyShoppingLists", fields: [familyGroupId], references: [id])
   user               User               @relation(fields: [userId], references: [id])
   weeklyPlan         WeeklyPlan?        @relation(fields: [weeklyPlanId], references: [id])
 
   @@index([userId], map: "shopping_lists_userId_fkey")
+  @@index([familyGroupId])
   @@index([weeklyPlanId], map: "shopping_lists_weeklyPlanId_fkey")
   @@map("shopping_lists")
 }
@@ -936,15 +947,18 @@ enum NotificationType {
 // ─────────────────────────────────────────────────────────
 
 model FamilyGroup {
-  id        String         @id @default(uuid()) @db.Char(36)
-  ownerId   String         @unique @db.Char(36)  // 1 user chỉ sở hữu 1 gia đình
-  status    String         @db.VarChar(20)        // active | dissolved
-  createdAt DateTime       @default(now())
-  updatedAt DateTime       @updatedAt
-  deletedAt DateTime?
+  id            String         @id @default(uuid()) @db.Char(36)
+  ownerId       String         @unique @db.Char(36)  // 1 user chỉ sở hữu 1 gia đình
+  status        String         @db.VarChar(20)        // active | dissolved
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  deletedAt     DateTime?
 
-  owner     User           @relation("FamilyOwner", fields: [ownerId], references: [id])
-  members   FamilyMember[]
+  owner         User           @relation("FamilyOwner", fields: [ownerId], references: [id])
+  members       FamilyMember[]
+  fridgeItems   FridgeItem[]   @relation("FamilyFridgeItems")
+  weeklyPlans   WeeklyPlan[]   @relation("FamilyWeeklyPlans")
+  shoppingLists ShoppingList[] @relation("FamilyShoppingLists")
 
   @@index([status])
   @@map("family_groups")

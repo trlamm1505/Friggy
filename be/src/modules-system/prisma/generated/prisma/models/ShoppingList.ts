@@ -37,6 +37,7 @@ export type ShoppingListSumAggregateOutputType = {
 export type ShoppingListMinAggregateOutputType = {
   id: string | null
   userId: string | null
+  familyGroupId: string | null
   weeklyPlanId: string | null
   title: string | null
   status: $Enums.ShoppingListStatus | null
@@ -49,6 +50,7 @@ export type ShoppingListMinAggregateOutputType = {
 export type ShoppingListMaxAggregateOutputType = {
   id: string | null
   userId: string | null
+  familyGroupId: string | null
   weeklyPlanId: string | null
   title: string | null
   status: $Enums.ShoppingListStatus | null
@@ -61,6 +63,7 @@ export type ShoppingListMaxAggregateOutputType = {
 export type ShoppingListCountAggregateOutputType = {
   id: number
   userId: number
+  familyGroupId: number
   weeklyPlanId: number
   title: number
   status: number
@@ -83,6 +86,7 @@ export type ShoppingListSumAggregateInputType = {
 export type ShoppingListMinAggregateInputType = {
   id?: true
   userId?: true
+  familyGroupId?: true
   weeklyPlanId?: true
   title?: true
   status?: true
@@ -95,6 +99,7 @@ export type ShoppingListMinAggregateInputType = {
 export type ShoppingListMaxAggregateInputType = {
   id?: true
   userId?: true
+  familyGroupId?: true
   weeklyPlanId?: true
   title?: true
   status?: true
@@ -107,6 +112,7 @@ export type ShoppingListMaxAggregateInputType = {
 export type ShoppingListCountAggregateInputType = {
   id?: true
   userId?: true
+  familyGroupId?: true
   weeklyPlanId?: true
   title?: true
   status?: true
@@ -206,6 +212,7 @@ export type ShoppingListGroupByArgs<ExtArgs extends runtime.Types.Extensions.Int
 export type ShoppingListGroupByOutputType = {
   id: string
   userId: string
+  familyGroupId: string | null
   weeklyPlanId: string | null
   title: string
   status: $Enums.ShoppingListStatus
@@ -241,6 +248,7 @@ export type ShoppingListWhereInput = {
   NOT?: Prisma.ShoppingListWhereInput | Prisma.ShoppingListWhereInput[]
   id?: Prisma.StringFilter<"ShoppingList"> | string
   userId?: Prisma.StringFilter<"ShoppingList"> | string
+  familyGroupId?: Prisma.StringNullableFilter<"ShoppingList"> | string | null
   weeklyPlanId?: Prisma.StringNullableFilter<"ShoppingList"> | string | null
   title?: Prisma.StringFilter<"ShoppingList"> | string
   status?: Prisma.EnumShoppingListStatusFilter<"ShoppingList"> | $Enums.ShoppingListStatus
@@ -249,6 +257,7 @@ export type ShoppingListWhereInput = {
   updatedAt?: Prisma.DateTimeFilter<"ShoppingList"> | Date | string
   deletedAt?: Prisma.DateTimeNullableFilter<"ShoppingList"> | Date | string | null
   items?: Prisma.ShoppingListItemListRelationFilter
+  familyGroup?: Prisma.XOR<Prisma.FamilyGroupNullableScalarRelationFilter, Prisma.FamilyGroupWhereInput> | null
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
   weeklyPlan?: Prisma.XOR<Prisma.WeeklyPlanNullableScalarRelationFilter, Prisma.WeeklyPlanWhereInput> | null
 }
@@ -256,6 +265,7 @@ export type ShoppingListWhereInput = {
 export type ShoppingListOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   userId?: Prisma.SortOrder
+  familyGroupId?: Prisma.SortOrderInput | Prisma.SortOrder
   weeklyPlanId?: Prisma.SortOrderInput | Prisma.SortOrder
   title?: Prisma.SortOrder
   status?: Prisma.SortOrder
@@ -264,6 +274,7 @@ export type ShoppingListOrderByWithRelationInput = {
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   items?: Prisma.ShoppingListItemOrderByRelationAggregateInput
+  familyGroup?: Prisma.FamilyGroupOrderByWithRelationInput
   user?: Prisma.UserOrderByWithRelationInput
   weeklyPlan?: Prisma.WeeklyPlanOrderByWithRelationInput
   _relevance?: Prisma.ShoppingListOrderByRelevanceInput
@@ -275,6 +286,7 @@ export type ShoppingListWhereUniqueInput = Prisma.AtLeast<{
   OR?: Prisma.ShoppingListWhereInput[]
   NOT?: Prisma.ShoppingListWhereInput | Prisma.ShoppingListWhereInput[]
   userId?: Prisma.StringFilter<"ShoppingList"> | string
+  familyGroupId?: Prisma.StringNullableFilter<"ShoppingList"> | string | null
   weeklyPlanId?: Prisma.StringNullableFilter<"ShoppingList"> | string | null
   title?: Prisma.StringFilter<"ShoppingList"> | string
   status?: Prisma.EnumShoppingListStatusFilter<"ShoppingList"> | $Enums.ShoppingListStatus
@@ -283,6 +295,7 @@ export type ShoppingListWhereUniqueInput = Prisma.AtLeast<{
   updatedAt?: Prisma.DateTimeFilter<"ShoppingList"> | Date | string
   deletedAt?: Prisma.DateTimeNullableFilter<"ShoppingList"> | Date | string | null
   items?: Prisma.ShoppingListItemListRelationFilter
+  familyGroup?: Prisma.XOR<Prisma.FamilyGroupNullableScalarRelationFilter, Prisma.FamilyGroupWhereInput> | null
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
   weeklyPlan?: Prisma.XOR<Prisma.WeeklyPlanNullableScalarRelationFilter, Prisma.WeeklyPlanWhereInput> | null
 }, "id">
@@ -290,6 +303,7 @@ export type ShoppingListWhereUniqueInput = Prisma.AtLeast<{
 export type ShoppingListOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   userId?: Prisma.SortOrder
+  familyGroupId?: Prisma.SortOrderInput | Prisma.SortOrder
   weeklyPlanId?: Prisma.SortOrderInput | Prisma.SortOrder
   title?: Prisma.SortOrder
   status?: Prisma.SortOrder
@@ -310,6 +324,7 @@ export type ShoppingListScalarWhereWithAggregatesInput = {
   NOT?: Prisma.ShoppingListScalarWhereWithAggregatesInput | Prisma.ShoppingListScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"ShoppingList"> | string
   userId?: Prisma.StringWithAggregatesFilter<"ShoppingList"> | string
+  familyGroupId?: Prisma.StringNullableWithAggregatesFilter<"ShoppingList"> | string | null
   weeklyPlanId?: Prisma.StringNullableWithAggregatesFilter<"ShoppingList"> | string | null
   title?: Prisma.StringWithAggregatesFilter<"ShoppingList"> | string
   status?: Prisma.EnumShoppingListStatusWithAggregatesFilter<"ShoppingList"> | $Enums.ShoppingListStatus
@@ -328,6 +343,7 @@ export type ShoppingListCreateInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   items?: Prisma.ShoppingListItemCreateNestedManyWithoutShoppingListInput
+  familyGroup?: Prisma.FamilyGroupCreateNestedOneWithoutShoppingListsInput
   user: Prisma.UserCreateNestedOneWithoutShoppingListsInput
   weeklyPlan?: Prisma.WeeklyPlanCreateNestedOneWithoutShoppingListsInput
 }
@@ -335,6 +351,7 @@ export type ShoppingListCreateInput = {
 export type ShoppingListUncheckedCreateInput = {
   id?: string
   userId: string
+  familyGroupId?: string | null
   weeklyPlanId?: string | null
   title: string
   status?: $Enums.ShoppingListStatus
@@ -354,6 +371,7 @@ export type ShoppingListUpdateInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   items?: Prisma.ShoppingListItemUpdateManyWithoutShoppingListNestedInput
+  familyGroup?: Prisma.FamilyGroupUpdateOneWithoutShoppingListsNestedInput
   user?: Prisma.UserUpdateOneRequiredWithoutShoppingListsNestedInput
   weeklyPlan?: Prisma.WeeklyPlanUpdateOneWithoutShoppingListsNestedInput
 }
@@ -361,6 +379,7 @@ export type ShoppingListUpdateInput = {
 export type ShoppingListUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   userId?: Prisma.StringFieldUpdateOperationsInput | string
+  familyGroupId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   weeklyPlanId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumShoppingListStatusFieldUpdateOperationsInput | $Enums.ShoppingListStatus
@@ -374,6 +393,7 @@ export type ShoppingListUncheckedUpdateInput = {
 export type ShoppingListCreateManyInput = {
   id?: string
   userId: string
+  familyGroupId?: string | null
   weeklyPlanId?: string | null
   title: string
   status?: $Enums.ShoppingListStatus
@@ -396,6 +416,7 @@ export type ShoppingListUpdateManyMutationInput = {
 export type ShoppingListUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   userId?: Prisma.StringFieldUpdateOperationsInput | string
+  familyGroupId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   weeklyPlanId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumShoppingListStatusFieldUpdateOperationsInput | $Enums.ShoppingListStatus
@@ -424,6 +445,7 @@ export type ShoppingListOrderByRelevanceInput = {
 export type ShoppingListCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   userId?: Prisma.SortOrder
+  familyGroupId?: Prisma.SortOrder
   weeklyPlanId?: Prisma.SortOrder
   title?: Prisma.SortOrder
   status?: Prisma.SortOrder
@@ -440,6 +462,7 @@ export type ShoppingListAvgOrderByAggregateInput = {
 export type ShoppingListMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   userId?: Prisma.SortOrder
+  familyGroupId?: Prisma.SortOrder
   weeklyPlanId?: Prisma.SortOrder
   title?: Prisma.SortOrder
   status?: Prisma.SortOrder
@@ -452,6 +475,7 @@ export type ShoppingListMaxOrderByAggregateInput = {
 export type ShoppingListMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   userId?: Prisma.SortOrder
+  familyGroupId?: Prisma.SortOrder
   weeklyPlanId?: Prisma.SortOrder
   title?: Prisma.SortOrder
   status?: Prisma.SortOrder
@@ -572,6 +596,48 @@ export type ShoppingListUpdateOneRequiredWithoutItemsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.ShoppingListUpdateToOneWithWhereWithoutItemsInput, Prisma.ShoppingListUpdateWithoutItemsInput>, Prisma.ShoppingListUncheckedUpdateWithoutItemsInput>
 }
 
+export type ShoppingListCreateNestedManyWithoutFamilyGroupInput = {
+  create?: Prisma.XOR<Prisma.ShoppingListCreateWithoutFamilyGroupInput, Prisma.ShoppingListUncheckedCreateWithoutFamilyGroupInput> | Prisma.ShoppingListCreateWithoutFamilyGroupInput[] | Prisma.ShoppingListUncheckedCreateWithoutFamilyGroupInput[]
+  connectOrCreate?: Prisma.ShoppingListCreateOrConnectWithoutFamilyGroupInput | Prisma.ShoppingListCreateOrConnectWithoutFamilyGroupInput[]
+  createMany?: Prisma.ShoppingListCreateManyFamilyGroupInputEnvelope
+  connect?: Prisma.ShoppingListWhereUniqueInput | Prisma.ShoppingListWhereUniqueInput[]
+}
+
+export type ShoppingListUncheckedCreateNestedManyWithoutFamilyGroupInput = {
+  create?: Prisma.XOR<Prisma.ShoppingListCreateWithoutFamilyGroupInput, Prisma.ShoppingListUncheckedCreateWithoutFamilyGroupInput> | Prisma.ShoppingListCreateWithoutFamilyGroupInput[] | Prisma.ShoppingListUncheckedCreateWithoutFamilyGroupInput[]
+  connectOrCreate?: Prisma.ShoppingListCreateOrConnectWithoutFamilyGroupInput | Prisma.ShoppingListCreateOrConnectWithoutFamilyGroupInput[]
+  createMany?: Prisma.ShoppingListCreateManyFamilyGroupInputEnvelope
+  connect?: Prisma.ShoppingListWhereUniqueInput | Prisma.ShoppingListWhereUniqueInput[]
+}
+
+export type ShoppingListUpdateManyWithoutFamilyGroupNestedInput = {
+  create?: Prisma.XOR<Prisma.ShoppingListCreateWithoutFamilyGroupInput, Prisma.ShoppingListUncheckedCreateWithoutFamilyGroupInput> | Prisma.ShoppingListCreateWithoutFamilyGroupInput[] | Prisma.ShoppingListUncheckedCreateWithoutFamilyGroupInput[]
+  connectOrCreate?: Prisma.ShoppingListCreateOrConnectWithoutFamilyGroupInput | Prisma.ShoppingListCreateOrConnectWithoutFamilyGroupInput[]
+  upsert?: Prisma.ShoppingListUpsertWithWhereUniqueWithoutFamilyGroupInput | Prisma.ShoppingListUpsertWithWhereUniqueWithoutFamilyGroupInput[]
+  createMany?: Prisma.ShoppingListCreateManyFamilyGroupInputEnvelope
+  set?: Prisma.ShoppingListWhereUniqueInput | Prisma.ShoppingListWhereUniqueInput[]
+  disconnect?: Prisma.ShoppingListWhereUniqueInput | Prisma.ShoppingListWhereUniqueInput[]
+  delete?: Prisma.ShoppingListWhereUniqueInput | Prisma.ShoppingListWhereUniqueInput[]
+  connect?: Prisma.ShoppingListWhereUniqueInput | Prisma.ShoppingListWhereUniqueInput[]
+  update?: Prisma.ShoppingListUpdateWithWhereUniqueWithoutFamilyGroupInput | Prisma.ShoppingListUpdateWithWhereUniqueWithoutFamilyGroupInput[]
+  updateMany?: Prisma.ShoppingListUpdateManyWithWhereWithoutFamilyGroupInput | Prisma.ShoppingListUpdateManyWithWhereWithoutFamilyGroupInput[]
+  deleteMany?: Prisma.ShoppingListScalarWhereInput | Prisma.ShoppingListScalarWhereInput[]
+}
+
+export type ShoppingListUncheckedUpdateManyWithoutFamilyGroupNestedInput = {
+  create?: Prisma.XOR<Prisma.ShoppingListCreateWithoutFamilyGroupInput, Prisma.ShoppingListUncheckedCreateWithoutFamilyGroupInput> | Prisma.ShoppingListCreateWithoutFamilyGroupInput[] | Prisma.ShoppingListUncheckedCreateWithoutFamilyGroupInput[]
+  connectOrCreate?: Prisma.ShoppingListCreateOrConnectWithoutFamilyGroupInput | Prisma.ShoppingListCreateOrConnectWithoutFamilyGroupInput[]
+  upsert?: Prisma.ShoppingListUpsertWithWhereUniqueWithoutFamilyGroupInput | Prisma.ShoppingListUpsertWithWhereUniqueWithoutFamilyGroupInput[]
+  createMany?: Prisma.ShoppingListCreateManyFamilyGroupInputEnvelope
+  set?: Prisma.ShoppingListWhereUniqueInput | Prisma.ShoppingListWhereUniqueInput[]
+  disconnect?: Prisma.ShoppingListWhereUniqueInput | Prisma.ShoppingListWhereUniqueInput[]
+  delete?: Prisma.ShoppingListWhereUniqueInput | Prisma.ShoppingListWhereUniqueInput[]
+  connect?: Prisma.ShoppingListWhereUniqueInput | Prisma.ShoppingListWhereUniqueInput[]
+  update?: Prisma.ShoppingListUpdateWithWhereUniqueWithoutFamilyGroupInput | Prisma.ShoppingListUpdateWithWhereUniqueWithoutFamilyGroupInput[]
+  updateMany?: Prisma.ShoppingListUpdateManyWithWhereWithoutFamilyGroupInput | Prisma.ShoppingListUpdateManyWithWhereWithoutFamilyGroupInput[]
+  deleteMany?: Prisma.ShoppingListScalarWhereInput | Prisma.ShoppingListScalarWhereInput[]
+}
+
 export type ShoppingListCreateWithoutUserInput = {
   id?: string
   title: string
@@ -581,11 +647,13 @@ export type ShoppingListCreateWithoutUserInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   items?: Prisma.ShoppingListItemCreateNestedManyWithoutShoppingListInput
+  familyGroup?: Prisma.FamilyGroupCreateNestedOneWithoutShoppingListsInput
   weeklyPlan?: Prisma.WeeklyPlanCreateNestedOneWithoutShoppingListsInput
 }
 
 export type ShoppingListUncheckedCreateWithoutUserInput = {
   id?: string
+  familyGroupId?: string | null
   weeklyPlanId?: string | null
   title: string
   status?: $Enums.ShoppingListStatus
@@ -628,6 +696,7 @@ export type ShoppingListScalarWhereInput = {
   NOT?: Prisma.ShoppingListScalarWhereInput | Prisma.ShoppingListScalarWhereInput[]
   id?: Prisma.StringFilter<"ShoppingList"> | string
   userId?: Prisma.StringFilter<"ShoppingList"> | string
+  familyGroupId?: Prisma.StringNullableFilter<"ShoppingList"> | string | null
   weeklyPlanId?: Prisma.StringNullableFilter<"ShoppingList"> | string | null
   title?: Prisma.StringFilter<"ShoppingList"> | string
   status?: Prisma.EnumShoppingListStatusFilter<"ShoppingList"> | $Enums.ShoppingListStatus
@@ -646,12 +715,14 @@ export type ShoppingListCreateWithoutWeeklyPlanInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   items?: Prisma.ShoppingListItemCreateNestedManyWithoutShoppingListInput
+  familyGroup?: Prisma.FamilyGroupCreateNestedOneWithoutShoppingListsInput
   user: Prisma.UserCreateNestedOneWithoutShoppingListsInput
 }
 
 export type ShoppingListUncheckedCreateWithoutWeeklyPlanInput = {
   id?: string
   userId: string
+  familyGroupId?: string | null
   title: string
   status?: $Enums.ShoppingListStatus
   totalEstimatedCost?: number | null
@@ -695,6 +766,7 @@ export type ShoppingListCreateWithoutItemsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
+  familyGroup?: Prisma.FamilyGroupCreateNestedOneWithoutShoppingListsInput
   user: Prisma.UserCreateNestedOneWithoutShoppingListsInput
   weeklyPlan?: Prisma.WeeklyPlanCreateNestedOneWithoutShoppingListsInput
 }
@@ -702,6 +774,7 @@ export type ShoppingListCreateWithoutItemsInput = {
 export type ShoppingListUncheckedCreateWithoutItemsInput = {
   id?: string
   userId: string
+  familyGroupId?: string | null
   weeklyPlanId?: string | null
   title: string
   status?: $Enums.ShoppingListStatus
@@ -735,6 +808,7 @@ export type ShoppingListUpdateWithoutItemsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  familyGroup?: Prisma.FamilyGroupUpdateOneWithoutShoppingListsNestedInput
   user?: Prisma.UserUpdateOneRequiredWithoutShoppingListsNestedInput
   weeklyPlan?: Prisma.WeeklyPlanUpdateOneWithoutShoppingListsNestedInput
 }
@@ -742,6 +816,7 @@ export type ShoppingListUpdateWithoutItemsInput = {
 export type ShoppingListUncheckedUpdateWithoutItemsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   userId?: Prisma.StringFieldUpdateOperationsInput | string
+  familyGroupId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   weeklyPlanId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumShoppingListStatusFieldUpdateOperationsInput | $Enums.ShoppingListStatus
@@ -751,8 +826,61 @@ export type ShoppingListUncheckedUpdateWithoutItemsInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
 
+export type ShoppingListCreateWithoutFamilyGroupInput = {
+  id?: string
+  title: string
+  status?: $Enums.ShoppingListStatus
+  totalEstimatedCost?: number | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  items?: Prisma.ShoppingListItemCreateNestedManyWithoutShoppingListInput
+  user: Prisma.UserCreateNestedOneWithoutShoppingListsInput
+  weeklyPlan?: Prisma.WeeklyPlanCreateNestedOneWithoutShoppingListsInput
+}
+
+export type ShoppingListUncheckedCreateWithoutFamilyGroupInput = {
+  id?: string
+  userId: string
+  weeklyPlanId?: string | null
+  title: string
+  status?: $Enums.ShoppingListStatus
+  totalEstimatedCost?: number | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  items?: Prisma.ShoppingListItemUncheckedCreateNestedManyWithoutShoppingListInput
+}
+
+export type ShoppingListCreateOrConnectWithoutFamilyGroupInput = {
+  where: Prisma.ShoppingListWhereUniqueInput
+  create: Prisma.XOR<Prisma.ShoppingListCreateWithoutFamilyGroupInput, Prisma.ShoppingListUncheckedCreateWithoutFamilyGroupInput>
+}
+
+export type ShoppingListCreateManyFamilyGroupInputEnvelope = {
+  data: Prisma.ShoppingListCreateManyFamilyGroupInput | Prisma.ShoppingListCreateManyFamilyGroupInput[]
+  skipDuplicates?: boolean
+}
+
+export type ShoppingListUpsertWithWhereUniqueWithoutFamilyGroupInput = {
+  where: Prisma.ShoppingListWhereUniqueInput
+  update: Prisma.XOR<Prisma.ShoppingListUpdateWithoutFamilyGroupInput, Prisma.ShoppingListUncheckedUpdateWithoutFamilyGroupInput>
+  create: Prisma.XOR<Prisma.ShoppingListCreateWithoutFamilyGroupInput, Prisma.ShoppingListUncheckedCreateWithoutFamilyGroupInput>
+}
+
+export type ShoppingListUpdateWithWhereUniqueWithoutFamilyGroupInput = {
+  where: Prisma.ShoppingListWhereUniqueInput
+  data: Prisma.XOR<Prisma.ShoppingListUpdateWithoutFamilyGroupInput, Prisma.ShoppingListUncheckedUpdateWithoutFamilyGroupInput>
+}
+
+export type ShoppingListUpdateManyWithWhereWithoutFamilyGroupInput = {
+  where: Prisma.ShoppingListScalarWhereInput
+  data: Prisma.XOR<Prisma.ShoppingListUpdateManyMutationInput, Prisma.ShoppingListUncheckedUpdateManyWithoutFamilyGroupInput>
+}
+
 export type ShoppingListCreateManyUserInput = {
   id?: string
+  familyGroupId?: string | null
   weeklyPlanId?: string | null
   title: string
   status?: $Enums.ShoppingListStatus
@@ -771,11 +899,13 @@ export type ShoppingListUpdateWithoutUserInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   items?: Prisma.ShoppingListItemUpdateManyWithoutShoppingListNestedInput
+  familyGroup?: Prisma.FamilyGroupUpdateOneWithoutShoppingListsNestedInput
   weeklyPlan?: Prisma.WeeklyPlanUpdateOneWithoutShoppingListsNestedInput
 }
 
 export type ShoppingListUncheckedUpdateWithoutUserInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  familyGroupId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   weeklyPlanId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumShoppingListStatusFieldUpdateOperationsInput | $Enums.ShoppingListStatus
@@ -788,6 +918,7 @@ export type ShoppingListUncheckedUpdateWithoutUserInput = {
 
 export type ShoppingListUncheckedUpdateManyWithoutUserInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  familyGroupId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   weeklyPlanId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumShoppingListStatusFieldUpdateOperationsInput | $Enums.ShoppingListStatus
@@ -800,6 +931,7 @@ export type ShoppingListUncheckedUpdateManyWithoutUserInput = {
 export type ShoppingListCreateManyWeeklyPlanInput = {
   id?: string
   userId: string
+  familyGroupId?: string | null
   title: string
   status?: $Enums.ShoppingListStatus
   totalEstimatedCost?: number | null
@@ -817,12 +949,14 @@ export type ShoppingListUpdateWithoutWeeklyPlanInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   items?: Prisma.ShoppingListItemUpdateManyWithoutShoppingListNestedInput
+  familyGroup?: Prisma.FamilyGroupUpdateOneWithoutShoppingListsNestedInput
   user?: Prisma.UserUpdateOneRequiredWithoutShoppingListsNestedInput
 }
 
 export type ShoppingListUncheckedUpdateWithoutWeeklyPlanInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   userId?: Prisma.StringFieldUpdateOperationsInput | string
+  familyGroupId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumShoppingListStatusFieldUpdateOperationsInput | $Enums.ShoppingListStatus
   totalEstimatedCost?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -835,6 +969,57 @@ export type ShoppingListUncheckedUpdateWithoutWeeklyPlanInput = {
 export type ShoppingListUncheckedUpdateManyWithoutWeeklyPlanInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   userId?: Prisma.StringFieldUpdateOperationsInput | string
+  familyGroupId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumShoppingListStatusFieldUpdateOperationsInput | $Enums.ShoppingListStatus
+  totalEstimatedCost?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+}
+
+export type ShoppingListCreateManyFamilyGroupInput = {
+  id?: string
+  userId: string
+  weeklyPlanId?: string | null
+  title: string
+  status?: $Enums.ShoppingListStatus
+  totalEstimatedCost?: number | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+}
+
+export type ShoppingListUpdateWithoutFamilyGroupInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumShoppingListStatusFieldUpdateOperationsInput | $Enums.ShoppingListStatus
+  totalEstimatedCost?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  items?: Prisma.ShoppingListItemUpdateManyWithoutShoppingListNestedInput
+  user?: Prisma.UserUpdateOneRequiredWithoutShoppingListsNestedInput
+  weeklyPlan?: Prisma.WeeklyPlanUpdateOneWithoutShoppingListsNestedInput
+}
+
+export type ShoppingListUncheckedUpdateWithoutFamilyGroupInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  userId?: Prisma.StringFieldUpdateOperationsInput | string
+  weeklyPlanId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumShoppingListStatusFieldUpdateOperationsInput | $Enums.ShoppingListStatus
+  totalEstimatedCost?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  items?: Prisma.ShoppingListItemUncheckedUpdateManyWithoutShoppingListNestedInput
+}
+
+export type ShoppingListUncheckedUpdateManyWithoutFamilyGroupInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  userId?: Prisma.StringFieldUpdateOperationsInput | string
+  weeklyPlanId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumShoppingListStatusFieldUpdateOperationsInput | $Enums.ShoppingListStatus
   totalEstimatedCost?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -877,6 +1062,7 @@ export type ShoppingListCountOutputTypeCountItemsArgs<ExtArgs extends runtime.Ty
 export type ShoppingListSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   userId?: boolean
+  familyGroupId?: boolean
   weeklyPlanId?: boolean
   title?: boolean
   status?: boolean
@@ -885,6 +1071,7 @@ export type ShoppingListSelect<ExtArgs extends runtime.Types.Extensions.Internal
   updatedAt?: boolean
   deletedAt?: boolean
   items?: boolean | Prisma.ShoppingList$itemsArgs<ExtArgs>
+  familyGroup?: boolean | Prisma.ShoppingList$familyGroupArgs<ExtArgs>
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   weeklyPlan?: boolean | Prisma.ShoppingList$weeklyPlanArgs<ExtArgs>
   _count?: boolean | Prisma.ShoppingListCountOutputTypeDefaultArgs<ExtArgs>
@@ -895,6 +1082,7 @@ export type ShoppingListSelect<ExtArgs extends runtime.Types.Extensions.Internal
 export type ShoppingListSelectScalar = {
   id?: boolean
   userId?: boolean
+  familyGroupId?: boolean
   weeklyPlanId?: boolean
   title?: boolean
   status?: boolean
@@ -904,9 +1092,10 @@ export type ShoppingListSelectScalar = {
   deletedAt?: boolean
 }
 
-export type ShoppingListOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "weeklyPlanId" | "title" | "status" | "totalEstimatedCost" | "createdAt" | "updatedAt" | "deletedAt", ExtArgs["result"]["shoppingList"]>
+export type ShoppingListOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "familyGroupId" | "weeklyPlanId" | "title" | "status" | "totalEstimatedCost" | "createdAt" | "updatedAt" | "deletedAt", ExtArgs["result"]["shoppingList"]>
 export type ShoppingListInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   items?: boolean | Prisma.ShoppingList$itemsArgs<ExtArgs>
+  familyGroup?: boolean | Prisma.ShoppingList$familyGroupArgs<ExtArgs>
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   weeklyPlan?: boolean | Prisma.ShoppingList$weeklyPlanArgs<ExtArgs>
   _count?: boolean | Prisma.ShoppingListCountOutputTypeDefaultArgs<ExtArgs>
@@ -916,12 +1105,14 @@ export type $ShoppingListPayload<ExtArgs extends runtime.Types.Extensions.Intern
   name: "ShoppingList"
   objects: {
     items: Prisma.$ShoppingListItemPayload<ExtArgs>[]
+    familyGroup: Prisma.$FamilyGroupPayload<ExtArgs> | null
     user: Prisma.$UserPayload<ExtArgs>
     weeklyPlan: Prisma.$WeeklyPlanPayload<ExtArgs> | null
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
     userId: string
+    familyGroupId: string | null
     weeklyPlanId: string | null
     title: string
     status: $Enums.ShoppingListStatus
@@ -1270,6 +1461,7 @@ readonly fields: ShoppingListFieldRefs;
 export interface Prisma__ShoppingListClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   items<T extends Prisma.ShoppingList$itemsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ShoppingList$itemsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ShoppingListItemPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  familyGroup<T extends Prisma.ShoppingList$familyGroupArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ShoppingList$familyGroupArgs<ExtArgs>>): Prisma.Prisma__FamilyGroupClient<runtime.Types.Result.GetResult<Prisma.$FamilyGroupPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   user<T extends Prisma.UserDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserDefaultArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   weeklyPlan<T extends Prisma.ShoppingList$weeklyPlanArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ShoppingList$weeklyPlanArgs<ExtArgs>>): Prisma.Prisma__WeeklyPlanClient<runtime.Types.Result.GetResult<Prisma.$WeeklyPlanPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   /**
@@ -1303,6 +1495,7 @@ export interface Prisma__ShoppingListClient<T, Null = never, ExtArgs extends run
 export interface ShoppingListFieldRefs {
   readonly id: Prisma.FieldRef<"ShoppingList", 'String'>
   readonly userId: Prisma.FieldRef<"ShoppingList", 'String'>
+  readonly familyGroupId: Prisma.FieldRef<"ShoppingList", 'String'>
   readonly weeklyPlanId: Prisma.FieldRef<"ShoppingList", 'String'>
   readonly title: Prisma.FieldRef<"ShoppingList", 'String'>
   readonly status: Prisma.FieldRef<"ShoppingList", 'ShoppingListStatus'>
@@ -1679,6 +1872,25 @@ export type ShoppingList$itemsArgs<ExtArgs extends runtime.Types.Extensions.Inte
   take?: number
   skip?: number
   distinct?: Prisma.ShoppingListItemScalarFieldEnum | Prisma.ShoppingListItemScalarFieldEnum[]
+}
+
+/**
+ * ShoppingList.familyGroup
+ */
+export type ShoppingList$familyGroupArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the FamilyGroup
+   */
+  select?: Prisma.FamilyGroupSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the FamilyGroup
+   */
+  omit?: Prisma.FamilyGroupOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.FamilyGroupInclude<ExtArgs> | null
+  where?: Prisma.FamilyGroupWhereInput
 }
 
 /**

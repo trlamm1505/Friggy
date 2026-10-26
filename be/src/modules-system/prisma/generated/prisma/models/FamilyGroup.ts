@@ -192,6 +192,9 @@ export type FamilyGroupWhereInput = {
   deletedAt?: Prisma.DateTimeNullableFilter<"FamilyGroup"> | Date | string | null
   owner?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
   members?: Prisma.FamilyMemberListRelationFilter
+  fridgeItems?: Prisma.FridgeItemListRelationFilter
+  weeklyPlans?: Prisma.WeeklyPlanListRelationFilter
+  shoppingLists?: Prisma.ShoppingListListRelationFilter
 }
 
 export type FamilyGroupOrderByWithRelationInput = {
@@ -203,6 +206,9 @@ export type FamilyGroupOrderByWithRelationInput = {
   deletedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   owner?: Prisma.UserOrderByWithRelationInput
   members?: Prisma.FamilyMemberOrderByRelationAggregateInput
+  fridgeItems?: Prisma.FridgeItemOrderByRelationAggregateInput
+  weeklyPlans?: Prisma.WeeklyPlanOrderByRelationAggregateInput
+  shoppingLists?: Prisma.ShoppingListOrderByRelationAggregateInput
   _relevance?: Prisma.FamilyGroupOrderByRelevanceInput
 }
 
@@ -218,6 +224,9 @@ export type FamilyGroupWhereUniqueInput = Prisma.AtLeast<{
   deletedAt?: Prisma.DateTimeNullableFilter<"FamilyGroup"> | Date | string | null
   owner?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
   members?: Prisma.FamilyMemberListRelationFilter
+  fridgeItems?: Prisma.FridgeItemListRelationFilter
+  weeklyPlans?: Prisma.WeeklyPlanListRelationFilter
+  shoppingLists?: Prisma.ShoppingListListRelationFilter
 }, "id" | "ownerId">
 
 export type FamilyGroupOrderByWithAggregationInput = {
@@ -252,6 +261,9 @@ export type FamilyGroupCreateInput = {
   deletedAt?: Date | string | null
   owner: Prisma.UserCreateNestedOneWithoutFamilyOwnedInput
   members?: Prisma.FamilyMemberCreateNestedManyWithoutFamilyGroupInput
+  fridgeItems?: Prisma.FridgeItemCreateNestedManyWithoutFamilyGroupInput
+  weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutFamilyGroupInput
+  shoppingLists?: Prisma.ShoppingListCreateNestedManyWithoutFamilyGroupInput
 }
 
 export type FamilyGroupUncheckedCreateInput = {
@@ -262,6 +274,9 @@ export type FamilyGroupUncheckedCreateInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   members?: Prisma.FamilyMemberUncheckedCreateNestedManyWithoutFamilyGroupInput
+  fridgeItems?: Prisma.FridgeItemUncheckedCreateNestedManyWithoutFamilyGroupInput
+  weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutFamilyGroupInput
+  shoppingLists?: Prisma.ShoppingListUncheckedCreateNestedManyWithoutFamilyGroupInput
 }
 
 export type FamilyGroupUpdateInput = {
@@ -272,6 +287,9 @@ export type FamilyGroupUpdateInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   owner?: Prisma.UserUpdateOneRequiredWithoutFamilyOwnedNestedInput
   members?: Prisma.FamilyMemberUpdateManyWithoutFamilyGroupNestedInput
+  fridgeItems?: Prisma.FridgeItemUpdateManyWithoutFamilyGroupNestedInput
+  weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutFamilyGroupNestedInput
+  shoppingLists?: Prisma.ShoppingListUpdateManyWithoutFamilyGroupNestedInput
 }
 
 export type FamilyGroupUncheckedUpdateInput = {
@@ -282,6 +300,9 @@ export type FamilyGroupUncheckedUpdateInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   members?: Prisma.FamilyMemberUncheckedUpdateManyWithoutFamilyGroupNestedInput
+  fridgeItems?: Prisma.FridgeItemUncheckedUpdateManyWithoutFamilyGroupNestedInput
+  weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutFamilyGroupNestedInput
+  shoppingLists?: Prisma.ShoppingListUncheckedUpdateManyWithoutFamilyGroupNestedInput
 }
 
 export type FamilyGroupCreateManyInput = {
@@ -385,6 +406,54 @@ export type FamilyGroupUncheckedUpdateOneWithoutOwnerNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.FamilyGroupUpdateToOneWithWhereWithoutOwnerInput, Prisma.FamilyGroupUpdateWithoutOwnerInput>, Prisma.FamilyGroupUncheckedUpdateWithoutOwnerInput>
 }
 
+export type FamilyGroupCreateNestedOneWithoutFridgeItemsInput = {
+  create?: Prisma.XOR<Prisma.FamilyGroupCreateWithoutFridgeItemsInput, Prisma.FamilyGroupUncheckedCreateWithoutFridgeItemsInput>
+  connectOrCreate?: Prisma.FamilyGroupCreateOrConnectWithoutFridgeItemsInput
+  connect?: Prisma.FamilyGroupWhereUniqueInput
+}
+
+export type FamilyGroupUpdateOneWithoutFridgeItemsNestedInput = {
+  create?: Prisma.XOR<Prisma.FamilyGroupCreateWithoutFridgeItemsInput, Prisma.FamilyGroupUncheckedCreateWithoutFridgeItemsInput>
+  connectOrCreate?: Prisma.FamilyGroupCreateOrConnectWithoutFridgeItemsInput
+  upsert?: Prisma.FamilyGroupUpsertWithoutFridgeItemsInput
+  disconnect?: Prisma.FamilyGroupWhereInput | boolean
+  delete?: Prisma.FamilyGroupWhereInput | boolean
+  connect?: Prisma.FamilyGroupWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.FamilyGroupUpdateToOneWithWhereWithoutFridgeItemsInput, Prisma.FamilyGroupUpdateWithoutFridgeItemsInput>, Prisma.FamilyGroupUncheckedUpdateWithoutFridgeItemsInput>
+}
+
+export type FamilyGroupCreateNestedOneWithoutWeeklyPlansInput = {
+  create?: Prisma.XOR<Prisma.FamilyGroupCreateWithoutWeeklyPlansInput, Prisma.FamilyGroupUncheckedCreateWithoutWeeklyPlansInput>
+  connectOrCreate?: Prisma.FamilyGroupCreateOrConnectWithoutWeeklyPlansInput
+  connect?: Prisma.FamilyGroupWhereUniqueInput
+}
+
+export type FamilyGroupUpdateOneWithoutWeeklyPlansNestedInput = {
+  create?: Prisma.XOR<Prisma.FamilyGroupCreateWithoutWeeklyPlansInput, Prisma.FamilyGroupUncheckedCreateWithoutWeeklyPlansInput>
+  connectOrCreate?: Prisma.FamilyGroupCreateOrConnectWithoutWeeklyPlansInput
+  upsert?: Prisma.FamilyGroupUpsertWithoutWeeklyPlansInput
+  disconnect?: Prisma.FamilyGroupWhereInput | boolean
+  delete?: Prisma.FamilyGroupWhereInput | boolean
+  connect?: Prisma.FamilyGroupWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.FamilyGroupUpdateToOneWithWhereWithoutWeeklyPlansInput, Prisma.FamilyGroupUpdateWithoutWeeklyPlansInput>, Prisma.FamilyGroupUncheckedUpdateWithoutWeeklyPlansInput>
+}
+
+export type FamilyGroupCreateNestedOneWithoutShoppingListsInput = {
+  create?: Prisma.XOR<Prisma.FamilyGroupCreateWithoutShoppingListsInput, Prisma.FamilyGroupUncheckedCreateWithoutShoppingListsInput>
+  connectOrCreate?: Prisma.FamilyGroupCreateOrConnectWithoutShoppingListsInput
+  connect?: Prisma.FamilyGroupWhereUniqueInput
+}
+
+export type FamilyGroupUpdateOneWithoutShoppingListsNestedInput = {
+  create?: Prisma.XOR<Prisma.FamilyGroupCreateWithoutShoppingListsInput, Prisma.FamilyGroupUncheckedCreateWithoutShoppingListsInput>
+  connectOrCreate?: Prisma.FamilyGroupCreateOrConnectWithoutShoppingListsInput
+  upsert?: Prisma.FamilyGroupUpsertWithoutShoppingListsInput
+  disconnect?: Prisma.FamilyGroupWhereInput | boolean
+  delete?: Prisma.FamilyGroupWhereInput | boolean
+  connect?: Prisma.FamilyGroupWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.FamilyGroupUpdateToOneWithWhereWithoutShoppingListsInput, Prisma.FamilyGroupUpdateWithoutShoppingListsInput>, Prisma.FamilyGroupUncheckedUpdateWithoutShoppingListsInput>
+}
+
 export type FamilyGroupCreateNestedOneWithoutMembersInput = {
   create?: Prisma.XOR<Prisma.FamilyGroupCreateWithoutMembersInput, Prisma.FamilyGroupUncheckedCreateWithoutMembersInput>
   connectOrCreate?: Prisma.FamilyGroupCreateOrConnectWithoutMembersInput
@@ -406,6 +475,9 @@ export type FamilyGroupCreateWithoutOwnerInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   members?: Prisma.FamilyMemberCreateNestedManyWithoutFamilyGroupInput
+  fridgeItems?: Prisma.FridgeItemCreateNestedManyWithoutFamilyGroupInput
+  weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutFamilyGroupInput
+  shoppingLists?: Prisma.ShoppingListCreateNestedManyWithoutFamilyGroupInput
 }
 
 export type FamilyGroupUncheckedCreateWithoutOwnerInput = {
@@ -415,6 +487,9 @@ export type FamilyGroupUncheckedCreateWithoutOwnerInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   members?: Prisma.FamilyMemberUncheckedCreateNestedManyWithoutFamilyGroupInput
+  fridgeItems?: Prisma.FridgeItemUncheckedCreateNestedManyWithoutFamilyGroupInput
+  weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutFamilyGroupInput
+  shoppingLists?: Prisma.ShoppingListUncheckedCreateNestedManyWithoutFamilyGroupInput
 }
 
 export type FamilyGroupCreateOrConnectWithoutOwnerInput = {
@@ -440,6 +515,9 @@ export type FamilyGroupUpdateWithoutOwnerInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   members?: Prisma.FamilyMemberUpdateManyWithoutFamilyGroupNestedInput
+  fridgeItems?: Prisma.FridgeItemUpdateManyWithoutFamilyGroupNestedInput
+  weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutFamilyGroupNestedInput
+  shoppingLists?: Prisma.ShoppingListUpdateManyWithoutFamilyGroupNestedInput
 }
 
 export type FamilyGroupUncheckedUpdateWithoutOwnerInput = {
@@ -449,6 +527,201 @@ export type FamilyGroupUncheckedUpdateWithoutOwnerInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   members?: Prisma.FamilyMemberUncheckedUpdateManyWithoutFamilyGroupNestedInput
+  fridgeItems?: Prisma.FridgeItemUncheckedUpdateManyWithoutFamilyGroupNestedInput
+  weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutFamilyGroupNestedInput
+  shoppingLists?: Prisma.ShoppingListUncheckedUpdateManyWithoutFamilyGroupNestedInput
+}
+
+export type FamilyGroupCreateWithoutFridgeItemsInput = {
+  id?: string
+  status: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  owner: Prisma.UserCreateNestedOneWithoutFamilyOwnedInput
+  members?: Prisma.FamilyMemberCreateNestedManyWithoutFamilyGroupInput
+  weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutFamilyGroupInput
+  shoppingLists?: Prisma.ShoppingListCreateNestedManyWithoutFamilyGroupInput
+}
+
+export type FamilyGroupUncheckedCreateWithoutFridgeItemsInput = {
+  id?: string
+  ownerId: string
+  status: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  members?: Prisma.FamilyMemberUncheckedCreateNestedManyWithoutFamilyGroupInput
+  weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutFamilyGroupInput
+  shoppingLists?: Prisma.ShoppingListUncheckedCreateNestedManyWithoutFamilyGroupInput
+}
+
+export type FamilyGroupCreateOrConnectWithoutFridgeItemsInput = {
+  where: Prisma.FamilyGroupWhereUniqueInput
+  create: Prisma.XOR<Prisma.FamilyGroupCreateWithoutFridgeItemsInput, Prisma.FamilyGroupUncheckedCreateWithoutFridgeItemsInput>
+}
+
+export type FamilyGroupUpsertWithoutFridgeItemsInput = {
+  update: Prisma.XOR<Prisma.FamilyGroupUpdateWithoutFridgeItemsInput, Prisma.FamilyGroupUncheckedUpdateWithoutFridgeItemsInput>
+  create: Prisma.XOR<Prisma.FamilyGroupCreateWithoutFridgeItemsInput, Prisma.FamilyGroupUncheckedCreateWithoutFridgeItemsInput>
+  where?: Prisma.FamilyGroupWhereInput
+}
+
+export type FamilyGroupUpdateToOneWithWhereWithoutFridgeItemsInput = {
+  where?: Prisma.FamilyGroupWhereInput
+  data: Prisma.XOR<Prisma.FamilyGroupUpdateWithoutFridgeItemsInput, Prisma.FamilyGroupUncheckedUpdateWithoutFridgeItemsInput>
+}
+
+export type FamilyGroupUpdateWithoutFridgeItemsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  owner?: Prisma.UserUpdateOneRequiredWithoutFamilyOwnedNestedInput
+  members?: Prisma.FamilyMemberUpdateManyWithoutFamilyGroupNestedInput
+  weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutFamilyGroupNestedInput
+  shoppingLists?: Prisma.ShoppingListUpdateManyWithoutFamilyGroupNestedInput
+}
+
+export type FamilyGroupUncheckedUpdateWithoutFridgeItemsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  ownerId?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  members?: Prisma.FamilyMemberUncheckedUpdateManyWithoutFamilyGroupNestedInput
+  weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutFamilyGroupNestedInput
+  shoppingLists?: Prisma.ShoppingListUncheckedUpdateManyWithoutFamilyGroupNestedInput
+}
+
+export type FamilyGroupCreateWithoutWeeklyPlansInput = {
+  id?: string
+  status: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  owner: Prisma.UserCreateNestedOneWithoutFamilyOwnedInput
+  members?: Prisma.FamilyMemberCreateNestedManyWithoutFamilyGroupInput
+  fridgeItems?: Prisma.FridgeItemCreateNestedManyWithoutFamilyGroupInput
+  shoppingLists?: Prisma.ShoppingListCreateNestedManyWithoutFamilyGroupInput
+}
+
+export type FamilyGroupUncheckedCreateWithoutWeeklyPlansInput = {
+  id?: string
+  ownerId: string
+  status: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  members?: Prisma.FamilyMemberUncheckedCreateNestedManyWithoutFamilyGroupInput
+  fridgeItems?: Prisma.FridgeItemUncheckedCreateNestedManyWithoutFamilyGroupInput
+  shoppingLists?: Prisma.ShoppingListUncheckedCreateNestedManyWithoutFamilyGroupInput
+}
+
+export type FamilyGroupCreateOrConnectWithoutWeeklyPlansInput = {
+  where: Prisma.FamilyGroupWhereUniqueInput
+  create: Prisma.XOR<Prisma.FamilyGroupCreateWithoutWeeklyPlansInput, Prisma.FamilyGroupUncheckedCreateWithoutWeeklyPlansInput>
+}
+
+export type FamilyGroupUpsertWithoutWeeklyPlansInput = {
+  update: Prisma.XOR<Prisma.FamilyGroupUpdateWithoutWeeklyPlansInput, Prisma.FamilyGroupUncheckedUpdateWithoutWeeklyPlansInput>
+  create: Prisma.XOR<Prisma.FamilyGroupCreateWithoutWeeklyPlansInput, Prisma.FamilyGroupUncheckedCreateWithoutWeeklyPlansInput>
+  where?: Prisma.FamilyGroupWhereInput
+}
+
+export type FamilyGroupUpdateToOneWithWhereWithoutWeeklyPlansInput = {
+  where?: Prisma.FamilyGroupWhereInput
+  data: Prisma.XOR<Prisma.FamilyGroupUpdateWithoutWeeklyPlansInput, Prisma.FamilyGroupUncheckedUpdateWithoutWeeklyPlansInput>
+}
+
+export type FamilyGroupUpdateWithoutWeeklyPlansInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  owner?: Prisma.UserUpdateOneRequiredWithoutFamilyOwnedNestedInput
+  members?: Prisma.FamilyMemberUpdateManyWithoutFamilyGroupNestedInput
+  fridgeItems?: Prisma.FridgeItemUpdateManyWithoutFamilyGroupNestedInput
+  shoppingLists?: Prisma.ShoppingListUpdateManyWithoutFamilyGroupNestedInput
+}
+
+export type FamilyGroupUncheckedUpdateWithoutWeeklyPlansInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  ownerId?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  members?: Prisma.FamilyMemberUncheckedUpdateManyWithoutFamilyGroupNestedInput
+  fridgeItems?: Prisma.FridgeItemUncheckedUpdateManyWithoutFamilyGroupNestedInput
+  shoppingLists?: Prisma.ShoppingListUncheckedUpdateManyWithoutFamilyGroupNestedInput
+}
+
+export type FamilyGroupCreateWithoutShoppingListsInput = {
+  id?: string
+  status: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  owner: Prisma.UserCreateNestedOneWithoutFamilyOwnedInput
+  members?: Prisma.FamilyMemberCreateNestedManyWithoutFamilyGroupInput
+  fridgeItems?: Prisma.FridgeItemCreateNestedManyWithoutFamilyGroupInput
+  weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutFamilyGroupInput
+}
+
+export type FamilyGroupUncheckedCreateWithoutShoppingListsInput = {
+  id?: string
+  ownerId: string
+  status: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  members?: Prisma.FamilyMemberUncheckedCreateNestedManyWithoutFamilyGroupInput
+  fridgeItems?: Prisma.FridgeItemUncheckedCreateNestedManyWithoutFamilyGroupInput
+  weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutFamilyGroupInput
+}
+
+export type FamilyGroupCreateOrConnectWithoutShoppingListsInput = {
+  where: Prisma.FamilyGroupWhereUniqueInput
+  create: Prisma.XOR<Prisma.FamilyGroupCreateWithoutShoppingListsInput, Prisma.FamilyGroupUncheckedCreateWithoutShoppingListsInput>
+}
+
+export type FamilyGroupUpsertWithoutShoppingListsInput = {
+  update: Prisma.XOR<Prisma.FamilyGroupUpdateWithoutShoppingListsInput, Prisma.FamilyGroupUncheckedUpdateWithoutShoppingListsInput>
+  create: Prisma.XOR<Prisma.FamilyGroupCreateWithoutShoppingListsInput, Prisma.FamilyGroupUncheckedCreateWithoutShoppingListsInput>
+  where?: Prisma.FamilyGroupWhereInput
+}
+
+export type FamilyGroupUpdateToOneWithWhereWithoutShoppingListsInput = {
+  where?: Prisma.FamilyGroupWhereInput
+  data: Prisma.XOR<Prisma.FamilyGroupUpdateWithoutShoppingListsInput, Prisma.FamilyGroupUncheckedUpdateWithoutShoppingListsInput>
+}
+
+export type FamilyGroupUpdateWithoutShoppingListsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  owner?: Prisma.UserUpdateOneRequiredWithoutFamilyOwnedNestedInput
+  members?: Prisma.FamilyMemberUpdateManyWithoutFamilyGroupNestedInput
+  fridgeItems?: Prisma.FridgeItemUpdateManyWithoutFamilyGroupNestedInput
+  weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutFamilyGroupNestedInput
+}
+
+export type FamilyGroupUncheckedUpdateWithoutShoppingListsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  ownerId?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  members?: Prisma.FamilyMemberUncheckedUpdateManyWithoutFamilyGroupNestedInput
+  fridgeItems?: Prisma.FridgeItemUncheckedUpdateManyWithoutFamilyGroupNestedInput
+  weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutFamilyGroupNestedInput
 }
 
 export type FamilyGroupCreateWithoutMembersInput = {
@@ -458,6 +731,9 @@ export type FamilyGroupCreateWithoutMembersInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   owner: Prisma.UserCreateNestedOneWithoutFamilyOwnedInput
+  fridgeItems?: Prisma.FridgeItemCreateNestedManyWithoutFamilyGroupInput
+  weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutFamilyGroupInput
+  shoppingLists?: Prisma.ShoppingListCreateNestedManyWithoutFamilyGroupInput
 }
 
 export type FamilyGroupUncheckedCreateWithoutMembersInput = {
@@ -467,6 +743,9 @@ export type FamilyGroupUncheckedCreateWithoutMembersInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
+  fridgeItems?: Prisma.FridgeItemUncheckedCreateNestedManyWithoutFamilyGroupInput
+  weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutFamilyGroupInput
+  shoppingLists?: Prisma.ShoppingListUncheckedCreateNestedManyWithoutFamilyGroupInput
 }
 
 export type FamilyGroupCreateOrConnectWithoutMembersInput = {
@@ -492,6 +771,9 @@ export type FamilyGroupUpdateWithoutMembersInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   owner?: Prisma.UserUpdateOneRequiredWithoutFamilyOwnedNestedInput
+  fridgeItems?: Prisma.FridgeItemUpdateManyWithoutFamilyGroupNestedInput
+  weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutFamilyGroupNestedInput
+  shoppingLists?: Prisma.ShoppingListUpdateManyWithoutFamilyGroupNestedInput
 }
 
 export type FamilyGroupUncheckedUpdateWithoutMembersInput = {
@@ -501,6 +783,9 @@ export type FamilyGroupUncheckedUpdateWithoutMembersInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  fridgeItems?: Prisma.FridgeItemUncheckedUpdateManyWithoutFamilyGroupNestedInput
+  weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutFamilyGroupNestedInput
+  shoppingLists?: Prisma.ShoppingListUncheckedUpdateManyWithoutFamilyGroupNestedInput
 }
 
 
@@ -510,10 +795,16 @@ export type FamilyGroupUncheckedUpdateWithoutMembersInput = {
 
 export type FamilyGroupCountOutputType = {
   members: number
+  fridgeItems: number
+  weeklyPlans: number
+  shoppingLists: number
 }
 
 export type FamilyGroupCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   members?: boolean | FamilyGroupCountOutputTypeCountMembersArgs
+  fridgeItems?: boolean | FamilyGroupCountOutputTypeCountFridgeItemsArgs
+  weeklyPlans?: boolean | FamilyGroupCountOutputTypeCountWeeklyPlansArgs
+  shoppingLists?: boolean | FamilyGroupCountOutputTypeCountShoppingListsArgs
 }
 
 /**
@@ -533,6 +824,27 @@ export type FamilyGroupCountOutputTypeCountMembersArgs<ExtArgs extends runtime.T
   where?: Prisma.FamilyMemberWhereInput
 }
 
+/**
+ * FamilyGroupCountOutputType without action
+ */
+export type FamilyGroupCountOutputTypeCountFridgeItemsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.FridgeItemWhereInput
+}
+
+/**
+ * FamilyGroupCountOutputType without action
+ */
+export type FamilyGroupCountOutputTypeCountWeeklyPlansArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.WeeklyPlanWhereInput
+}
+
+/**
+ * FamilyGroupCountOutputType without action
+ */
+export type FamilyGroupCountOutputTypeCountShoppingListsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.ShoppingListWhereInput
+}
+
 
 export type FamilyGroupSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -543,6 +855,9 @@ export type FamilyGroupSelect<ExtArgs extends runtime.Types.Extensions.InternalA
   deletedAt?: boolean
   owner?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   members?: boolean | Prisma.FamilyGroup$membersArgs<ExtArgs>
+  fridgeItems?: boolean | Prisma.FamilyGroup$fridgeItemsArgs<ExtArgs>
+  weeklyPlans?: boolean | Prisma.FamilyGroup$weeklyPlansArgs<ExtArgs>
+  shoppingLists?: boolean | Prisma.FamilyGroup$shoppingListsArgs<ExtArgs>
   _count?: boolean | Prisma.FamilyGroupCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["familyGroup"]>
 
@@ -561,6 +876,9 @@ export type FamilyGroupOmit<ExtArgs extends runtime.Types.Extensions.InternalArg
 export type FamilyGroupInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   owner?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   members?: boolean | Prisma.FamilyGroup$membersArgs<ExtArgs>
+  fridgeItems?: boolean | Prisma.FamilyGroup$fridgeItemsArgs<ExtArgs>
+  weeklyPlans?: boolean | Prisma.FamilyGroup$weeklyPlansArgs<ExtArgs>
+  shoppingLists?: boolean | Prisma.FamilyGroup$shoppingListsArgs<ExtArgs>
   _count?: boolean | Prisma.FamilyGroupCountOutputTypeDefaultArgs<ExtArgs>
 }
 
@@ -569,6 +887,9 @@ export type $FamilyGroupPayload<ExtArgs extends runtime.Types.Extensions.Interna
   objects: {
     owner: Prisma.$UserPayload<ExtArgs>
     members: Prisma.$FamilyMemberPayload<ExtArgs>[]
+    fridgeItems: Prisma.$FridgeItemPayload<ExtArgs>[]
+    weeklyPlans: Prisma.$WeeklyPlanPayload<ExtArgs>[]
+    shoppingLists: Prisma.$ShoppingListPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -919,6 +1240,9 @@ export interface Prisma__FamilyGroupClient<T, Null = never, ExtArgs extends runt
   readonly [Symbol.toStringTag]: "PrismaPromise"
   owner<T extends Prisma.UserDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserDefaultArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   members<T extends Prisma.FamilyGroup$membersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.FamilyGroup$membersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$FamilyMemberPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  fridgeItems<T extends Prisma.FamilyGroup$fridgeItemsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.FamilyGroup$fridgeItemsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$FridgeItemPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  weeklyPlans<T extends Prisma.FamilyGroup$weeklyPlansArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.FamilyGroup$weeklyPlansArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$WeeklyPlanPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  shoppingLists<T extends Prisma.FamilyGroup$shoppingListsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.FamilyGroup$shoppingListsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ShoppingListPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1323,6 +1647,78 @@ export type FamilyGroup$membersArgs<ExtArgs extends runtime.Types.Extensions.Int
   take?: number
   skip?: number
   distinct?: Prisma.FamilyMemberScalarFieldEnum | Prisma.FamilyMemberScalarFieldEnum[]
+}
+
+/**
+ * FamilyGroup.fridgeItems
+ */
+export type FamilyGroup$fridgeItemsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the FridgeItem
+   */
+  select?: Prisma.FridgeItemSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the FridgeItem
+   */
+  omit?: Prisma.FridgeItemOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.FridgeItemInclude<ExtArgs> | null
+  where?: Prisma.FridgeItemWhereInput
+  orderBy?: Prisma.FridgeItemOrderByWithRelationInput | Prisma.FridgeItemOrderByWithRelationInput[]
+  cursor?: Prisma.FridgeItemWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.FridgeItemScalarFieldEnum | Prisma.FridgeItemScalarFieldEnum[]
+}
+
+/**
+ * FamilyGroup.weeklyPlans
+ */
+export type FamilyGroup$weeklyPlansArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the WeeklyPlan
+   */
+  select?: Prisma.WeeklyPlanSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the WeeklyPlan
+   */
+  omit?: Prisma.WeeklyPlanOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.WeeklyPlanInclude<ExtArgs> | null
+  where?: Prisma.WeeklyPlanWhereInput
+  orderBy?: Prisma.WeeklyPlanOrderByWithRelationInput | Prisma.WeeklyPlanOrderByWithRelationInput[]
+  cursor?: Prisma.WeeklyPlanWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.WeeklyPlanScalarFieldEnum | Prisma.WeeklyPlanScalarFieldEnum[]
+}
+
+/**
+ * FamilyGroup.shoppingLists
+ */
+export type FamilyGroup$shoppingListsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ShoppingList
+   */
+  select?: Prisma.ShoppingListSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the ShoppingList
+   */
+  omit?: Prisma.ShoppingListOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ShoppingListInclude<ExtArgs> | null
+  where?: Prisma.ShoppingListWhereInput
+  orderBy?: Prisma.ShoppingListOrderByWithRelationInput | Prisma.ShoppingListOrderByWithRelationInput[]
+  cursor?: Prisma.ShoppingListWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.ShoppingListScalarFieldEnum | Prisma.ShoppingListScalarFieldEnum[]
 }
 
 /**

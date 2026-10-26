@@ -29,16 +29,19 @@ export type AggregateFridgeItem = {
 export type FridgeItemAvgAggregateOutputType = {
   ingredientId: number | null
   quantity: number | null
+  version: number | null
 }
 
 export type FridgeItemSumAggregateOutputType = {
   ingredientId: number | null
   quantity: number | null
+  version: number | null
 }
 
 export type FridgeItemMinAggregateOutputType = {
   id: string | null
   userId: string | null
+  familyGroupId: string | null
   ingredientId: number | null
   quantity: number | null
   unit: string | null
@@ -46,6 +49,8 @@ export type FridgeItemMinAggregateOutputType = {
   expiresAt: Date | null
   storageLocation: $Enums.StorageLocation | null
   addedBy: $Enums.AddedBy | null
+  version: number | null
+  lastUpdatedById: string | null
   createdAt: Date | null
   updatedAt: Date | null
   deletedAt: Date | null
@@ -55,6 +60,7 @@ export type FridgeItemMinAggregateOutputType = {
 export type FridgeItemMaxAggregateOutputType = {
   id: string | null
   userId: string | null
+  familyGroupId: string | null
   ingredientId: number | null
   quantity: number | null
   unit: string | null
@@ -62,6 +68,8 @@ export type FridgeItemMaxAggregateOutputType = {
   expiresAt: Date | null
   storageLocation: $Enums.StorageLocation | null
   addedBy: $Enums.AddedBy | null
+  version: number | null
+  lastUpdatedById: string | null
   createdAt: Date | null
   updatedAt: Date | null
   deletedAt: Date | null
@@ -71,6 +79,7 @@ export type FridgeItemMaxAggregateOutputType = {
 export type FridgeItemCountAggregateOutputType = {
   id: number
   userId: number
+  familyGroupId: number
   ingredientId: number
   quantity: number
   unit: number
@@ -78,6 +87,8 @@ export type FridgeItemCountAggregateOutputType = {
   expiresAt: number
   storageLocation: number
   addedBy: number
+  version: number
+  lastUpdatedById: number
   createdAt: number
   updatedAt: number
   deletedAt: number
@@ -89,16 +100,19 @@ export type FridgeItemCountAggregateOutputType = {
 export type FridgeItemAvgAggregateInputType = {
   ingredientId?: true
   quantity?: true
+  version?: true
 }
 
 export type FridgeItemSumAggregateInputType = {
   ingredientId?: true
   quantity?: true
+  version?: true
 }
 
 export type FridgeItemMinAggregateInputType = {
   id?: true
   userId?: true
+  familyGroupId?: true
   ingredientId?: true
   quantity?: true
   unit?: true
@@ -106,6 +120,8 @@ export type FridgeItemMinAggregateInputType = {
   expiresAt?: true
   storageLocation?: true
   addedBy?: true
+  version?: true
+  lastUpdatedById?: true
   createdAt?: true
   updatedAt?: true
   deletedAt?: true
@@ -115,6 +131,7 @@ export type FridgeItemMinAggregateInputType = {
 export type FridgeItemMaxAggregateInputType = {
   id?: true
   userId?: true
+  familyGroupId?: true
   ingredientId?: true
   quantity?: true
   unit?: true
@@ -122,6 +139,8 @@ export type FridgeItemMaxAggregateInputType = {
   expiresAt?: true
   storageLocation?: true
   addedBy?: true
+  version?: true
+  lastUpdatedById?: true
   createdAt?: true
   updatedAt?: true
   deletedAt?: true
@@ -131,6 +150,7 @@ export type FridgeItemMaxAggregateInputType = {
 export type FridgeItemCountAggregateInputType = {
   id?: true
   userId?: true
+  familyGroupId?: true
   ingredientId?: true
   quantity?: true
   unit?: true
@@ -138,6 +158,8 @@ export type FridgeItemCountAggregateInputType = {
   expiresAt?: true
   storageLocation?: true
   addedBy?: true
+  version?: true
+  lastUpdatedById?: true
   createdAt?: true
   updatedAt?: true
   deletedAt?: true
@@ -234,6 +256,7 @@ export type FridgeItemGroupByArgs<ExtArgs extends runtime.Types.Extensions.Inter
 export type FridgeItemGroupByOutputType = {
   id: string
   userId: string
+  familyGroupId: string | null
   ingredientId: number
   quantity: number
   unit: string
@@ -241,6 +264,8 @@ export type FridgeItemGroupByOutputType = {
   expiresAt: Date | null
   storageLocation: $Enums.StorageLocation
   addedBy: $Enums.AddedBy
+  version: number
+  lastUpdatedById: string | null
   createdAt: Date
   updatedAt: Date
   deletedAt: Date | null
@@ -273,6 +298,7 @@ export type FridgeItemWhereInput = {
   NOT?: Prisma.FridgeItemWhereInput | Prisma.FridgeItemWhereInput[]
   id?: Prisma.StringFilter<"FridgeItem"> | string
   userId?: Prisma.StringFilter<"FridgeItem"> | string
+  familyGroupId?: Prisma.StringNullableFilter<"FridgeItem"> | string | null
   ingredientId?: Prisma.IntFilter<"FridgeItem"> | number
   quantity?: Prisma.FloatFilter<"FridgeItem"> | number
   unit?: Prisma.StringFilter<"FridgeItem"> | string
@@ -280,10 +306,13 @@ export type FridgeItemWhereInput = {
   expiresAt?: Prisma.DateTimeNullableFilter<"FridgeItem"> | Date | string | null
   storageLocation?: Prisma.EnumStorageLocationFilter<"FridgeItem"> | $Enums.StorageLocation
   addedBy?: Prisma.EnumAddedByFilter<"FridgeItem"> | $Enums.AddedBy
+  version?: Prisma.IntFilter<"FridgeItem"> | number
+  lastUpdatedById?: Prisma.StringNullableFilter<"FridgeItem"> | string | null
   createdAt?: Prisma.DateTimeFilter<"FridgeItem"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"FridgeItem"> | Date | string
   deletedAt?: Prisma.DateTimeNullableFilter<"FridgeItem"> | Date | string | null
   consumedAt?: Prisma.DateTimeNullableFilter<"FridgeItem"> | Date | string | null
+  familyGroup?: Prisma.XOR<Prisma.FamilyGroupNullableScalarRelationFilter, Prisma.FamilyGroupWhereInput> | null
   ingredient?: Prisma.XOR<Prisma.IngredientScalarRelationFilter, Prisma.IngredientWhereInput>
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
 }
@@ -291,6 +320,7 @@ export type FridgeItemWhereInput = {
 export type FridgeItemOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   userId?: Prisma.SortOrder
+  familyGroupId?: Prisma.SortOrderInput | Prisma.SortOrder
   ingredientId?: Prisma.SortOrder
   quantity?: Prisma.SortOrder
   unit?: Prisma.SortOrder
@@ -298,10 +328,13 @@ export type FridgeItemOrderByWithRelationInput = {
   expiresAt?: Prisma.SortOrderInput | Prisma.SortOrder
   storageLocation?: Prisma.SortOrder
   addedBy?: Prisma.SortOrder
+  version?: Prisma.SortOrder
+  lastUpdatedById?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   consumedAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  familyGroup?: Prisma.FamilyGroupOrderByWithRelationInput
   ingredient?: Prisma.IngredientOrderByWithRelationInput
   user?: Prisma.UserOrderByWithRelationInput
   _relevance?: Prisma.FridgeItemOrderByRelevanceInput
@@ -313,6 +346,7 @@ export type FridgeItemWhereUniqueInput = Prisma.AtLeast<{
   OR?: Prisma.FridgeItemWhereInput[]
   NOT?: Prisma.FridgeItemWhereInput | Prisma.FridgeItemWhereInput[]
   userId?: Prisma.StringFilter<"FridgeItem"> | string
+  familyGroupId?: Prisma.StringNullableFilter<"FridgeItem"> | string | null
   ingredientId?: Prisma.IntFilter<"FridgeItem"> | number
   quantity?: Prisma.FloatFilter<"FridgeItem"> | number
   unit?: Prisma.StringFilter<"FridgeItem"> | string
@@ -320,10 +354,13 @@ export type FridgeItemWhereUniqueInput = Prisma.AtLeast<{
   expiresAt?: Prisma.DateTimeNullableFilter<"FridgeItem"> | Date | string | null
   storageLocation?: Prisma.EnumStorageLocationFilter<"FridgeItem"> | $Enums.StorageLocation
   addedBy?: Prisma.EnumAddedByFilter<"FridgeItem"> | $Enums.AddedBy
+  version?: Prisma.IntFilter<"FridgeItem"> | number
+  lastUpdatedById?: Prisma.StringNullableFilter<"FridgeItem"> | string | null
   createdAt?: Prisma.DateTimeFilter<"FridgeItem"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"FridgeItem"> | Date | string
   deletedAt?: Prisma.DateTimeNullableFilter<"FridgeItem"> | Date | string | null
   consumedAt?: Prisma.DateTimeNullableFilter<"FridgeItem"> | Date | string | null
+  familyGroup?: Prisma.XOR<Prisma.FamilyGroupNullableScalarRelationFilter, Prisma.FamilyGroupWhereInput> | null
   ingredient?: Prisma.XOR<Prisma.IngredientScalarRelationFilter, Prisma.IngredientWhereInput>
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
 }, "id">
@@ -331,6 +368,7 @@ export type FridgeItemWhereUniqueInput = Prisma.AtLeast<{
 export type FridgeItemOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   userId?: Prisma.SortOrder
+  familyGroupId?: Prisma.SortOrderInput | Prisma.SortOrder
   ingredientId?: Prisma.SortOrder
   quantity?: Prisma.SortOrder
   unit?: Prisma.SortOrder
@@ -338,6 +376,8 @@ export type FridgeItemOrderByWithAggregationInput = {
   expiresAt?: Prisma.SortOrderInput | Prisma.SortOrder
   storageLocation?: Prisma.SortOrder
   addedBy?: Prisma.SortOrder
+  version?: Prisma.SortOrder
+  lastUpdatedById?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -355,6 +395,7 @@ export type FridgeItemScalarWhereWithAggregatesInput = {
   NOT?: Prisma.FridgeItemScalarWhereWithAggregatesInput | Prisma.FridgeItemScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"FridgeItem"> | string
   userId?: Prisma.StringWithAggregatesFilter<"FridgeItem"> | string
+  familyGroupId?: Prisma.StringNullableWithAggregatesFilter<"FridgeItem"> | string | null
   ingredientId?: Prisma.IntWithAggregatesFilter<"FridgeItem"> | number
   quantity?: Prisma.FloatWithAggregatesFilter<"FridgeItem"> | number
   unit?: Prisma.StringWithAggregatesFilter<"FridgeItem"> | string
@@ -362,6 +403,8 @@ export type FridgeItemScalarWhereWithAggregatesInput = {
   expiresAt?: Prisma.DateTimeNullableWithAggregatesFilter<"FridgeItem"> | Date | string | null
   storageLocation?: Prisma.EnumStorageLocationWithAggregatesFilter<"FridgeItem"> | $Enums.StorageLocation
   addedBy?: Prisma.EnumAddedByWithAggregatesFilter<"FridgeItem"> | $Enums.AddedBy
+  version?: Prisma.IntWithAggregatesFilter<"FridgeItem"> | number
+  lastUpdatedById?: Prisma.StringNullableWithAggregatesFilter<"FridgeItem"> | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"FridgeItem"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"FridgeItem"> | Date | string
   deletedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"FridgeItem"> | Date | string | null
@@ -376,10 +419,13 @@ export type FridgeItemCreateInput = {
   expiresAt?: Date | string | null
   storageLocation?: $Enums.StorageLocation
   addedBy?: $Enums.AddedBy
+  version?: number
+  lastUpdatedById?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   consumedAt?: Date | string | null
+  familyGroup?: Prisma.FamilyGroupCreateNestedOneWithoutFridgeItemsInput
   ingredient: Prisma.IngredientCreateNestedOneWithoutFridgeItemsInput
   user: Prisma.UserCreateNestedOneWithoutFridgeItemsInput
 }
@@ -387,6 +433,7 @@ export type FridgeItemCreateInput = {
 export type FridgeItemUncheckedCreateInput = {
   id?: string
   userId: string
+  familyGroupId?: string | null
   ingredientId: number
   quantity: number
   unit: string
@@ -394,6 +441,8 @@ export type FridgeItemUncheckedCreateInput = {
   expiresAt?: Date | string | null
   storageLocation?: $Enums.StorageLocation
   addedBy?: $Enums.AddedBy
+  version?: number
+  lastUpdatedById?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -408,10 +457,13 @@ export type FridgeItemUpdateInput = {
   expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   storageLocation?: Prisma.EnumStorageLocationFieldUpdateOperationsInput | $Enums.StorageLocation
   addedBy?: Prisma.EnumAddedByFieldUpdateOperationsInput | $Enums.AddedBy
+  version?: Prisma.IntFieldUpdateOperationsInput | number
+  lastUpdatedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   consumedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  familyGroup?: Prisma.FamilyGroupUpdateOneWithoutFridgeItemsNestedInput
   ingredient?: Prisma.IngredientUpdateOneRequiredWithoutFridgeItemsNestedInput
   user?: Prisma.UserUpdateOneRequiredWithoutFridgeItemsNestedInput
 }
@@ -419,6 +471,7 @@ export type FridgeItemUpdateInput = {
 export type FridgeItemUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   userId?: Prisma.StringFieldUpdateOperationsInput | string
+  familyGroupId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   ingredientId?: Prisma.IntFieldUpdateOperationsInput | number
   quantity?: Prisma.FloatFieldUpdateOperationsInput | number
   unit?: Prisma.StringFieldUpdateOperationsInput | string
@@ -426,6 +479,8 @@ export type FridgeItemUncheckedUpdateInput = {
   expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   storageLocation?: Prisma.EnumStorageLocationFieldUpdateOperationsInput | $Enums.StorageLocation
   addedBy?: Prisma.EnumAddedByFieldUpdateOperationsInput | $Enums.AddedBy
+  version?: Prisma.IntFieldUpdateOperationsInput | number
+  lastUpdatedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -435,6 +490,7 @@ export type FridgeItemUncheckedUpdateInput = {
 export type FridgeItemCreateManyInput = {
   id?: string
   userId: string
+  familyGroupId?: string | null
   ingredientId: number
   quantity: number
   unit: string
@@ -442,6 +498,8 @@ export type FridgeItemCreateManyInput = {
   expiresAt?: Date | string | null
   storageLocation?: $Enums.StorageLocation
   addedBy?: $Enums.AddedBy
+  version?: number
+  lastUpdatedById?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -456,6 +514,8 @@ export type FridgeItemUpdateManyMutationInput = {
   expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   storageLocation?: Prisma.EnumStorageLocationFieldUpdateOperationsInput | $Enums.StorageLocation
   addedBy?: Prisma.EnumAddedByFieldUpdateOperationsInput | $Enums.AddedBy
+  version?: Prisma.IntFieldUpdateOperationsInput | number
+  lastUpdatedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -465,6 +525,7 @@ export type FridgeItemUpdateManyMutationInput = {
 export type FridgeItemUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   userId?: Prisma.StringFieldUpdateOperationsInput | string
+  familyGroupId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   ingredientId?: Prisma.IntFieldUpdateOperationsInput | number
   quantity?: Prisma.FloatFieldUpdateOperationsInput | number
   unit?: Prisma.StringFieldUpdateOperationsInput | string
@@ -472,6 +533,8 @@ export type FridgeItemUncheckedUpdateManyInput = {
   expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   storageLocation?: Prisma.EnumStorageLocationFieldUpdateOperationsInput | $Enums.StorageLocation
   addedBy?: Prisma.EnumAddedByFieldUpdateOperationsInput | $Enums.AddedBy
+  version?: Prisma.IntFieldUpdateOperationsInput | number
+  lastUpdatedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -497,6 +560,7 @@ export type FridgeItemOrderByRelevanceInput = {
 export type FridgeItemCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   userId?: Prisma.SortOrder
+  familyGroupId?: Prisma.SortOrder
   ingredientId?: Prisma.SortOrder
   quantity?: Prisma.SortOrder
   unit?: Prisma.SortOrder
@@ -504,6 +568,8 @@ export type FridgeItemCountOrderByAggregateInput = {
   expiresAt?: Prisma.SortOrder
   storageLocation?: Prisma.SortOrder
   addedBy?: Prisma.SortOrder
+  version?: Prisma.SortOrder
+  lastUpdatedById?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrder
@@ -513,11 +579,13 @@ export type FridgeItemCountOrderByAggregateInput = {
 export type FridgeItemAvgOrderByAggregateInput = {
   ingredientId?: Prisma.SortOrder
   quantity?: Prisma.SortOrder
+  version?: Prisma.SortOrder
 }
 
 export type FridgeItemMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   userId?: Prisma.SortOrder
+  familyGroupId?: Prisma.SortOrder
   ingredientId?: Prisma.SortOrder
   quantity?: Prisma.SortOrder
   unit?: Prisma.SortOrder
@@ -525,6 +593,8 @@ export type FridgeItemMaxOrderByAggregateInput = {
   expiresAt?: Prisma.SortOrder
   storageLocation?: Prisma.SortOrder
   addedBy?: Prisma.SortOrder
+  version?: Prisma.SortOrder
+  lastUpdatedById?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrder
@@ -534,6 +604,7 @@ export type FridgeItemMaxOrderByAggregateInput = {
 export type FridgeItemMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   userId?: Prisma.SortOrder
+  familyGroupId?: Prisma.SortOrder
   ingredientId?: Prisma.SortOrder
   quantity?: Prisma.SortOrder
   unit?: Prisma.SortOrder
@@ -541,6 +612,8 @@ export type FridgeItemMinOrderByAggregateInput = {
   expiresAt?: Prisma.SortOrder
   storageLocation?: Prisma.SortOrder
   addedBy?: Prisma.SortOrder
+  version?: Prisma.SortOrder
+  lastUpdatedById?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrder
@@ -550,6 +623,7 @@ export type FridgeItemMinOrderByAggregateInput = {
 export type FridgeItemSumOrderByAggregateInput = {
   ingredientId?: Prisma.SortOrder
   quantity?: Prisma.SortOrder
+  version?: Prisma.SortOrder
 }
 
 export type FridgeItemCreateNestedManyWithoutUserInput = {
@@ -644,6 +718,48 @@ export type EnumAddedByFieldUpdateOperationsInput = {
   set?: $Enums.AddedBy
 }
 
+export type FridgeItemCreateNestedManyWithoutFamilyGroupInput = {
+  create?: Prisma.XOR<Prisma.FridgeItemCreateWithoutFamilyGroupInput, Prisma.FridgeItemUncheckedCreateWithoutFamilyGroupInput> | Prisma.FridgeItemCreateWithoutFamilyGroupInput[] | Prisma.FridgeItemUncheckedCreateWithoutFamilyGroupInput[]
+  connectOrCreate?: Prisma.FridgeItemCreateOrConnectWithoutFamilyGroupInput | Prisma.FridgeItemCreateOrConnectWithoutFamilyGroupInput[]
+  createMany?: Prisma.FridgeItemCreateManyFamilyGroupInputEnvelope
+  connect?: Prisma.FridgeItemWhereUniqueInput | Prisma.FridgeItemWhereUniqueInput[]
+}
+
+export type FridgeItemUncheckedCreateNestedManyWithoutFamilyGroupInput = {
+  create?: Prisma.XOR<Prisma.FridgeItemCreateWithoutFamilyGroupInput, Prisma.FridgeItemUncheckedCreateWithoutFamilyGroupInput> | Prisma.FridgeItemCreateWithoutFamilyGroupInput[] | Prisma.FridgeItemUncheckedCreateWithoutFamilyGroupInput[]
+  connectOrCreate?: Prisma.FridgeItemCreateOrConnectWithoutFamilyGroupInput | Prisma.FridgeItemCreateOrConnectWithoutFamilyGroupInput[]
+  createMany?: Prisma.FridgeItemCreateManyFamilyGroupInputEnvelope
+  connect?: Prisma.FridgeItemWhereUniqueInput | Prisma.FridgeItemWhereUniqueInput[]
+}
+
+export type FridgeItemUpdateManyWithoutFamilyGroupNestedInput = {
+  create?: Prisma.XOR<Prisma.FridgeItemCreateWithoutFamilyGroupInput, Prisma.FridgeItemUncheckedCreateWithoutFamilyGroupInput> | Prisma.FridgeItemCreateWithoutFamilyGroupInput[] | Prisma.FridgeItemUncheckedCreateWithoutFamilyGroupInput[]
+  connectOrCreate?: Prisma.FridgeItemCreateOrConnectWithoutFamilyGroupInput | Prisma.FridgeItemCreateOrConnectWithoutFamilyGroupInput[]
+  upsert?: Prisma.FridgeItemUpsertWithWhereUniqueWithoutFamilyGroupInput | Prisma.FridgeItemUpsertWithWhereUniqueWithoutFamilyGroupInput[]
+  createMany?: Prisma.FridgeItemCreateManyFamilyGroupInputEnvelope
+  set?: Prisma.FridgeItemWhereUniqueInput | Prisma.FridgeItemWhereUniqueInput[]
+  disconnect?: Prisma.FridgeItemWhereUniqueInput | Prisma.FridgeItemWhereUniqueInput[]
+  delete?: Prisma.FridgeItemWhereUniqueInput | Prisma.FridgeItemWhereUniqueInput[]
+  connect?: Prisma.FridgeItemWhereUniqueInput | Prisma.FridgeItemWhereUniqueInput[]
+  update?: Prisma.FridgeItemUpdateWithWhereUniqueWithoutFamilyGroupInput | Prisma.FridgeItemUpdateWithWhereUniqueWithoutFamilyGroupInput[]
+  updateMany?: Prisma.FridgeItemUpdateManyWithWhereWithoutFamilyGroupInput | Prisma.FridgeItemUpdateManyWithWhereWithoutFamilyGroupInput[]
+  deleteMany?: Prisma.FridgeItemScalarWhereInput | Prisma.FridgeItemScalarWhereInput[]
+}
+
+export type FridgeItemUncheckedUpdateManyWithoutFamilyGroupNestedInput = {
+  create?: Prisma.XOR<Prisma.FridgeItemCreateWithoutFamilyGroupInput, Prisma.FridgeItemUncheckedCreateWithoutFamilyGroupInput> | Prisma.FridgeItemCreateWithoutFamilyGroupInput[] | Prisma.FridgeItemUncheckedCreateWithoutFamilyGroupInput[]
+  connectOrCreate?: Prisma.FridgeItemCreateOrConnectWithoutFamilyGroupInput | Prisma.FridgeItemCreateOrConnectWithoutFamilyGroupInput[]
+  upsert?: Prisma.FridgeItemUpsertWithWhereUniqueWithoutFamilyGroupInput | Prisma.FridgeItemUpsertWithWhereUniqueWithoutFamilyGroupInput[]
+  createMany?: Prisma.FridgeItemCreateManyFamilyGroupInputEnvelope
+  set?: Prisma.FridgeItemWhereUniqueInput | Prisma.FridgeItemWhereUniqueInput[]
+  disconnect?: Prisma.FridgeItemWhereUniqueInput | Prisma.FridgeItemWhereUniqueInput[]
+  delete?: Prisma.FridgeItemWhereUniqueInput | Prisma.FridgeItemWhereUniqueInput[]
+  connect?: Prisma.FridgeItemWhereUniqueInput | Prisma.FridgeItemWhereUniqueInput[]
+  update?: Prisma.FridgeItemUpdateWithWhereUniqueWithoutFamilyGroupInput | Prisma.FridgeItemUpdateWithWhereUniqueWithoutFamilyGroupInput[]
+  updateMany?: Prisma.FridgeItemUpdateManyWithWhereWithoutFamilyGroupInput | Prisma.FridgeItemUpdateManyWithWhereWithoutFamilyGroupInput[]
+  deleteMany?: Prisma.FridgeItemScalarWhereInput | Prisma.FridgeItemScalarWhereInput[]
+}
+
 export type FridgeItemCreateWithoutUserInput = {
   id?: string
   quantity: number
@@ -652,15 +768,19 @@ export type FridgeItemCreateWithoutUserInput = {
   expiresAt?: Date | string | null
   storageLocation?: $Enums.StorageLocation
   addedBy?: $Enums.AddedBy
+  version?: number
+  lastUpdatedById?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   consumedAt?: Date | string | null
+  familyGroup?: Prisma.FamilyGroupCreateNestedOneWithoutFridgeItemsInput
   ingredient: Prisma.IngredientCreateNestedOneWithoutFridgeItemsInput
 }
 
 export type FridgeItemUncheckedCreateWithoutUserInput = {
   id?: string
+  familyGroupId?: string | null
   ingredientId: number
   quantity: number
   unit: string
@@ -668,6 +788,8 @@ export type FridgeItemUncheckedCreateWithoutUserInput = {
   expiresAt?: Date | string | null
   storageLocation?: $Enums.StorageLocation
   addedBy?: $Enums.AddedBy
+  version?: number
+  lastUpdatedById?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -706,6 +828,7 @@ export type FridgeItemScalarWhereInput = {
   NOT?: Prisma.FridgeItemScalarWhereInput | Prisma.FridgeItemScalarWhereInput[]
   id?: Prisma.StringFilter<"FridgeItem"> | string
   userId?: Prisma.StringFilter<"FridgeItem"> | string
+  familyGroupId?: Prisma.StringNullableFilter<"FridgeItem"> | string | null
   ingredientId?: Prisma.IntFilter<"FridgeItem"> | number
   quantity?: Prisma.FloatFilter<"FridgeItem"> | number
   unit?: Prisma.StringFilter<"FridgeItem"> | string
@@ -713,6 +836,8 @@ export type FridgeItemScalarWhereInput = {
   expiresAt?: Prisma.DateTimeNullableFilter<"FridgeItem"> | Date | string | null
   storageLocation?: Prisma.EnumStorageLocationFilter<"FridgeItem"> | $Enums.StorageLocation
   addedBy?: Prisma.EnumAddedByFilter<"FridgeItem"> | $Enums.AddedBy
+  version?: Prisma.IntFilter<"FridgeItem"> | number
+  lastUpdatedById?: Prisma.StringNullableFilter<"FridgeItem"> | string | null
   createdAt?: Prisma.DateTimeFilter<"FridgeItem"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"FridgeItem"> | Date | string
   deletedAt?: Prisma.DateTimeNullableFilter<"FridgeItem"> | Date | string | null
@@ -727,22 +852,28 @@ export type FridgeItemCreateWithoutIngredientInput = {
   expiresAt?: Date | string | null
   storageLocation?: $Enums.StorageLocation
   addedBy?: $Enums.AddedBy
+  version?: number
+  lastUpdatedById?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   consumedAt?: Date | string | null
+  familyGroup?: Prisma.FamilyGroupCreateNestedOneWithoutFridgeItemsInput
   user: Prisma.UserCreateNestedOneWithoutFridgeItemsInput
 }
 
 export type FridgeItemUncheckedCreateWithoutIngredientInput = {
   id?: string
   userId: string
+  familyGroupId?: string | null
   quantity: number
   unit: string
   purchasedAt?: Date | string | null
   expiresAt?: Date | string | null
   storageLocation?: $Enums.StorageLocation
   addedBy?: $Enums.AddedBy
+  version?: number
+  lastUpdatedById?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -775,8 +906,27 @@ export type FridgeItemUpdateManyWithWhereWithoutIngredientInput = {
   data: Prisma.XOR<Prisma.FridgeItemUpdateManyMutationInput, Prisma.FridgeItemUncheckedUpdateManyWithoutIngredientInput>
 }
 
-export type FridgeItemCreateManyUserInput = {
+export type FridgeItemCreateWithoutFamilyGroupInput = {
   id?: string
+  quantity: number
+  unit: string
+  purchasedAt?: Date | string | null
+  expiresAt?: Date | string | null
+  storageLocation?: $Enums.StorageLocation
+  addedBy?: $Enums.AddedBy
+  version?: number
+  lastUpdatedById?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  consumedAt?: Date | string | null
+  ingredient: Prisma.IngredientCreateNestedOneWithoutFridgeItemsInput
+  user: Prisma.UserCreateNestedOneWithoutFridgeItemsInput
+}
+
+export type FridgeItemUncheckedCreateWithoutFamilyGroupInput = {
+  id?: string
+  userId: string
   ingredientId: number
   quantity: number
   unit: string
@@ -784,6 +934,52 @@ export type FridgeItemCreateManyUserInput = {
   expiresAt?: Date | string | null
   storageLocation?: $Enums.StorageLocation
   addedBy?: $Enums.AddedBy
+  version?: number
+  lastUpdatedById?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  consumedAt?: Date | string | null
+}
+
+export type FridgeItemCreateOrConnectWithoutFamilyGroupInput = {
+  where: Prisma.FridgeItemWhereUniqueInput
+  create: Prisma.XOR<Prisma.FridgeItemCreateWithoutFamilyGroupInput, Prisma.FridgeItemUncheckedCreateWithoutFamilyGroupInput>
+}
+
+export type FridgeItemCreateManyFamilyGroupInputEnvelope = {
+  data: Prisma.FridgeItemCreateManyFamilyGroupInput | Prisma.FridgeItemCreateManyFamilyGroupInput[]
+  skipDuplicates?: boolean
+}
+
+export type FridgeItemUpsertWithWhereUniqueWithoutFamilyGroupInput = {
+  where: Prisma.FridgeItemWhereUniqueInput
+  update: Prisma.XOR<Prisma.FridgeItemUpdateWithoutFamilyGroupInput, Prisma.FridgeItemUncheckedUpdateWithoutFamilyGroupInput>
+  create: Prisma.XOR<Prisma.FridgeItemCreateWithoutFamilyGroupInput, Prisma.FridgeItemUncheckedCreateWithoutFamilyGroupInput>
+}
+
+export type FridgeItemUpdateWithWhereUniqueWithoutFamilyGroupInput = {
+  where: Prisma.FridgeItemWhereUniqueInput
+  data: Prisma.XOR<Prisma.FridgeItemUpdateWithoutFamilyGroupInput, Prisma.FridgeItemUncheckedUpdateWithoutFamilyGroupInput>
+}
+
+export type FridgeItemUpdateManyWithWhereWithoutFamilyGroupInput = {
+  where: Prisma.FridgeItemScalarWhereInput
+  data: Prisma.XOR<Prisma.FridgeItemUpdateManyMutationInput, Prisma.FridgeItemUncheckedUpdateManyWithoutFamilyGroupInput>
+}
+
+export type FridgeItemCreateManyUserInput = {
+  id?: string
+  familyGroupId?: string | null
+  ingredientId: number
+  quantity: number
+  unit: string
+  purchasedAt?: Date | string | null
+  expiresAt?: Date | string | null
+  storageLocation?: $Enums.StorageLocation
+  addedBy?: $Enums.AddedBy
+  version?: number
+  lastUpdatedById?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -798,15 +994,19 @@ export type FridgeItemUpdateWithoutUserInput = {
   expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   storageLocation?: Prisma.EnumStorageLocationFieldUpdateOperationsInput | $Enums.StorageLocation
   addedBy?: Prisma.EnumAddedByFieldUpdateOperationsInput | $Enums.AddedBy
+  version?: Prisma.IntFieldUpdateOperationsInput | number
+  lastUpdatedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   consumedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  familyGroup?: Prisma.FamilyGroupUpdateOneWithoutFridgeItemsNestedInput
   ingredient?: Prisma.IngredientUpdateOneRequiredWithoutFridgeItemsNestedInput
 }
 
 export type FridgeItemUncheckedUpdateWithoutUserInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  familyGroupId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   ingredientId?: Prisma.IntFieldUpdateOperationsInput | number
   quantity?: Prisma.FloatFieldUpdateOperationsInput | number
   unit?: Prisma.StringFieldUpdateOperationsInput | string
@@ -814,6 +1014,8 @@ export type FridgeItemUncheckedUpdateWithoutUserInput = {
   expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   storageLocation?: Prisma.EnumStorageLocationFieldUpdateOperationsInput | $Enums.StorageLocation
   addedBy?: Prisma.EnumAddedByFieldUpdateOperationsInput | $Enums.AddedBy
+  version?: Prisma.IntFieldUpdateOperationsInput | number
+  lastUpdatedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -822,6 +1024,7 @@ export type FridgeItemUncheckedUpdateWithoutUserInput = {
 
 export type FridgeItemUncheckedUpdateManyWithoutUserInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  familyGroupId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   ingredientId?: Prisma.IntFieldUpdateOperationsInput | number
   quantity?: Prisma.FloatFieldUpdateOperationsInput | number
   unit?: Prisma.StringFieldUpdateOperationsInput | string
@@ -829,6 +1032,8 @@ export type FridgeItemUncheckedUpdateManyWithoutUserInput = {
   expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   storageLocation?: Prisma.EnumStorageLocationFieldUpdateOperationsInput | $Enums.StorageLocation
   addedBy?: Prisma.EnumAddedByFieldUpdateOperationsInput | $Enums.AddedBy
+  version?: Prisma.IntFieldUpdateOperationsInput | number
+  lastUpdatedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -838,12 +1043,15 @@ export type FridgeItemUncheckedUpdateManyWithoutUserInput = {
 export type FridgeItemCreateManyIngredientInput = {
   id?: string
   userId: string
+  familyGroupId?: string | null
   quantity: number
   unit: string
   purchasedAt?: Date | string | null
   expiresAt?: Date | string | null
   storageLocation?: $Enums.StorageLocation
   addedBy?: $Enums.AddedBy
+  version?: number
+  lastUpdatedById?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -858,22 +1066,28 @@ export type FridgeItemUpdateWithoutIngredientInput = {
   expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   storageLocation?: Prisma.EnumStorageLocationFieldUpdateOperationsInput | $Enums.StorageLocation
   addedBy?: Prisma.EnumAddedByFieldUpdateOperationsInput | $Enums.AddedBy
+  version?: Prisma.IntFieldUpdateOperationsInput | number
+  lastUpdatedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   consumedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  familyGroup?: Prisma.FamilyGroupUpdateOneWithoutFridgeItemsNestedInput
   user?: Prisma.UserUpdateOneRequiredWithoutFridgeItemsNestedInput
 }
 
 export type FridgeItemUncheckedUpdateWithoutIngredientInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   userId?: Prisma.StringFieldUpdateOperationsInput | string
+  familyGroupId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   quantity?: Prisma.FloatFieldUpdateOperationsInput | number
   unit?: Prisma.StringFieldUpdateOperationsInput | string
   purchasedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   storageLocation?: Prisma.EnumStorageLocationFieldUpdateOperationsInput | $Enums.StorageLocation
   addedBy?: Prisma.EnumAddedByFieldUpdateOperationsInput | $Enums.AddedBy
+  version?: Prisma.IntFieldUpdateOperationsInput | number
+  lastUpdatedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -883,12 +1097,87 @@ export type FridgeItemUncheckedUpdateWithoutIngredientInput = {
 export type FridgeItemUncheckedUpdateManyWithoutIngredientInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   userId?: Prisma.StringFieldUpdateOperationsInput | string
+  familyGroupId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   quantity?: Prisma.FloatFieldUpdateOperationsInput | number
   unit?: Prisma.StringFieldUpdateOperationsInput | string
   purchasedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   storageLocation?: Prisma.EnumStorageLocationFieldUpdateOperationsInput | $Enums.StorageLocation
   addedBy?: Prisma.EnumAddedByFieldUpdateOperationsInput | $Enums.AddedBy
+  version?: Prisma.IntFieldUpdateOperationsInput | number
+  lastUpdatedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  consumedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+}
+
+export type FridgeItemCreateManyFamilyGroupInput = {
+  id?: string
+  userId: string
+  ingredientId: number
+  quantity: number
+  unit: string
+  purchasedAt?: Date | string | null
+  expiresAt?: Date | string | null
+  storageLocation?: $Enums.StorageLocation
+  addedBy?: $Enums.AddedBy
+  version?: number
+  lastUpdatedById?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  consumedAt?: Date | string | null
+}
+
+export type FridgeItemUpdateWithoutFamilyGroupInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  quantity?: Prisma.FloatFieldUpdateOperationsInput | number
+  unit?: Prisma.StringFieldUpdateOperationsInput | string
+  purchasedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  storageLocation?: Prisma.EnumStorageLocationFieldUpdateOperationsInput | $Enums.StorageLocation
+  addedBy?: Prisma.EnumAddedByFieldUpdateOperationsInput | $Enums.AddedBy
+  version?: Prisma.IntFieldUpdateOperationsInput | number
+  lastUpdatedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  consumedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  ingredient?: Prisma.IngredientUpdateOneRequiredWithoutFridgeItemsNestedInput
+  user?: Prisma.UserUpdateOneRequiredWithoutFridgeItemsNestedInput
+}
+
+export type FridgeItemUncheckedUpdateWithoutFamilyGroupInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  userId?: Prisma.StringFieldUpdateOperationsInput | string
+  ingredientId?: Prisma.IntFieldUpdateOperationsInput | number
+  quantity?: Prisma.FloatFieldUpdateOperationsInput | number
+  unit?: Prisma.StringFieldUpdateOperationsInput | string
+  purchasedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  storageLocation?: Prisma.EnumStorageLocationFieldUpdateOperationsInput | $Enums.StorageLocation
+  addedBy?: Prisma.EnumAddedByFieldUpdateOperationsInput | $Enums.AddedBy
+  version?: Prisma.IntFieldUpdateOperationsInput | number
+  lastUpdatedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  consumedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+}
+
+export type FridgeItemUncheckedUpdateManyWithoutFamilyGroupInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  userId?: Prisma.StringFieldUpdateOperationsInput | string
+  ingredientId?: Prisma.IntFieldUpdateOperationsInput | number
+  quantity?: Prisma.FloatFieldUpdateOperationsInput | number
+  unit?: Prisma.StringFieldUpdateOperationsInput | string
+  purchasedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  expiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  storageLocation?: Prisma.EnumStorageLocationFieldUpdateOperationsInput | $Enums.StorageLocation
+  addedBy?: Prisma.EnumAddedByFieldUpdateOperationsInput | $Enums.AddedBy
+  version?: Prisma.IntFieldUpdateOperationsInput | number
+  lastUpdatedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -900,6 +1189,7 @@ export type FridgeItemUncheckedUpdateManyWithoutIngredientInput = {
 export type FridgeItemSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   userId?: boolean
+  familyGroupId?: boolean
   ingredientId?: boolean
   quantity?: boolean
   unit?: boolean
@@ -907,10 +1197,13 @@ export type FridgeItemSelect<ExtArgs extends runtime.Types.Extensions.InternalAr
   expiresAt?: boolean
   storageLocation?: boolean
   addedBy?: boolean
+  version?: boolean
+  lastUpdatedById?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   deletedAt?: boolean
   consumedAt?: boolean
+  familyGroup?: boolean | Prisma.FridgeItem$familyGroupArgs<ExtArgs>
   ingredient?: boolean | Prisma.IngredientDefaultArgs<ExtArgs>
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["fridgeItem"]>
@@ -920,6 +1213,7 @@ export type FridgeItemSelect<ExtArgs extends runtime.Types.Extensions.InternalAr
 export type FridgeItemSelectScalar = {
   id?: boolean
   userId?: boolean
+  familyGroupId?: boolean
   ingredientId?: boolean
   quantity?: boolean
   unit?: boolean
@@ -927,14 +1221,17 @@ export type FridgeItemSelectScalar = {
   expiresAt?: boolean
   storageLocation?: boolean
   addedBy?: boolean
+  version?: boolean
+  lastUpdatedById?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   deletedAt?: boolean
   consumedAt?: boolean
 }
 
-export type FridgeItemOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "ingredientId" | "quantity" | "unit" | "purchasedAt" | "expiresAt" | "storageLocation" | "addedBy" | "createdAt" | "updatedAt" | "deletedAt" | "consumedAt", ExtArgs["result"]["fridgeItem"]>
+export type FridgeItemOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "familyGroupId" | "ingredientId" | "quantity" | "unit" | "purchasedAt" | "expiresAt" | "storageLocation" | "addedBy" | "version" | "lastUpdatedById" | "createdAt" | "updatedAt" | "deletedAt" | "consumedAt", ExtArgs["result"]["fridgeItem"]>
 export type FridgeItemInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  familyGroup?: boolean | Prisma.FridgeItem$familyGroupArgs<ExtArgs>
   ingredient?: boolean | Prisma.IngredientDefaultArgs<ExtArgs>
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
 }
@@ -942,12 +1239,14 @@ export type FridgeItemInclude<ExtArgs extends runtime.Types.Extensions.InternalA
 export type $FridgeItemPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "FridgeItem"
   objects: {
+    familyGroup: Prisma.$FamilyGroupPayload<ExtArgs> | null
     ingredient: Prisma.$IngredientPayload<ExtArgs>
     user: Prisma.$UserPayload<ExtArgs>
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
     userId: string
+    familyGroupId: string | null
     ingredientId: number
     quantity: number
     unit: string
@@ -955,6 +1254,8 @@ export type $FridgeItemPayload<ExtArgs extends runtime.Types.Extensions.Internal
     expiresAt: Date | null
     storageLocation: $Enums.StorageLocation
     addedBy: $Enums.AddedBy
+    version: number
+    lastUpdatedById: string | null
     createdAt: Date
     updatedAt: Date
     deletedAt: Date | null
@@ -1299,6 +1600,7 @@ readonly fields: FridgeItemFieldRefs;
  */
 export interface Prisma__FridgeItemClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
+  familyGroup<T extends Prisma.FridgeItem$familyGroupArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.FridgeItem$familyGroupArgs<ExtArgs>>): Prisma.Prisma__FamilyGroupClient<runtime.Types.Result.GetResult<Prisma.$FamilyGroupPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   ingredient<T extends Prisma.IngredientDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.IngredientDefaultArgs<ExtArgs>>): Prisma.Prisma__IngredientClient<runtime.Types.Result.GetResult<Prisma.$IngredientPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   user<T extends Prisma.UserDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserDefaultArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   /**
@@ -1332,6 +1634,7 @@ export interface Prisma__FridgeItemClient<T, Null = never, ExtArgs extends runti
 export interface FridgeItemFieldRefs {
   readonly id: Prisma.FieldRef<"FridgeItem", 'String'>
   readonly userId: Prisma.FieldRef<"FridgeItem", 'String'>
+  readonly familyGroupId: Prisma.FieldRef<"FridgeItem", 'String'>
   readonly ingredientId: Prisma.FieldRef<"FridgeItem", 'Int'>
   readonly quantity: Prisma.FieldRef<"FridgeItem", 'Float'>
   readonly unit: Prisma.FieldRef<"FridgeItem", 'String'>
@@ -1339,6 +1642,8 @@ export interface FridgeItemFieldRefs {
   readonly expiresAt: Prisma.FieldRef<"FridgeItem", 'DateTime'>
   readonly storageLocation: Prisma.FieldRef<"FridgeItem", 'StorageLocation'>
   readonly addedBy: Prisma.FieldRef<"FridgeItem", 'AddedBy'>
+  readonly version: Prisma.FieldRef<"FridgeItem", 'Int'>
+  readonly lastUpdatedById: Prisma.FieldRef<"FridgeItem", 'String'>
   readonly createdAt: Prisma.FieldRef<"FridgeItem", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"FridgeItem", 'DateTime'>
   readonly deletedAt: Prisma.FieldRef<"FridgeItem", 'DateTime'>
@@ -1688,6 +1993,25 @@ export type FridgeItemDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.In
    * Limit how many FridgeItems to delete.
    */
   limit?: number
+}
+
+/**
+ * FridgeItem.familyGroup
+ */
+export type FridgeItem$familyGroupArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the FamilyGroup
+   */
+  select?: Prisma.FamilyGroupSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the FamilyGroup
+   */
+  omit?: Prisma.FamilyGroupOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.FamilyGroupInclude<ExtArgs> | null
+  where?: Prisma.FamilyGroupWhereInput
 }
 
 /**

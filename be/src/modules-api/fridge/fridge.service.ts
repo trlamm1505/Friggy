@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Logger, ConflictException, Optional } from '@nestjs/common';
 import { PrismaService } from 'src/modules-system/prisma/prisma.service';
 import { RabbitMqPublisherService } from 'src/modules-system/rabbit-mq/rabbit-mq-publisher.service';
 import { FRIDGE_SCAN_ROUTING_KEY } from 'src/common/constants/app.constant';
@@ -20,6 +20,7 @@ import type {
   FridgeStatsChartResponseDto,
   ScanStatusResponseDto,
 } from './dto/fridge-response.dto';
+import { FamilyGateway } from '../family/family.gateway';
 
 @Injectable()
 export class FridgeService {
@@ -28,14 +29,50 @@ export class FridgeService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly rabbitMq: RabbitMqPublisherService,
+    @Optional() private readonly familyGateway: FamilyGateway,
   ) {}
+
+  // ─────────────────────────────────────────────────────────
+  // DataScopeHelper — phát hiện context gia đình của user
+  // ─────────────────────────────────────────────────────────
+
+  /**
+   * Trả về familyGroupId nếu user đang thuộc 1 gia đình active.
+   * Owner → kiểm tra FamilyGroup.ownerId.
+   * Member → kiểm tra FamilyMember.status=active.
+   */
+  async resolveFamilyGroupId(userId: string): Promise<string | null> {
+    const ownedGroup = await this.prisma.familyGroup.findUnique({
+      where: { ownerId: userId },
+      select: { id: true, status: true },
+    });
+    if (ownedGroup?.status === 'active') return ownedGroup.id;
+
+    const membership = await this.prisma.familyMember.findFirst({
+      where: { userId, status: 'active' },
+      select: { familyGroupId: true },
+    });
+    return membership?.familyGroupId ?? null;
+  }
+
+  /** Lấy displayName của user (dùng cho Socket.IO payload) */
+  private async getUserDisplayName(userId: string): Promise<string> {
+    const profile = await this.prisma.userProfile.findUnique({
+      where: { userId },
+      select: { displayName: true },
+    });
+    return profile?.displayName ?? 'Thành viên';
+  }
 
   // ─────────────────────────────────────────────────────────
   // GET / — Danh sách tủ lạnh
   // ─────────────────────────────────────────────────────────
 
   async findAll(userId: string, query: ListFridgeQueryDto): Promise<FridgeItemResponseDto[]> {
-    const where: any = { userId, deletedAt: null, consumedAt: null };
+    const familyGroupId = await this.resolveFamilyGroupId(userId);
+    const where: any = familyGroupId
+      ? { familyGroupId, deletedAt: null, consumedAt: null }
+      : { userId, familyGroupId: null, deletedAt: null, consumedAt: null };
     if (query.storageLocation) where.storageLocation = query.storageLocation;
 
     const items = await this.prisma.fridgeItem.findMany({
@@ -56,13 +93,13 @@ export class FridgeService {
     const deadline = new Date();
     deadline.setDate(deadline.getDate() + days);
 
+    const familyGroupId = await this.resolveFamilyGroupId(userId);
+    const baseWhere: any = familyGroupId
+      ? { familyGroupId, deletedAt: null, consumedAt: null }
+      : { userId, familyGroupId: null, deletedAt: null, consumedAt: null };
+
     const items = await this.prisma.fridgeItem.findMany({
-      where: {
-        userId,
-        deletedAt: null,
-        consumedAt: null,
-        expiresAt: { not: null, lte: deadline },
-      },
+      where: { ...baseWhere, expiresAt: { not: null, lte: deadline } },
       include: { ingredient: true },
       orderBy: { expiresAt: 'asc' },
     });
@@ -152,10 +189,14 @@ export class FridgeService {
           storageLocation,
         );
 
+    // Phát hiện context gia đình
+    const familyGroupId = await this.resolveFamilyGroupId(userId);
+
     const item = await this.prisma.fridgeItem.create({
       data: {
         id: uuid(),
         userId,
+        familyGroupId: familyGroupId ?? undefined,
         ingredientId: ingredient.id,
         quantity: dto.quantity,
         unit: dto.unit,
@@ -163,33 +204,78 @@ export class FridgeService {
         expiresAt,
         storageLocation: (dto.storageLocation as any) ?? 'fridge',
         addedBy: 'manual',
+        lastUpdatedById: userId,
       },
       include: { ingredient: true },
     });
+
+    // Broadcast event Socket.IO nếu là family
+    if (familyGroupId && this.familyGateway) {
+      const addedByName = await this.getUserDisplayName(userId);
+      this.familyGateway.emitFridgeItemAdded(
+        familyGroupId,
+        this.mapFridgeItem(item) as any,
+        addedByName,
+      );
+    }
 
     return this.mapFridgeItem(item);
   }
 
   // ─────────────────────────────────────────────────────────
-  // PATCH /items/:id — Cập nhật
+  // PATCH /items/:id — Cập nhật (với Optimistic Locking)
   // ─────────────────────────────────────────────────────────
 
-  async updateItem(userId: string, itemId: string, dto: UpdateFridgeItemDto): Promise<FridgeItemResponseDto> {
+  async updateItem(
+    userId: string,
+    itemId: string,
+    dto: UpdateFridgeItemDto & { version?: number },
+  ): Promise<FridgeItemResponseDto> {
+    // Tìm item — family member cũng được phép sửa nếu item thuộc family tủ lạnh chung
+    const familyGroupId = await this.resolveFamilyGroupId(userId);
     const item = await this.prisma.fridgeItem.findFirst({
-      where: { id: itemId, userId, deletedAt: null },
+      where: familyGroupId
+        ? { id: itemId, familyGroupId, deletedAt: null }
+        : { id: itemId, userId, familyGroupId: null, deletedAt: null },
     });
     if (!item) throw new NotFoundException('Không tìm thấy nguyên liệu trong tủ');
+
+    // Optimistic Locking: kiểm tra version nếu client gửi
+    if (dto.version !== undefined && item.version !== dto.version) {
+      throw new ConflictException({
+        message: 'Dữ liệu đã bị thay đổi bởi thành viên khác. Vui lòng tải lại.',
+        currentVersion: item.version,
+        itemId,
+      });
+    }
+
+    const changes: Record<string, unknown> = {};
+    if (dto.quantity !== undefined) changes.quantity = dto.quantity;
+    if (dto.unit) changes.unit = dto.unit;
+    if (dto.expiresAt !== undefined) changes.expiresAt = dto.expiresAt ? new Date(dto.expiresAt) : null;
+    if (dto.storageLocation) changes.storageLocation = dto.storageLocation as any;
 
     const updated = await this.prisma.fridgeItem.update({
       where: { id: itemId },
       data: {
-        ...(dto.quantity !== undefined && { quantity: dto.quantity }),
-        ...(dto.unit && { unit: dto.unit }),
-        ...(dto.expiresAt !== undefined && { expiresAt: dto.expiresAt ? new Date(dto.expiresAt) : null }),
-        ...(dto.storageLocation && { storageLocation: dto.storageLocation as any }),
+        ...changes,
+        version: { increment: 1 },
+        lastUpdatedById: userId,
       },
       include: { ingredient: true },
     });
+
+    // Broadcast event Socket.IO nếu là family
+    if (familyGroupId && this.familyGateway) {
+      const updatedByName = await this.getUserDisplayName(userId);
+      this.familyGateway.emitFridgeItemUpdated(
+        familyGroupId,
+        itemId,
+        changes,
+        updated.version,
+        updatedByName,
+      );
+    }
 
     return this.mapFridgeItem(updated);
   }
@@ -199,8 +285,12 @@ export class FridgeService {
   // ─────────────────────────────────────────────────────────
 
   async removeItem(userId: string, itemId: string): Promise<void> {
+    const familyGroupId = await this.resolveFamilyGroupId(userId);
     const item = await this.prisma.fridgeItem.findFirst({
-      where: { id: itemId, userId, deletedAt: null },
+      where: familyGroupId
+        ? { id: itemId, familyGroupId, deletedAt: null }
+        : { id: itemId, userId, familyGroupId: null, deletedAt: null },
+      include: { ingredient: true },
     });
     if (!item) throw new NotFoundException('Không tìm thấy nguyên liệu trong tủ');
 
@@ -208,6 +298,17 @@ export class FridgeService {
       where: { id: itemId },
       data: { deletedAt: new Date() },
     });
+
+    // Broadcast event Socket.IO nếu là family
+    if (familyGroupId && this.familyGateway) {
+      const removedByName = await this.getUserDisplayName(userId);
+      this.familyGateway.emitFridgeItemRemoved(
+        familyGroupId,
+        itemId,
+        (item as any).ingredient?.name ?? 'Không rõ',
+        removedByName,
+      );
+    }
   }
 
   // ─────────────────────────────────────────────────────────

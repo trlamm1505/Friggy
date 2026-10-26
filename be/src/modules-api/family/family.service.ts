@@ -17,11 +17,13 @@ import {
   BadRequestException,
   ForbiddenException,
   ConflictException,
+  Optional,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService } from 'src/modules-system/prisma/prisma.service';
 import { v4 as uuid } from 'uuid';
 import type { InviteMemberDto, FamilyGroupDto, FamilyRoleDto } from './dto/family.dto';
+import { FamilyGateway } from './family.gateway';
 
 const MAX_MEMBERS = 5;
 const INVITE_EXPIRE_HOURS = 48;
@@ -33,6 +35,7 @@ export class FamilyService {
   constructor(
     private readonly prisma: PrismaService,
     @Inject('EMAIL_SERVICE') private readonly emailClient: ClientProxy,
+    @Optional() private readonly familyGateway: FamilyGateway,
   ) {}
 
   // ─────────────────────────────────────────────────────────
@@ -205,7 +208,10 @@ export class FamilyService {
       }
     }
 
-    // Atomic: count + update trong transaction → tránh race condition
+    // Atomic: count + update + merge trong transaction
+    let mergedItemCount = 0;
+    const memberUserId = userId ?? member.userId;
+
     await this.prisma.$transaction(async (tx) => {
       const activeCount = await tx.familyMember.count({
         where: { familyGroupId: member.familyGroupId, status: 'active' },
@@ -215,8 +221,25 @@ export class FamilyService {
       }
       await tx.familyMember.update({
         where: { id: member.id },
-        data: { status: 'active', joinedAt: new Date(), userId: userId ?? member.userId },
+        data: { status: 'active', joinedAt: new Date(), userId: memberUserId ?? member.userId },
       });
+
+      // ─── Gộp đồ cá nhân vào tủ gia đình (Direction 1: Single Active Fridge) ───
+      if (memberUserId) {
+        const result = await tx.fridgeItem.updateMany({
+          where: {
+            userId: memberUserId,
+            familyGroupId: null,   // Chỉ lấy đồ cá nhân (chưa thuộc gia đình nào)
+            deletedAt: null,
+            consumedAt: null,
+          },
+          data: { familyGroupId: member.familyGroupId },
+        });
+        mergedItemCount = result.count;
+        this.logger.log(
+          `[Family] Merged ${mergedItemCount} personal fridge items of ${memberUserId} into family ${member.familyGroupId}`,
+        );
+      }
     });
 
     await this.createNotification(
@@ -226,6 +249,15 @@ export class FamilyService {
       `${member.invitedEmail} đã chấp nhận lời mời tham gia gia đình.`,
       { memberId: member.id, email: member.invitedEmail },
     );
+
+    // Broadcast Socket.IO event đến tất cả thành viên trong gia đình
+    if (this.familyGateway) {
+      this.familyGateway.emitMemberJoined(
+        member.familyGroupId,
+        member.invitedEmail,
+        mergedItemCount,
+      );
+    }
 
     this.logger.log(`[Family] ${member.invitedEmail} accepted invite for group ${member.familyGroupId}`);
     return { message: 'Đã tham gia gia đình thành công!' };
