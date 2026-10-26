@@ -1,20 +1,18 @@
-﻿import {
+import {
   CanActivate,
   ExecutionContext,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
-import { JWT_ACCESS_SECRET } from '../constants/app.constant';
-import { JwtPayload } from '../interfaces/jwt-payload.interface';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
+import { TokensService } from 'src/modules-system/tokens/tokens.service';
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
   constructor(
-    private readonly jwtService: JwtService,
+    private readonly tokensService: TokensService,
     private readonly reflector: Reflector,
   ) {}
 
@@ -33,15 +31,13 @@ export class JwtAuthGuard implements CanActivate {
       throw new UnauthorizedException('Vui lòng đăng nhập để tiếp tục');
     }
 
-    try {
-      const payload = await this.jwtService.verifyAsync<JwtPayload>(token, {
-        secret: JWT_ACCESS_SECRET,
-      });
-      // Gán payload vào request.user để dùng trong controller
-      (request as any).user = payload;
-    } catch {
+    const payload = this.tokensService.verifyAccessToken(token);
+    if (!payload) {
       throw new UnauthorizedException('Token không hợp lệ hoặc đã hết hạn');
     }
+
+    // Gán payload vào request.user để dùng trong controller
+    (request as any).user = payload;
 
     return true;
   }
