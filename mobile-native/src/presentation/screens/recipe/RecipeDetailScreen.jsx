@@ -94,7 +94,10 @@ export const RecipeDetailScreen = () => {
   const services = useServices();
 
   const routeRecipe = route.params?.recipe;
-  const recipeId = routeRecipe?.recipeId ?? routeRecipe?.id;
+  // ⚠️ B4: màn "Thực đơn tuần tới" chỉ có `recipeId` của slot -> hỗ trợ cả 2
+  // dạng route param: `{ recipeId }` hoặc `{ recipe: {...} }`.
+  const recipeId =
+    route.params?.recipeId ?? routeRecipe?.recipeId ?? routeRecipe?.id;
 
   const { data: fetchedRecipe, loading, error, refetch } = useRecipeById(recipeId);
   const { data: fridgeItems } = useFridgeItems();

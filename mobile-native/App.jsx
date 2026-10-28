@@ -86,6 +86,19 @@ import './src/data/services/real/RealUserService';
 // ──────────────────────────────────────────────────────────────────
 import './src/data/services/real/RealRecipeService';
 
+// ──────────────────────────────────────────────────────────────────
+// B4 — AI Chat streaming (đăng ký key 'aiChatService')
+//
+// ⚠️ Key `aiChatService` KHÔNG có trong `ServiceProvider.defaultServices`
+// (file immutable từ P0.5) nên `resolveServices()` không bọc service này.
+// UI đọc thẳng từ registry: `getRegisteredService('aiChatService')` và TỰ
+// fallback sang `MockAiChatService` khi `isMockMode()` (xem `AiChatScreen.jsx`).
+//
+// ⚠️ Cố ý KHÔNG fallback sang mock khi BE lỗi: AI Chat là flow AI thật,
+// bịa câu trả lời giả sẽ khiến user tin AI đang thật sự trả lời.
+// ──────────────────────────────────────────────────────────────────
+import './src/data/services/real/RealAiChatService';
+
 export default function App() {
   const [fontsLoaded] = useFonts({
     PlusJakartaSans_400Regular,

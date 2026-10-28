@@ -9,6 +9,14 @@
  *      (bỏ `week` / `data` / `total` / `previousWeek`).
  *   3. Thêm `getBookmarked()` / `addBookmark()` / `removeBookmark()`.
  *
+ * ⚠️ SỬA Ở SPRINT B4:
+ *   4. `getNextWeekPlan()` đổi shape từ `{ id, weekStart, slots: {breakfast,...} }`
+ *      sang `{ id, weekStart, status, totalBudget, days[] }` — mỗi ngày có
+ *      `slots[]` kèm `mealType` (khớp `RealRecipeService.getNextWeekPlan()`).
+ *   5. `markSlotCooked()` nhận slot id thật và CẬP NHẬT state mock
+ *      (trước đây là no-op) để UI phản ánh ngay.
+ *   6. `toggleShoppingItem()` nhận `listId:itemId` (BE cần cả 2 id).
+ *
  * Khớp với `RealRecipeService` (R1): cùng input -> cùng output shape.
  */
 
@@ -22,15 +30,71 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 let shoppingList = JSON.parse(JSON.stringify(shoppingMock.items));
 
-// Mock weekly plan
+/**
+ * Mock weekly plan — shape MỚI của B4: `{ id, weekStart, status, totalBudget, days[] }`.
+ *
+ * Mỗi ngày có `slots[]` (mỗi slot có `mealType`) -> UI KHÔNG đoán bữa theo index.
+ */
 const mockNextWeekPlan = {
   id: 'plan-current',
   weekStart: '2026-10-19',
-  slots: {
-    breakfast: { id: 'r1', name: 'Trứng xào cà chua', image: 'recipe_tomato_egg', cookTime: 15 },
-    lunch: { id: 'r2', name: 'Canh rau củ', image: 'recipe_veggie_soup', cookTime: 25 },
-    dinner: { id: 'r3', name: 'Thịt heo kho trứng', image: null, cookTime: 45 },
-  },
+  status: 'active',
+  totalBudget: 700000,
+  days: [
+    {
+      id: 'daily-1',
+      dayOfWeek: 1,
+      date: '2026-10-19',
+      dailyBudget: 100000,
+      slots: [
+        {
+          id: 'slot-1',
+          recipeId: 'r1',
+          name: 'Trứng xào cà chua',
+          image: 'recipe_tomato_egg',
+          cookTime: 15,
+          difficulty: 'easy',
+          servings: 2,
+          mealType: 'breakfast',
+          cooked: false,
+          matchPercent: 95,
+          tags: ['Nhanh', 'Dễ'],
+          estimatedCost: 30000,
+          note: null,
+        },
+        {
+          id: 'slot-2',
+          recipeId: 'r2',
+          name: 'Canh rau củ',
+          image: 'recipe_veggie_soup',
+          cookTime: 25,
+          difficulty: 'easy',
+          servings: 4,
+          mealType: 'lunch',
+          cooked: false,
+          matchPercent: 88,
+          tags: ['Healthy'],
+          estimatedCost: 45000,
+          note: null,
+        },
+        {
+          id: 'slot-3',
+          recipeId: 'r3',
+          name: 'Thịt heo xào rau',
+          image: null,
+          cookTime: 30,
+          difficulty: 'medium',
+          servings: 4,
+          mealType: 'dinner',
+          cooked: false,
+          matchPercent: 80,
+          tags: ['Đậm đà'],
+          estimatedCost: 90000,
+          note: null,
+        },
+      ],
+    },
+  ],
 };
 
 /**
@@ -202,26 +266,210 @@ export class MockRecipeService extends IRecipeService {
     };
   }
 
+  /**
+   * Kế hoạch tuần — shape MỚI của B4 (`{ id, weekStart, status, totalBudget, days[] }`).
+   * Khớp `RealRecipeService.getNextWeekPlan()`.
+   */
   async getNextWeekPlan() {
     await sleep(MOCK_DELAY);
-    return { ...mockNextWeekPlan };
+    return JSON.parse(JSON.stringify(mockNextWeekPlan));
   }
 
+  /**
+   * Tick "đã nấu" — mock cập nhật state in-memory để UI phản ánh ngay.
+   *
+   * @param {string} planId
+   * @param {string|{id:string, completed?:boolean}} slot
+   */
   async markSlotCooked(planId, slot) {
     await sleep(MOCK_DELAY);
-    // mock - no-op, chỉ return thành công
+    const slotId = typeof slot === 'string' ? slot : slot?.id;
+    const completed = typeof slot === 'object' ? slot.completed !== false : true;
+    if (!slotId) return;
+
+    for (const day of mockNextWeekPlan.days) {
+      const found = day.slots.find((s) => s.id === slotId);
+      if (found) {
+        found.cooked = completed;
+        return;
+      }
+    }
   }
 
+  /**
+   * Danh sách mua phẳng — khớp `RealRecipeService.getShoppingList()`.
+   */
   async getShoppingList() {
     await sleep(MOCK_DELAY / 2);
-    return [...shoppingList];
+    // Gắn `listId` giả để khớp shape của `RealRecipeService.getShoppingList()`.
+    return shoppingList.map((i) => ({ ...i, listId: 'shopping-list-mock' }));
   }
 
+  /**
+   * Tick đã mua.
+   *
+   * ⚠️ BE cần CẢ `listId` + `itemId` -> `id` nhận dạng `listId:itemId`.
+   */
   async toggleShoppingItem(id) {
     await sleep(MOCK_DELAY);
-    const idx = shoppingList.findIndex((i) => i.id === id);
+    const [listId, itemId] = String(id).split(':');
+    if (!listId || itemId === undefined) {
+      throw new Error('Thiếu listId hoặc itemId để tick món mua');
+    }
+
+    const idx = shoppingList.findIndex((i) => String(i.id) === String(itemId));
     if (idx === -1) throw new Error('Item không tồn tại');
     shoppingList[idx] = { ...shoppingList[idx], done: !shoppingList[idx].done };
-    return shoppingList[idx];
+    return { ...shoppingList[idx] };
+  }
+
+  // ═══════════════ Meal planning — Sprint B4 ═══════════════
+
+  /**
+   * `PATCH /meal-planning/slots/{id}` — tick "đã nấu" hoặc đổi công thức.
+   *
+   * Khớp `RealRecipeService.updateSlot()`: cập nhật state in-memory để UI
+   * phản ánh ngay (optimistic update của UI vẫn hoạt động đúng).
+   *
+   * @param {string} slotId
+   * @param {{completed?:boolean, recipeId?:string|null, servings?:number, note?:string}} payload
+   * @returns {Promise<void>}
+   */
+  async updateSlot(slotId, payload = {}) {
+    await sleep(MOCK_DELAY / 2);
+    if (!slotId) return;
+
+    for (const day of mockNextWeekPlan.days) {
+      const found = day.slots.find((s) => s.id === slotId);
+      if (!found) continue;
+
+      if (payload.completed !== undefined) {
+        found.cooked = Boolean(payload.completed);
+      }
+      if (payload.recipeId !== undefined) {
+        const recipe = recipesMock.recipes.find((r) => r.id === payload.recipeId);
+        found.recipeId = payload.recipeId;
+        if (recipe) {
+          found.name = recipe.name;
+          found.cookTime = recipe.cookTime;
+          found.difficulty = recipe.difficulty;
+          found.servings = recipe.servings;
+        }
+      }
+      if (payload.servings !== undefined) {
+        found.servings = Number(payload.servings);
+      }
+      if (payload.note !== undefined) {
+        found.note = payload.note;
+      }
+      return;
+    }
+  }
+
+  /**
+   * `POST /meal-planning/plans/generate` — mock: trả jobId giả, không có SSE.
+   */
+  async generatePlan(params = {}) {
+    await sleep(MOCK_DELAY);
+    return { jobId: 'mock-plan-job', status: 'completed', streamUrl: null };
+  }
+
+  /**
+   * `POST /meal-planning/plans/generate-from-expiring` — mock: trả jobId giả.
+   */
+  async generateFromExpiring(params = {}) {
+    await sleep(MOCK_DELAY);
+    return { jobId: 'mock-expiring-job', status: 'completed', streamUrl: null };
+  }
+
+  /**
+   * `POST /meal-planning/slots/{id}/regenerate` — mock: trả jobId giả.
+   */
+  async regenerateSlot(slotId, reason = 'want_different') {
+    await sleep(MOCK_DELAY);
+    return { jobId: 'mock-regenerate-job', status: 'completed', streamUrl: null };
+  }
+
+  /**
+   * Mở luồng SSE tiến độ (mock) — yield các event giả để UI chạy được.
+   *
+   * ⚠️ Mock KHÔNG có SSE thật -> yield 1 event `done`/`completed` để UI thoát
+   * vòng lặp `for await` và không bị treo.
+   *
+   * @param {string} path
+   * @param {{signal?:AbortSignal}} [options]
+   * @returns {AsyncGenerator<{event:string, data:any}>}
+   */
+  async* streamPlanProgress(path, options = {}) {
+    await sleep(MOCK_DELAY);
+    if (options?.signal?.aborted) return;
+
+    // Đổi món slot -> event `done` với 3 gợi ý.
+    if (path && path.includes('/regenerate/')) {
+      yield {
+        event: 'done',
+        data: {
+          slotId: path.split('/slots/')[1]?.split('/')[0] ?? null,
+          suggestions: '1. Trứng xào cà chua\n2. Canh rau củ\n3. Thịt heo xào rau',
+          message: 'Đã gợi ý 3 món thay thế',
+        },
+      };
+      return;
+    }
+
+    // Lập thực đơn -> event `completed`.
+    yield {
+      event: 'completed',
+      data: { message: 'Đã lập xong thực đơn', summary: '' },
+    };
+  }
+
+  /**
+   * `GET /meal-planning/shopping-lists` — mock: 1 list gồm toàn bộ items.
+   */
+  async getShoppingLists() {
+    await sleep(MOCK_DELAY / 2);
+    return [
+      {
+        id: 'shopping-list-mock',
+        title: 'Danh sách mua tuần này',
+        status: 'active',
+        totalEstimatedCost: shoppingList.reduce((sum, i) => sum + (i.estimatedPrice ?? 0), 0),
+        weeklyPlanId: mockNextWeekPlan.id,
+        createdAt: mockNextWeekPlan.weekStart,
+        items: shoppingList.map((i) => ({ ...i })),
+      },
+    ];
+  }
+
+  /**
+   * `POST /meal-planning/shopping-lists` — mock: tạo list từ kế hoạch tuần.
+   */
+  async createShoppingList(weeklyPlanId, title) {
+    await sleep(MOCK_DELAY);
+    return {
+      id: 'shopping-list-mock',
+      title: (title ?? '').trim() || 'Danh sách mua tuần này',
+      status: 'active',
+      totalEstimatedCost: shoppingList.reduce((sum, i) => sum + (i.estimatedPrice ?? 0), 0),
+      weeklyPlanId: weeklyPlanId ?? mockNextWeekPlan.id,
+      createdAt: mockNextWeekPlan.weekStart,
+      items: shoppingList.map((i) => ({ ...i })),
+    };
+  }
+
+  /**
+   * `PATCH /meal-planning/shopping-lists/{listId}/items/{itemId}` — mock: toggle.
+   */
+  async toggleShoppingItemInList(listId, itemId) {
+    await sleep(MOCK_DELAY / 2);
+    if (!listId || itemId === null || itemId === undefined) {
+      throw new Error('Thiếu listId hoặc itemId để tick món mua');
+    }
+
+    const idx = shoppingList.findIndex((i) => String(i.id) === String(itemId));
+    if (idx === -1) throw new Error('Item không tồn tại');
+    shoppingList[idx] = { ...shoppingList[idx], done: !shoppingList[idx].done };
+    return { ...shoppingList[idx] };
   }
 }

@@ -98,13 +98,21 @@ export const FamilyPlanModal = ({ visible, onClose, onSuccess }) => {
   }, []);
 
   // Reset state khi đóng modal.
+  //
+  // ⚠️ `react-hooks/set-state-in-effect`: setState đồng bộ trong effect body
+  // gây cascading render. Đặt vào task macro (setTimeout 0) để effect chỉ
+  // "đăng ký việc reset", không setState ngay -> hợp lệ với React Compiler.
   useEffect(() => {
     if (!visible) {
-      stopPolling();
-      setCheckout(null);
-      setExpired(false);
-      setTokenInput('');
+      const timer = setTimeout(() => {
+        stopPolling();
+        setCheckout(null);
+        setExpired(false);
+        setTokenInput('');
+      }, 0);
+      return () => clearTimeout(timer);
     }
+    return undefined;
   }, [visible, stopPolling]);
 
   /**

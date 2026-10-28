@@ -73,6 +73,8 @@ export const FamilyManagementScreen = () => {
   }, [userService]);
 
   useEffect(() => {
+    // `load` là async -> setState chỉ chạy sau `await`.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     load();
   }, [load]);
 

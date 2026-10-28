@@ -452,3 +452,416 @@ describe('9. R1 — Mock và Real cùng shape', () => {
     );
   });
 });
+
+// ═══════════════ 10. SPRINT B4 — MEAL PLANNING ═══════════════
+
+describe('10. B4 — Meal planning (plans / slots / tick / regenerate)', () => {
+  /** BE `WeeklyPlanSummaryResponseDto` nguyên bản. */
+  const bePlan = (over = {}) => ({
+    id: 'plan-1',
+    weekStartDate: '2026-10-19',
+    totalBudget: 700000,
+    actualCost: 250000,
+    status: 'active',
+    generatedByAi: true,
+    createdAt: '2026-10-18T08:00:00Z',
+    isSmartFiltered: true,
+    ...over,
+  });
+
+  /** BE `MealSlotResponseDto` nguyên bản. */
+  const beSlot = (over = {}) => ({
+    id: 'slot-1',
+    dayOfWeek: 1,
+    mealType: 'breakfast',
+    recipeId: 'r1',
+    recipeName: 'Trứng xào cà chua',
+    servings: 2,
+    estimatedCost: 30000,
+    note: null,
+    completedAt: null,
+    ...over,
+  });
+
+  it('getPlans gọi GET /meal-planning/plans, map weekStartDate->weekStart', async () => {
+    api.get.mockResolvedValue([bePlan()]);
+
+    const plans = await svc.getPlans();
+
+    expect(api.get).toHaveBeenCalledWith('/meal-planning/plans');
+    expect(plans).toHaveLength(1);
+    expect(plans[0].weekStart).toBe('2026-10-19');
+    expect(plans[0].status).toBe('active');
+    expect(plans[0].generatedByAi).toBe(true);
+  });
+
+  it('getPlanDetail map dailyPlans -> days[] với slots[] có mealType', async () => {
+    api.get.mockResolvedValue({
+      ...bePlan(),
+      dailyPlans: [
+        {
+          id: 'daily-1',
+          dayOfWeek: 1,
+          date: '2026-10-19',
+          dailyBudget: 100000,
+          mealSlots: [beSlot(), beSlot({ id: 'slot-2', mealType: 'lunch' })],
+        },
+      ],
+    });
+
+    const detail = await svc.getPlanDetail('plan-1');
+
+    expect(api.get).toHaveBeenCalledWith('/meal-planning/plans/plan-1');
+    expect(detail.days).toHaveLength(1);
+    expect(detail.days[0].dayOfWeek).toBe(1);
+    expect(detail.days[0].slots).toHaveLength(2);
+    // mealType giữ nguyên -> UI KHÔNG đoán bữa theo index
+    expect(detail.days[0].slots.map((s) => s.mealType)).toEqual(['breakfast', 'lunch']);
+  });
+
+  it('getNextWeekPlan gọi plans -> plans/{id}, trả shape { id, weekStart, days[] }', async () => {
+    api.get
+      .mockResolvedValueOnce([bePlan()])
+      .mockResolvedValueOnce({
+        ...bePlan(),
+        dailyPlans: [{ id: 'd1', dayOfWeek: 1, date: '2026-10-19', mealSlots: [beSlot()] }],
+      });
+
+    const plan = await svc.getNextWeekPlan();
+
+    expect(api.get).toHaveBeenNthCalledWith(1, '/meal-planning/plans');
+    expect(api.get).toHaveBeenNthCalledWith(2, '/meal-planning/plans/plan-1');
+    expect(plan.id).toBe('plan-1');
+    expect(plan.days[0].slots[0].mealType).toBe('breakfast');
+  });
+
+  it('getNextWeekPlan không có plan nào -> trả null', async () => {
+    api.get.mockResolvedValueOnce([]);
+    await expect(svc.getNextWeekPlan()).resolves.toBeNull();
+  });
+
+  it('updateSlot(completed:true) -> PATCH /meal-planning/slots/{id}', async () => {
+    api.patch.mockResolvedValue(null);
+
+    await svc.updateSlot('slot-1', { completed: true });
+
+    expect(api.patch).toHaveBeenCalledWith('/meal-planning/slots/slot-1', {
+      completed: true,
+    });
+  });
+
+  it('updateSlot(đổi món) -> gửi recipeId', async () => {
+    api.patch.mockResolvedValue(null);
+
+    await svc.updateSlot('slot-1', { recipeId: 'r9' });
+
+    expect(api.patch).toHaveBeenCalledWith('/meal-planning/slots/slot-1', {
+      recipeId: 'r9',
+    });
+  });
+
+  it('markSlotCooked nhận slot id -> gọi đúng endpoint', async () => {
+    api.patch.mockResolvedValue(null);
+
+    await svc.markSlotCooked('plan-1', 'slot-1');
+
+    expect(api.patch).toHaveBeenCalledWith('/meal-planning/slots/slot-1', {
+      completed: true,
+    });
+  });
+
+  it('markSlotCooked nhận object { id, completed:false } -> bỏ tick', async () => {
+    api.patch.mockResolvedValue(null);
+
+    await svc.markSlotCooked('plan-1', { id: 'slot-1', completed: false });
+
+    expect(api.patch).toHaveBeenCalledWith('/meal-planning/slots/slot-1', {
+      completed: false,
+    });
+  });
+
+  it('getSlotDetail map summary + missingItems, ảnh qua getImageUrl (R2)', async () => {
+    api.get.mockResolvedValue({
+      id: 'slot-1',
+      mealType: 'lunch',
+      servings: 4,
+      completedAt: null,
+      recipe: {
+        id: 'r2',
+        title: 'Canh rau củ',
+        description: 'Canh nhẹ',
+        thumbnailPath: '/public/recipes/canh.jpg',
+        cookTimeMinutes: 25,
+        difficultyLevel: 'easy',
+        estimatedCost: 45000,
+        steps: [{ stepNumber: 1, instruction: 'Rửa rau' }],
+        ingredients: [],
+      },
+      summary: {
+        totalIngredients: 8,
+        haveCount: 5,
+        partialCount: 1,
+        missingCount: 2,
+        fridgeReadyPercent: 62,
+        missingItems: [
+          {
+            ingredientId: 42,
+            name: 'Cà rốt',
+            quantityNeeded: 200,
+            baseUnit: 'g',
+            originalQuantity: 2,
+            originalUnit: 'củ',
+            isOptional: false,
+            fridgeStatus: 'missing',
+            fridgeQuantity: 150,
+            missingQuantity: 50,
+          },
+        ],
+      },
+    });
+
+    const detail = await svc.getSlotDetail('slot-1');
+
+    expect(api.get).toHaveBeenCalledWith('/meal-planning/slots/slot-1');
+    expect(detail.mealType).toBe('lunch');
+    expect(detail.cooked).toBe(false);
+    expect(detail.recipe.name).toBe('Canh rau củ');
+    expect(detail.recipe.image).toMatch(/^https?:\/\//);
+    expect(detail.recipe.steps).toEqual(['Rửa rau']);
+    expect(detail.summary.fridgeReadyPercent).toBe(62);
+    expect(detail.summary.missingItems[0].fridgeStatus).toBe('missing');
+    expect(detail.summary.missingItems[0].missingQuantity).toBe(50);
+  });
+
+  it('generatePlan -> POST trả jobId + streamUrl', async () => {
+    api.post.mockResolvedValue({
+      jobId: 'job-1',
+      status: 'queued',
+      streamUrl: '/meal-planning/plans/generate/job-1/stream',
+      message: 'ok',
+    });
+
+    const job = await svc.generatePlan({ weekStartDate: '2026-10-19', budget: 700000 });
+
+    expect(api.post).toHaveBeenCalledWith('/meal-planning/plans/generate', {
+      weekStartDate: '2026-10-19',
+      budget: 700000,
+    });
+    expect(job.jobId).toBe('job-1');
+    expect(job.streamUrl).toBe('/meal-planning/plans/generate/job-1/stream');
+  });
+
+  it('generateFromExpiring -> POST đúng endpoint', async () => {
+    api.post.mockResolvedValue({ jobId: 'job-2', status: 'queued', streamUrl: '/x' });
+
+    await svc.generateFromExpiring({ withinDays: 3, days: 2 });
+
+    expect(api.post).toHaveBeenCalledWith('/meal-planning/plans/generate-from-expiring', {
+      withinDays: 3,
+      days: 2,
+    });
+  });
+
+  it('regenerateSlot -> POST đúng endpoint + reason', async () => {
+    api.post.mockResolvedValue({ jobId: 'job-3', status: 'queued', streamUrl: '/y' });
+
+    await svc.regenerateSlot('slot-1', 'want_different');
+
+    expect(api.post).toHaveBeenCalledWith('/meal-planning/slots/slot-1/regenerate', {
+      reason: 'want_different',
+    });
+  });
+});
+
+// ═══════════════ 11. SPRINT B4 — SHOPPING LIST ═══════════════
+
+describe('11. B4 — Shopping list', () => {
+  /** BE `ShoppingListResponseDto` nguyên bản. */
+  const beList = (over = {}) => ({
+    id: 'list-1',
+    title: 'Danh sách mua tuần 43',
+    status: 'active',
+    totalEstimatedCost: 350000,
+    weeklyPlanId: 'plan-1',
+    createdAt: '2026-10-18T08:00:00Z',
+    items: [
+      {
+        id: 1,
+        ingredientName: 'Thịt bò',
+        quantity: 500,
+        unit: 'g',
+        estimatedPrice: 120000,
+        isPurchased: false,
+        purchasedAt: null,
+      },
+    ],
+    ...over,
+  });
+
+  it('getShoppingLists map ingredientName->name, isPurchased->done', async () => {
+    api.get.mockResolvedValue([beList()]);
+
+    const lists = await svc.getShoppingLists();
+
+    expect(api.get).toHaveBeenCalledWith('/meal-planning/shopping-lists');
+    expect(lists[0].items[0].name).toBe('Thịt bò');
+    expect(lists[0].items[0].done).toBe(false);
+    // id của item là SỐ -> giữ nguyên kiểu (endpoint toggle dùng ParseIntPipe)
+    expect(lists[0].items[0].id).toBe(1);
+  });
+
+  it('getShoppingList gộp items mọi list + gắn listId', async () => {
+    api.get.mockResolvedValue([
+      beList(),
+      beList({
+        id: 'list-2',
+        items: [
+          { id: 2, ingredientName: 'Rau muống', quantity: 2, unit: 'bó', isPurchased: true },
+        ],
+      }),
+    ]);
+
+    const items = await svc.getShoppingList();
+
+    expect(items).toHaveLength(2);
+    expect(items[0].listId).toBe('list-1');
+    expect(items[1].listId).toBe('list-2');
+    expect(items[1].done).toBe(true);
+  });
+
+  it('createShoppingList -> POST weeklyPlanId', async () => {
+    api.post.mockResolvedValue(beList());
+
+    const list = await svc.createShoppingList('plan-1');
+
+    expect(api.post).toHaveBeenCalledWith('/meal-planning/shopping-lists', {
+      weeklyPlanId: 'plan-1',
+    });
+    expect(list.id).toBe('list-1');
+    expect(list.items[0].name).toBe('Thịt bò');
+  });
+
+  it('toggleShoppingItemInList -> PATCH đúng URL (listId + itemId)', async () => {
+    api.patch.mockResolvedValue(null);
+
+    await svc.toggleShoppingItemInList('list-1', 1);
+
+    expect(api.patch).toHaveBeenCalledWith('/meal-planning/shopping-lists/list-1/items/1');
+  });
+
+  it('toggleShoppingItem("list-1:1") -> tách được 2 id', async () => {
+    api.patch.mockResolvedValue(null);
+
+    await svc.toggleShoppingItem('list-1:1');
+
+    expect(api.patch).toHaveBeenCalledWith('/meal-planning/shopping-lists/list-1/items/1');
+  });
+
+  it('toggleShoppingItem thiếu itemId -> ném lỗi, KHÔNG gọi API', async () => {
+    await expect(svc.toggleShoppingItem('list-1')).rejects.toThrow(/listId hoặc itemId/i);
+    expect(api.patch).not.toHaveBeenCalled();
+  });
+});
+
+// ═══════════════ 12. B4 — R1: Mock và Real cùng shape ═══════════════
+
+describe('12. B4 — R1 — Mock và Real cùng shape', () => {
+  it('getNextWeekPlan(): Mock trả shape { id, weekStart, status, totalBudget, days[] }', async () => {
+    const mock = new MockRecipeService();
+    const mockPlan = await mock.getNextWeekPlan();
+
+    expect(Object.keys(mockPlan).sort()).toEqual(
+      ['days', 'id', 'status', 'totalBudget', 'weekStart'].sort()
+    );
+    expect(Array.isArray(mockPlan.days)).toBe(true);
+    expect(mockPlan.days[0].slots[0]).toHaveProperty('mealType');
+    expect(mockPlan.days[0].slots[0]).toHaveProperty('cooked');
+  });
+
+  it('getShoppingList(): Mock gắn listId giống Real', async () => {
+    const mock = new MockRecipeService();
+    const mockItems = await mock.getShoppingList();
+
+    expect(mockItems.length).toBeGreaterThan(0);
+    expect(mockItems[0]).toHaveProperty('listId');
+    expect(mockItems[0]).toHaveProperty('done');
+  });
+
+  it('getShoppingLists(): Mock trả list[] có items[] giống Real', async () => {
+    const mock = new MockRecipeService();
+    const lists = await mock.getShoppingLists();
+
+    expect(Array.isArray(lists)).toBe(true);
+    expect(lists.length).toBeGreaterThan(0);
+    expect(lists[0]).toHaveProperty('id');
+    expect(lists[0]).toHaveProperty('title');
+    expect(lists[0]).toHaveProperty('items');
+    expect(Array.isArray(lists[0].items)).toBe(true);
+  });
+
+  it('updateSlot(): Mock cập nhật cooked trong state (không crash, đúng shape)', async () => {
+    const mock = new MockRecipeService();
+    const plan = await mock.getNextWeekPlan();
+    const slotId = plan.days[0].slots[0].id;
+
+    await mock.updateSlot(slotId, { completed: true });
+
+    const after = await mock.getNextWeekPlan();
+    expect(after.days[0].slots[0].cooked).toBe(true);
+  });
+
+  it('createShoppingList(): Mock trả shape ShoppingList giống Real', async () => {
+    const mock = new MockRecipeService();
+    const list = await mock.createShoppingList('plan-current');
+
+    expect(list).toHaveProperty('id');
+    expect(list).toHaveProperty('title');
+    expect(list).toHaveProperty('items');
+    expect(list.weeklyPlanId).toBe('plan-current');
+  });
+
+  it('toggleShoppingItemInList(): Mock toggle done trong state', async () => {
+    const mock = new MockRecipeService();
+    const before = await mock.getShoppingList();
+    const item = before[0];
+
+    await mock.toggleShoppingItemInList(item.listId, item.id);
+
+    const after = await mock.getShoppingList();
+    const same = after.find((i) => String(i.id) === String(item.id));
+    expect(same.done).toBe(!item.done);
+  });
+
+  it('streamPlanProgress(): Mock yield event "done" cho regenerate, "completed" cho plan', async () => {
+    const mock = new MockRecipeService();
+
+    const regenEvents = [];
+    for await (const evt of mock.streamPlanProgress('/meal-planning/slots/slot-1/regenerate/job-1/stream')) {
+      regenEvents.push(evt);
+    }
+    expect(regenEvents).toHaveLength(1);
+    expect(regenEvents[0].event).toBe('done');
+    expect(regenEvents[0].data.suggestions).toContain('1.');
+
+    const planEvents = [];
+    for await (const evt of mock.streamPlanProgress('/meal-planning/plans/generate-from-expiring/job-1/stream')) {
+      planEvents.push(evt);
+    }
+    expect(planEvents).toHaveLength(1);
+    expect(planEvents[0].event).toBe('completed');
+  });
+
+  it('generateFromExpiring()/regenerateSlot(): Mock trả { jobId, status, streamUrl }', async () => {
+    const mock = new MockRecipeService();
+
+    const gen = await mock.generateFromExpiring({ withinDays: 3, days: 2 });
+    expect(gen).toHaveProperty('jobId');
+    expect(gen).toHaveProperty('status');
+    expect(gen).toHaveProperty('streamUrl');
+
+    const regen = await mock.regenerateSlot('slot-1', 'want_different');
+    expect(regen).toHaveProperty('jobId');
+    expect(regen).toHaveProperty('status');
+    expect(regen).toHaveProperty('streamUrl');
+  });
+});

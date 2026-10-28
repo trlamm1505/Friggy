@@ -1,16 +1,20 @@
 /**
  * ShoppingReminderScreen
  *
- * Redesigned (Sprint 7):
- * - Filter chips: All / Pending / Completed
- * - Search bar cho shopping items
- * - Stats header (pending + completed count)
- * - Long-press to delete (instead of swipe - simpler)
- * - Dùng useAsyncData-style hook thông qua service
- * - Empty states khác nhau (no items vs no filter result)
+ * ⚠️ SPRINT B4 — ĐÃ NỐI BE THẬT (trước đây là `shoppingMock` hardcode).
+ *
+ * Nguồn dữ liệu: `GET /meal-planning/shopping-lists` -> mỗi list có `items[]`.
+ * Tick đã mua: `PATCH /meal-planning/shopping-lists/{listId}/items/{itemId}`.
+ *
+ * ⚠️ BE trả item id là SỐ (`@ApiProperty({ example: 1 })`) và endpoint toggle
+ * dùng `ParseIntPipe` -> PHẢI giữ nguyên kiểu số khi ghép `listId:itemId`.
+ *
+ * ⚠️ BE KHÔNG có endpoint xoá item hay thêm item lẻ -> các nút tương ứng
+ *   vẫn hiển thị nhưng chỉ báo "chưa hỗ trợ" thay vì giả vờ thành công.
+ *   (Thêm món chỉ khả dụng qua `createShoppingList` từ kế hoạch tuần.)
  */
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, Pressable, Alert } from 'react-native';
 import { useTheme } from '../../theme/ThemeContext';
 import { AppColors } from '../../theme/colors';
@@ -22,9 +26,11 @@ import { FriggyAppBar } from '../../components/navigation/FriggyAppBar';
 import { SearchBar } from '../../components/common/SearchBar';
 import { FilterChips } from '../../components/common/FilterChips';
 import { EmptyState } from '../../components/common/EmptyState';
-import { Check, Plus, ShoppingCart, Trash2 } from 'lucide-react-native';
-import shoppingMock from '../../../shared/mocks/shopping-reminder.json';
-import { showSuccess } from '../../utils/helpers';
+import { ErrorState } from '../../components/common/ErrorState';
+import { Skeleton } from '../../components/common/Skeleton';
+import { Check, Plus, Trash2 } from 'lucide-react-native';
+import { showError, showInfo } from '../../utils/helpers';
+import { useServices } from '../../../data/ServiceProvider';
 
 const FILTER_KEYS = {
   ALL: 'all',
@@ -36,9 +42,33 @@ export const ShoppingReminderScreen = () => {
   const { isDark } = useTheme();
   const { t } = useTranslation();
   const navigation = useNavigation();
-  const [items, setItems] = useState(shoppingMock.items);
+  const services = useServices();
+
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState(FILTER_KEYS.ALL);
+  const [busyId, setBusyId] = useState(null);
+
+  const loadItems = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await services.recipeService.getShoppingList();
+      setItems(Array.isArray(data) ? data : []);
+    } catch (e) {
+      setError(e);
+    } finally {
+      setLoading(false);
+    }
+  }, [services]);
+
+  useEffect(() => {
+    // `loadItems` là async -> setState chỉ chạy sau `await`.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadItems();
+  }, [loadItems]);
 
   // Filter + search
   const filteredItems = useMemo(() => {
@@ -64,61 +94,117 @@ export const ShoppingReminderScreen = () => {
 
   const filterOptions = [
     { key: FILTER_KEYS.ALL, label: t('home.shoppingAll'), count: counts.all },
-    { key: FILTER_KEYS.PENDING, label: t('home.shoppingPending'), count: counts.pending, color: '#FF9800' },
-    { key: FILTER_KEYS.COMPLETED, label: t('home.shoppingCompleted'), count: counts.completed, color: AppColors.primary },
+    {
+      key: FILTER_KEYS.PENDING,
+      label: t('home.shoppingPending'),
+      count: counts.pending,
+      color: '#FF9800',
+    },
+    {
+      key: FILTER_KEYS.COMPLETED,
+      label: t('home.shoppingCompleted'),
+      count: counts.completed,
+      color: AppColors.primary,
+    },
   ];
 
+  /**
+   * Tick đã mua — optimistic update + rollback nếu API lỗi.
+   *
+   * @param {object} item - item có `listId` (do service gắn) và `id`
+   */
   const toggle = useCallback(
-    (id) => {
-      setItems((prev) => prev.map((it) => (it.id === id ? { ...it, done: !it.done } : it)));
+    async (item) => {
+      if (busyId !== null) return;
+
+      const nextDone = !item.done;
+      setBusyId(item.id);
+
+      // Optimistic.
+      setItems((prev) => prev.map((it) => (it.id === item.id ? { ...it, done: nextDone } : it)));
+
+      try {
+        await services.recipeService.toggleShoppingItemInList(item.listId, item.id);
+      } catch (e) {
+        // Rollback.
+        setItems((prev) => prev.map((it) => (it.id === item.id ? { ...it, done: !nextDone } : it)));
+        showError(e?.message ?? t('home.error'));
+      } finally {
+        setBusyId(null);
+      }
     },
-    [],
+    [busyId, services, t]
   );
 
-  const remove = useCallback(
-    (id) => {
-      Alert.alert(t('home.shoppingDelete'), 'Xóa món này khỏi danh sách?', [
-        { text: t('home.cancel'), style: 'cancel' },
-        {
-          text: t('home.shoppingDelete'),
-          style: 'destructive',
-          onPress: () => setItems((prev) => prev.filter((it) => it.id !== id)),
-        },
-      ]);
-    },
-    [t],
-  );
+  /**
+   * Xoá món — BE chưa có endpoint xoá item -> báo rõ cho user.
+   */
+  const remove = useCallback(() => {
+    Alert.alert(t('home.shoppingDelete'), t('home.shoppingDeleteNotSupported'), [
+      { text: t('home.cancel'), style: 'cancel' },
+    ]);
+  }, [t]);
 
+  /**
+   * Thêm món — BE chỉ cho tạo list từ kế hoạch tuần -> hướng user sang đó.
+   */
   const add = useCallback(() => {
-    const newItem = {
-      id: String(Date.now()),
-      name: `Món mới ${items.length + 1}`,
-      quantity: 1,
-      unit: 'cái',
-      done: false,
-    };
-    setItems((prev) => [...prev, newItem]);
-    showSuccess(t('home.shoppingAddItem'));
-  }, [items.length, t]);
+    showInfo(t('home.shoppingAddFromPlanHint'));
+  }, [t]);
 
   const clearCompleted = useCallback(() => {
     const completedCount = items.filter((i) => i.done).length;
     if (completedCount === 0) return;
     Alert.alert(
       t('home.shoppingClearCompleted'),
-      `Xóa ${completedCount} món đã hoàn thành?`,
+      `${completedCount} ${t('home.shoppingCompleted')}`,
       [
         { text: t('home.cancel'), style: 'cancel' },
         {
           text: t('home.shoppingClearCompleted'),
           style: 'destructive',
-          onPress: () => setItems((prev) => prev.filter((it) => !it.done)),
+          onPress: () => setItems((prev) => prev.filter((i) => !i.done)),
         },
-      ],
+      ]
     );
   }, [items, t]);
 
   const hasFilters = search || filter !== FILTER_KEYS.ALL;
+
+  // ── Loading ──
+  if (loading && items.length === 0) {
+    return (
+      <View style={[styles.container, { backgroundColor: isDark ? '#0E1611' : '#FFFFFF' }]}>
+        <FriggyAppBar showBackButton onBackTap={() => navigation.goBack()} />
+        <View style={{ padding: sp(20), gap: sp(10) }}>
+          {[0, 1, 2, 3].map((i) => (
+            <View
+              key={i}
+              style={[styles.skeletonRow, { backgroundColor: isDark ? '#19271E' : '#F4F7F4' }]}
+            >
+              <Skeleton width={sp(22)} height={sp(22)} borderRadius={sp(11)} />
+              <View style={{ flex: 1, marginLeft: sp(12) }}>
+                <Skeleton width="60%" height={sp(13)} borderRadius={sp(6)} />
+                <Skeleton width="35%" height={sp(11)} borderRadius={sp(6)} style={{ marginTop: sp(6) }} />
+              </View>
+            </View>
+          ))}
+        </View>
+      </View>
+    );
+  }
+
+  // ── Error ──
+  if (error && items.length === 0) {
+    return (
+      <View style={[styles.container, { backgroundColor: isDark ? '#0E1611' : '#FFFFFF' }]}>
+        <FriggyAppBar showBackButton onBackTap={() => navigation.goBack()} />
+        <View style={{ padding: sp(20) }}>
+          <ErrorState message={error?.message} onRetry={loadItems} />
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.container, { backgroundColor: isDark ? '#0E1611' : '#FFFFFF' }]}>
@@ -137,20 +223,21 @@ export const ShoppingReminderScreen = () => {
           <Text
             style={[
               styles.subtitle,
-              { color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary, fontSize: sp(13) },
+              {
+                color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                fontSize: sp(13),
+              },
             ]}
           >
-            {counts.pending} {t('home.shoppingPending')} • {counts.completed} {t('home.shoppingCompleted')}
+            {counts.pending} {t('home.shoppingPending')} • {counts.completed}{' '}
+            {t('home.shoppingCompleted')}
           </Text>
         </View>
         {counts.completed > 0 ? (
           <Pressable
             onPress={clearCompleted}
             hitSlop={6}
-            style={({ pressed }) => [
-              styles.clearBtn,
-              { opacity: pressed ? 0.6 : 1 },
-            ]}
+            style={({ pressed }) => [styles.clearBtn, { opacity: pressed ? 0.6 : 1 }]}
           >
             <Trash2 color={isDark ? AppColors.primaryLight : AppColors.forestAccent} size={16} />
           </Pressable>
@@ -167,11 +254,7 @@ export const ShoppingReminderScreen = () => {
       </View>
 
       <View style={{ paddingHorizontal: sp(20), marginBottom: sp(10) }}>
-        <SearchBar
-          value={search}
-          onChangeText={setSearch}
-          placeholder="Tìm món..."
-        />
+        <SearchBar value={search} onChangeText={setSearch} placeholder={t('home.shoppingSearch')} />
       </View>
 
       <FilterChips
@@ -183,13 +266,14 @@ export const ShoppingReminderScreen = () => {
 
       <FlatList
         data={filteredItems}
-        keyExtractor={(it) => it.id}
+        keyExtractor={(it) => `${it.listId ?? ''}-${it.id}`}
         contentContainerStyle={{ paddingHorizontal: sp(20), paddingBottom: 100 }}
         ItemSeparatorComponent={() => <View style={{ height: sp(10) }} />}
         renderItem={({ item }) => (
           <ShoppingItem
             item={item}
-            onToggle={() => toggle(item.id)}
+            busy={busyId === item.id}
+            onToggle={() => toggle(item)}
             onRemove={() => remove(item.id)}
           />
         )}
@@ -199,15 +283,11 @@ export const ShoppingReminderScreen = () => {
               emoji="🛒"
               title={t('home.shoppingEmpty')}
               hint={t('home.shoppingEmptyHint')}
-              actionText={t('home.shoppingAddItem')}
+              actionText={t('home.shoppingCreateFromPlan')}
               onAction={add}
             />
           ) : hasFilters ? (
-            <EmptyState
-              emoji="🔍"
-              title={t('home.noResults')}
-              hint={t('home.noResultsHint')}
-            />
+            <EmptyState emoji="🔍" title={t('home.noResults')} hint={t('home.noResultsHint')} />
           ) : null
         }
       />
@@ -215,7 +295,7 @@ export const ShoppingReminderScreen = () => {
   );
 };
 
-const ShoppingItem = ({ item, onToggle, onRemove }) => {
+const ShoppingItem = ({ item, busy, onToggle, onRemove }) => {
   const { isDark } = useTheme();
   return (
     <View
@@ -230,6 +310,7 @@ const ShoppingItem = ({ item, onToggle, onRemove }) => {
     >
       <Pressable
         onPress={onToggle}
+        disabled={busy}
         hitSlop={4}
         style={({ pressed }) => [
           styles.checkBox,
@@ -242,7 +323,7 @@ const ShoppingItem = ({ item, onToggle, onRemove }) => {
       >
         {item.done ? <Check color="#FFFFFF" size={14} strokeWidth={3} /> : null}
       </Pressable>
-      <Pressable onPress={onToggle} style={{ flex: 1, marginLeft: sp(10) }}>
+      <Pressable onPress={onToggle} disabled={busy} style={{ flex: 1, marginLeft: sp(10) }}>
         <Text
           style={[
             styles.itemName,
@@ -339,5 +420,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: sp(8),
+  },
+  skeletonRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: sp(14),
+    borderRadius: sp(12),
   },
 });

@@ -72,19 +72,55 @@
  */
 
 /**
- * @typedef {Object} WeeklyPlan
+ * @typedef {Object} MealPlanSummary
  * @property {string} id
- * @property {string} weekStart
- * @property {Object} slots - { breakfast: Recipe, lunch: Recipe, dinner: Recipe }
+ * @property {string|null} weekStart - YYYY-MM-DD
+ * @property {number} totalBudget
+ * @property {number|null} actualCost
+ * @property {string} status - 'draft'|'confirmed'|'active'|'completed'
+ * @property {boolean} generatedByAi
+ * @property {boolean} isSmartFiltered
+ * @property {string|null} createdAt
+ */
+
+/**
+ * @typedef {Object} MealPlanDay
+ * @property {string} id
+ * @property {number} dayOfWeek - 1=T2 ... 7=CN (quy ước BE)
+ * @property {string|null} date - YYYY-MM-DD
+ * @property {number|null} dailyBudget
+ * @property {RecipeSuggestion[]} slots - đã có `mealType` để không đoán theo index
+ */
+
+/**
+ * @typedef {Object} MealPlan
+ * @property {string} id
+ * @property {string|null} weekStart
+ * @property {string} status
+ * @property {number} totalBudget
+ * @property {MealPlanDay[]} days
  */
 
 /**
  * @typedef {Object} ShoppingItem
- * @property {string} id
+ * @property {string|number} id - id item của BE (SỐ)
  * @property {string} name
  * @property {number} quantity
  * @property {string} unit
  * @property {boolean} done
+ * @property {number|null} [estimatedPrice]
+ * @property {string|null} [purchasedAt]
+ */
+
+/**
+ * @typedef {Object} ShoppingList
+ * @property {string} id
+ * @property {string} title
+ * @property {string} status
+ * @property {number|null} totalEstimatedCost
+ * @property {string|null} weeklyPlanId
+ * @property {string|null} createdAt
+ * @property {ShoppingItem[]} items
  */
 
 export class IRecipeService {
@@ -175,17 +211,23 @@ export class IRecipeService {
   }
 
   /**
-   * Lấy weekly plan (kế hoạch tuần tới)
-   * @returns {Promise<WeeklyPlan>}
+   * Lấy weekly plan (kế hoạch tuần tới).
+   *
+   * ⚠️ B4 đã đổi shape: giờ trả `{ id, weekStart, status, totalBudget, days[] }`
+   * với `days[]` = 7 ngày, mỗi ngày có `slots[]` (mỗi slot có `mealType`).
+   * Lý do: màn "Thực đơn tuần tới" cần đủ 7 ngày x 3 bữa, không phải 1 ngày.
+   *
+   * @returns {Promise<MealPlan|null>}
    */
   async getNextWeekPlan() {
     throw new Error('IRecipeService.getNextWeekPlan() must be implemented');
   }
 
   /**
-   * Đánh dấu slot đã nấu
-   * @param {string} planId
-   * @param {'breakfast'|'lunch'|'dinner'} slot
+   * Đánh dấu slot đã nấu.
+   *
+   * @param {string} planId - id kế hoạch
+   * @param {string|{id:string, completed?:boolean}} slot - slot id hoặc object slot
    * @returns {Promise<void>}
    */
   async markSlotCooked(planId, slot) {
@@ -193,7 +235,7 @@ export class IRecipeService {
   }
 
   /**
-   * Lấy shopping reminder
+   * Lấy shopping reminder (danh sách mua phẳng).
    * @returns {Promise<ShoppingItem[]>}
    */
   async getShoppingList() {
@@ -201,11 +243,107 @@ export class IRecipeService {
   }
 
   /**
-   * Toggle done cho shopping item
+   * Toggle done cho shopping item.
+   *
+   * ⚠️ BE cần CẢ `listId` + `itemId` -> `id` nhận dạng `listId:itemId`.
    * @param {string} id
-   * @returns {Promise<ShoppingItem>}
+   * @returns {Promise<ShoppingItem|void>}
    */
   async toggleShoppingItem(id) {
     throw new Error('IRecipeService.toggleShoppingItem() must be implemented');
+  }
+
+  // ═══════════════ Meal planning (Sprint B4) ═══════════════
+
+  /**
+   * Cập nhật 1 meal slot — `PATCH /meal-planning/slots/{id}`.
+   *
+   * @param {string} slotId
+   * @param {{completed?:boolean, recipeId?:string|null, servings?:number, note?:string}} payload
+   * @returns {Promise<void>}
+   */
+  async updateSlot(slotId, payload) {
+    throw new Error('IRecipeService.updateSlot() must be implemented');
+  }
+
+  /**
+   * Nhờ AI lập thực đơn tuần — `POST /meal-planning/plans/generate`.
+   *
+   * BE trả 202 ngay + `jobId`; tiến độ đến qua `streamPlanProgress()`.
+   *
+   * @param {{weekStartDate?:string, budget?:number}} [params]
+   * @returns {Promise<{jobId:string|null, status:string, streamUrl:string|null}>}
+   */
+  async generatePlan(params) {
+    throw new Error('IRecipeService.generatePlan() must be implemented');
+  }
+
+  /**
+   * Nhờ AI lập thực đơn từ nguyên liệu sắp hết hạn —
+   * `POST /meal-planning/plans/generate-from-expiring`.
+   *
+   * @param {{withinDays?:number, days?:number}} [params]
+   * @returns {Promise<{jobId:string|null, status:string, streamUrl:string|null}>}
+   */
+  async generateFromExpiring(params) {
+    throw new Error('IRecipeService.generateFromExpiring() must be implemented');
+  }
+
+  /**
+   * Nhờ AI gợi ý món thay thế cho 1 slot —
+   * `POST /meal-planning/slots/{id}/regenerate`.
+   *
+   * @param {string} slotId
+   * @param {string} [reason] - 'no_ingredients'|'dislike'|'want_different'|'too_expensive'
+   * @returns {Promise<{jobId:string|null, status:string, streamUrl:string|null}>}
+   */
+  async regenerateSlot(slotId, reason) {
+    throw new Error('IRecipeService.regenerateSlot() must be implemented');
+  }
+
+  /**
+   * Mở luồng SSE tiến độ (tạo thực đơn / đổi món slot).
+   *
+   * @param {string} path - path stream (thường lấy từ `streamUrl` của BE)
+   * @param {{signal?:AbortSignal}} [options]
+   * @returns {AsyncGenerator<{event:string, data:any}>}
+   */
+  async* streamPlanProgress(path, options) {
+    // eslint-disable-next-line require-yield
+    throw new Error('IRecipeService.streamPlanProgress() must be implemented');
+  }
+
+  // ═══════════════ Shopping list (Sprint B4) ═══════════════
+
+  /**
+   * Danh sách mua (dạng đầy đủ, mỗi list kèm `items`) —
+   * `GET /meal-planning/shopping-lists`.
+   *
+   * @returns {Promise<ShoppingList[]>}
+   */
+  async getShoppingLists() {
+    throw new Error('IRecipeService.getShoppingLists() must be implemented');
+  }
+
+  /**
+   * Tạo danh sách mua từ kế hoạch tuần — `POST /meal-planning/shopping-lists`.
+   *
+   * @param {string} weeklyPlanId
+   * @param {string} [title]
+   * @returns {Promise<ShoppingList|null>}
+   */
+  async createShoppingList(weeklyPlanId, title) {
+    throw new Error('IRecipeService.createShoppingList() must be implemented');
+  }
+
+  /**
+   * Tick đã mua — `PATCH /meal-planning/shopping-lists/{listId}/items/{itemId}`.
+   *
+   * @param {string} listId
+   * @param {string|number} itemId
+   * @returns {Promise<void>}
+   */
+  async toggleShoppingItemInList(listId, itemId) {
+    throw new Error('IRecipeService.toggleShoppingItemInList() must be implemented');
   }
 }

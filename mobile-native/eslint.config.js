@@ -51,6 +51,26 @@ module.exports = [
   },
 
   {
+    // Script Node (CommonJS) - cần globals `__dirname`, `require`, `process`.
+    // Không có block này thì `no-undef` báo lỗi cho mọi file trong scripts/.
+    files: ['scripts/**/*.js', '*.config.js', '*.config.cjs'],
+    languageOptions: {
+      sourceType: 'commonjs',
+      globals: {
+        __dirname: 'readonly',
+        __filename: 'readonly',
+        require: 'readonly',
+        module: 'writable',
+        exports: 'writable',
+        process: 'readonly',
+        console: 'readonly',
+        Buffer: 'readonly',
+        __DEV__: 'readonly',
+      },
+    },
+  },
+
+  {
     files: ['**/*.js', '**/*.jsx'],
     rules: {
       'react/jsx-filename-extension': ['error', { extensions: ['.js', '.jsx'] }],
