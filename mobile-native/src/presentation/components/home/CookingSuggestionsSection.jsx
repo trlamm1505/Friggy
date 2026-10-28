@@ -9,10 +9,20 @@
  *   • Hàng 2: tên món (lớn) + chú thích nhỏ (số người, thời gian nấu)
  *   • Hàng 3: 2 button "Xem công thức" + "Đổi món bằng AI"
  * - Ảnh để trống (null) — layout đã sẵn sàng, chờ thay ảnh
+ *
+ * ⚠️ B3 — NGUỒN DỮ LIỆU ĐÃ ĐỔI:
+ * Trước đây map bữa ăn theo INDEX của mảng (`MEAL_SLOTS[i]`). Điều này SAI
+ * khi nối BE thật: BE trả slot theo `dayOfWeek`, thứ tự KHÔNG đảm bảo là
+ * bữa nào (plan chỉ có lunch + dinner thì index 0 là trưa chứ không phải sáng).
+ * Giờ đọc `recipe.mealType` trực tiếp từ response.
+ *
+ * Nguồn dữ liệu cũng đổi: KHÔNG dùng `GET /recipes/suggestions` (gợi ý theo
+ * tủ lạnh) mà dùng MEAL-PLANNING SLOTS hôm nay — xem
+ * `RealRecipeService.getSuggestions()`.
  */
 
 import React from 'react';
-import { View, Text, Image, StyleSheet, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { useTheme } from '../../theme/ThemeContext';
 import { AppColors } from '../../theme/colors';
 import { sp } from '../../utils/responsive';
@@ -24,17 +34,18 @@ import { Skeleton } from '../common/Skeleton';
 import { EmptyState } from '../common/EmptyState';
 import { ErrorState } from '../common/ErrorState';
 
-// Ảnh minh hoạ từng món — để trống trước khi có asset.
-const MEAL_ART = null;
-
-// Map index của suggestion -> bữa ăn (data mock có 4 món tương ứng
-// sáng / trưa / tối / phụ). Khi nối API thật, lấy `mealType` từ response.
-const MEAL_SLOTS = [
-  { key: 'mealBreakfast', accent: AppColors.accentOrange },
-  { key: 'mealLunch', accent: AppColors.primary },
-  { key: 'mealDinner', accent: AppColors.forestAccent },
-  { key: 'mealSnack', accent: AppColors.textSecondary },
-];
+/**
+ * Map `mealType` của BE -> nhãn i18n + màu nhấn.
+ * ⚠️ KHÔNG lấy nhãn theo index — phải theo `mealType` (xét giải thích đầu file).
+ */
+const MEAL_TYPE_BY_KEY = {
+  breakfast: { labelKey: 'home.mealBreakfast', accent: AppColors.accentOrange },
+  lunch: { labelKey: 'home.mealLunch', accent: AppColors.primary },
+  dinner: { labelKey: 'home.mealDinner', accent: AppColors.forestAccent },
+  snack: { labelKey: 'home.mealSnack', accent: AppColors.textSecondary },
+  dessert: { labelKey: 'home.mealSnack', accent: AppColors.textSecondary },
+  drink: { labelKey: 'home.mealSnack', accent: AppColors.textSecondary },
+};
 
 export const CookingSuggestionsSection = ({ onRecipeTap, onSwapTap }) => {
   const { isDark } = useTheme();
@@ -47,7 +58,9 @@ export const CookingSuggestionsSection = ({ onRecipeTap, onSwapTap }) => {
 
   const header = (
     <View style={styles.headerRow}>
-      <View style={[styles.headerIcon, { backgroundColor: isDark ? '#233629' : AppColors.accentGreen }]}>
+      <View
+        style={[styles.headerIcon, { backgroundColor: isDark ? '#233629' : AppColors.accentGreen }]}
+      >
         <Sparkles color={isDark ? AppColors.primaryLight : AppColors.forestAccent} size={16} />
       </View>
       <Text style={[styles.title, { color: textPrimary }]} numberOfLines={1}>
@@ -65,7 +78,10 @@ export const CookingSuggestionsSection = ({ onRecipeTap, onSwapTap }) => {
           {[0, 1, 2].map((i) => (
             <View
               key={i}
-              style={[styles.mealCard, { backgroundColor: surfaceColor, borderColor, marginTop: sp(10) }]}
+              style={[
+                styles.mealCard,
+                { backgroundColor: surfaceColor, borderColor, marginTop: sp(10) },
+              ]}
             >
               <Skeleton width={sp(70)} height={sp(18)} borderRadius={sp(9)} />
               <View style={styles.mealMainRow}>
@@ -122,7 +138,7 @@ export const CookingSuggestionsSection = ({ onRecipeTap, onSwapTap }) => {
             t={t}
             recipe={recipe}
             index={i}
-            slot={MEAL_SLOTS[i % MEAL_SLOTS.length]}
+            slot={MEAL_TYPE_BY_KEY[recipe.mealType]}
             onRecipeTap={onRecipeTap}
             onSwapTap={onSwapTap}
           />
@@ -147,7 +163,7 @@ const MealCard = ({ isDark, t, recipe, slot, index, onRecipeTap, onSwapTap }) =>
       <View style={styles.mealTopRow}>
         <View style={[styles.mealTag, { backgroundColor: tint, borderColor: accent }]}>
           <Text style={[styles.mealTagText, { color: fg }]}>
-            {slot ? t(slot.key) : t('meal.mealType')}
+            {slot ? t(slot.labelKey) : t('meal.mealType')}
           </Text>
         </View>
         {recipe.cooked ? (

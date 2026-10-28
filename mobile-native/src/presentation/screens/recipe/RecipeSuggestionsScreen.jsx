@@ -8,7 +8,7 @@
  * - Tap sort menu → mở modal bottom sheet style inline
  */
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, Pressable, Modal } from 'react-native';
 import { useTheme } from '../../theme/ThemeContext';
 import { AppColors } from '../../theme/colors';
@@ -27,6 +27,8 @@ import { Routes } from '../../../shared/constants/routes';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RecipeListItem } from '../../components/recipe/RecipeListItem';
 import { ArrowUpDown, Check, X } from 'lucide-react-native';
+import { useServices } from '../../../data/ServiceProvider';
+import { showSuccess, showError } from '../../utils/helpers';
 
 const DIFFICULTY_KEYS = {
   ALL: 'all',
@@ -37,9 +39,9 @@ const DIFFICULTY_KEYS = {
 
 const COOKTIME_KEYS = {
   ALL: 'all',
-  QUICK: 'quick',     // < 15 min
-  MEDIUM: 'medium',   // 15-30 min
-  LONG: 'long',       // > 30 min
+  QUICK: 'quick', // < 15 min
+  MEDIUM: 'medium', // 15-30 min
+  LONG: 'long', // > 30 min
 };
 
 const SORT_KEYS = {
@@ -49,11 +51,24 @@ const SORT_KEYS = {
   NAME_ASC: 'name_asc',
 };
 
+/**
+ * ⚠️ B3 — Cook-time filter gửi LÊN SERVER qua `maxCookTime` (BE có param này),
+ * KHÔNG lọc client:
+ *   quick  (<15)  -> maxCookTime = 14
+ *   medium (15-30)-> maxCookTime = 30
+ *   long   (>30)  -> BE KHÔNG có `minCookTime` -> buộc lọc client
+ */
+const COOKTIME_MAX = {
+  [COOKTIME_KEYS.QUICK]: 14,
+  [COOKTIME_KEYS.MEDIUM]: 30,
+};
+
 export const RecipeSuggestionsScreen = () => {
   const { isDark } = useTheme();
   const { t } = useTranslation();
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
+  const services = useServices();
 
   const [search, setSearch] = useState('');
   const [difficulty, setDifficulty] = useState(DIFFICULTY_KEYS.ALL);
@@ -61,18 +76,37 @@ export const RecipeSuggestionsScreen = () => {
   const [sort, setSort] = useState(SORT_KEYS.COOK_TIME_ASC);
   const [sortModalOpen, setSortModalOpen] = useState(false);
 
-  // Tính filter client-side (recipe list ngắn)
-  const filteredClient = useMemo(() => {
-    let result = [];
-    // Mock: dùng recipesMock
-    // Nếu có data từ service thì dùng, fallback mock
-    return result;
-  }, []);
+  // Id công thức đã bookmark — để vẽ icon bookmark trong list.
+  const [bookmarkedIds, setBookmarkedIds] = useState([]);
+
+  /**
+   * Lấy danh sách id đã bookmark 1 lần khi mount.
+   * BE: `GET /recipes/bookmarked` -> RecipeSummaryDto[] (có `id`).
+   */
+  useEffect(() => {
+    let cancelled = false;
+    const loadBookmarked = async () => {
+      try {
+        const list = await services.recipeService.getBookmarked();
+        if (!cancelled) setBookmarkedIds((list || []).map((r) => r.id));
+      } catch (_e) {
+        // im lặng — icon bookmark chỉ là gợi ý, lỗi không chặn danh sách
+      }
+    };
+    loadBookmarked();
+    return () => {
+      cancelled = true;
+    };
+  }, [services]);
 
   const serviceFilters = useMemo(() => {
     const f = {};
     if (search.trim()) f.search = search.trim();
     if (difficulty !== DIFFICULTY_KEYS.ALL) f.difficulty = difficulty;
+
+    // ⚠️ B3: cook-time filter gửi lên server (`maxCookTime`).
+    if (COOKTIME_MAX[cookTime]) f.maxCookTime = COOKTIME_MAX[cookTime];
+
     if (sort === SORT_KEYS.NAME_ASC) {
       f.sortBy = 'name';
       f.sortDir = 'asc';
@@ -87,21 +121,46 @@ export const RecipeSuggestionsScreen = () => {
       f.sortDir = 'asc';
     }
     return f;
-  }, [search, difficulty, sort]);
+  }, [search, difficulty, sort, cookTime]);
 
   const { data: recipes, loading, error, refetch } = useRecipesFiltered(serviceFilters);
 
-  // Cook time filter client-side
+  /**
+   * Chỉ còn 1 trường hợp lọc client: "long" (>30 phút) — BE không có
+   * `minCookTime`. Các filter khác đã gửi lên server.
+   */
   const finalRecipes = useMemo(() => {
-    if (cookTime === COOKTIME_KEYS.ALL) return recipes;
-    return recipes.filter((r) => {
-      const t = r.cookTime;
-      if (cookTime === COOKTIME_KEYS.QUICK) return t < 15;
-      if (cookTime === COOKTIME_KEYS.MEDIUM) return t >= 15 && t <= 30;
-      if (cookTime === COOKTIME_KEYS.LONG) return t > 30;
-      return true;
-    });
+    const list = recipes || [];
+    if (cookTime !== COOKTIME_KEYS.LONG) return list;
+    return list.filter((r) => r.cookTime > 30);
   }, [recipes, cookTime]);
+
+  /**
+   * Bookmark — optimistic update + rollback nếu API fail.
+   */
+  const toggleBookmark = useCallback(
+    async (recipe) => {
+      const id = recipe.id;
+      const isBookmarked = bookmarkedIds.includes(id);
+      const next = !isBookmarked;
+
+      setBookmarkedIds((prev) => (next ? [...prev, id] : prev.filter((b) => b !== id)));
+      try {
+        if (next) {
+          await services.recipeService.addBookmark(id);
+          showSuccess(t('home.addedToFavorites'));
+        } else {
+          await services.recipeService.removeBookmark(id);
+          showSuccess(t('home.removedFromFavorites'));
+        }
+      } catch (e) {
+        // rollback
+        setBookmarkedIds((prev) => (next ? prev.filter((b) => b !== id) : [...prev, id]));
+        showError(e?.message || t('common.error'));
+      }
+    },
+    [bookmarkedIds, services, t]
+  );
 
   // Counts by difficulty
   const difficultyCounts = useMemo(() => {
@@ -127,15 +186,30 @@ export const RecipeSuggestionsScreen = () => {
 
   const difficultyOptions = [
     { key: DIFFICULTY_KEYS.ALL, label: 'Tất cả', count: difficultyCounts.all },
-    { key: DIFFICULTY_KEYS.EASY, label: 'Dễ', count: difficultyCounts.easy, color: AppColors.primaryDark },
+    {
+      key: DIFFICULTY_KEYS.EASY,
+      label: 'Dễ',
+      count: difficultyCounts.easy,
+      color: AppColors.primaryDark,
+    },
     { key: DIFFICULTY_KEYS.MEDIUM, label: 'Vừa', count: difficultyCounts.medium, color: '#E65100' },
-    { key: DIFFICULTY_KEYS.HARD, label: 'Khó', count: difficultyCounts.hard, color: AppColors.error },
+    {
+      key: DIFFICULTY_KEYS.HARD,
+      label: 'Khó',
+      count: difficultyCounts.hard,
+      color: AppColors.error,
+    },
   ];
 
   const cookTimeOptions = [
     { key: COOKTIME_KEYS.ALL, label: 'Mọi thời gian', count: cookTimeCounts.all },
     { key: COOKTIME_KEYS.QUICK, label: '< 15 phút', count: cookTimeCounts.quick, color: '#4CAF50' },
-    { key: COOKTIME_KEYS.MEDIUM, label: '15-30 phút', count: cookTimeCounts.medium, color: '#FF9800' },
+    {
+      key: COOKTIME_KEYS.MEDIUM,
+      label: '15-30 phút',
+      count: cookTimeCounts.medium,
+      color: '#FF9800',
+    },
     { key: COOKTIME_KEYS.LONG, label: '> 30 phút', count: cookTimeCounts.long, color: '#9C27B0' },
   ];
 
@@ -159,7 +233,12 @@ export const RecipeSuggestionsScreen = () => {
           </Text>
         </View>
         <View style={{ paddingHorizontal: sp(20), gap: sp(10) }}>
-          <Skeleton width="100%" height={sp(42)} borderRadius={sp(12)} style={{ marginBottom: sp(8) }} />
+          <Skeleton
+            width="100%"
+            height={sp(42)}
+            borderRadius={sp(12)}
+            style={{ marginBottom: sp(8) }}
+          />
           {[0, 1, 2, 3, 4].map((i) => (
             <Skeleton key={i} width="100%" height={sp(90)} borderRadius={sp(14)} />
           ))}
@@ -184,10 +263,23 @@ export const RecipeSuggestionsScreen = () => {
       <FriggyAppBar showBackButton onBackTap={() => navigation.goBack()} />
 
       <View style={styles.header}>
-        <Text style={[styles.title, { color: isDark ? '#FFFFFF' : AppColors.textPrimary, fontSize: sp(22) }]}>
+        <Text
+          style={[
+            styles.title,
+            { color: isDark ? '#FFFFFF' : AppColors.textPrimary, fontSize: sp(22) },
+          ]}
+        >
           Tất cả công thức
         </Text>
-        <Text style={[styles.subtitle, { color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary, fontSize: sp(13) }]}>
+        <Text
+          style={[
+            styles.subtitle,
+            {
+              color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+              fontSize: sp(13),
+            },
+          ]}
+        >
           {finalRecipes.length > 0
             ? t('home.resultCount', { count: finalRecipes.length })
             : 'Không có món nào'}
@@ -222,7 +314,15 @@ export const RecipeSuggestionsScreen = () => {
           },
         ]}
       >
-        <Text style={[styles.sortLabel, { color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary, fontSize: sp(12) }]}>
+        <Text
+          style={[
+            styles.sortLabel,
+            {
+              color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+              fontSize: sp(12),
+            },
+          ]}
+        >
           Sắp xếp theo
         </Text>
         <Pressable
@@ -236,7 +336,12 @@ export const RecipeSuggestionsScreen = () => {
           ]}
         >
           <ArrowUpDown color={isDark ? AppColors.primaryLight : AppColors.primary} size={14} />
-          <Text style={[styles.sortBtnText, { color: isDark ? AppColors.primaryLight : AppColors.primary, fontSize: sp(12) }]}>
+          <Text
+            style={[
+              styles.sortBtnText,
+              { color: isDark ? AppColors.primaryLight : AppColors.primary, fontSize: sp(12) },
+            ]}
+          >
             {currentSortLabel}
           </Text>
         </Pressable>
@@ -256,14 +361,20 @@ export const RecipeSuggestionsScreen = () => {
         }
         renderItem={({ item }) => (
           <RecipeListItem
-            recipe={item}
+            recipe={{ ...item, bookmarked: bookmarkedIds.includes(item.id) }}
             onPress={(recipe) => navigation.navigate(Routes.RecipeDetail, { recipe })}
+            onBookmarkPress={toggleBookmark}
           />
         )}
       />
 
       {/* Sort bottom sheet */}
-      <Modal visible={sortModalOpen} animationType="slide" transparent onRequestClose={() => setSortModalOpen(false)}>
+      <Modal
+        visible={sortModalOpen}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setSortModalOpen(false)}
+      >
         <Pressable style={styles.backdrop} onPress={() => setSortModalOpen(false)}>
           <Pressable
             onPress={(e) => e.stopPropagation()}
@@ -277,11 +388,19 @@ export const RecipeSuggestionsScreen = () => {
           >
             <View style={styles.handle} />
             <View style={styles.sheetHeader}>
-              <Text style={[styles.sheetTitle, { color: isDark ? '#FFFFFF' : AppColors.textPrimary, fontSize: sp(18) }]}>
+              <Text
+                style={[
+                  styles.sheetTitle,
+                  { color: isDark ? '#FFFFFF' : AppColors.textPrimary, fontSize: sp(18) },
+                ]}
+              >
                 Sắp xếp theo
               </Text>
               <Pressable onPress={() => setSortModalOpen(false)} hitSlop={6}>
-                <X color={isDark ? AppColors.darkTextSecondary : AppColors.textSecondary} size={22} />
+                <X
+                  color={isDark ? AppColors.darkTextSecondary : AppColors.textSecondary}
+                  size={22}
+                />
               </Pressable>
             </View>
             {sortOptions.map((opt) => {
@@ -297,7 +416,9 @@ export const RecipeSuggestionsScreen = () => {
                     styles.sheetItem,
                     {
                       backgroundColor: active
-                        ? isDark ? '#1B3324' : AppColors.accentGreen
+                        ? isDark
+                          ? '#1B3324'
+                          : AppColors.accentGreen
                         : 'transparent',
                       opacity: pressed ? 0.7 : 1,
                     },
@@ -308,8 +429,12 @@ export const RecipeSuggestionsScreen = () => {
                       styles.sheetItemText,
                       {
                         color: active
-                          ? isDark ? AppColors.primaryLight : AppColors.primary
-                          : isDark ? '#FFFFFF' : AppColors.textPrimary,
+                          ? isDark
+                            ? AppColors.primaryLight
+                            : AppColors.primary
+                          : isDark
+                            ? '#FFFFFF'
+                            : AppColors.textPrimary,
                         fontSize: sp(15),
                         fontWeight: active ? 'bold' : 'normal',
                       },
@@ -317,7 +442,9 @@ export const RecipeSuggestionsScreen = () => {
                   >
                     {opt.label}
                   </Text>
-                  {active ? <Check color={isDark ? AppColors.primaryLight : AppColors.primary} size={18} /> : null}
+                  {active ? (
+                    <Check color={isDark ? AppColors.primaryLight : AppColors.primary} size={18} />
+                  ) : null}
                 </Pressable>
               );
             })}

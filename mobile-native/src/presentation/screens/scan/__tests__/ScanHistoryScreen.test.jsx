@@ -6,8 +6,17 @@ import { ScanHistoryScreen } from '../ScanHistoryScreen';
 
 const mockGetScanHistory = jest.fn();
 
+// ⚠️ Phải trả CÙNG một object cho mọi lần render. Nếu tạo object mới mỗi
+// lần, `load` (useCallback deps [services]) đổi identity -> useFocusEffect
+// chạy lại -> render lặp -> test chậm và dễ timeout khi CI chạy nhiều worker.
+const mockServices = {
+  fridgeService: {
+    getScanHistory: (...args) => mockGetScanHistory(...args),
+  },
+};
+
 jest.mock('../../../../data/ServiceProvider', () => ({
-  useServices: () => ({ fridgeService: { getScanHistory: (...args) => mockGetScanHistory(...args) } }),
+  useServices: () => mockServices,
 }));
 
 jest.mock('react-i18next', () => ({
@@ -23,7 +32,10 @@ jest.mock('@react-navigation/native', () => {
     useNavigation: () => ({ goBack: jest.fn() }),
     // Chạy 1 lần như focus thật — mock useEffect([fn]) sẽ lặp vì `load`
     // đổi identity mỗi render (services mock trả object mới).
-    useFocusEffect: (fn) => React.useEffect(() => { fn(); }, []),
+    useFocusEffect: (fn) =>
+      React.useEffect(() => {
+        fn();
+      }, []),
   };
 });
 
@@ -59,7 +71,7 @@ describe('ScanHistoryScreen', () => {
     });
     expect(view.getByText('Thất bại')).toBeTruthy();
     expect(mockGetScanHistory).toHaveBeenCalledTimes(1);
-  });
+  }, 20000);
 
   it('chưa scan lần nào -> hiện EmptyState gợi ý quét', async () => {
     mockGetScanHistory.mockResolvedValue([]);
@@ -72,9 +84,7 @@ describe('ScanHistoryScreen', () => {
   });
 
   it('BE lỗi -> hiện ErrorState và bấm thử lại gọi lại service', async () => {
-    mockGetScanHistory
-      .mockRejectedValueOnce(new Error('Mất mạng'))
-      .mockResolvedValueOnce([]);
+    mockGetScanHistory.mockRejectedValueOnce(new Error('Mất mạng')).mockResolvedValueOnce([]);
 
     const view = await render(<ScanHistoryScreen />);
 

@@ -63,8 +63,10 @@ describe('CameraPreviewScreen confirmScan', () => {
     const view = await render(<CameraPreviewScreen />);
 
     const saveBtn = view.getByText('home.scanAddToFridge');
-    fireEvent.press(saveBtn);
-    await saveBtn.props.onPress?.();
+    // ⚠️ `fireEvent.press` của RTL v14 ĐÃ tự wrap trong act() và trả promise.
+    // KHÔNG gọi thêm `saveBtn.props.onPress()` — sẽ bấm 2 lần -> render lặp ->
+    // test timeout. Chỉ await fireEvent là đủ.
+    await fireEvent.press(saveBtn);
 
     await waitFor(() => {
       expect(mockConfirmScan).toHaveBeenCalledWith('scan-1', [
@@ -82,8 +84,7 @@ describe('CameraPreviewScreen confirmScan', () => {
     const view = await render(<CameraPreviewScreen />);
 
     const saveBtn = view.getByText('home.scanAddToFridge');
-    fireEvent.press(saveBtn);
-    await saveBtn.props.onPress?.();
+    await fireEvent.press(saveBtn);
 
     expect(mockConfirmScan).not.toHaveBeenCalled();
     expect(alertSpy).toHaveBeenCalled();

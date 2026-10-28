@@ -38,7 +38,8 @@ import { ListSection } from '../../components/common/ListSection';
 import { ErrorState } from '../../components/common/ErrorState';
 import { Skeleton } from '../../components/common/Skeleton';
 import { useRecipeById, useFridgeItems } from '../../hooks/useServiceHooks';
-import { showSuccess } from '../../utils/helpers';
+import { useServices } from '../../../data/ServiceProvider';
+import { showSuccess, showError } from '../../utils/helpers';
 
 const FALLBACK_RECIPE = {
   id: 'r1',
@@ -90,16 +91,18 @@ export const RecipeDetailScreen = () => {
   const { t } = useTranslation();
   const navigation = useNavigation();
   const route = useRoute();
+  const services = useServices();
 
   const routeRecipe = route.params?.recipe;
-  const recipeId = routeRecipe?.id;
+  const recipeId = routeRecipe?.recipeId ?? routeRecipe?.id;
 
   const { data: fetchedRecipe, loading, error, refetch } = useRecipeById(recipeId);
   const { data: fridgeItems } = useFridgeItems();
 
   const [activeTab, setActiveTab] = useState('ingredients');
   const [expandedStep, setExpandedStep] = useState(null);
-  const [isFavorite, setIsFavorite] = useState(false);
+  const [isBookmarked, setIsBookmarked] = useState(false);
+  const [bookmarkBusy, setBookmarkBusy] = useState(false);
   const [servings, setServings] = useState(2);
 
   // Mock suggestions chỉ có id/name/cookTime/matchPercent, KHÔNG có
@@ -107,9 +110,7 @@ export const RecipeDetailScreen = () => {
   // nguyên suggestion đó — ta phải dùng id để fetch full recipe từ service.
   // Ưu tiên: fetchedRecipe (đầy đủ) > routeRecipe (chỉ khi có ingredients) > FALLBACK.
   const recipe =
-    fetchedRecipe ||
-    (routeRecipe?.ingredients ? routeRecipe : null) ||
-    FALLBACK_RECIPE;
+    fetchedRecipe || (routeRecipe?.ingredients ? routeRecipe : null) || FALLBACK_RECIPE;
 
   // servings là "derived state" từ recipe.servings, nhưng người dùng có thể
   // chỉnh bằng Stepper -> cần giữ state cục bộ.
@@ -122,27 +123,52 @@ export const RecipeDetailScreen = () => {
     setServings(recipe.servings);
   }
 
+  /**
+   * ⚠️ B3: khi BE đã trả `inFridge` cho từng nguyên liệu -> DÙNG LUÔN giá trị
+   * của BE (BE đối chiếu theo `ingredientId`, chính xác hơn so tên chuỗi).
+   * Chỉ fallback sang cách so tên khi chạy mock (mock không có `inFridge`).
+   */
+  const hasBeFridgeFlag = useMemo(
+    () =>
+      Array.isArray(recipe?.ingredients) &&
+      recipe.ingredients.some((ing) => typeof ing?.inFridge === 'boolean'),
+    [recipe]
+  );
+
   // Tính match percent
   const matchInfo = useMemo(() => {
-    if (!recipe?.ingredients || !fridgeItems) {
+    if (!recipe?.ingredients || recipe.ingredients.length === 0) {
       return {
         haveCount: 0,
-        needCount: recipe?.ingredients?.length || 0,
+        needCount: 0,
         percent: 0,
         missingItems: [],
+        haveItems: [],
       };
     }
-    const fridgeNames = fridgeItems.map((it) => it.name.toLowerCase());
+
     const have = [];
     const missing = [];
-    for (const ing of recipe.ingredients) {
-      const name = typeof ing === 'string' ? ing : ing.name;
-      const found = fridgeNames.some(
-        (n) => n.includes(name.toLowerCase()) || name.toLowerCase().includes(n)
-      );
-      if (found) have.push(name);
-      else missing.push(name);
+
+    if (hasBeFridgeFlag) {
+      // BE đã phân tích sẵn theo tủ lạnh thật của user.
+      for (const ing of recipe.ingredients) {
+        if (ing.inFridge) have.push(ing.name);
+        else missing.push(ing.name);
+      }
+    } else {
+      // Mock: tự so tên với danh sách tủ lạnh.
+      const fridgeNames = (fridgeItems || []).map((it) => it.name.toLowerCase());
+      for (const ing of recipe.ingredients) {
+        const name = typeof ing === 'string' ? ing : ing.name;
+        const found = fridgeNames.some(
+          (n) => n.includes(name.toLowerCase()) || name.toLowerCase().includes(n)
+        );
+        if (found) have.push(name);
+        else missing.push(name);
+      }
     }
+
     const total = recipe.ingredients.length;
     const percent = total > 0 ? Math.round((have.length / total) * 100) : 0;
     return {
@@ -152,17 +178,22 @@ export const RecipeDetailScreen = () => {
       missingItems: missing,
       haveItems: have,
     };
-  }, [recipe, fridgeItems]);
+  }, [recipe, fridgeItems, hasBeFridgeFlag]);
 
   const isIngredientInFridge = useCallback(
     (ingredientName) => {
+      // Ưu tiên cờ `inFridge` của BE.
+      if (hasBeFridgeFlag) {
+        const ing = (recipe?.ingredients || []).find((i) => i && i.name === ingredientName);
+        return ing ? !!ing.inFridge : false;
+      }
       if (!fridgeItems) return false;
       const lower = ingredientName.toLowerCase();
       return fridgeItems.some(
         (it) => it.name.toLowerCase().includes(lower) || lower.includes(it.name.toLowerCase())
       );
     },
-    [fridgeItems]
+    [fridgeItems, hasBeFridgeFlag, recipe]
   );
 
   // Scale ingredients theo servings
@@ -179,10 +210,36 @@ export const RecipeDetailScreen = () => {
     });
   }, [recipe, servings]);
 
-  const toggleFavorite = useCallback(() => {
-    setIsFavorite((v) => !v);
-    showSuccess(isFavorite ? t('home.removedFromFavorites') : t('home.addedToFavorites'));
-  }, [isFavorite, t]);
+  /**
+   * Bookmark — optimistic update + ROLLBACK nếu API fail.
+   *
+   * ⚠️ B3: trước đây nút tim chỉ đổi state cục bộ (không gọi API) -> đóng app
+   * là mất. Giờ gọi `POST/DELETE /recipes/{id}/bookmark`.
+   * `id` phải là ID CÔNG THỨC, không phải id slot -> dùng `recipe.recipeId ?? recipe.id`.
+   */
+  const toggleBookmark = useCallback(async () => {
+    if (!recipeId || bookmarkBusy) return;
+
+    const targetId = recipe?.recipeId ?? recipeId;
+    const next = !isBookmarked;
+
+    setBookmarkBusy(true);
+    setIsBookmarked(next); // optimistic
+    try {
+      if (next) {
+        await services.recipeService.addBookmark(targetId);
+        showSuccess(t('home.addedToFavorites'));
+      } else {
+        await services.recipeService.removeBookmark(targetId);
+        showSuccess(t('home.removedFromFavorites'));
+      }
+    } catch (e) {
+      setIsBookmarked(!next); // rollback
+      showError(e?.message || t('common.error'));
+    } finally {
+      setBookmarkBusy(false);
+    }
+  }, [recipeId, recipe, isBookmarked, bookmarkBusy, services, t]);
 
   const addMissingToShoppingList = useCallback(async () => {
     showSuccess(t('home.addedToShoppingList'));
@@ -192,7 +249,14 @@ export const RecipeDetailScreen = () => {
     recipe_tomato_egg: require('../../../../assets/images/recipe_tomato_egg.png'),
     recipe_veggie_soup: require('../../../../assets/images/recipe_veggie_soup.png'),
   };
-  const imageSource = recipe.image && imageMap[recipe.image] ? imageMap[recipe.image] : null;
+  // Ảnh từ BE là URL TUYỆT ĐỐI (đã qua appConfig.getImageUrl) -> render { uri }.
+  // Ảnh của mock là KEY -> tra asset đóng gói sẵn.
+  const resolveImageSource = (image) => {
+    if (!image || typeof image !== 'string') return null;
+    if (/^https?:\/\//i.test(image)) return { uri: image };
+    return imageMap[image] || null;
+  };
+  const imageSource = resolveImageSource(recipe.image);
 
   // Loading — chỉ hiện skeleton khi chưa có dữ liệu nào để hiển thị.
   if (loading && !recipe?.ingredients) {
@@ -480,6 +544,33 @@ export const RecipeDetailScreen = () => {
                           {ing.amount} {ing.unit}
                         </Text>
                       ) : null}
+                      {/* Badge "Có trong tủ" / "Cần mua" — dùng cờ `inFridge` của BE */}
+                      <View
+                        style={[
+                          styles.ingBadge,
+                          {
+                            backgroundColor: have
+                              ? isDark
+                                ? '#1B3324'
+                                : '#E8F5E9'
+                              : isDark
+                                ? '#3D2E1A'
+                                : '#FFF3E0',
+                          },
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.ingBadgeText,
+                            {
+                              color: have ? AppColors.primary : '#E65100',
+                              fontSize: sp(10),
+                            },
+                          ]}
+                        >
+                          {have ? t('home.ingredientsYouHave') : t('home.ingredientsYouNeed')}
+                        </Text>
+                      </View>
                     </View>
                   );
                 })}
@@ -648,20 +739,22 @@ export const RecipeDetailScreen = () => {
         ]}
       >
         <Pressable
-          onPress={toggleFavorite}
+          onPress={toggleBookmark}
           style={({ pressed }) => [
             styles.iconBtn,
             {
-              backgroundColor: isFavorite ? AppColors.error : isDark ? '#19271E' : '#E8F5E9',
+              backgroundColor: isBookmarked ? AppColors.error : isDark ? '#19271E' : '#E8F5E9',
               opacity: pressed ? 0.7 : 1,
             },
           ]}
           hitSlop={8}
+          testID="recipe-detail-bookmark"
+          accessibilityLabel={t('home.favorite')}
         >
           <Heart
-            color={isFavorite ? '#FFFFFF' : isDark ? AppColors.primaryLight : AppColors.primary}
+            color={isBookmarked ? '#FFFFFF' : isDark ? AppColors.primaryLight : AppColors.primary}
             size={20}
-            fill={isFavorite ? '#FFFFFF' : 'transparent'}
+            fill={isBookmarked ? '#FFFFFF' : 'transparent'}
           />
         </Pressable>
         <View style={{ flex: 1, marginLeft: sp(12) }}>
@@ -827,6 +920,16 @@ const styles = StyleSheet.create({
     fontFamily: FontFamily.semibold,
     fontWeight: FontWeights.semibold,
     marginLeft: 8,
+  },
+  ingBadge: {
+    paddingHorizontal: sp(6),
+    paddingVertical: sp(2),
+    borderRadius: sp(6),
+    marginLeft: sp(8),
+  },
+  ingBadgeText: {
+    fontFamily: FontFamily.bold,
+    fontWeight: FontWeights.bold,
   },
   stepRow: {
     flexDirection: 'row',

@@ -8,15 +8,19 @@ import { useScanFlow } from '../useScanFlow';
 const mockStartScan = jest.fn();
 const mockPollScanResult = jest.fn();
 
+// ⚠️ Phải trả CÙNG một object cho mọi lần render. Nếu tạo object mới mỗi
+// lần, `startScan` (useCallback deps [services]) đổi identity mỗi render.
+const mockServices = {
+  fridgeService: {
+    scanImage: (...args) => mockStartScan(...args),
+    scanReceipt: (...args) => mockStartScan(...args),
+    scanBarcode: (...args) => mockStartScan(...args),
+    pollScanResult: (...args) => mockPollScanResult(...args),
+  },
+};
+
 jest.mock('../../../data/ServiceProvider', () => ({
-  useServices: () => ({
-    fridgeService: {
-      scanImage: (...args) => mockStartScan(...args),
-      scanReceipt: (...args) => mockStartScan(...args),
-      scanBarcode: (...args) => mockStartScan(...args),
-      pollScanResult: (...args) => mockPollScanResult(...args),
-    },
-  }),
+  useServices: () => mockServices,
 }));
 
 const Harness = ({ scanType = 'image', uri = 'file:///photo.jpg' }) => {
@@ -29,7 +33,11 @@ const Harness = ({ scanType = 'image', uri = 'file:///photo.jpg' }) => {
       <Text testID="result">{result ? JSON.stringify(result) : ''}</Text>
       <Pressable
         testID="start"
-        onPress={() => startScan(scanType, uri).then(setResult).catch(() => {})}
+        onPress={() =>
+          startScan(scanType, uri)
+            .then(setResult)
+            .catch(() => {})
+        }
       />
     </>
   );
@@ -51,7 +59,9 @@ describe('useScanFlow', () => {
 
     const view = await render(<Harness />);
 
-    fireEvent.press(view.getByTestId('start'));
+    // `fireEvent.press` của RTL v14 đã wrap trong act() và trả promise ->
+    // phải await để tránh cập nhật state ngoài act().
+    await fireEvent.press(view.getByTestId('start'));
 
     await waitFor(() => {
       expect(view.getByTestId('result').props.children).not.toBe('');
@@ -68,7 +78,10 @@ describe('useScanFlow', () => {
       storageLocation: 'fridge',
     });
     expect(parsed.items[0].clientId).toBeTruthy();
-  });
+    // Timeout 5s của jest quá chặt: test đầu tiên trong 1 file phải chịu
+    // chi phí transform/cache của jest-expo (~2-4s). Nới lên 20s để CI chạy
+    // nhiều worker vẫn ổn định.
+  }, 20000);
 
   it('poll lỗi thì phase=error và lưu error', async () => {
     mockStartScan.mockResolvedValue({ scanId: 's2', status: 'pending' });
@@ -76,7 +89,7 @@ describe('useScanFlow', () => {
 
     const view = await render(<Harness />);
 
-    fireEvent.press(view.getByTestId('start'));
+    await fireEvent.press(view.getByTestId('start'));
 
     await waitFor(() => {
       expect(view.getByTestId('phase').props.children).toBe('error');

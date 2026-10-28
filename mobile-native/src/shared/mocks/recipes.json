@@ -7,6 +7,8 @@
       "cookTime": 15,
       "difficulty": "easy",
       "servings": 2,
+      "mealType": "breakfast",
+      "tags": ["Nhanh", "Dễ"],
       "ingredients": ["Cà chua", "Trứng gà", "Hành lá", "Gia vị"],
       "steps": [
         "Rửa sạch cà chua, cắt múi.",
@@ -22,9 +24,11 @@
       "cookTime": 25,
       "difficulty": "easy",
       "servings": 4,
+      "mealType": "lunch",
+      "tags": ["Healthy"],
       "ingredients": ["Cà rốt", "Khoai tây", "Hành tây", "Cải bó xôi"],
       "steps": [
-        "Gọt vỏ, cắt khối rau củ.",
+        "Gọt vỏ, cắt khúc rau củ.",
         "Nấu nước dùng sôi, cho rau cứng vào trước.",
         "Nêm nếm gia vị, cho rau mềm vào sau.",
         "Tắt bếp, rắc hành lá."
@@ -37,12 +41,14 @@
       "cookTime": 45,
       "difficulty": "medium",
       "servings": 4,
+      "mealType": "dinner",
+      "tags": ["Đậm đà"],
       "ingredients": ["Thịt heo", "Trứng gà", "Nước dừa", "Nước mắm"],
       "steps": [
         "Ướp thịt với nước mắm, đường, tiêu.",
         "Luộc trứng, bóc vỏ.",
         "Kho thịt với nước dừa, cho trứng vào.",
-        "Kho nhỏ lửa 30 phút đến khi thịt mềm."
+        "Kho nhỏ lửa 30 phút để thịt mềm."
       ]
     },
     {
@@ -52,6 +58,8 @@
       "cookTime": 10,
       "difficulty": "easy",
       "servings": 2,
+      "mealType": "snack",
+      "tags": ["Healthy", "Nhanh"],
       "ingredients": ["Cà chua", "Dưa leo", "Hành lá", "Sốt salad"],
       "steps": [
         "Rửa sạch cà chua, cắt múi.",

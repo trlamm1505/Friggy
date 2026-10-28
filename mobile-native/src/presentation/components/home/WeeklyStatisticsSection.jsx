@@ -11,7 +11,7 @@
  * Ảnh minh hoạ để trống (null) — cấu trúc layout đã sẵn sàng, chờ thay ảnh.
  */
 
-import React, { useMemo } from 'react';
+import React from 'react';
 import { View, Text, Image, StyleSheet, Pressable } from 'react-native';
 import { useTheme } from '../../theme/ThemeContext';
 import { AppColors } from '../../theme/colors';
@@ -27,22 +27,20 @@ import { ErrorState } from '../common/ErrorState';
 // Ảnh minh hoạ. Để null trước khi có asset — ô ảnh vẫn giữ đúng kích thước
 // để layout không nhảy khi thay ảnh sau này.
 const COOKED_ART = require('../../../../assets/images/left.png'); // bữa đã nấu
-const ATTENTION_ART = require('../../../../assets/images/right.png');// cần chú ý
+const ATTENTION_ART = require('../../../../assets/images/right.png'); // cần chú ý
 
 export const WeeklyStatisticsSection = ({ onDetailTap }) => {
   const { isDark } = useTheme();
   const { t } = useTranslation();
   const { data: stats, loading, error, refetch } = useWeeklyStats();
 
-  const cookedCount = useMemo(() => {
-    if (!stats?.data?.length) return 0;
-    return stats.data.reduce((sum, d) => sum + (d.count || 0), 0);
-  }, [stats]);
-
-  const attentionCount = useMemo(() => {
-    if (!stats?.data?.length) return 0;
-    return stats.data.filter((d) => (d.count || 0) === 0).length;
-  }, [stats]);
+  // ⚠️ B3: typedef `WeeklyStats` đã đổi sang shape của `GET /fridge/stats`
+  // (`FridgeStatsResponseDto`): { mealsCooked, expiringSoonCount,
+  // totalSpentThisMonth, wastePercent, totalItems }.
+  // Trước đây đọc `stats.data[]` (shape tuần cũ) -> luôn rỗng -> UI rơi vào
+  // EmptyState dù BE có trả số liệu thật.
+  const cookedCount = stats?.mealsCooked ?? 0;
+  const attentionCount = stats?.expiringSoonCount ?? 0;
 
   const hasData = cookedCount > 0 || attentionCount > 0;
 
@@ -58,7 +56,12 @@ export const WeeklyStatisticsSection = ({ onDetailTap }) => {
           onPress={onDetailTap}
           style={({ pressed }) => [styles.detailLink, { opacity: pressed ? 0.6 : 1 }]}
         >
-          <Text style={[styles.detailLinkText, { color: isDark ? AppColors.primaryLight : AppColors.primary }]}>
+          <Text
+            style={[
+              styles.detailLinkText,
+              { color: isDark ? AppColors.primaryLight : AppColors.primary },
+            ]}
+          >
             {t('recipe.viewDetail')}
           </Text>
           <ChevronRight
@@ -163,16 +166,11 @@ const StatBlock = ({ isDark, art, tone, title, sub, value, unit }) => (
       {art ? (
         <Image source={art} style={styles.art} resizeMode="contain" />
       ) : (
-        <View
-          style={[styles.artPlaceholder, { borderColor: isDark ? '#2E4D36' : '#A5E69C' }]}
-        />
+        <View style={[styles.artPlaceholder, { borderColor: isDark ? '#2E4D36' : '#A5E69C' }]} />
       )}
     </View>
     <Text
-      style={[
-        styles.statTitle,
-        { color: tone === 'red' ? AppColors.error : AppColors.primary },
-      ]}
+      style={[styles.statTitle, { color: tone === 'red' ? AppColors.error : AppColors.primary }]}
     >
       {title}
     </Text>

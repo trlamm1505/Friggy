@@ -75,6 +75,17 @@ import './src/data/services/real/RealAuthService';
 // Sprint A2: đăng ký RealUserService (profile / preferences / allergies / onboarding).
 import './src/data/services/real/RealUserService';
 
+// ──────────────────────────────────────────────────────────────────
+// B3 — Recipes + meal-planning slots (đăng ký key 'recipeService')
+//
+// ⚠️ Q5 đã chốt: dùng CHUNG key `recipe`, KHÔNG tách `mealPlanning`.
+// `RealRecipeService` là service DUY NHẤT cho key này, gồm cả phần
+// recipes lẫn `getSuggestions()` đọc meal-planning slots.
+// `useServiceHooks.js` là file IMMUTABLE -> hook `useRecipeSuggestions`
+// vẫn gọi `recipeService.getSuggestions()`.
+// ──────────────────────────────────────────────────────────────────
+import './src/data/services/real/RealRecipeService';
+
 export default function App() {
   const [fontsLoaded] = useFonts({
     PlusJakartaSans_400Regular,
