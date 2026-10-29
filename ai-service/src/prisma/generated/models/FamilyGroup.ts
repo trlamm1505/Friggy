@@ -192,6 +192,7 @@ export type FamilyGroupWhereInput = {
   deletedAt?: Prisma.DateTimeNullableFilter<"FamilyGroup"> | Date | string | null
   owner?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
   members?: Prisma.FamilyMemberListRelationFilter
+  weeklyPlans?: Prisma.WeeklyPlanListRelationFilter
 }
 
 export type FamilyGroupOrderByWithRelationInput = {
@@ -203,6 +204,7 @@ export type FamilyGroupOrderByWithRelationInput = {
   deletedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   owner?: Prisma.UserOrderByWithRelationInput
   members?: Prisma.FamilyMemberOrderByRelationAggregateInput
+  weeklyPlans?: Prisma.WeeklyPlanOrderByRelationAggregateInput
   _relevance?: Prisma.FamilyGroupOrderByRelevanceInput
 }
 
@@ -218,6 +220,7 @@ export type FamilyGroupWhereUniqueInput = Prisma.AtLeast<{
   deletedAt?: Prisma.DateTimeNullableFilter<"FamilyGroup"> | Date | string | null
   owner?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
   members?: Prisma.FamilyMemberListRelationFilter
+  weeklyPlans?: Prisma.WeeklyPlanListRelationFilter
 }, "id" | "ownerId">
 
 export type FamilyGroupOrderByWithAggregationInput = {
@@ -252,6 +255,7 @@ export type FamilyGroupCreateInput = {
   deletedAt?: Date | string | null
   owner: Prisma.UserCreateNestedOneWithoutFamilyOwnedInput
   members?: Prisma.FamilyMemberCreateNestedManyWithoutFamilyGroupInput
+  weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutFamilyGroupInput
 }
 
 export type FamilyGroupUncheckedCreateInput = {
@@ -262,6 +266,7 @@ export type FamilyGroupUncheckedCreateInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   members?: Prisma.FamilyMemberUncheckedCreateNestedManyWithoutFamilyGroupInput
+  weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutFamilyGroupInput
 }
 
 export type FamilyGroupUpdateInput = {
@@ -272,6 +277,7 @@ export type FamilyGroupUpdateInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   owner?: Prisma.UserUpdateOneRequiredWithoutFamilyOwnedNestedInput
   members?: Prisma.FamilyMemberUpdateManyWithoutFamilyGroupNestedInput
+  weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutFamilyGroupNestedInput
 }
 
 export type FamilyGroupUncheckedUpdateInput = {
@@ -282,6 +288,7 @@ export type FamilyGroupUncheckedUpdateInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   members?: Prisma.FamilyMemberUncheckedUpdateManyWithoutFamilyGroupNestedInput
+  weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutFamilyGroupNestedInput
 }
 
 export type FamilyGroupCreateManyInput = {
@@ -385,6 +392,22 @@ export type FamilyGroupUncheckedUpdateOneWithoutOwnerNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.FamilyGroupUpdateToOneWithWhereWithoutOwnerInput, Prisma.FamilyGroupUpdateWithoutOwnerInput>, Prisma.FamilyGroupUncheckedUpdateWithoutOwnerInput>
 }
 
+export type FamilyGroupCreateNestedOneWithoutWeeklyPlansInput = {
+  create?: Prisma.XOR<Prisma.FamilyGroupCreateWithoutWeeklyPlansInput, Prisma.FamilyGroupUncheckedCreateWithoutWeeklyPlansInput>
+  connectOrCreate?: Prisma.FamilyGroupCreateOrConnectWithoutWeeklyPlansInput
+  connect?: Prisma.FamilyGroupWhereUniqueInput
+}
+
+export type FamilyGroupUpdateOneWithoutWeeklyPlansNestedInput = {
+  create?: Prisma.XOR<Prisma.FamilyGroupCreateWithoutWeeklyPlansInput, Prisma.FamilyGroupUncheckedCreateWithoutWeeklyPlansInput>
+  connectOrCreate?: Prisma.FamilyGroupCreateOrConnectWithoutWeeklyPlansInput
+  upsert?: Prisma.FamilyGroupUpsertWithoutWeeklyPlansInput
+  disconnect?: Prisma.FamilyGroupWhereInput | boolean
+  delete?: Prisma.FamilyGroupWhereInput | boolean
+  connect?: Prisma.FamilyGroupWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.FamilyGroupUpdateToOneWithWhereWithoutWeeklyPlansInput, Prisma.FamilyGroupUpdateWithoutWeeklyPlansInput>, Prisma.FamilyGroupUncheckedUpdateWithoutWeeklyPlansInput>
+}
+
 export type FamilyGroupCreateNestedOneWithoutMembersInput = {
   create?: Prisma.XOR<Prisma.FamilyGroupCreateWithoutMembersInput, Prisma.FamilyGroupUncheckedCreateWithoutMembersInput>
   connectOrCreate?: Prisma.FamilyGroupCreateOrConnectWithoutMembersInput
@@ -406,6 +429,7 @@ export type FamilyGroupCreateWithoutOwnerInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   members?: Prisma.FamilyMemberCreateNestedManyWithoutFamilyGroupInput
+  weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutFamilyGroupInput
 }
 
 export type FamilyGroupUncheckedCreateWithoutOwnerInput = {
@@ -415,6 +439,7 @@ export type FamilyGroupUncheckedCreateWithoutOwnerInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   members?: Prisma.FamilyMemberUncheckedCreateNestedManyWithoutFamilyGroupInput
+  weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutFamilyGroupInput
 }
 
 export type FamilyGroupCreateOrConnectWithoutOwnerInput = {
@@ -440,10 +465,68 @@ export type FamilyGroupUpdateWithoutOwnerInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   members?: Prisma.FamilyMemberUpdateManyWithoutFamilyGroupNestedInput
+  weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutFamilyGroupNestedInput
 }
 
 export type FamilyGroupUncheckedUpdateWithoutOwnerInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  members?: Prisma.FamilyMemberUncheckedUpdateManyWithoutFamilyGroupNestedInput
+  weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutFamilyGroupNestedInput
+}
+
+export type FamilyGroupCreateWithoutWeeklyPlansInput = {
+  id?: string
+  status: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  owner: Prisma.UserCreateNestedOneWithoutFamilyOwnedInput
+  members?: Prisma.FamilyMemberCreateNestedManyWithoutFamilyGroupInput
+}
+
+export type FamilyGroupUncheckedCreateWithoutWeeklyPlansInput = {
+  id?: string
+  ownerId: string
+  status: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  members?: Prisma.FamilyMemberUncheckedCreateNestedManyWithoutFamilyGroupInput
+}
+
+export type FamilyGroupCreateOrConnectWithoutWeeklyPlansInput = {
+  where: Prisma.FamilyGroupWhereUniqueInput
+  create: Prisma.XOR<Prisma.FamilyGroupCreateWithoutWeeklyPlansInput, Prisma.FamilyGroupUncheckedCreateWithoutWeeklyPlansInput>
+}
+
+export type FamilyGroupUpsertWithoutWeeklyPlansInput = {
+  update: Prisma.XOR<Prisma.FamilyGroupUpdateWithoutWeeklyPlansInput, Prisma.FamilyGroupUncheckedUpdateWithoutWeeklyPlansInput>
+  create: Prisma.XOR<Prisma.FamilyGroupCreateWithoutWeeklyPlansInput, Prisma.FamilyGroupUncheckedCreateWithoutWeeklyPlansInput>
+  where?: Prisma.FamilyGroupWhereInput
+}
+
+export type FamilyGroupUpdateToOneWithWhereWithoutWeeklyPlansInput = {
+  where?: Prisma.FamilyGroupWhereInput
+  data: Prisma.XOR<Prisma.FamilyGroupUpdateWithoutWeeklyPlansInput, Prisma.FamilyGroupUncheckedUpdateWithoutWeeklyPlansInput>
+}
+
+export type FamilyGroupUpdateWithoutWeeklyPlansInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  owner?: Prisma.UserUpdateOneRequiredWithoutFamilyOwnedNestedInput
+  members?: Prisma.FamilyMemberUpdateManyWithoutFamilyGroupNestedInput
+}
+
+export type FamilyGroupUncheckedUpdateWithoutWeeklyPlansInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  ownerId?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -458,6 +541,7 @@ export type FamilyGroupCreateWithoutMembersInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   owner: Prisma.UserCreateNestedOneWithoutFamilyOwnedInput
+  weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutFamilyGroupInput
 }
 
 export type FamilyGroupUncheckedCreateWithoutMembersInput = {
@@ -467,6 +551,7 @@ export type FamilyGroupUncheckedCreateWithoutMembersInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
+  weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutFamilyGroupInput
 }
 
 export type FamilyGroupCreateOrConnectWithoutMembersInput = {
@@ -492,6 +577,7 @@ export type FamilyGroupUpdateWithoutMembersInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   owner?: Prisma.UserUpdateOneRequiredWithoutFamilyOwnedNestedInput
+  weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutFamilyGroupNestedInput
 }
 
 export type FamilyGroupUncheckedUpdateWithoutMembersInput = {
@@ -501,6 +587,7 @@ export type FamilyGroupUncheckedUpdateWithoutMembersInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutFamilyGroupNestedInput
 }
 
 
@@ -510,10 +597,12 @@ export type FamilyGroupUncheckedUpdateWithoutMembersInput = {
 
 export type FamilyGroupCountOutputType = {
   members: number
+  weeklyPlans: number
 }
 
 export type FamilyGroupCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   members?: boolean | FamilyGroupCountOutputTypeCountMembersArgs
+  weeklyPlans?: boolean | FamilyGroupCountOutputTypeCountWeeklyPlansArgs
 }
 
 /**
@@ -533,6 +622,13 @@ export type FamilyGroupCountOutputTypeCountMembersArgs<ExtArgs extends runtime.T
   where?: Prisma.FamilyMemberWhereInput
 }
 
+/**
+ * FamilyGroupCountOutputType without action
+ */
+export type FamilyGroupCountOutputTypeCountWeeklyPlansArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.WeeklyPlanWhereInput
+}
+
 
 export type FamilyGroupSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -543,6 +639,7 @@ export type FamilyGroupSelect<ExtArgs extends runtime.Types.Extensions.InternalA
   deletedAt?: boolean
   owner?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   members?: boolean | Prisma.FamilyGroup$membersArgs<ExtArgs>
+  weeklyPlans?: boolean | Prisma.FamilyGroup$weeklyPlansArgs<ExtArgs>
   _count?: boolean | Prisma.FamilyGroupCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["familyGroup"]>
 
@@ -561,6 +658,7 @@ export type FamilyGroupOmit<ExtArgs extends runtime.Types.Extensions.InternalArg
 export type FamilyGroupInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   owner?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   members?: boolean | Prisma.FamilyGroup$membersArgs<ExtArgs>
+  weeklyPlans?: boolean | Prisma.FamilyGroup$weeklyPlansArgs<ExtArgs>
   _count?: boolean | Prisma.FamilyGroupCountOutputTypeDefaultArgs<ExtArgs>
 }
 
@@ -569,6 +667,7 @@ export type $FamilyGroupPayload<ExtArgs extends runtime.Types.Extensions.Interna
   objects: {
     owner: Prisma.$UserPayload<ExtArgs>
     members: Prisma.$FamilyMemberPayload<ExtArgs>[]
+    weeklyPlans: Prisma.$WeeklyPlanPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -919,6 +1018,7 @@ export interface Prisma__FamilyGroupClient<T, Null = never, ExtArgs extends runt
   readonly [Symbol.toStringTag]: "PrismaPromise"
   owner<T extends Prisma.UserDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserDefaultArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   members<T extends Prisma.FamilyGroup$membersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.FamilyGroup$membersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$FamilyMemberPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  weeklyPlans<T extends Prisma.FamilyGroup$weeklyPlansArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.FamilyGroup$weeklyPlansArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$WeeklyPlanPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1323,6 +1423,30 @@ export type FamilyGroup$membersArgs<ExtArgs extends runtime.Types.Extensions.Int
   take?: number
   skip?: number
   distinct?: Prisma.FamilyMemberScalarFieldEnum | Prisma.FamilyMemberScalarFieldEnum[]
+}
+
+/**
+ * FamilyGroup.weeklyPlans
+ */
+export type FamilyGroup$weeklyPlansArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the WeeklyPlan
+   */
+  select?: Prisma.WeeklyPlanSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the WeeklyPlan
+   */
+  omit?: Prisma.WeeklyPlanOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.WeeklyPlanInclude<ExtArgs> | null
+  where?: Prisma.WeeklyPlanWhereInput
+  orderBy?: Prisma.WeeklyPlanOrderByWithRelationInput | Prisma.WeeklyPlanOrderByWithRelationInput[]
+  cursor?: Prisma.WeeklyPlanWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.WeeklyPlanScalarFieldEnum | Prisma.WeeklyPlanScalarFieldEnum[]
 }
 
 /**

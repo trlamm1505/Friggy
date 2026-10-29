@@ -168,4 +168,19 @@ export class TokensService {
       { secret: JWT_ACCESS_SECRET, expiresIn: accessTtl as any },
     );
   }
+
+  /**
+   * Xác minh access token: verify signature + check chưa hết hạn
+   * Trả về JwtPayload nếu hợp lệ, null nếu không
+   */
+  verifyAccessToken(token: string): JwtPayload | null {
+    try {
+      return this.jwtService.verify<JwtPayload>(token, {
+        secret: JWT_ACCESS_SECRET,
+      });
+    } catch {
+      return null;
+    }
+  }
 }
+

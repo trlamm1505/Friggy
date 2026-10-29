@@ -88,12 +88,14 @@ export class MealPlanTools {
    */
   async saveWeeklyPlan(params: {
     userId: string;
+    familyGroupId?: string | null;
     weekStartDate: string;
     totalBudget?: number;
     slots: Array<{
       dayOfWeek: number; // 1 = Thứ 2, 2 = Thứ 3, ..., 7 = Chủ nhật
       mealType: string;  // breakfast | lunch | dinner | snack
       recipeId: string;
+      servings?: number;
     }>;
   }): Promise<{ weeklyPlanId: string }> {
     const weekStart = new Date(params.weekStartDate);
@@ -109,6 +111,7 @@ export class MealPlanTools {
         data: {
           id: uuid(),
           userId: params.userId,
+          familyGroupId: params.familyGroupId ?? null,
           weekStartDate: weekStart,
           totalBudget: params.totalBudget ?? 0,
           status: 'draft',

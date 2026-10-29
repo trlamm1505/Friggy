@@ -4,9 +4,9 @@ import { JwtModule } from '@nestjs/jwt';
 
 // System modules
 import { PrismaModule } from './modules-system/prisma/prisma.module';
-
 import { RedisModule } from './modules-system/redis/redis.module';
 import { RabbitMqPublisherModule } from './modules-system/rabbit-mq/rabbit-mq-publisher.module';
+import { SocketModule } from './modules-system/socket/socket.module';
 
 // API modules
 import { AuthModule } from './modules-api/auth/auth.module';
@@ -45,8 +45,9 @@ import { TokensModule } from './modules-system/tokens/tokens.module';
     JwtModule.register({}),
 
     // ── System Modules (Global) ────────────────────────────────────────
-    RedisModule, // Redis cache + SSE pub/sub (global)
+    RedisModule,           // Redis cache + SSE pub/sub (global)
     RabbitMqPublisherModule, // Publish jobs lên AI Service qua RabbitMQ (global)
+    SocketModule,          // Socket.IO server + broadcast service (global)
 
     // ── API Modules ────────────────────────────────────────────────
     AuthModule,

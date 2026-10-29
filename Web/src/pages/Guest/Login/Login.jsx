@@ -5,8 +5,6 @@ import { User, Lock, Eye, EyeOff, ArrowLeft, Sparkles, ShieldCheck, CheckCircle2
 import cuteMascotImg from '../../../assets/images/cute_mascot.png';
 import qrMascotImg from '../../../assets/images/QR.png';
 import mascotImg from '../../../assets/images/mascot.png';
-import suggestImg from '../../../assets/images/suggest.png';
-import { adminAccount, initialUsers } from '../../../data/adminMockData';
 import { emailLoginApi, googleAuthApi } from '../../../services/authService';
 import { showToast } from '../../../components/common/Toast';
 
@@ -69,6 +67,7 @@ export const Login = ({ onBack, onLoginSuccess }) => {
         localStorage.setItem('friggy_user', JSON.stringify(authData.user));
         localStorage.setItem('user', JSON.stringify(authData.user));
       }
+      localStorage.removeItem('is_mock_user');
 
       showToast.success(`Đăng nhập thành công! Chào mừng ${authData.user?.name || authData.user?.email || inputEmail}`);
 
@@ -76,9 +75,13 @@ export const Login = ({ onBack, onLoginSuccess }) => {
         authData.user?.role?.name || authData.user?.role || ''
       ).toLowerCase();
       const isAdmin = userRole === 'admin' || userRole.includes('admin');
+      const isManager = userRole === 'manager' || userRole.includes('manager');
 
       if (isAdmin) {
         navigate('/admin/dashboard', { replace: true });
+        if (onLoginSuccess) onLoginSuccess(authData.user);
+      } else if (isManager) {
+        navigate('/manager/dashboard', { replace: true });
         if (onLoginSuccess) onLoginSuccess(authData.user);
       } else {
         navigate('/', { replace: true });
@@ -86,40 +89,6 @@ export const Login = ({ onBack, onLoginSuccess }) => {
       }
     } catch (err) {
       console.error('Email Login Error:', err);
-
-      // Fallback kiểm tra tài khoản Mock nếu backend offline hoặc dùng account admin mock
-      const validAccounts = [
-        adminAccount,
-        ...initialUsers.map((u) => ({
-          ...u,
-          password: u.password || '123456',
-        })),
-      ];
-
-      const matchedAccount = validAccounts.find((acc) => {
-        const matchesUser =
-          acc.username === inputEmail ||
-          acc.phone === inputEmail ||
-          acc.email === inputEmail;
-        const matchesPass = acc.password === inputPass;
-        return matchesUser && matchesPass;
-      });
-
-      if (matchedAccount) {
-        const roleLower = String(matchedAccount.role || '').toLowerCase();
-        const isAdmin = roleLower === 'admin' || roleLower.includes('admin');
-
-        showToast.success(`Đăng nhập thành công! Chào mừng ${matchedAccount.name || matchedAccount.username}`);
-        if (isAdmin) {
-          navigate('/admin/dashboard', { replace: true });
-          if (onLoginSuccess) onLoginSuccess(matchedAccount);
-        } else {
-          navigate('/', { replace: true });
-          if (onLoginSuccess) onLoginSuccess(matchedAccount);
-        }
-        return;
-      }
-
       const errMsg = err.message || 'Tên đăng nhập hoặc mật khẩu không chính xác!';
       setError(errMsg);
       showToast.error(errMsg);
@@ -171,16 +140,22 @@ export const Login = ({ onBack, onLoginSuccess }) => {
               localStorage.setItem('friggy_user', JSON.stringify(authData.user));
               localStorage.setItem('user', JSON.stringify(authData.user));
             }
+            localStorage.removeItem('is_mock_user');
 
             showToast.success('Đăng nhập thành công với Google!');
 
-            // Check role: nếu role là admin -> chuyển trang chủ admin, nếu user -> trang người dùng
+            // Check role: nếu role là admin -> chuyển admin, nếu manager -> chuyển manager, nếu user -> trang chủ
             const userRole = String(
               authData.user?.role?.name || authData.user?.role || ''
             ).toLowerCase();
+            const isAdmin = userRole === 'admin' || userRole.includes('admin');
+            const isManager = userRole === 'manager' || userRole.includes('manager');
 
-            if (userRole === 'admin' || userRole.includes('admin')) {
+            if (isAdmin) {
               navigate('/admin/dashboard', { replace: true });
+              if (onLoginSuccess) onLoginSuccess(authData.user);
+            } else if (isManager) {
+              navigate('/manager/dashboard', { replace: true });
               if (onLoginSuccess) onLoginSuccess(authData.user);
             } else {
               navigate('/', { replace: true });

@@ -133,10 +133,11 @@ class AuthService {
     } on PlatformException catch (e) {
       debugPrint('[AuthService] PlatformException during Google login: ${e.code} - ${e.message}');
       if (context.mounted) {
-        final isDevError = e.message?.contains('10') == true || e.code == 'sign_in_failed';
+        final rawMsg = e.message ?? '';
+        final isDevError = RegExp(r'ApiException:\s*10\b').hasMatch(rawMsg);
         final msg = isDevError
             ? 'Lỗi 10 (DEVELOPER_ERROR): Cần thêm SHA-1 fingerprint vào Google Cloud Console'
-            : 'Lỗi Google Sign-In: ${e.message}';
+            : 'Lỗi Google Sign-In [${e.code}]: $rawMsg';
         _showSnackBar(context, msg, isError: true);
       }
       return false;

@@ -5,20 +5,13 @@ import AdminDashboard from './Dashboard/AdminDashboard';
 import UserManagement from './UserManagement/UserManagement';
 import PackageManagement from './PackageManagement/PackageManagement';
 import AdminSettings from './Settings/AdminSettings';
-import {
-  initialStats,
-  initialUsers,
-  initialPackages,
-  initialTransactions,
-} from '../../data/adminMockData';
-
 export const AdminPage = ({ onExitAdmin }) => {
   const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' | 'users' | 'packages' | 'settings'
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [stats, setStats] = useState(initialStats);
-  const [users, setUsers] = useState(initialUsers);
-  const [packages, setPackages] = useState(initialPackages);
-  const [transactions, setTransactions] = useState(initialTransactions);
+  const [stats, setStats] = useState({});
+  const [users, setUsers] = useState([]);
+  const [packages, setPackages] = useState([]);
+  const [transactions, setTransactions] = useState([]);
   const [openAddPackageModal, setOpenAddPackageModal] = useState(false);
 
   return (

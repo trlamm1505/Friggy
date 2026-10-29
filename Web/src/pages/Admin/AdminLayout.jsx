@@ -2,20 +2,14 @@ import React, { useState } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import AdminSidebar from './Sidebar/AdminSidebar';
 import AdminHeader from './Header/AdminHeader';
-import {
-  initialStats,
-  initialUsers,
-  initialPackages,
-  initialTransactions,
-} from '../../data/adminMockData';
 import { logoutHelper } from '../../services/authService';
 
 export const AdminLayout = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [stats, setStats] = useState(initialStats);
-  const [users, setUsers] = useState(initialUsers);
-  const [packages, setPackages] = useState(initialPackages);
-  const [transactions, setTransactions] = useState(initialTransactions);
+  const [stats, setStats] = useState({});
+  const [users, setUsers] = useState([]);
+  const [packages, setPackages] = useState([]);
+  const [transactions, setTransactions] = useState([]);
   const [openAddPackageModal, setOpenAddPackageModal] = useState(false);
 
   const navigate = useNavigate();

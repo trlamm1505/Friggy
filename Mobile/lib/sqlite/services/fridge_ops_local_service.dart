@@ -22,6 +22,7 @@ class FridgeOpsLocalService {
     required FridgeOpAction action,
     double? quantity,
     String? unit,
+    String? expiresAt,
   }) async {
     try {
       final db = await _db.database;
@@ -33,11 +34,12 @@ class FridgeOpsLocalService {
           'action': action.name,
           'quantity': quantity,
           'unit': unit,
+          'expires_at': expiresAt,
           'created_at': DateTime.now().millisecondsSinceEpoch,
         },
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
-      debugPrint('[FridgeOpsLocalService] Saved pending op: item=$itemId action=${action.name}');
+      debugPrint('[FridgeOpsLocalService] Saved pending op: item=$itemId action=${action.name} expiresAt=$expiresAt');
     } catch (e) {
       debugPrint('[FridgeOpsLocalService] Error saving pending op: $e');
     }

@@ -14,11 +14,27 @@
       },
       "oauth_client": [
         {
+          "client_id": "717739810642-3v0i91levfj9338n2d2lfc8jec9nr81a.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.tqlam.friggy",
+            "certificate_hash": "22bee81698c271018b37e0ef8aec3c62513f886d"
+          }
+        },
+        {
           "client_id": "717739810642-972vaqidadjjv087ff631tq9u38j6u3l.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.tqlam.friggy",
             "certificate_hash": "ecedd586565aca4b9eef6de02cacd81fffe2d705"
+          }
+        },
+        {
+          "client_id": "717739810642-prb3gv2ri3v6ja8l5isrnhqhbs8denq4.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.tqlam.friggy",
+            "certificate_hash": "f29fdfd1a79bbf4d994bc396b119da8f2c7cdecf"
           }
         },
         {
