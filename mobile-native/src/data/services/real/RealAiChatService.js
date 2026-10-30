@@ -113,10 +113,7 @@ export class RealAiChatService extends IAiChatService {
    */
   async createSession(title) {
     const trimmed = (title ?? '').trim();
-    const payload = await this.client.post(
-      '/ai-chat/sessions',
-      trimmed ? { title: trimmed } : {}
-    );
+    const payload = await this.client.post('/ai-chat/sessions', trimmed ? { title: trimmed } : {});
     return this._toSession(payload);
   }
 
@@ -180,7 +177,7 @@ export class RealAiChatService extends IAiChatService {
    * @param {string} sessionId
    * @param {{signal?:AbortSignal}} [options]
    */
-  async* streamSession(sessionId, options = {}) {
+  async *streamSession(sessionId, options = {}) {
     if (!sessionId) return;
 
     const path = `/ai-chat/sessions/${sessionId}/stream`;
@@ -211,10 +208,7 @@ export class RealAiChatService extends IAiChatService {
 
         yield {
           event: 'done',
-          data:
-            typeof doneData === 'object' && doneData !== null
-              ? doneData
-              : { tokensUsed: null },
+          data: typeof doneData === 'object' && doneData !== null ? doneData : { tokensUsed: null },
         };
         continue;
       }

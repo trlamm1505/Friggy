@@ -423,6 +423,24 @@ export class MockRecipeService extends IRecipeService {
   // ═══════════════ Meal planning — Sprint B4 ═══════════════
 
   /**
+   * `PATCH /meal-planning/plans/{id}` — đổi trạng thái kế hoạch (mock).
+   *
+   * Khớp `RealRecipeService.updatePlan()`: chỉ nhận `status`.
+   *
+   * @param {string} planId
+   * @param {{status?:string}} payload
+   * @returns {Promise<void>}
+   */
+  async updatePlan(planId, payload = {}) {
+    await sleep(MOCK_DELAY / 2);
+    if (!planId) return;
+    if (planId !== mockNextWeekPlan.id) return;
+    if (payload.status !== undefined) {
+      mockNextWeekPlan.status = payload.status;
+    }
+  }
+
+  /**
    * `PATCH /meal-planning/slots/{id}` — tick "đã nấu" hoặc đổi công thức.
    *
    * Khớp `RealRecipeService.updateSlot()`: cập nhật state in-memory để UI
@@ -497,7 +515,7 @@ export class MockRecipeService extends IRecipeService {
    * @param {{signal?:AbortSignal}} [options]
    * @returns {AsyncGenerator<{event:string, data:any}>}
    */
-  async* streamPlanProgress(path, options = {}) {
+  async *streamPlanProgress(path, options = {}) {
     await sleep(MOCK_DELAY);
     if (options?.signal?.aborted) return;
 

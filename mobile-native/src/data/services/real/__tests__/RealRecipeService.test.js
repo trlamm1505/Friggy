@@ -520,12 +520,10 @@ describe('10. B4 — Meal planning (plans / slots / tick / regenerate)', () => {
   });
 
   it('getNextWeekPlan gọi plans -> plans/{id}, trả shape { id, weekStart, days[] }', async () => {
-    api.get
-      .mockResolvedValueOnce([bePlan()])
-      .mockResolvedValueOnce({
-        ...bePlan(),
-        dailyPlans: [{ id: 'd1', dayOfWeek: 1, date: '2026-10-19', mealSlots: [beSlot()] }],
-      });
+    api.get.mockResolvedValueOnce([bePlan()]).mockResolvedValueOnce({
+      ...bePlan(),
+      dailyPlans: [{ id: 'd1', dayOfWeek: 1, date: '2026-10-19', mealSlots: [beSlot()] }],
+    });
 
     const plan = await svc.getNextWeekPlan();
 
@@ -715,9 +713,7 @@ describe('11. B4 — Shopping list', () => {
       beList(),
       beList({
         id: 'list-2',
-        items: [
-          { id: 2, ingredientName: 'Rau muống', quantity: 2, unit: 'bó', isPurchased: true },
-        ],
+        items: [{ id: 2, ingredientName: 'Rau muống', quantity: 2, unit: 'bó', isPurchased: true }],
       }),
     ]);
 
@@ -836,7 +832,9 @@ describe('12. B4 — R1 — Mock và Real cùng shape', () => {
     const mock = new MockRecipeService();
 
     const regenEvents = [];
-    for await (const evt of mock.streamPlanProgress('/meal-planning/slots/slot-1/regenerate/job-1/stream')) {
+    for await (const evt of mock.streamPlanProgress(
+      '/meal-planning/slots/slot-1/regenerate/job-1/stream'
+    )) {
       regenEvents.push(evt);
     }
     expect(regenEvents).toHaveLength(1);
@@ -844,7 +842,9 @@ describe('12. B4 — R1 — Mock và Real cùng shape', () => {
     expect(regenEvents[0].data.suggestions).toContain('1.');
 
     const planEvents = [];
-    for await (const evt of mock.streamPlanProgress('/meal-planning/plans/generate-from-expiring/job-1/stream')) {
+    for await (const evt of mock.streamPlanProgress(
+      '/meal-planning/plans/generate-from-expiring/job-1/stream'
+    )) {
       planEvents.push(evt);
     }
     expect(planEvents).toHaveLength(1);
@@ -863,5 +863,47 @@ describe('12. B4 — R1 — Mock và Real cùng shape', () => {
     expect(regen).toHaveProperty('jobId');
     expect(regen).toHaveProperty('status');
     expect(regen).toHaveProperty('streamUrl');
+  });
+
+  it('updatePlan(): Mock đổi status trong state, không crash', async () => {
+    const mock = new MockRecipeService();
+
+    await mock.updatePlan('plan-current', { status: 'confirmed' });
+
+    const after = await mock.getNextWeekPlan();
+    expect(after.status).toBe('confirmed');
+  });
+});
+
+// ═══════════════ 13. B4 — updatePlan (PATCH /meal-planning/plans/{id}) ═══════════════
+
+describe('13. B4 — updatePlan đổi trạng thái kế hoạch', () => {
+  it('gọi PATCH /meal-planning/plans/{id} với { status }', async () => {
+    api.patch.mockResolvedValue({ id: 'plan-1', status: 'confirmed' });
+
+    await svc.updatePlan('plan-1', { status: 'confirmed' });
+
+    expect(api.patch).toHaveBeenCalledWith('/meal-planning/plans/plan-1', {
+      status: 'confirmed',
+    });
+  });
+
+  it('payload rỗng -> KHÔNG gọi API (BE chỉ nhận `status`)', async () => {
+    await svc.updatePlan('plan-1', {});
+
+    expect(api.patch).not.toHaveBeenCalled();
+  });
+
+  it('planId rỗng -> KHÔNG gọi API', async () => {
+    await svc.updatePlan('', { status: 'active' });
+
+    expect(api.patch).not.toHaveBeenCalled();
+  });
+
+  it('Mock và Real cùng có method updatePlan(planId, payload)', async () => {
+    const mock = new MockRecipeService();
+
+    expect(typeof mock.updatePlan).toBe('function');
+    expect(typeof svc.updatePlan).toBe('function');
   });
 });

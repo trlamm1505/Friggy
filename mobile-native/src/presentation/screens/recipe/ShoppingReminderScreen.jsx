@@ -185,7 +185,12 @@ export const ShoppingReminderScreen = () => {
               <Skeleton width={sp(22)} height={sp(22)} borderRadius={sp(11)} />
               <View style={{ flex: 1, marginLeft: sp(12) }}>
                 <Skeleton width="60%" height={sp(13)} borderRadius={sp(6)} />
-                <Skeleton width="35%" height={sp(11)} borderRadius={sp(6)} style={{ marginTop: sp(6) }} />
+                <Skeleton
+                  width="35%"
+                  height={sp(11)}
+                  borderRadius={sp(6)}
+                  style={{ marginTop: sp(6) }}
+                />
               </View>
             </View>
           ))}
@@ -339,7 +344,10 @@ const ShoppingItem = ({ item, busy, onToggle, onRemove }) => {
         <Text
           style={[
             styles.itemQty,
-            { color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary, fontSize: sp(12) },
+            {
+              color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+              fontSize: sp(12),
+            },
           ]}
         >
           {item.quantity} {item.unit}

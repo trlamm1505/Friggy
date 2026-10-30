@@ -225,7 +225,13 @@ export const AiChatScreen = () => {
         }
       }
 
-      const userMsg = { id: `u-${Date.now()}`, sender: 'user', text: messageText, time: now() };
+      const userMsg = {
+        id: `u-${Date.now()}`,
+        sender: 'user',
+        text: messageText,
+        time: now(),
+        status: 'sending',
+      };
       setMessages((prev) => [...prev, userMsg]);
       setInput('');
       setThinking(true);
@@ -268,6 +274,10 @@ export const AiChatScreen = () => {
         // Bước 1: gửi tin nhắn (BE trả 202).
         try {
           await service.sendMessage(sessionIdRef.current, messageText);
+          // Server đã nhận -> message user chuyển từ 'sending' sang 'done'.
+          setMessages((prev) =>
+            prev.map((m) => (m.id === userMsg.id ? { ...m, status: 'done' } : m))
+          );
         } catch (sendError) {
           // Gửi lỗi -> huỷ stream, tránh promise `firstEvent` bị unhandled.
           controller.abort();
@@ -295,7 +305,13 @@ export const AiChatScreen = () => {
             const finalText = accumulated.trim() ? accumulated : t('home.aiEmptyReply');
             setMessages((prev) => [
               ...prev,
-              { id: `a-${Date.now()}`, sender: 'ai', text: finalText, time: now() },
+              {
+                id: `a-${Date.now()}`,
+                sender: 'ai',
+                text: finalText,
+                time: now(),
+                status: 'done',
+              },
             ]);
             setStreamingText('');
             setThinking(false);
@@ -316,7 +332,13 @@ export const AiChatScreen = () => {
         if (!committed && accumulated.trim() && !controller.signal.aborted) {
           setMessages((prev) => [
             ...prev,
-            { id: `a-${Date.now()}`, sender: 'ai', text: accumulated, time: now() },
+            {
+              id: `a-${Date.now()}`,
+              sender: 'ai',
+              text: accumulated,
+              time: now(),
+              status: 'done',
+            },
           ]);
           setStreamingText('');
         }
@@ -327,13 +349,25 @@ export const AiChatScreen = () => {
         // báo lỗi (abort là hành động chủ động, không phải lỗi mạng).
         if (controller.signal.aborted) {
           setThinking(false);
+          // Abort là hành động chủ động (user gửi tin mới / rời màn hình)
+          // -> message không phải lỗi, chuyển về 'done' cho khỏi bị kẹt ở 'sending'.
+          setMessages((prev) =>
+            prev.map((m) => (m.id === userMsg.id ? { ...m, status: 'done' } : m))
+          );
           return;
         }
 
-        const message = e?.message ?? t('home.aiError');
+        // ⚠️ 429 = hết lượt AI tuần này (BE `AiUsageLimitGuard`).
+        //   Hiện message riêng cho dễ hiểu, KHÔNG bịa câu trả lời.
+        const isAiLimit = e?.statusCode === 429;
+        const message = isAiLimit ? t('home.aiLimitReached') : (e?.message ?? t('home.aiError'));
         setError(message);
         setStreamingText('');
         setThinking(false);
+        // Message user gửi đi bị lỗi -> đánh dấu luôn để user thấy rõ.
+        setMessages((prev) =>
+          prev.map((m) => (m.id === userMsg.id ? { ...m, status: 'error' } : m))
+        );
         showError(message);
       }
     },
@@ -419,7 +453,7 @@ export const AiChatScreen = () => {
           {/* Message đang stream — hiện text tới dần */}
           {streamingText ? (
             <MessageBubble
-              message={{ sender: 'ai', text: streamingText, time: null }}
+              message={{ sender: 'ai', text: streamingText, time: null, status: 'streaming' }}
               avatar={AIAvatar}
               showAvatar
             />

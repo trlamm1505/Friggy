@@ -224,7 +224,9 @@ export const IngredientStatisticsScreen = () => {
             {stats.expiringSoonCount > 0 ? (
               <View style={styles.heroGrowth}>
                 <TrendingUp color={AppColors.primary} size={14} />
-                <Text style={[styles.heroGrowthText, { color: AppColors.primary, fontSize: sp(13) }]}>
+                <Text
+                  style={[styles.heroGrowthText, { color: AppColors.primary, fontSize: sp(13) }]}
+                >
                   {stats.expiringSoonCount} {t('home.statsExpiringSoon')}
                 </Text>
               </View>

@@ -98,7 +98,7 @@ function createDecoder() {
       pending = buffer.slice(cut);
 
       let out = '';
-      for (let i = 0; i < usable.length; ) {
+      for (let i = 0; i < usable.length;) {
         const byte = usable[i];
         let codePoint;
         let size;
@@ -251,7 +251,7 @@ export function normalizeSsePayload(parsed) {
   // NestJS interceptor wrapper: { statusCode, message, data }
   if (
     'data' in parsed &&
-    (('statusCode' in parsed) || ('message' in parsed) || ('success' in parsed)) &&
+    ('statusCode' in parsed || 'message' in parsed || 'success' in parsed) &&
     !('event' in parsed)
   ) {
     return normalizeSsePayload(parsed.data);
@@ -330,9 +330,7 @@ async function* parseStream(chunks) {
       payload = last.data;
     }
     const normalized = normalizeSsePayload(payload);
-    yield last.event
-      ? { event: last.event, data: normalized.data ?? normalized }
-      : normalized;
+    yield last.event ? { event: last.event, data: normalized.data ?? normalized } : normalized;
   }
 }
 

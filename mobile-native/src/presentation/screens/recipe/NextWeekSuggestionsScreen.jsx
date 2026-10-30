@@ -19,7 +19,16 @@
  */
 
 import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Alert, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Pressable,
+  Alert,
+  ActivityIndicator,
+  Modal,
+} from 'react-native';
 import { useTheme } from '../../theme/ThemeContext';
 import { AppColors } from '../../theme/colors';
 import { sp } from '../../utils/responsive';
@@ -31,7 +40,7 @@ import { DayPlanCard } from '../../components/recipe/DayPlanCard';
 import { Skeleton } from '../../components/common/Skeleton';
 import { EmptyState } from '../../components/common/EmptyState';
 import { ErrorState } from '../../components/common/ErrorState';
-import { Sparkles, Info, Wand2, ShoppingCart } from 'lucide-react-native';
+import { Sparkles, Info, Wand2, ShoppingCart, X } from 'lucide-react-native';
 import { Routes } from '../../../shared/constants/routes';
 import { showSuccess, showError, showInfo } from '../../utils/helpers';
 import { useServices } from '../../../data/ServiceProvider';
@@ -52,6 +61,8 @@ export const NextWeekSuggestionsScreen = () => {
   const [error, setError] = useState(null);
   const [aiBusy, setAiBusy] = useState(false);
   const [aiProgress, setAiProgress] = useState('');
+  // Chi tiết slot (modal): `{ loading, data, slot, error }`.
+  const [slotDetail, setSlotDetail] = useState(null);
 
   // Dùng ref để tránh đóng gói lại callback khi stream SSE đang chạy.
   const mountedRef = useRef(true);
@@ -108,10 +119,34 @@ export const NextWeekSuggestionsScreen = () => {
         dayOfWeek,
         dayLabel: DAY_LABELS_BE[dayOfWeek],
         dayNumber: found?.date ? Number(String(found.date).slice(8, 10)) : null,
+        date: found?.date ?? null,
         slots: found?.slots ?? [],
       };
     });
   }, [plan]);
+
+  /**
+   * Ngày hôm nay / ngày mai.
+   *
+   * ⚠️ KHÔNG được dùng index trong mảng `days` — `days[0]` LUÔN là T2
+   * (BE quy ước 1=T2 ... 7=CN), không phải "hôm nay". Phải so `date` của
+   * ngày đó với ngày thật, nếu không app sẽ gắn nhãn "HÔM NAY" cho T2
+   * bất kể hôm nay là thứ mấy.
+   */
+  const todayStr = useMemo(() => {
+    const d = new Date();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${d.getFullYear()}-${mm}-${dd}`;
+  }, []);
+
+  const tomorrowStr = useMemo(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${d.getFullYear()}-${mm}-${dd}`;
+  }, []);
 
   /**
    * Tick "đã nấu" — optimistic update + rollback nếu API lỗi.
@@ -269,20 +304,19 @@ export const NextWeekSuggestionsScreen = () => {
           return;
         }
 
-        Alert.alert(
-          t('home.weekPlanReplace'),
-          t('home.aiChooseDish'),
-          [
-            ...options.slice(0, 3).map((option) => ({
-              text: option.length > 60 ? `${option.slice(0, 60)}…` : option,
-              onPress: () => applyNewRecipe(slot, option),
-            })),
-            { text: t('home.cancel'), style: 'cancel' },
-          ]
-        );
+        Alert.alert(t('home.weekPlanReplace'), t('home.aiChooseDish'), [
+          ...options.slice(0, 3).map((option) => ({
+            text: option.length > 60 ? `${option.slice(0, 60)}…` : option,
+            onPress: () => applyNewRecipe(slot, option),
+          })),
+          { text: t('home.cancel'), style: 'cancel' },
+        ]);
       } catch (e) {
         if (!controller.signal.aborted) {
-          showError(e?.message ?? t('home.error'));
+          // ⚠️ 429 = hết lượt AI tuần này (BE `AiUsageLimitGuard`).
+          showError(
+            e?.statusCode === 429 ? t('home.aiLimitReached') : (e?.message ?? t('home.error'))
+          );
         }
       } finally {
         abortRef.current = null;
@@ -359,7 +393,10 @@ export const NextWeekSuggestionsScreen = () => {
       showSuccess(t('home.aiPlanCreated'));
     } catch (e) {
       if (!controller.signal.aborted) {
-        showError(e?.message ?? t('home.error'));
+        // ⚠️ 429 = hết lượt AI tuần này (BE `AiUsageLimitGuard`).
+        showError(
+          e?.statusCode === 429 ? t('home.aiLimitReached') : (e?.message ?? t('home.error'))
+        );
       }
     } finally {
       abortRef.current = null;
@@ -368,15 +405,31 @@ export const NextWeekSuggestionsScreen = () => {
     }
   }, [aiBusy, services, loadPlan, t]);
 
+  /**
+   * Mở chi tiết 1 slot: `GET /meal-planning/slots/{id}`.
+   *
+   * BE trả công thức + các bước nấu + phân tích tủ lạnh
+   * (`summary.missingItems` = nguyên liệu thiếu / thiếu một phần).
+   *
+   * ⚠️ Không điều hướng thẳng sang `RecipeDetail` vì màn đó cần `recipeId`
+   * (id công thức), còn slot có `id` là id bản ghi meal plan -> phải gọi
+   * API lấy `slot.recipe.id` trước. Hiện modal chi tiết cho đủ thông tin
+   * (công thức + nguyên liệu + bước nấu + phân tích tủ lạnh).
+   */
   const openSlot = useCallback(
-    (slot) => {
-      if (!slot?.recipeId) {
-        showInfo(t('home.aiDishNotFound'));
-        return;
+    async (slot) => {
+      if (!slot?.id) return;
+
+      setSlotDetail({ loading: true, data: null, slot });
+      try {
+        const detail = await services.recipeService.getSlotDetail(slot.id);
+        setSlotDetail({ loading: false, data: detail, slot });
+      } catch (e) {
+        setSlotDetail({ loading: false, data: null, slot, error: e });
+        showError(e?.message ?? t('home.slotDetailLoadFailed'));
       }
-      navigation.navigate(Routes.RecipeDetail, { recipeId: slot.recipeId });
     },
-    [navigation, t]
+    [services, t]
   );
 
   // ── Loading ──
@@ -391,8 +444,18 @@ export const NextWeekSuggestionsScreen = () => {
               style={[styles.skeletonCard, { backgroundColor: isDark ? '#19271E' : '#F4F7F4' }]}
             >
               <Skeleton width="35%" height={sp(16)} borderRadius={sp(8)} />
-              <Skeleton width="85%" height={sp(14)} borderRadius={sp(7)} style={{ marginTop: sp(12) }} />
-              <Skeleton width="60%" height={sp(12)} borderRadius={sp(6)} style={{ marginTop: sp(8) }} />
+              <Skeleton
+                width="85%"
+                height={sp(14)}
+                borderRadius={sp(7)}
+                style={{ marginTop: sp(12) }}
+              />
+              <Skeleton
+                width="60%"
+                height={sp(12)}
+                borderRadius={sp(6)}
+                style={{ marginTop: sp(8) }}
+              />
             </View>
           ))}
         </View>
@@ -500,7 +563,10 @@ export const NextWeekSuggestionsScreen = () => {
                 <Text
                   style={[
                     styles.actionText,
-                    { color: isDark ? AppColors.primaryLight : AppColors.primary, fontSize: sp(12) },
+                    {
+                      color: isDark ? AppColors.primaryLight : AppColors.primary,
+                      fontSize: sp(12),
+                    },
                   ]}
                 >
                   {t('home.aiAskChef')}
@@ -519,11 +585,17 @@ export const NextWeekSuggestionsScreen = () => {
                   },
                 ]}
               >
-                <ShoppingCart color={isDark ? AppColors.primaryLight : AppColors.primary} size={14} />
+                <ShoppingCart
+                  color={isDark ? AppColors.primaryLight : AppColors.primary}
+                  size={14}
+                />
                 <Text
                   style={[
                     styles.actionText,
-                    { color: isDark ? AppColors.primaryLight : AppColors.primary, fontSize: sp(12) },
+                    {
+                      color: isDark ? AppColors.primaryLight : AppColors.primary,
+                      fontSize: sp(12),
+                    },
                   ]}
                 >
                   {t('home.shoppingCreateFromPlan')}
@@ -541,14 +613,14 @@ export const NextWeekSuggestionsScreen = () => {
             hint={t('home.weekPlanEmptyHint')}
           />
         ) : (
-          days.map((day, i) => (
+          days.map((day) => (
             <DayPlanCard
               key={day.dayOfWeek}
               slots={day.slots}
               dayLabel={day.dayLabel}
               dayNumber={day.dayNumber ?? '-'}
-              isToday={i === 0}
-              isTomorrow={i === 1}
+              isToday={day.date === todayStr}
+              isTomorrow={day.date === tomorrowStr}
               onSlotPress={openSlot}
               onToggleCooked={toggleCooked}
               onReplace={replaceSlot}
@@ -558,7 +630,209 @@ export const NextWeekSuggestionsScreen = () => {
 
         <View style={{ height: 40 }} />
       </ScrollView>
+
+      <SlotDetailModal
+        state={slotDetail}
+        onClose={() => setSlotDetail(null)}
+        onOpenRecipe={(recipeId) => {
+          setSlotDetail(null);
+          navigation.navigate(Routes.RecipeDetail, { recipeId });
+        }}
+      />
     </View>
+  );
+};
+
+/**
+ * Modal chi tiết slot: công thức + nguyên liệu + bước nấu + phân tích tủ lạnh.
+ *
+ * ⚠️ Được đặt trong file màn hình (không tách file mới) vì plan Mục 1 chỉ
+ * cho DEV B tạo đúng danh sách file đã liệt kê.
+ */
+const SlotDetailModal = ({ state, onClose, onOpenRecipe }) => {
+  const { isDark } = useTheme();
+  const { t } = useTranslation();
+
+  if (!state) return null;
+
+  const { loading, data } = state;
+  const recipe = data?.recipe ?? null;
+  const summary = data?.summary ?? null;
+  const missingItems = summary?.missingItems ?? [];
+
+  return (
+    <Modal visible transparent animationType="slide" onRequestClose={onClose}>
+      <Pressable style={styles.modalBackdrop} onPress={onClose}>
+        <Pressable
+          style={[styles.modalSheet, { backgroundColor: isDark ? '#19271E' : '#FFFFFF' }]}
+          onPress={(e) => e.stopPropagation?.()}
+        >
+          <View style={styles.modalHeader}>
+            <Text
+              style={[
+                styles.modalTitle,
+                { color: isDark ? '#FFFFFF' : AppColors.textPrimary, fontSize: sp(17) },
+              ]}
+              numberOfLines={2}
+            >
+              {recipe?.name ?? t('home.slotDetailNoRecipe')}
+            </Text>
+            <Pressable onPress={onClose} hitSlop={8}>
+              <X color={isDark ? '#FFFFFF' : AppColors.textPrimary} size={22} />
+            </Pressable>
+          </View>
+
+          {loading ? (
+            <View style={{ paddingVertical: sp(24) }}>
+              <ActivityIndicator size="small" color={AppColors.primary} />
+            </View>
+          ) : (
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {/* Tóm tắt tủ lạnh */}
+              {summary ? (
+                <View style={styles.fridgeSummary}>
+                  <Text
+                    style={[
+                      styles.fridgeSummaryText,
+                      {
+                        color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                        fontSize: sp(12),
+                      },
+                    ]}
+                  >
+                    {t('home.slotDetailFridgeReady')}: {summary.haveCount ?? 0} •{' '}
+                    {t('home.slotDetailMissing')}: {summary.missingCount ?? 0}
+                  </Text>
+                </View>
+              ) : null}
+
+              {/* Nguyên liệu còn thiếu */}
+              {missingItems.length > 0 ? (
+                <View style={styles.sectionBlock}>
+                  <Text
+                    style={[
+                      styles.sectionTitle,
+                      { color: isDark ? '#FFFFFF' : AppColors.textPrimary, fontSize: sp(14) },
+                    ]}
+                  >
+                    {t('home.slotDetailMissing')}
+                  </Text>
+                  {missingItems.map((item, idx) => (
+                    <View
+                      key={`${item.ingredientId ?? item.name}-${idx}`}
+                      style={styles.ingredientRow}
+                    >
+                      <Text
+                        style={[
+                          styles.ingredientName,
+                          { color: isDark ? '#FFFFFF' : AppColors.textPrimary, fontSize: sp(13) },
+                        ]}
+                      >
+                        {item.name}
+                      </Text>
+                      <View
+                        style={[
+                          styles.fridgeBadge,
+                          {
+                            backgroundColor:
+                              item.fridgeStatus === 'partial' ? '#FF980020' : '#FF525220',
+                          },
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.fridgeBadgeText,
+                            {
+                              color:
+                                item.fridgeStatus === 'partial'
+                                  ? AppColors.accentOrange
+                                  : AppColors.error,
+                              fontSize: sp(10),
+                            },
+                          ]}
+                        >
+                          {item.fridgeStatus === 'partial'
+                            ? t('home.slotDetailPartial')
+                            : t('home.slotDetailMissingShort')}
+                        </Text>
+                      </View>
+                    </View>
+                  ))}
+                </View>
+              ) : null}
+
+              {/* Khẩu phần */}
+              {data?.servings ? (
+                <Text
+                  style={[
+                    styles.servingsText,
+                    {
+                      color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                      fontSize: sp(12),
+                    },
+                  ]}
+                >
+                  {t('home.slotDetailServings')}: {data.servings} • {recipe?.cookTime}{' '}
+                  {t('home.minutes')}
+                </Text>
+              ) : null}
+
+              {/* Các bước nấu */}
+              {recipe?.steps?.length ? (
+                <View style={styles.sectionBlock}>
+                  <Text
+                    style={[
+                      styles.sectionTitle,
+                      { color: isDark ? '#FFFFFF' : AppColors.textPrimary, fontSize: sp(14) },
+                    ]}
+                  >
+                    {t('home.slotDetailSteps')}
+                  </Text>
+                  {recipe.steps.map((step, idx) => (
+                    <View key={idx} style={styles.stepRow}>
+                      <Text
+                        style={[
+                          styles.stepNumber,
+                          {
+                            backgroundColor: isDark ? '#233629' : '#E8F5E9',
+                            color: isDark ? AppColors.primaryLight : AppColors.primary,
+                            fontSize: sp(11),
+                          },
+                        ]}
+                      >
+                        {idx + 1}
+                      </Text>
+                      <Text
+                        style={[
+                          styles.stepText,
+                          { color: isDark ? '#FFFFFF' : AppColors.textPrimary, fontSize: sp(13) },
+                        ]}
+                      >
+                        {step}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              ) : null}
+
+              {recipe?.id ? (
+                <Pressable
+                  onPress={() => onOpenRecipe(recipe.id)}
+                  style={({ pressed }) => [
+                    styles.openRecipeBtn,
+                    { backgroundColor: AppColors.primary, opacity: pressed ? 0.85 : 1 },
+                  ]}
+                >
+                  <Text style={styles.openRecipeText}>{t('recipe.viewDetail')}</Text>
+                </Pressable>
+              ) : null}
+
+              <View style={{ height: sp(16) }} />
+            </ScrollView>
+          )}
+        </Pressable>
+      </Pressable>
+    </Modal>
   );
 };
 
@@ -632,5 +906,105 @@ const styles = StyleSheet.create({
     padding: sp(16),
     borderRadius: sp(16),
     marginBottom: sp(10),
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'flex-end',
+  },
+  modalSheet: {
+    maxHeight: '80%',
+    borderTopLeftRadius: sp(20),
+    borderTopRightRadius: sp(20),
+    paddingHorizontal: sp(20),
+    paddingTop: sp(16),
+    paddingBottom: sp(24),
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: sp(12),
+    gap: sp(8),
+  },
+  modalTitle: {
+    flex: 1,
+    fontFamily: FontFamily.bold,
+    fontWeight: FontWeights.bold,
+  },
+  fridgeSummary: {
+    padding: sp(12),
+    borderRadius: sp(12),
+    backgroundColor: 'transparent',
+    marginBottom: sp(12),
+  },
+  fridgeSummaryText: {
+    fontFamily: FontFamily.regular,
+  },
+  sectionBlock: {
+    marginBottom: sp(14),
+    gap: sp(6),
+  },
+  sectionTitle: {
+    fontFamily: FontFamily.bold,
+    fontWeight: FontWeights.bold,
+    marginBottom: sp(4),
+  },
+  ingredientRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: sp(4),
+    gap: sp(8),
+  },
+  ingredientName: {
+    flex: 1,
+    fontFamily: FontFamily.regular,
+  },
+  fridgeBadge: {
+    paddingHorizontal: sp(8),
+    paddingVertical: sp(2),
+    borderRadius: sp(8),
+  },
+  fridgeBadgeText: {
+    fontFamily: FontFamily.semibold,
+    fontWeight: FontWeights.semibold,
+  },
+  servingsText: {
+    fontFamily: FontFamily.regular,
+    marginBottom: sp(12),
+  },
+  stepRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: sp(8),
+    paddingVertical: sp(3),
+  },
+  stepNumber: {
+    width: sp(20),
+    height: sp(20),
+    borderRadius: sp(10),
+    textAlign: 'center',
+    lineHeight: sp(20),
+    fontFamily: FontFamily.bold,
+    fontWeight: FontWeights.bold,
+    overflow: 'hidden',
+  },
+  stepText: {
+    flex: 1,
+    fontFamily: FontFamily.regular,
+    lineHeight: sp(19),
+  },
+  openRecipeBtn: {
+    marginTop: sp(8),
+    paddingVertical: sp(12),
+    borderRadius: sp(12),
+    alignItems: 'center',
+  },
+  openRecipeText: {
+    color: '#FFFFFF',
+    fontFamily: FontFamily.semibold,
+    fontWeight: FontWeights.semibold,
+    fontSize: sp(14),
   },
 });

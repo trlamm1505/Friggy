@@ -124,7 +124,7 @@ export class MockAiChatService extends IAiChatService {
    * Yield đúng shape `{ event, data }` như `RealAiChatService` để UI không
    * cần biết mình đang ở chế độ mock hay thật.
    */
-  async* streamSession(sessionId, options = {}) {
+  async *streamSession(sessionId, options = {}) {
     const { signal } = options;
     const messages = this.messagesBySession.get(sessionId) ?? [];
 

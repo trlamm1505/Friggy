@@ -102,6 +102,35 @@
  */
 
 /**
+ * @typedef {Object} MealSlotMissingItem
+ * @property {number|null} ingredientId
+ * @property {string} name
+ * @property {number} quantityNeeded
+ * @property {string|null} unit
+ * @property {boolean} isOptional
+ * @property {'have'|'partial'|'missing'} fridgeStatus
+ * @property {number} fridgeQuantity
+ * @property {number} missingQuantity
+ */
+
+/**
+ * @typedef {Object} MealSlotDetail
+ * @property {string} id - id của meal slot
+ * @property {string} mealType - 'breakfast'|'lunch'|'dinner'|'snack'|'dessert'
+ * @property {number} servings
+ * @property {string|null} completedAt
+ * @property {boolean} cooked
+ * @property {Recipe|null} recipe - công thức (ảnh đã qua getImageUrl)
+ * @property {Object} summary
+ * @property {number} summary.totalIngredients
+ * @property {number} summary.haveCount
+ * @property {number} summary.partialCount
+ * @property {number} summary.missingCount
+ * @property {number} summary.fridgeReadyPercent
+ * @property {MealSlotMissingItem[]} summary.missingItems
+ */
+
+/**
  * @typedef {Object} ShoppingItem
  * @property {string|number} id - id item của BE (SỐ)
  * @property {string} name
@@ -110,6 +139,7 @@
  * @property {boolean} done
  * @property {number|null} [estimatedPrice]
  * @property {string|null} [purchasedAt]
+ * @property {string} [listId] - id danh sách chứa item (gắn khi gộp phẳng)
  */
 
 /**
@@ -224,6 +254,52 @@ export class IRecipeService {
   }
 
   /**
+   * Danh sách kế hoạch tuần — `GET /meal-planning/plans`.
+   *
+   * BE order `weekStartDate desc` -> phần tử đầu là kế hoạch MỚI NHẤT.
+   *
+   * @returns {Promise<MealPlanSummary[]>}
+   */
+  async getPlans() {
+    throw new Error('IRecipeService.getPlans() must be implemented');
+  }
+
+  /**
+   * Chi tiết kế hoạch tuần (7 ngày × N bữa) — `GET /meal-planning/plans/{id}`.
+   *
+   * @param {string} planId
+   * @returns {Promise<MealPlan|null>}
+   */
+  async getPlanDetail(planId) {
+    throw new Error('IRecipeService.getPlanDetail() must be implemented');
+  }
+
+  /**
+   * Chi tiết 1 meal slot: công thức + phân tích tủ lạnh —
+   * `GET /meal-planning/slots/{id}`.
+   *
+   * BE trả `summary.missingItems` = nguyên liệu thiếu / thiếu một phần, kèm
+   * `fridgeStatus` ('have'|'partial'|'missing') và `missingQuantity`.
+   *
+   * @param {string} slotId
+   * @returns {Promise<MealSlotDetail|null>}
+   */
+  async getSlotDetail(slotId) {
+    throw new Error('IRecipeService.getSlotDetail() must be implemented');
+  }
+
+  /**
+   * Cập nhật trạng thái kế hoạch — `PATCH /meal-planning/plans/{id}`.
+   *
+   * @param {string} planId
+   * @param {{status?:'draft'|'confirmed'|'active'|'completed'}} payload
+   * @returns {Promise<void>}
+   */
+  async updatePlan(planId, payload) {
+    throw new Error('IRecipeService.updatePlan() must be implemented');
+  }
+
+  /**
    * Đánh dấu slot đã nấu.
    *
    * @param {string} planId - id kế hoạch
@@ -308,7 +384,7 @@ export class IRecipeService {
    * @param {{signal?:AbortSignal}} [options]
    * @returns {AsyncGenerator<{event:string, data:any}>}
    */
-  async* streamPlanProgress(path, options) {
+  async *streamPlanProgress(path, options) {
     throw new Error('IRecipeService.streamPlanProgress() must be implemented');
   }
 

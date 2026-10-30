@@ -7,11 +7,7 @@
  *   3. `streamSse()` — parse stream byte -> event, xử lý lỗi HTTP / mạng
  */
 
-import {
-  parseSseBlock,
-  normalizeSsePayload,
-  streamSse,
-} from '../SseClient';
+import { parseSseBlock, normalizeSsePayload, streamSse } from '../SseClient';
 import { ApiException } from '../ApiException';
 
 // ── Mock `expo/fetch` (native) ──
@@ -113,7 +109,9 @@ describe('2. normalizeSsePayload — unwrap 2 lớp envelope', () => {
   });
 
   it('interceptor wrapper { statusCode, message, data } -> unwrap', () => {
-    expect(normalizeSsePayload({ statusCode: 200, message: 'ok', data: { event: 'done', data: 1 } })).toEqual({
+    expect(
+      normalizeSsePayload({ statusCode: 200, message: 'ok', data: { event: 'done', data: 1 } })
+    ).toEqual({
       event: 'done',
       data: 1,
     });
@@ -227,9 +225,7 @@ describe('3. streamSse — parse stream byte -> event', () => {
   });
 
   it('HTTP 429 -> ném ApiException với message của BE', async () => {
-    expoFetch.mockResolvedValue(
-      makeStreamResponse([], { ok: false, status: 429 })
-    );
+    expoFetch.mockResolvedValue(makeStreamResponse([], { ok: false, status: 429 }));
 
     await expect(async () => {
       for await (const _evt of streamSse('/ai-chat/sessions/s1/stream')) {

@@ -64,11 +64,7 @@ export const DayPlanCard = ({
   const { isDark } = useTheme();
   const { t } = useTranslation();
 
-  const borderColor = isToday
-    ? AppColors.primary
-    : isDark
-    ? '#2E4D36'
-    : '#E3E8E4';
+  const borderColor = isToday ? AppColors.primary : isDark ? '#2E4D36' : '#E3E8E4';
 
   return (
     <View
@@ -91,8 +87,8 @@ export const DayPlanCard = ({
                 color: isToday
                   ? AppColors.primary
                   : isDark
-                  ? AppColors.darkTextSecondary
-                  : AppColors.textSecondary,
+                    ? AppColors.darkTextSecondary
+                    : AppColors.textSecondary,
                 fontSize: sp(11),
               },
             ]}
@@ -103,11 +99,7 @@ export const DayPlanCard = ({
             style={[
               styles.dayNumber,
               {
-                color: isToday
-                  ? AppColors.primary
-                  : isDark
-                  ? '#FFFFFF'
-                  : AppColors.textPrimary,
+                color: isToday ? AppColors.primary : isDark ? '#FFFFFF' : AppColors.textPrimary,
                 fontSize: sp(20),
               },
             ]}
@@ -133,9 +125,9 @@ export const DayPlanCard = ({
                 fontSize: sp(12),
               },
             ]}
-            >
-              {t('home.weekPlanNoDish')}
-            </Text>
+          >
+            {t('home.weekPlanNoDish')}
+          </Text>
         </View>
       ) : (
         slots.map((slot) => {
@@ -159,10 +151,7 @@ export const DayPlanCard = ({
               </View>
 
               {/* Nội dung món */}
-              <Pressable
-                onPress={() => onSlotPress && onSlotPress(slot)}
-                style={styles.slotMain}
-              >
+              <Pressable onPress={() => onSlotPress && onSlotPress(slot)} style={styles.slotMain}>
                 <Text
                   style={[
                     styles.recipeName,
@@ -173,11 +162,14 @@ export const DayPlanCard = ({
                     },
                   ]}
                   numberOfLines={1}
-                  >
+                >
                   {slot.name || t('home.weekPlanNoDishName')}
                 </Text>
                 <View style={styles.metaRow}>
-                  <Clock color={isDark ? AppColors.darkTextSecondary : AppColors.hintText} size={11} />
+                  <Clock
+                    color={isDark ? AppColors.darkTextSecondary : AppColors.hintText}
+                    size={11}
+                  />
                   <Text
                     style={[
                       styles.metaText,
@@ -207,7 +199,9 @@ export const DayPlanCard = ({
                   ]}
                 >
                   <Check
-                    color={slot.cooked ? '#FFFFFF' : isDark ? AppColors.primaryLight : AppColors.primary}
+                    color={
+                      slot.cooked ? '#FFFFFF' : isDark ? AppColors.primaryLight : AppColors.primary
+                    }
                     size={14}
                     strokeWidth={3}
                   />
@@ -227,7 +221,10 @@ export const DayPlanCard = ({
                     },
                   ]}
                 >
-                  <RefreshCw color={isDark ? AppColors.primaryLight : AppColors.primary} size={14} />
+                  <RefreshCw
+                    color={isDark ? AppColors.primaryLight : AppColors.primary}
+                    size={14}
+                  />
                 </Pressable>
               ) : null}
             </View>

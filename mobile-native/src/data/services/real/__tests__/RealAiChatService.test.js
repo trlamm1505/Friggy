@@ -334,9 +334,7 @@ describe('5. R1 — Mock và Real cùng shape', () => {
     const mockDetail = await mockSvc.getSessionDetail(mockSession.id);
 
     expect(mockDetail.messages).toHaveLength(1);
-    expect(Object.keys(realMessage).sort()).toEqual(
-      Object.keys(mockDetail.messages[0]).sort()
-    );
+    expect(Object.keys(realMessage).sort()).toEqual(Object.keys(mockDetail.messages[0]).sort());
   });
 
   it('sendMessage shape giống nhau', async () => {

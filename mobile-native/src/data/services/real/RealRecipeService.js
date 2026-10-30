@@ -546,6 +546,25 @@ export class RealRecipeService {
   }
 
   /**
+   * `PATCH /meal-planning/plans/{id}` — đổi trạng thái kế hoạch.
+   *
+   * BE `UpdateMealPlanDto` chỉ nhận `status`:
+   * 'draft' | 'confirmed' | 'active' | 'completed'.
+   *
+   * @param {string} planId
+   * @param {{status?:string}} payload
+   * @returns {Promise<void>}
+   */
+  async updatePlan(planId, payload = {}) {
+    if (!planId) return;
+    const body = {};
+    if (payload.status !== undefined) body.status = payload.status;
+    if (!Object.keys(body).length) return;
+
+    await this.client.patch(`/meal-planning/plans/${planId}`, body);
+  }
+
+  /**
    * `PATCH /meal-planning/slots/{id}` — tick "đã nấu" hoặc đổi công thức.
    *
    * ⚠️ BE dùng `completed` (boolean) để set `completedAt` (xem
@@ -618,10 +637,7 @@ export class RealRecipeService {
     if (params.withinDays !== undefined) body.withinDays = Number(params.withinDays);
     if (params.days !== undefined) body.days = Number(params.days);
 
-    const payload = await this.client.post(
-      '/meal-planning/plans/generate-from-expiring',
-      body
-    );
+    const payload = await this.client.post('/meal-planning/plans/generate-from-expiring', body);
     return {
       jobId: payload?.jobId ?? null,
       status: payload?.status ?? 'queued',
@@ -637,10 +653,7 @@ export class RealRecipeService {
    * @returns {Promise<{jobId:string, status:string, streamUrl:string}>}
    */
   async regenerateSlot(slotId, reason = 'want_different') {
-    const payload = await this.client.post(
-      `/meal-planning/slots/${slotId}/regenerate`,
-      { reason }
-    );
+    const payload = await this.client.post(`/meal-planning/slots/${slotId}/regenerate`, { reason });
     return {
       jobId: payload?.jobId ?? null,
       status: payload?.status ?? 'queued',
@@ -663,7 +676,7 @@ export class RealRecipeService {
    * @param {{signal?:AbortSignal}} [options]
    * @returns {AsyncGenerator<{event:string, data:any}>}
    */
-  async* streamPlanProgress(path, options = {}) {
+  async *streamPlanProgress(path, options = {}) {
     if (!path) return;
 
     // BE trả `streamUrl` có thể kèm prefix `/api/v1` (đã nằm trong base URL của
@@ -676,9 +689,7 @@ export class RealRecipeService {
       // (phòng khi BE đổi format).
       const data = raw.data;
       const innerEvent =
-        data && typeof data === 'object' && typeof data.event === 'string'
-          ? data.event
-          : null;
+        data && typeof data === 'object' && typeof data.event === 'string' ? data.event : null;
 
       yield {
         event: innerEvent ?? raw.event,
@@ -723,17 +734,15 @@ export class RealRecipeService {
     const payload = await this.client.get('/meal-planning/shopping-lists');
     const list = Array.isArray(payload) ? payload : (payload?.data ?? []);
 
-    return list
-      .filter(Boolean)
-      .map((dto) => ({
-        id: dto.id,
-        title: dto.title ?? '',
-        status: dto.status ?? 'active',
-        totalEstimatedCost: dto.totalEstimatedCost ?? null,
-        weeklyPlanId: dto.weeklyPlanId ?? null,
-        createdAt: dto.createdAt ?? null,
-        items: (dto.items ?? []).map((item) => this._toShoppingItem(item)).filter(Boolean),
-      }));
+    return list.filter(Boolean).map((dto) => ({
+      id: dto.id,
+      title: dto.title ?? '',
+      status: dto.status ?? 'active',
+      totalEstimatedCost: dto.totalEstimatedCost ?? null,
+      weeklyPlanId: dto.weeklyPlanId ?? null,
+      createdAt: dto.createdAt ?? null,
+      items: (dto.items ?? []).map((item) => this._toShoppingItem(item)).filter(Boolean),
+    }));
   }
 
   /**
@@ -748,9 +757,7 @@ export class RealRecipeService {
     const lists = await this.getShoppingLists();
     // Gắn `listId` vào từng item để UI biết gọi endpoint toggle với đúng list
     // (BE cần CẢ listId + itemId).
-    return lists.flatMap((list) =>
-      list.items.map((item) => ({ ...item, listId: list.id }))
-    );
+    return lists.flatMap((list) => list.items.map((item) => ({ ...item, listId: list.id })));
   }
 
   /**
