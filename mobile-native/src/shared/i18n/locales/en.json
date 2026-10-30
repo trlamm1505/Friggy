@@ -18,7 +18,8 @@
     "add": "Add",
     "search": "Search",
     "filter": "Filter",
-    "cannotLoad": "Can't load"
+    "cannotLoad": "Can't load",
+    "error": "Something went wrong"
   },
   "auth": {
     "welcome": "Welcome Back",
@@ -182,12 +183,10 @@
     "quantity": "Quantity",
     "category": "Category",
     "filters": "Filters",
-    "resultCount": "{{count}} results",
     "showAll": "Show all",
     "today": "Today",
     "yesterday": "Yesterday",
     "earlier": "Earlier",
-    "thisWeek": "This week",
     "lastWeek": "Last week",
     "loadingMore": "Loading more...",
     "endOfList": "End of list",
@@ -253,7 +252,6 @@
     "logoutSuccess": "Logged out",
     "light": "Light",
     "dark": "Dark",
-    "system": "System",
     "vietnamese": "Tiếng Việt",
     "english": "English",
     "language": "Language",
@@ -303,6 +301,8 @@
     "shareInviteCode": "Share invite code",
     "removeMember": "Remove member",
     "removeMemberConfirm": "Remove this member?",
+    "removeAllergy": "Remove allergy",
+    "appSettings": "App settings",
     "leaveFamily": "Leave family",
     "login": "Log in",
     "register": "Sign up",
@@ -348,7 +348,6 @@
     "onboardingSkip": "Skip",
     "onboardingComplete": "Survey complete",
     "stepOfTotal": "Step {{current}}/{{total}}",
-    "step": "Step",
     "settingsNotifications": "Notifications",
     "settingsAppearance": "Appearance",
     "settingsLanguage": "Language",
@@ -396,7 +395,6 @@
     "aiSug4": "Low-calorie dinner options?",
     "aiWelcome": "Hi! I'm AI Chef. I can help you cook delicious meals from ingredients in your fridge.",
     "aiCooking": "What do you want to cook today?",
-    "aiSend": "Send",
     "aiError": "Cannot connect to AI Chef. Please try again.",
     "aiEmptyReply": "AI could not answer. Please try a different question.",
     "aiSend": "Send message",
@@ -466,10 +464,6 @@
     "weekPlanTomorrow": "Tomorrow",
     "weekPlanNoDish": "No dishes planned for this day",
     "weekPlanNoDishName": "No dish yet",
-    "mealBreakfast": "Breakfast",
-    "mealLunch": "Lunch",
-    "mealDinner": "Dinner",
-    "mealSnack": "Snack",
     "mealDessert": "Dessert",
     "mealDrink": "Drink",
     "weekPlanReplace": "Replace",
@@ -780,5 +774,8 @@
     "add": "Add",
     "ai": "AI Chef",
     "profile": "Profile"
+  },
+  "meal": {
+    "mealType": "Meal"
   }
 }

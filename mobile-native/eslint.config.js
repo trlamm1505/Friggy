@@ -46,6 +46,10 @@ module.exports = [
         afterEach: 'readonly',
         beforeAll: 'readonly',
         afterAll: 'readonly',
+        // Test đọc file locale từ disk -> cần `__dirname` + `require`.
+        __dirname: 'readonly',
+        require: 'readonly',
+        process: 'readonly',
       },
     },
   },

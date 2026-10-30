@@ -128,13 +128,122 @@ export const withFallback = (realService, mockService, options = {}) => {
     return Array.from(names);
   };
 
+  /**
+   * Giá trị trả về có phải ASYNC ITERABLE (async generator) không.
+   *
+   * @param {any} value
+   * @returns {boolean}
+   */
+  const isAsyncIterable = (value) =>
+    value != null && typeof value[Symbol.asyncIterator] === 'function';
+
+  /**
+   * Log cảnh báo fallback (chỉ tên method + message, KHÔNG log dữ liệu nhạy).
+   *
+   * @param {string} label
+   * @param {string} name
+   * @param {any} e
+   */
+  const logFallback = (label, name, e) => {
+    if (typeof __DEV__ !== 'undefined' && __DEV__) {
+      const status = extractStatus(e);
+      console.warn(
+        `[SafeService:${label}.${name}] fallback mock (status=${status ?? 'network'}):`,
+        e?.message
+      );
+    }
+  };
+
+  /**
+   * Bọc 1 method của real service với fallback sang mock.
+   *
+   * ⚠️ VÌ SAO KHÔNG DÙNG `async (...args) => await real[name](...)`:
+   *   Method async generator (`async function*`) KHÔNG trả về Promise mà trả về
+   *   object có `[Symbol.asyncIterator]()`. Nếu bọc bằng `async/await` thì `await`
+   *   sẽ chờ generator KẾT THÚC rồi trả về object generator ->
+   *   `for await (const x of proxy.streamPlanProgress())` ném
+   *   "TypeError: Object is not async iterable".
+   *
+   *   => Wrapper này KHÔNG khai báo `async`: nó gọi real TRƯỚC, rồi kiểm tra
+   *      runtime kết quả là async iterable hay Promise, và trả về tương ứng.
+   *      Nhờ vậy hỗ trợ được CẢ method thường LẪN async generator mà không cần
+   *      "đoán" loại hàm (Babel làm hỏng `constructor.name`).
+   *
+   * @param {string} name
+   * @param {Function} realFn
+   * @param {Function|null} mockFn
+   * @returns {Function}
+   */
+  const wrapMethod = (name, realFn, mockFn) => {
+    return function wrappedMethod(...args) {
+      // ── Gọi real ──
+      let realResult;
+      try {
+        realResult = realFn.apply(realService, args);
+      } catch (e) {
+        // Lỗi ném ĐỒNG BỘ (không phải generator lazy) -> xử lý như method thường.
+        if (!shouldFallback(e)) throw e;
+        if (typeof mockFn !== 'function') throw e;
+
+        logFallback(label, name, e);
+        return mockFn.apply(mockService, args);
+      }
+
+      // ── Kết quả là async iterable (generator) -> trả về generator wrapper ──
+      if (isAsyncIterable(realResult)) {
+        return (async function* wrappedStream() {
+          const source = realResult[Symbol.asyncIterator]();
+          while (true) {
+            let step;
+            try {
+              step = await source.next();
+            } catch (e) {
+              if (!shouldFallback(e) || typeof mockFn !== 'function') throw e;
+
+              logFallback(label, name, e);
+
+              // Chuyển sang generator của mock, phát lại từ đầu.
+              const mockSource = mockFn.apply(mockService, args)[Symbol.asyncIterator]();
+              while (true) {
+                const mockStep = await mockSource.next();
+                if (mockStep.done) return;
+                yield mockStep.value;
+              }
+            }
+
+            if (step.done) return;
+            yield step.value;
+          }
+        })();
+      }
+
+      // ── Kết quả là Promise -> bọc fallback ──
+      return Promise.resolve(realResult).catch((e) => {
+        if (!shouldFallback(e)) throw e;
+        if (typeof mockFn !== 'function') throw e;
+
+        logFallback(label, name, e);
+        return mockFn.apply(mockService, args);
+      });
+    };
+  };
+
   const proxy = {};
 
+  // ══════════════════════════════════════════════════════════════════
+  // BƯỚC 1 — Thu tập method của MOCK (contract chuẩn của domain).
+  //
+  // ⚠️ BUG ĐÃ SỬA (rà soát Sprint B4): trước đây vòng này là nguồn DUY NHẤT
+  //   của proxy -> method CHỈ có ở Real KHÔNG được expose.
+  //   Ví dụ `RealUserService.getFamilyInfo()` -> `services.userService.getFamilyInfo`
+  //   là `undefined` -> `userService.getFamilyInfo()` ném TypeError ->
+  //   FamilyManagementScreen luôn hiện lỗi tải dù BE hoàn toàn ổn.
+  // ══════════════════════════════════════════════════════════════════
   collectNames(mockService).forEach((name) => {
     const mockValue = mockService[name];
 
     // Property không phải function (vd isReady, version, tag) -> lấy thẳng từ real
-    // nếu real có, ngược lại lấy từ mock. UI/test có thể đọc bình thường.
+    // nếu real có, ngược lại lấy từ mock. UI/test có đọc bình thường.
     if (typeof mockValue !== 'function') {
       if (name in realService) {
         proxy[name] = realService[name];
@@ -144,43 +253,48 @@ export const withFallback = (realService, mockService, options = {}) => {
       return;
     }
 
-    // Method -> bọc fallback
-    proxy[name] = async (...args) => {
-      // Real service chưa implement method này -> gọi mock thẳng,
-      // đừng để UI nhận undefined.
-      if (typeof realService[name] !== 'function') {
-        return mockService[name](...args);
-      }
+    // Method -> bọc fallback.
+    //
+    // ⚠️ `wrapMethod` KHÔNG dùng `async/await` -> giữ được async generator
+    //   (`for await` hoạt động) VÀ method thường.
+    if (typeof realService[name] === 'function') {
+      proxy[name] = wrapMethod(name, realService[name], mockValue);
+      return;
+    }
 
-      try {
-        return await realService[name](...args);
-      } catch (e) {
-        if (!shouldFallback(e)) {
-          // 4xx hoặc lỗi không an toàn -> ném lên cho UI xử lý
-          throw e;
-        }
-
-        // 5xx / network -> fallback mock
-        const status = extractStatus(e);
-        if (typeof __DEV__ !== 'undefined' && __DEV__) {
-          console.warn(
-            `[SafeService:${label}.${name}] fallback mock (status=${status ?? 'network'}):`,
-            e?.message
-          );
-        }
-        return mockService[name](...args);
-      }
-    };
+    // Real chưa implement method này -> gọi mock thẳng,
+    // đừng để UI nhận undefined.
+    proxy[name] = (...args) => mockService[name](...args);
   });
 
-  // Property CHỈ có ở real (mock không khai báo) -> expose để ServiceDebugCard
-  // (P0.6e) và test đọc được trạng thái thật của real service.
+  // ══════════════════════════════════════════════════════════════════
+  // BƯỚC 2 — Method CHỈ có ở REAL (mock không khai báo).
+  //
+  // ⚠️ BUG ĐÃ SỬA (rà soát Sprint B4): trước đây vòng này CHỈ expose property
+  //   KHÔNG phải function -> method chỉ có ở Real bị bỏ sót -> UI gọi thì
+  //   "undefined is not a function".
+  //
+  //   Ví dụ thật: `RealUserService.getFamilyInfo()` (mock không có) ->
+  //   `services.userService.getFamilyInfo` là `undefined` ->
+  //   FamilyManagementScreen luôn hiển thị lỗi tải dù BE hoàn toàn ổn.
+  //
+  //   Giờ: expose method của Real, bọc fallback y hệt method của mock.
+  //   Nếu Real lỗi 5xx/network mà mock KHÔNG có method tương ứng -> ném lên
+  //   (không có dữ liệu giả nào để fallback -> phải nói thật với user).
+  // ══════════════════════════════════════════════════════════════════
   collectNames(realService).forEach((name) => {
     if (name === 'constructor' || name in proxy) return;
+
     const realValue = realService[name];
+
+    // Property không phải function -> lấy thẳng.
     if (typeof realValue !== 'function') {
       proxy[name] = realValue;
+      return;
     }
+
+    // Method (kể cả async generator) -> bọc fallback giống hệt method của mock.
+    proxy[name] = wrapMethod(name, realValue, null);
   });
 
   return proxy;

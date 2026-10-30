@@ -276,6 +276,103 @@ export class MockRecipeService extends IRecipeService {
   }
 
   /**
+   * `GET /meal-planning/plans` — mock: 1 plan duy nhất (kế hoạch tuần hiện tại).
+   * Khớp `RealRecipeService.getPlans()` (trả array summary).
+   */
+  async getPlans() {
+    await sleep(MOCK_DELAY / 2);
+    return [
+      {
+        id: mockNextWeekPlan.id,
+        weekStart: mockNextWeekPlan.weekStart,
+        totalBudget: mockNextWeekPlan.totalBudget,
+        actualCost: null,
+        status: mockNextWeekPlan.status,
+        generatedByAi: true,
+        isSmartFiltered: false,
+        createdAt: mockNextWeekPlan.weekStart,
+      },
+    ];
+  }
+
+  /**
+   * `GET /meal-planning/plans/{id}` — mock: chi tiết plan + `days[]`.
+   * Khớp `RealRecipeService.getPlanDetail()`.
+   *
+   * @param {string} planId
+   * @returns {Promise<object|null>}
+   */
+  async getPlanDetail(planId) {
+    await sleep(MOCK_DELAY / 2);
+    if (!planId) return null;
+
+    const summary = {
+      id: mockNextWeekPlan.id,
+      weekStart: mockNextWeekPlan.weekStart,
+      totalBudget: mockNextWeekPlan.totalBudget,
+      actualCost: null,
+      status: mockNextWeekPlan.status,
+      generatedByAi: true,
+      isSmartFiltered: false,
+      createdAt: mockNextWeekPlan.weekStart,
+    };
+
+    // Plan khác (id lạ) -> trả null như BE (404 -> null).
+    if (planId !== mockNextWeekPlan.id) return null;
+
+    return { ...summary, days: JSON.parse(JSON.stringify(mockNextWeekPlan.days)) };
+  }
+
+  /**
+   * `GET /meal-planning/slots/{id}` — mock: chi tiết slot (công thức + phân tích tủ lạnh).
+   * Khớp `RealRecipeService.getSlotDetail()`.
+   *
+   * @param {string} slotId
+   * @returns {Promise<object|null>}
+   */
+  async getSlotDetail(slotId) {
+    await sleep(MOCK_DELAY / 2);
+    if (!slotId) return null;
+
+    for (const day of mockNextWeekPlan.days) {
+      const slot = day.slots.find((s) => s.id === slotId);
+      if (!slot) continue;
+
+      const recipe = recipesMock.recipes.find((r) => r.id === slot.recipeId) ?? null;
+
+      return {
+        id: slot.id,
+        mealType: slot.mealType,
+        servings: slot.servings ?? 1,
+        completedAt: slot.cooked ? `${slot.id}-cooked` : null,
+        cooked: Boolean(slot.cooked),
+        recipe: recipe
+          ? {
+              id: recipe.id,
+              name: recipe.name,
+              description: recipe.description ?? null,
+              image: recipe.image ?? null,
+              cookTime: recipe.cookTime ?? slot.cookTime,
+              difficulty: recipe.difficulty ?? slot.difficulty,
+              estimatedCost: recipe.estimatedCost ?? slot.estimatedCost ?? null,
+              steps: recipe.steps ?? [],
+            }
+          : null,
+        summary: {
+          totalIngredients: 0,
+          haveCount: 0,
+          partialCount: 0,
+          missingCount: 0,
+          fridgeReadyPercent: slot.matchPercent ?? 0,
+          missingItems: [],
+        },
+      };
+    }
+
+    return null;
+  }
+
+  /**
    * Tick "đã nấu" — mock cập nhật state in-memory để UI phản ánh ngay.
    *
    * @param {string} planId

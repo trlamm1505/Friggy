@@ -18,7 +18,8 @@
     "add": "Thêm",
     "search": "Tìm kiếm",
     "filter": "Lọc",
-    "cannotLoad": "Không tải được"
+    "cannotLoad": "Không tải được",
+    "error": "Đã xảy ra lỗi"
   },
   "auth": {
     "welcome": "Chào mừng trở lại",
@@ -182,12 +183,10 @@
     "quantity": "Số lượng",
     "category": "Danh mục",
     "filters": "Bộ lọc",
-    "resultCount": "{{count}} kết quả",
     "showAll": "Xem tất cả",
     "today": "Hôm nay",
     "yesterday": "Hôm qua",
     "earlier": "Trước đó",
-    "thisWeek": "Tuần này",
     "lastWeek": "Tuần trước",
     "loadingMore": "Đang tải thêm...",
     "endOfList": "Đã hết danh sách",
@@ -253,7 +252,6 @@
     "logoutSuccess": "Đã đăng xuất",
     "light": "Sáng",
     "dark": "Tối",
-    "system": "Hệ thống",
     "vietnamese": "Tiếng Việt",
     "english": "English",
     "language": "Ngôn ngữ",
@@ -303,6 +301,8 @@
     "shareInviteCode": "Chia sẻ mã mời",
     "removeMember": "Xóa thành viên",
     "removeMemberConfirm": "Xóa thành viên này?",
+    "removeAllergy": "Xóa dị ứng",
+    "appSettings": "Cài đặt ứng dụng",
     "leaveFamily": "Rời gia đình",
     "login": "Đăng nhập",
     "register": "Đăng ký",
@@ -348,7 +348,6 @@
     "onboardingSkip": "Bỏ qua",
     "onboardingComplete": "Hoàn thành khảo sát",
     "stepOfTotal": "Bước {{current}}/{{total}}",
-    "step": "Bước",
     "settingsNotifications": "Thông báo",
     "settingsAppearance": "Hiển thị",
     "settingsLanguage": "Ngôn ngữ",
@@ -396,7 +395,6 @@
     "aiSug4": "Món ăn ít calo cho bữa tối?",
     "aiWelcome": "Xin chào! Tôi là Đầu bếp AI. Tôi có thể giúp bạn nấu ăn ngon từ những nguyên liệu trong tủ lạnh.",
     "aiCooking": "Bạn muốn nấu món gì hôm nay?",
-    "aiSend": "Gửi",
     "aiError": "Không thể kết nối với Đầu bếp AI. Vui lòng thử lại.",
     "aiEmptyReply": "AI chưa trả lời được. Vui lòng thử lại với câu hỏi khác.",
     "aiSend": "Gửi tin nhắn",
@@ -466,10 +464,6 @@
     "weekPlanTomorrow": "Ngày mai",
     "weekPlanNoDish": "Chưa có món cho ngày này",
     "weekPlanNoDishName": "Chưa có món",
-    "mealBreakfast": "Sáng",
-    "mealLunch": "Trưa",
-    "mealDinner": "Tối",
-    "mealSnack": "Vặt",
     "mealDessert": "Tráng miệng",
     "mealDrink": "Đồ uống",
     "weekPlanReplace": "Thay thế",
@@ -780,5 +774,8 @@
     "add": "Thêm",
     "ai": "Đầu bếp AI",
     "profile": "Tài khoản"
+  },
+  "meal": {
+    "mealType": "Bữa ăn"
   }
 }

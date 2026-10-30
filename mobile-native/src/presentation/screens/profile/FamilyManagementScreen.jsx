@@ -38,9 +38,9 @@ import { FontWeights, FontFamily } from '../../theme/typography';
 import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@react-navigation/native';
 import { FriggyAppBar } from '../../components/navigation/FriggyAppBar';
-import { Crown, User, UserPlus, Share2, Copy, Trash2, Users } from 'lucide-react-native';
+import { Crown, UserPlus, Trash2, Users } from 'lucide-react-native';
 import { CustomButton } from '../../components/common/CustomButton';
-import { showInfo, showSuccess, showError } from '../../utils/helpers';
+import { showSuccess, showError } from '../../utils/helpers';
 import { useServices } from '../../../data/ServiceProvider';
 import { FamilyPlanModal } from '../../components/home/FamilyPlanModal';
 

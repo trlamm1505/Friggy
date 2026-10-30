@@ -1,6 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../theme/ThemeContext';
 import { AppColors } from '../../theme/colors';
 import { sp } from '../../utils/responsive';
@@ -11,7 +10,8 @@ import { FriggyAppBar } from '../../components/navigation/FriggyAppBar';
 import { Check, Crown, Users, Sparkles } from 'lucide-react-native';
 import { CustomButton } from '../../components/common/CustomButton';
 import { showInfo } from '../../utils/helpers';
-import packagesMock from '../../../shared/mocks/packages.json';
+import { useServices } from '../../../data/ServiceProvider';
+import { FamilyPlanModal } from '../../components/home/FamilyPlanModal';
 
 const formatVND = (n) => new Intl.NumberFormat('vi-VN').format(n) + ' đ';
 
@@ -19,8 +19,31 @@ export const PackageManagementScreen = () => {
   const { isDark } = useTheme();
   const { t } = useTranslation();
   const navigation = useNavigation();
+  const { userService } = useServices();
   const [period, setPeriod] = useState('monthly');
-  const [packages] = useState(packagesMock.packages);
+  const [packages, setPackages] = useState([]);
+  const [planModalOpen, setPlanModalOpen] = useState(false);
+
+  /**
+   * ⚠️ SỬA BUG DEV B: trước đây màn này hardcode `packagesMock` -> giá hiển thị
+   * KHÔNG khớp BE (BE đổi giá là app vẫn hiện giá cũ) và cả gói mới của BE
+   * không bao giờ xuất hiện. Giờ lấy từ `GET /subscriptions/plans`.
+   */
+  const loadPackages = useCallback(async () => {
+    try {
+      const list = await userService.getAvailablePackages();
+      setPackages(Array.isArray(list) ? list : []);
+    } catch (_e) {
+      // Lỗi -> để danh sách rỗng, UI hiện empty (không bịa giá).
+      setPackages([]);
+    }
+  }, [userService]);
+
+  useEffect(() => {
+    // `loadPackages` là async -> setState chỉ chạy sau `await`.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadPackages();
+  }, [loadPackages]);
 
   return (
     <View style={[styles.container, { backgroundColor: isDark ? '#0E1611' : '#FFFFFF' }]}>
@@ -71,7 +94,15 @@ export const PackageManagementScreen = () => {
 
         {/* Package cards */}
         {packages.map((pkg) => {
-          const isFamily = pkg.name.toLowerCase().includes('gia đình') || pkg.name.toLowerCase().includes('family');
+          // ⚠️ BE `SubscriptionPlanResponseDto.name` = 'free'|'individual'|'family'
+          // (không phải nhãn tiếng Việt) -> check theo `name` chuẩn hoá trước,
+          // fallback theo `displayName` cho mock cũ.
+          const planName = String(pkg.name ?? '').toLowerCase();
+          const displayName = String(pkg.displayName ?? pkg.name ?? '');
+          const isFamily =
+            planName === 'family' ||
+            displayName.toLowerCase().includes('gia đình') ||
+            displayName.toLowerCase().includes('family');
           const Icon = isFamily ? Users : Crown;
           return (
             <View
@@ -91,7 +122,7 @@ export const PackageManagementScreen = () => {
                 </View>
                 <View style={{ flex: 1, marginLeft: 12 }}>
                   <Text style={[styles.pkgName, { color: isDark ? '#FFFFFF' : AppColors.textPrimary, fontSize: sp(17) }]}>
-                    {pkg.name}
+                    {displayName}
                   </Text>
                   <Text style={[styles.pkgPrice, { color: AppColors.primary, fontSize: sp(20) }]}>
                     {formatVND(pkg.price)}
@@ -107,7 +138,7 @@ export const PackageManagementScreen = () => {
                 ) : null}
               </View>
               <View style={styles.featuresList}>
-                {pkg.features.map((f, i) => (
+                {(pkg.features ?? []).map((f, i) => (
                   <View key={i} style={styles.featureRow}>
                     <Check color={AppColors.primary} size={16} />
                     <Text style={[styles.featureText, { color: isDark ? '#FFFFFF' : AppColors.textPrimary, fontSize: sp(13) }]}>
@@ -118,7 +149,15 @@ export const PackageManagementScreen = () => {
               </View>
               <CustomButton
                 title={t('subscription.subscribeNow')}
-                onPress={() => showInfo('Mở flow thanh toán')}
+                onPress={() => {
+                  // Gói Family -> mở paywall QR thật.
+                  // Gói khác -> BE chưa có flow thanh toán cho gói đó.
+                  if (isFamily) {
+                    setPlanModalOpen(true);
+                  } else {
+                    showInfo(t('familyPlan.planNotFound'));
+                  }
+                }}
                 variant={isFamily ? 'primary' : 'outline'}
               />
             </View>
@@ -126,6 +165,16 @@ export const PackageManagementScreen = () => {
         })}
         <View style={{ height: 40 }} />
       </ScrollView>
+
+      {/* Paywall Gói Gia Đình (QR PayOS). */}
+      <FamilyPlanModal
+        visible={planModalOpen}
+        onClose={() => setPlanModalOpen(false)}
+        onSuccess={() => {
+          setPlanModalOpen(false);
+          loadPackages();
+        }}
+      />
     </View>
   );
 };

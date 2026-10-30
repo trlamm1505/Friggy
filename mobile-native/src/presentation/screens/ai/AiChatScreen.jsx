@@ -257,6 +257,14 @@ export const AiChatScreen = () => {
         // Redis phía BE được thiết lập TRƯỚC khi message được gửi.
         const firstEvent = iterator.next();
 
+        // ⚠️ Gắn handler NGAY để không có "unhandled promise rejection".
+        //   `firstEvent` có thể reject (vd SSE trả 429 hết lượt AI) TRƯỚC khi
+        //   `await service.sendMessage()` xong. Nếu chưa có handler, runtime
+        //   báo unhandled rejection (đỏ màn hình ở dev Hermes).
+        //   Handler này KHÔNG nuốt lỗi: `await firstEvent` bên dưới vẫn ném
+        //   đúng error gốc ra ngoài -> UI hiển thị lỗi thật (R3).
+        firstEvent.catch(() => {});
+
         // Bước 1: gửi tin nhắn (BE trả 202).
         try {
           await service.sendMessage(sessionIdRef.current, messageText);

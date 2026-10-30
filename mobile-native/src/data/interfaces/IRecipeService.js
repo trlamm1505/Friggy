@@ -309,7 +309,6 @@ export class IRecipeService {
    * @returns {AsyncGenerator<{event:string, data:any}>}
    */
   async* streamPlanProgress(path, options) {
-    // eslint-disable-next-line require-yield
     throw new Error('IRecipeService.streamPlanProgress() must be implemented');
   }
 

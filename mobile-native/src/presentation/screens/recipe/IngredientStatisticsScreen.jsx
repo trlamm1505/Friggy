@@ -9,10 +9,14 @@
  *   - `GET /fridge/stats/chart?period=week|month` -> `FridgeStatsChartResponseDto`
  *     { period, labels[], spending[], wasteItems[] }
  *
- * ⚠️ `getFridgeStats()` / `getStatsChart()` KHÔNG có trong mock `fridgeService`
- *   (xem `RealFridgeService.js:328`) -> không đi qua `useServices().fridgeService`
- *   mà gọi trực tiếp `RealFridgeService` khi chế độ thật. Khi mock mode ->
- *   dùng số liệu mock để UI vẫn render được.
+ * ⚠️ RÀ SOÁT DEV B — đã bỏ cách gọi `getRegisteredService('fridgeService')`:
+ *   Bản cũ đi thẳng vào registry vì mock KHÔNG có `getFridgeStats` /
+ *   `getStatsChart` -> phải tự rẽ nhánh `isMockMode()`.
+ *   Nay `MockFridgeService` ĐÃ có đủ 2 method này (đúng shape BE) ->
+ *   mọi màn đi qua `useServices().fridgeService` như các màn khác:
+ *   - không còn 2 đường code (thật vs mock) dễ lệch nhau
+ *   - không cần `require()` file real trong component (side-effect lạ)
+ *   - tận dụng được `withFallback` (BE lỗi 5xx -> trả số liệu mock)
  */
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -31,7 +35,7 @@ import { ErrorState } from '../../components/common/ErrorState';
 import { Skeleton } from '../../components/common/Skeleton';
 import { Package, TrendingUp, DollarSign, Sparkles, BarChart3 } from 'lucide-react-native';
 import weeklyStats from '../../../shared/mocks/weekly-stats.json';
-import { getRegisteredService, isMockMode } from '../../../data/api/ServiceRegistry';
+import { useServices } from '../../../data/ServiceProvider';
 
 const PERIOD_TABS = [
   { key: 'day', label: 'Theo ngày' },
@@ -60,6 +64,7 @@ export const IngredientStatisticsScreen = () => {
   const { isDark } = useTheme();
   const { t } = useTranslation();
   const navigation = useNavigation();
+  const { fridgeService } = useServices();
   const [period, setPeriod] = useState('day');
 
   const [stats, setStats] = useState(FALLBACK_STATS);
@@ -71,29 +76,9 @@ export const IngredientStatisticsScreen = () => {
     setLoading(true);
     setError(null);
 
-    // Chế độ mock -> dùng số liệu mock (không gọi BE).
-    if (isMockMode()) {
-      setStats({
-        ...FALLBACK_STATS,
-        totalItems: weeklyStats.total ?? 0,
-        mealsCooked: weeklyStats.total ?? 0,
-      });
-      setChart({
-        labels: weeklyStats.data.map((d) => d.day),
-        spending: weeklyStats.data.map((d) => d.count),
-        wasteItems: weeklyStats.data.map(() => 0),
-      });
-      setLoading(false);
-      return;
-    }
-
     try {
-      // `getFridgeStats` / `getStatsChart` không có trong mock -> lấy service
-      // đã đăng ký thật từ registry.
-      require('../../../data/services/real/RealFridgeService');
-      const fridgeService = getRegisteredService('fridgeService');
-      if (!fridgeService) throw new Error(t('home.error'));
-
+      // Đi qua `useServices()` -> có `withFallback` (BE 5xx -> số liệu mock,
+      // 4xx -> ném lên để user thấy lỗi thật).
       const [statsDto, chartDto] = await Promise.all([
         fridgeService.getFridgeStats(),
         fridgeService.getStatsChart('week'),
@@ -117,7 +102,7 @@ export const IngredientStatisticsScreen = () => {
     } finally {
       setLoading(false);
     }
-  }, [t]);
+  }, [fridgeService]);
 
   useEffect(() => {
     // `loadData` là async -> setState chỉ chạy sau `await`.

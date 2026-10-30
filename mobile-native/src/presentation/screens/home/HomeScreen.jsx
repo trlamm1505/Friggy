@@ -173,6 +173,19 @@ export const HomeScreen = () => {
           />
         </ScrollView>
       </Animated.View>
+
+      {/* Paywall Gói Gia Đình (QR PayOS + nhập token lời mời).
+          ⚠️ SỬA BUG DEV B: modal được import + có state `planModalOpen` nhưng
+          KHÔNG được render -> bấm "Gia đình" ở PremiumBanner không mở được
+          paywall (setPlanModalOpen(true) không có gì để hiện). */}
+      <FamilyPlanModal
+        visible={planModalOpen}
+        onClose={() => setPlanModalOpen(false)}
+        onSuccess={() => {
+          setPlanModalOpen(false);
+          refetchPlan();
+        }}
+      />
     </ScreenBackground>
   );
 };
