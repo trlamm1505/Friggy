@@ -36,6 +36,7 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Plus, Refrigerator } from 'lucide-react-native';
 import { FridgeItem } from '../../components/fridge/FridgeItem';
+import { FridgeItemActions } from '../../components/fridge/FridgeItemActions';
 import { SearchBar } from '../../components/common/SearchBar';
 import { FilterChips } from '../../components/common/FilterChips';
 import { SortMenu } from '../../components/common/SortMenu';
@@ -44,6 +45,7 @@ import { ErrorState } from '../../components/common/ErrorState';
 import { Skeleton } from '../../components/common/Skeleton';
 import { ScreenBackground } from '../../components/common/ScreenBackground';
 import { useFridgeItems } from '../../hooks/useServiceHooks';
+import { sortFridgeItems } from '../../utils/fridgeItems';
 import { COMPARTMENT_LABEL } from '../../../data/services/real/RealFridgeService';
 import { Routes } from '../../../shared/constants/routes';
 
@@ -92,6 +94,11 @@ export const FridgeInventoryScreen = ({ fridge, isEmbedded = false, onRename }) 
   const [storageFilter, setStorageFilter] = useState(STORAGE_KEYS.ALL);
   const [sort, setSort] = useState(SORT_KEYS.EXPIRY_ASC);
   const [refreshing, setRefreshing] = useState(false);
+  // Item đang mở sheet thao tác (sửa số lượng / dùng hết / xóa). null = đóng.
+  const [actionsItem, setActionsItem] = useState(null);
+
+  const openActions = useCallback((item) => setActionsItem(item), []);
+  const closeActions = useCallback(() => setActionsItem(null), []);
 
   // Debounce 300ms cho search. setState nằm trong callback của timer (không phải
   // thân effect) nên không vi phạm quy tắc cascading render.
@@ -106,38 +113,104 @@ export const FridgeInventoryScreen = ({ fridge, isEmbedded = false, onRename }) 
   // Ô search rỗng -> không lọc, KHÔNG chờ debounce (UI phản hồi tức thì).
   const search = searchInput.trim() ? debouncedSearch : '';
 
-  // Build service filters
-  const serviceFilters = useMemo(() => {
-    const f = {};
-    if (search) f.search = search;
-    if (statusFilter !== STATUS_KEYS.ALL) f.status = statusFilter;
-    // `compartment` là tên UI; _buildListQuery dịch sang `storageLocation` của BE.
-    if (storageFilter !== STORAGE_KEYS.ALL) f.compartment = storageFilter;
-    if (sort === SORT_KEYS.EXPIRY_ASC) {
-      f.sortBy = 'expiry';
-      f.sortDir = 'asc';
-    } else if (sort === SORT_KEYS.EXPIRY_DESC) {
-      f.sortBy = 'expiry';
-      f.sortDir = 'desc';
-    } else if (sort === SORT_KEYS.NAME_ASC) {
-      f.sortBy = 'name';
-      f.sortDir = 'asc';
-    } else if (sort === SORT_KEYS.NAME_DESC) {
-      f.sortBy = 'name';
-      f.sortDir = 'desc';
-    } else if (sort === SORT_KEYS.QUANTITY_ASC) {
-      f.sortBy = 'quantity';
-      f.sortDir = 'asc';
-    } else if (sort === SORT_KEYS.QUANTITY_DESC) {
-      f.sortBy = 'quantity';
-      f.sortDir = 'desc';
-    }
-    return f;
-  }, [search, statusFilter, storageFilter, sort]);
+  /**
+   * Filter SERVER-SIDE — CỐ Ý ĐỂ TRỐNG.
+   *
+   * ⚠️ B1 — sửa lỗi "mỗi ký tự gõ = 1 request" + "count trên pill sai":
+   *   Bản cũ truyền search + sort + status + compartment vào `useFridgeItems()`.
+   *   Deps của hook là `JSON.stringify(filters)` -> BẤT KỲ thay đổi filter nào
+   *   cũng đổi chuỗi deps -> gọi lại API. Debounce 300ms chỉ giảm tần suất,
+   *   không triệt tiêu (vẫn 1 request mỗi 300ms khi gõ, và mỗi lần đổi sort
+   *   cũng gọi API dù BE không có sort param).
+   *
+   *   Vấn đề lớn hơn: nếu `compartment` chạy server-side thì list trả về CHỈ
+   *   chứa 1 ngăn -> đếm count trên các pill ngăn khác ra 0. Số trên pill mất
+   *   hết ý nghĩa "còn bao nhiêu món ở ngăn này" (bấm "Ngăn đông" thì pill
+   *   "Ngăn mát" nhảy về 0 dù tủ vẫn còn món ngăn mát).
+   *
+   *   Flutter production làm đúng như vậy: `_loadIngredients()` gọi
+   *   `getFridgeItems()` 1 LẦN, rồi lọc storage + search client-side
+   *   (fridge_inventory_screen.dart:59-99 và :669-677).
+   *
+   *   => Tải full list 1 lần, mọi filter lọc client-side trên list đã có.
+   *      Đúng spec mục 5.1: "list đã nằm trong RAM, không gọi API mới".
+   *      Pull-to-refresh vẫn gọi lại API -> dữ liệu luôn mới.
+   */
+  const serviceFilters = useMemo(() => ({}), []);
 
   const { data: items, loading, error, refetch } = useFridgeItems(serviceFilters);
 
-  // Stats
+  /**
+   * Lọc + sắp xếp CLIENT-SIDE trên list đã tải.
+   *
+   * Thứ tự: status -> storage -> search -> sort. (Sắp xếp cuối cùng để sort
+   * theo đúng tập kết quả đang hiển thị.)
+   */
+  const visibleItems = useMemo(() => {
+    let list = items || [];
+
+    // 1. Status — client-side. `expiring` KHÔNG gửi `expiringSoon` lên server vì
+    //    BE `fridge.service.ts:findAll` BỎ QUA param đó -> client-side là cách
+    //    duy nhất cho kết quả đúng.
+    if (statusFilter !== STATUS_KEYS.ALL) {
+      list = list.filter((it) => it.status === statusFilter);
+    }
+
+    // 2. Storage (`compartment` là tên UI của `storageLocation` của BE).
+    if (storageFilter !== STORAGE_KEYS.ALL) {
+      list = list.filter((it) => it.compartment === storageFilter);
+    }
+
+    // 3. Search — client-side, không gọi API mới.
+    if (search) {
+      const q = search.toLowerCase();
+      list = list.filter((it) => (it.name || '').toLowerCase().includes(q));
+    }
+
+    // 4. Sort — client-side (BE không có sort param).
+    return sortFridgeItems(list, sort);
+  }, [items, statusFilter, storageFilter, search, sort]);
+
+  /**
+   * Phạm vi dùng để ĐẾM count trên pill trạng thái.
+   * = đã lọc storage + search, CHƯA lọc status.
+   *
+   * ⚠️ B1 — sửa lỗi count sai:
+   *   Bản cũ đếm trên `items` đã qua bộ lọc của service (search + sort + status
+   *   + storage) -> bấm pill "Sắp hết hạn" thì pill "Tươi" đổi thành 0 và
+   *   ngược lại. Số trên pill lúc đó KHÔNG còn nghĩa là "còn bao nhiêu món ở
+   *   trạng thái này" mà là "còn bao nhiêu món sau khi lọc" -> vô nghĩa.
+   *   Giờ: mỗi nhóm pill đếm trong phạm vi của chính nó (cross-filtering).
+   */
+  const itemsInStorageScope = useMemo(() => {
+    let list = items || [];
+    if (storageFilter !== STORAGE_KEYS.ALL) {
+      list = list.filter((it) => it.compartment === storageFilter);
+    }
+    if (search) {
+      const q = search.toLowerCase();
+      list = list.filter((it) => (it.name || '').toLowerCase().includes(q));
+    }
+    return list;
+  }, [items, storageFilter, search]);
+
+  /**
+   * Phạm vi dùng để ĐẾM count trên pill ngăn lưu trữ.
+   * = đã lọc status + search, CHƯA lọc storage.
+   */
+  const itemsInStatusScope = useMemo(() => {
+    let list = items || [];
+    if (statusFilter !== STATUS_KEYS.ALL) {
+      list = list.filter((it) => it.status === statusFilter);
+    }
+    if (search) {
+      const q = search.toLowerCase();
+      list = list.filter((it) => (it.name || '').toLowerCase().includes(q));
+    }
+    return list;
+  }, [items, statusFilter, search]);
+
+  // Stats — tổng quan của tủ (không phụ thuộc bộ lọc đang bật).
   const stats = useMemo(() => {
     if (!items) return { total: 0, expiring: 0, fresh: 0 };
     return {
@@ -147,28 +220,27 @@ export const FridgeInventoryScreen = ({ fridge, isEmbedded = false, onRename }) 
     };
   }, [items]);
 
-  // Storage counts — đếm trên `items` ĐANG hiển thị (đã lọc status nhưng chưa lọc storage).
-  // Cùng cách đếm cũ với category, nhưng dùng `compartment` (BE trả) thay vì
-  // `category` (BE không trả) -> số luôn thật.
+  // Storage counts — đếm trong `itemsInStatusScope` (đã lọc status + search).
+  // Dùng `compartment` (BE trả) thay vì `category` (BE không trả) -> số luôn thật.
   const storageCounts = useMemo(() => {
-    if (!items) return { all: 0, fridge: 0, freezer: 0, pantry: 0 };
+    if (!itemsInStatusScope) return { all: 0, fridge: 0, freezer: 0, pantry: 0 };
     return {
-      all: items.length,
-      fridge: items.filter((it) => it.compartment === 'fridge').length,
-      freezer: items.filter((it) => it.compartment === 'freezer').length,
-      pantry: items.filter((it) => it.compartment === 'pantry').length,
+      all: itemsInStatusScope.length,
+      fridge: itemsInStatusScope.filter((it) => it.compartment === 'fridge').length,
+      freezer: itemsInStatusScope.filter((it) => it.compartment === 'freezer').length,
+      pantry: itemsInStatusScope.filter((it) => it.compartment === 'pantry').length,
     };
-  }, [items]);
+  }, [itemsInStatusScope]);
 
-  // Status counts
+  // Status counts — đếm trong `itemsInStorageScope` (đã lọc storage + search).
   const statusCounts = useMemo(() => {
-    if (!items) return { all: 0, fresh: 0, expiring: 0 };
+    if (!itemsInStorageScope) return { all: 0, fresh: 0, expiring: 0 };
     return {
-      all: items.length,
-      fresh: items.filter((it) => it.status === 'fresh').length,
-      expiring: items.filter((it) => it.status === 'expiring').length,
+      all: itemsInStorageScope.length,
+      fresh: itemsInStorageScope.filter((it) => it.status === 'fresh').length,
+      expiring: itemsInStorageScope.filter((it) => it.status === 'expiring').length,
     };
-  }, [items]);
+  }, [itemsInStorageScope]);
 
   const statusOptions = [
     // Nhãn riêng cho hàng trạng thái. Trước đây dùng chung key home.all
@@ -365,13 +437,13 @@ export const FridgeInventoryScreen = ({ fridge, isEmbedded = false, onRename }) 
             },
           ]}
         >
-          {items.length} {t('home.resultCount', { count: '' }).replace('{{count}} ', '')}
+          {visibleItems.length} {t('home.resultCount', { count: '' }).replace('{{count}} ', '')}
         </Text>
         <SortMenu options={sortOptions} selectedKey={sort} onSelect={setSort} />
       </View>
 
       <FlatList
-        data={items}
+        data={visibleItems}
         keyExtractor={(it) => it.id}
         contentContainerStyle={{ paddingHorizontal: sp(20), paddingBottom: 100 + insets.bottom }}
         ItemSeparatorComponent={() => <View style={{ height: sp(10) }} />}
@@ -397,7 +469,19 @@ export const FridgeInventoryScreen = ({ fridge, isEmbedded = false, onRename }) 
             />
           )
         }
-        renderItem={({ item }) => <FridgeItem item={item} />}
+        renderItem={({ item }) => <FridgeItem item={item} onPress={openActions} />}
+      />
+
+      {/* Sheet thao tác: sửa số lượng / đánh dấu dùng hết / xóa.
+          `key={actionsItem?.id}` -> mỗi item là 1 instance mới, state trong
+          sheet (số lượng, đơn vị) khởi tạo đúng ngay, không cần setState
+          trong effect. */}
+      <FridgeItemActions
+        key={actionsItem?.id ?? 'none'}
+        item={actionsItem}
+        visible={actionsItem !== null}
+        onClose={closeActions}
+        onChanged={refetch}
       />
     </ScreenBackground>
   );

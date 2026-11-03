@@ -1,13 +1,20 @@
 /**
- * CameraPreviewScreen
+ * CameraPreviewScreen (ScanResultReview)
  *
- * Redesigned (Sprint 8):
- * - Dùng DetectionItem component (editable, có confidence bar)
- * - Header với count badge "5 món"
- * - Re-scan button
- * - Inline edit name (TextInput trong từng item)
- * - Confirm dialog trước khi add to fridge
- * - Empty state khi list rỗng
+ * B2 — nối vào BE thật (thay data cứng + Alert giả).
+ *
+ * Luồng thật (giống Flutter `scan_result_review_modal.dart`):
+ *   1. Nhận `{ scanId, scanType, items }` từ màn scan qua route params
+ *      (items đã chuẩn hoá bởi `useScanFlow()`).
+ *   2. User kiểm tra / sửa: tên, số lượng, đơn vị, vị trí lưu trữ, xoá, thêm tay.
+ *      Món có `needsConfirm` hiện badge nhắc kiểm tra; món có `allergyWarning`
+ *      hiện icon ⚠ (giống Flutter).
+ *   3. `POST /fridge/scan/:scanId/confirm` với `{ items: [{ ingredientId?,
+ *      name?, quantity, unit, storageLocation }] }` -> BE tạo fridge items.
+ *   4. Thành công -> toast + `popToTop()` (giống Flutter `Navigator.pop(ctx, true)`).
+ *
+ * Trường hợp không có `scanId` (deep-link lạ / test cũ): vẫn cho review
+ * offline nhưng nút Lưu chỉ hiện toast nhắc — KHÔNG gọi BE với id giả.
  */
 
 import React, { useState, useCallback, useMemo } from 'react';
@@ -17,9 +24,9 @@ import {
   StyleSheet,
   ScrollView,
   Pressable,
-  Alert,
   KeyboardAvoidingView,
   Platform,
+  Alert,
 } from 'react-native';
 import { useTheme } from '../../theme/ThemeContext';
 import { AppColors } from '../../theme/colors';
@@ -29,49 +36,113 @@ import { useTranslation } from 'react-i18next';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { ChevronLeft, Plus, Camera, Sparkles } from 'lucide-react-native';
 import { CustomButton } from '../../components/common/CustomButton';
+import { ErrorState } from '../../components/common/ErrorState';
 import { DetectionItem } from '../../components/scan/DetectionItem';
 import { EmptyState } from '../../components/common/EmptyState';
 import { showSuccess } from '../../utils/helpers';
+import { useServices } from '../../../data/ServiceProvider';
+
+const normalizeIncoming = (rawItems) => {
+  if (!Array.isArray(rawItems)) return [];
+  return rawItems.map((it, idx) => {
+    // Tương thích ngược: màn scan cũ (Sprint 8) chỉ truyền mảng string.
+    if (typeof it === 'string') {
+      return {
+        clientId: `legacy-${idx}`,
+        ingredientId: null,
+        name: it,
+        quantity: 1,
+        unit: '',
+        confidence: null,
+        needsConfirm: true,
+        allergyWarning: false,
+        storageLocation: 'fridge',
+      };
+    }
+    return {
+      clientId: it.clientId ?? `item-${idx}`,
+      ingredientId: it.ingredientId ?? null,
+      name: it.name ?? '',
+      quantity: Number.isFinite(Number(it.quantity)) ? Number(it.quantity) : 1,
+      unit: it.unit ?? '',
+      confidence: it.confidence ?? null,
+      needsConfirm: it.needsConfirm === true,
+      allergyWarning: it.allergyWarning === true,
+      storageLocation: it.storageLocation ?? 'fridge',
+    };
+  });
+};
 
 export const CameraPreviewScreen = () => {
   const { isDark } = useTheme();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigation = useNavigation();
   const route = useRoute();
-  const initialItems = useMemo(
-    () =>
-      route.params?.items || [
-        { id: '1', name: 'Cà chua', confidence: 0.95 },
-        { id: '2', name: 'Sữa tươi', confidence: 0.88 },
-        { id: '3', name: 'Trứng', confidence: 0.76 },
-      ],
-    [route.params?.items],
-  );
-  const [items, setItems] = useState(initialItems);
+  const services = useServices();
+  const isEn = i18n.language === 'en';
 
-  const updateName = useCallback((id, name) => {
-    setItems((prev) => prev.map((it) => (it.id === id ? { ...it, name } : it)));
+  // `ScanFoodPhotoScreen` (Sprint 8) từng truyền `{ items: ['Cà chua', ...] }`
+  // (mảng string) — `normalizeIncoming` giữ màn review chạy được với cả 2 shape.
+  const initialItems = useMemo(
+    () => normalizeIncoming(route.params?.items),
+    [route.params?.items]
+  );
+  const scanId = route.params?.scanId ?? null;
+
+  const [items, setItems] = useState(initialItems);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState(null);
+
+  const updateField = useCallback((id, field, value) => {
+    setItems((prev) => prev.map((it) => (it.clientId === id ? { ...it, [field]: value } : it)));
+    setSaveError(null);
   }, []);
 
+  const updateName = useCallback(
+    (id, name) => updateField(id, 'name', name),
+    [updateField]
+  );
+
   const remove = useCallback((id) => {
-    setItems((prev) => prev.filter((it) => it.id !== id));
+    setItems((prev) => prev.filter((it) => it.clientId !== id));
   }, []);
 
   const addNew = useCallback(() => {
     const newItem = {
-      id: String(Date.now()),
+      clientId: `manual-${Date.now()}`,
+      ingredientId: null,
       name: '',
+      quantity: 1,
+      unit: '',
       confidence: null,
+      needsConfirm: false,
+      allergyWarning: false,
+      storageLocation: 'fridge',
     };
     setItems((prev) => [...prev, newItem]);
   }, []);
 
   const saveAll = useCallback(() => {
-    const validItems = items.filter((i) => i.name.trim().length > 0);
+    const validItems = items.filter((i) => (i.name || '').trim().length > 0);
     if (validItems.length === 0) {
-      Alert.alert('Chưa có nguyên liệu', 'Vui lòng thêm ít nhất 1 nguyên liệu');
+      Alert.alert(
+        isEn ? 'No ingredients' : 'Chưa có nguyên liệu',
+        isEn ? 'Please add at least 1 ingredient' : 'Vui lòng thêm ít nhất 1 nguyên liệu'
+      );
       return;
     }
+
+    // Không có scanId thật (deep-link lạ / test cũ) -> không gọi BE với id giả.
+    if (!scanId) {
+      Alert.alert(
+        isEn ? 'Cannot save' : 'Không thể lưu',
+        isEn
+          ? 'Missing scan session. Please scan again.'
+          : 'Thiếu phiên scan. Vui lòng quét lại.'
+      );
+      return;
+    }
+
     Alert.alert(
       t('home.scanAddToFridge'),
       t('home.scanConfirmAdd', { count: validItems.length }),
@@ -79,23 +150,49 @@ export const CameraPreviewScreen = () => {
         { text: t('home.cancel'), style: 'cancel' },
         {
           text: t('home.scanAddToFridge'),
-          onPress: () => {
-            showSuccess(`Đã thêm ${validItems.length} món vào tủ lạnh`);
-            navigation.popToTop();
+          onPress: async () => {
+            if (saving) return;
+            setSaving(true);
+            setSaveError(null);
+            try {
+              const payload = validItems.map((it) => {
+                const row = {
+                  name: it.name.trim(),
+                  quantity: Number(it.quantity) || 1,
+                  unit: (it.unit || '').trim() || 'pcs',
+                  storageLocation: it.storageLocation || 'fridge',
+                };
+                if (it.ingredientId !== null && it.ingredientId !== undefined) {
+                  row.ingredientId = Number(it.ingredientId);
+                }
+                return row;
+              });
+              await services.fridgeService.confirmScan(scanId, payload);
+              showSuccess(
+                isEn
+                  ? `Added ${validItems.length} items to fridge`
+                  : `Đã thêm ${validItems.length} món vào tủ lạnh`
+              );
+              navigation.popToTop();
+            } catch (e) {
+              setSaveError(e);
+            } finally {
+              setSaving(false);
+            }
           },
         },
-      ],
+      ]
     );
-  }, [items, t, navigation]);
+  }, [items, t, navigation, scanId, services, saving, isEn]);
 
   const reScan = useCallback(() => {
-    Alert.alert(t('home.scanReScan'), 'Chụp lại ảnh?', [
+    Alert.alert(t('home.scanReScan'), isEn ? 'Take another photo?' : 'Chụp ảnh lại?', [
       { text: t('home.cancel'), style: 'cancel' },
       { text: t('home.scanReScan'), onPress: () => navigation.goBack() },
     ]);
-  }, [t, navigation]);
+  }, [t, navigation, isEn]);
 
-  const validCount = items.filter((i) => i.name.trim().length > 0).length;
+  const validCount = items.filter((i) => (i.name || '').trim().length > 0).length;
 
   return (
     <KeyboardAvoidingView
@@ -149,6 +246,9 @@ export const CameraPreviewScreen = () => {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
+        {saveError ? (
+          <ErrorState message={saveError?.message} onRetry={saveAll} style={styles.saveError} />
+        ) : null}
         {items.length === 0 ? (
           <View style={{ marginTop: sp(40) }}>
             <EmptyState
@@ -163,11 +263,19 @@ export const CameraPreviewScreen = () => {
           <>
             {items.map((item) => (
               <DetectionItem
-                key={item.id}
+                key={item.clientId}
                 name={item.name}
                 confidence={item.confidence}
-                onChange={(name) => updateName(item.id, name)}
-                onRemove={() => remove(item.id)}
+                onChange={(name) => updateName(item.clientId, name)}
+                onRemove={() => remove(item.clientId)}
+                quantity={item.quantity}
+                onQuantityChange={(q) => updateField(item.clientId, 'quantity', q)}
+                unit={item.unit}
+                onUnitChange={(u) => updateField(item.clientId, 'unit', u)}
+                storageLocation={item.storageLocation}
+                onStorageChange={(s) => updateField(item.clientId, 'storageLocation', s)}
+                allergyWarning={item.allergyWarning}
+                needsConfirm={item.needsConfirm}
               />
             ))}
 
@@ -204,7 +312,8 @@ export const CameraPreviewScreen = () => {
         <CustomButton
           title={t('home.scanAddToFridge')}
           onPress={saveAll}
-          disabled={validCount === 0}
+          disabled={validCount === 0 || saving}
+          loading={saving}
         />
       </View>
     </KeyboardAvoidingView>
@@ -252,6 +361,11 @@ const styles = StyleSheet.create({
   },
   scroll: {
     padding: sp(20),
+  },
+  saveError: {
+    marginBottom: sp(12),
+    backgroundColor: '#FFEBEE',
+    borderRadius: sp(12),
   },
   addRow: {
     flexDirection: 'row',

@@ -46,6 +46,30 @@ module.exports = [
         afterEach: 'readonly',
         beforeAll: 'readonly',
         afterAll: 'readonly',
+        // Test đọc file locale từ disk -> cần `__dirname` + `require`.
+        __dirname: 'readonly',
+        require: 'readonly',
+        process: 'readonly',
+      },
+    },
+  },
+
+  {
+    // Script Node (CommonJS) - cần globals `__dirname`, `require`, `process`.
+    // Không có block này thì `no-undef` báo lỗi cho mọi file trong scripts/.
+    files: ['scripts/**/*.js', '*.config.js', '*.config.cjs'],
+    languageOptions: {
+      sourceType: 'commonjs',
+      globals: {
+        __dirname: 'readonly',
+        __filename: 'readonly',
+        require: 'readonly',
+        module: 'writable',
+        exports: 'writable',
+        process: 'readonly',
+        console: 'readonly',
+        Buffer: 'readonly',
+        __DEV__: 'readonly',
       },
     },
   },

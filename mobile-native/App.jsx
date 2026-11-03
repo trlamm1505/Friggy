@@ -75,6 +75,30 @@ import './src/data/services/real/RealAuthService';
 // Sprint A2: đăng ký RealUserService (profile / preferences / allergies / onboarding).
 import './src/data/services/real/RealUserService';
 
+// ──────────────────────────────────────────────────────────────────
+// B3 — Recipes + meal-planning slots (đăng ký key 'recipeService')
+//
+// ⚠️ Q5 đã chốt: dùng CHUNG key `recipe`, KHÔNG tách `mealPlanning`.
+// `RealRecipeService` là service DUY NHẤT cho key này, gồm cả phần
+// recipes lẫn `getSuggestions()` đọc meal-planning slots.
+// `useServiceHooks.js` là file IMMUTABLE -> hook `useRecipeSuggestions`
+// vẫn gọi `recipeService.getSuggestions()`.
+// ──────────────────────────────────────────────────────────────────
+import './src/data/services/real/RealRecipeService';
+
+// ──────────────────────────────────────────────────────────────────
+// B4 — AI Chat streaming (đăng ký key 'aiChatService')
+//
+// ⚠️ Key `aiChatService` KHÔNG có trong `ServiceProvider.defaultServices`
+// (file immutable từ P0.5) nên `resolveServices()` không bọc service này.
+// UI đọc thẳng từ registry: `getRegisteredService('aiChatService')` và TỰ
+// fallback sang `MockAiChatService` khi `isMockMode()` (xem `AiChatScreen.jsx`).
+//
+// ⚠️ Cố ý KHÔNG fallback sang mock khi BE lỗi: AI Chat là flow AI thật,
+// bịa câu trả lời giả sẽ khiến user tin AI đang thật sự trả lời.
+// ──────────────────────────────────────────────────────────────────
+import './src/data/services/real/RealAiChatService';
+
 export default function App() {
   const [fontsLoaded] = useFonts({
     PlusJakartaSans_400Regular,

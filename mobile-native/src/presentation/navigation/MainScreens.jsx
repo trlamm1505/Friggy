@@ -17,6 +17,7 @@ import { ScanFoodPhotoScreen } from '../screens/scan/ScanFoodPhotoScreen';
 import { ScanReceiptScreen } from '../screens/scan/ScanReceiptScreen';
 import { ScanBarcodeScreen } from '../screens/scan/ScanBarcodeScreen';
 import { CameraPreviewScreen } from '../screens/scan/CameraPreviewScreen';
+import { ScanHistoryScreen } from '../screens/scan/ScanHistoryScreen';
 import { RecipeSuggestionsScreen } from '../screens/recipe/RecipeSuggestionsScreen';
 import { PersonalInfoScreen } from '../screens/profile/PersonalInfoScreen';
 import { UserPreferencesScreen } from '../screens/profile/UserPreferencesScreen';
@@ -49,6 +50,7 @@ export const MainScreens = () => (
     <MainStack.Screen name={Routes.ScanReceipt} component={ScanReceiptScreen} />
     <MainStack.Screen name={Routes.ScanBarcode} component={ScanBarcodeScreen} />
     <MainStack.Screen name={Routes.ScanResultReview} component={CameraPreviewScreen} />
+    <MainStack.Screen name={Routes.ScanHistory} component={ScanHistoryScreen} />
     <MainStack.Screen name={Routes.RecipeSuggestions} component={RecipeSuggestionsScreen} />
     <MainStack.Screen name={Routes.PersonalInfo} component={PersonalInfoScreen} />
     <MainStack.Screen name={Routes.UserPreferences} component={UserPreferencesScreen} />

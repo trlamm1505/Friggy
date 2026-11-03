@@ -11,7 +11,7 @@ import { useTheme } from '../../theme/ThemeContext';
 import { AppColors } from '../../theme/colors';
 import { sp } from '../../utils/responsive';
 import { FontFamily, FontWeights } from '../../theme/typography';
-import { Clock, ChefHat } from 'lucide-react-native';
+import { Clock, ChefHat, Bookmark } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 
 const DIFFICULTY_LABELS = {
@@ -26,7 +26,7 @@ const DIFFICULTY_COLORS = {
   hard: { bg: '#FFEBEE', fg: AppColors.error },
 };
 
-export const RecipeListItem = ({ recipe, onPress, style }) => {
+export const RecipeListItem = ({ recipe, onPress, onBookmarkPress, style }) => {
   const { isDark } = useTheme();
   const { t } = useTranslation();
 
@@ -36,7 +36,13 @@ export const RecipeListItem = ({ recipe, onPress, style }) => {
     recipe_tomato_egg: require('../../../../assets/images/recipe_tomato_egg.png'),
     recipe_veggie_soup: require('../../../../assets/images/recipe_veggie_soup.png'),
   };
-  const imageSource = recipe.image && imageMap[recipe.image] ? imageMap[recipe.image] : null;
+  // URL tuyệt đối từ BE -> `{ uri }`; key của mock -> asset đóng gói sẵn.
+  const resolveImageSource = (image) => {
+    if (!image || typeof image !== 'string') return null;
+    if (/^https?:\/\//i.test(image)) return { uri: image };
+    return imageMap[image] || null;
+  };
+  const imageSource = resolveImageSource(recipe.image);
 
   return (
     <Pressable
@@ -68,10 +74,7 @@ export const RecipeListItem = ({ recipe, onPress, style }) => {
         </View>
         <View style={styles.body}>
           <Text
-            style={[
-              styles.name,
-              { color: isDark ? '#FFFFFF' : AppColors.textPrimary },
-            ]}
+            style={[styles.name, { color: isDark ? '#FFFFFF' : AppColors.textPrimary }]}
             numberOfLines={2}
           >
             {recipe.name}
@@ -115,6 +118,27 @@ export const RecipeListItem = ({ recipe, onPress, style }) => {
             >
               {recipe.servings} {t('home.people')}
             </Text>
+            {onBookmarkPress ? (
+              <Pressable
+                onPress={() => onBookmarkPress(recipe)}
+                hitSlop={8}
+                style={({ pressed }) => [styles.bookmarkBtn, { opacity: pressed ? 0.6 : 1 }]}
+                testID={`recipe-bookmark-${recipe.id}`}
+                accessibilityLabel={t('home.favorite')}
+              >
+                <Bookmark
+                  color={
+                    recipe.bookmarked
+                      ? AppColors.primary
+                      : isDark
+                        ? AppColors.darkTextSecondary
+                        : AppColors.textSecondary
+                  }
+                  size={16}
+                  fill={recipe.bookmarked ? AppColors.primary : 'transparent'}
+                />
+              </Pressable>
+            ) : null}
           </View>
         </View>
       </View>
@@ -184,6 +208,12 @@ const styles = StyleSheet.create({
   },
   servingsRow: {
     marginTop: sp(4),
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  bookmarkBtn: {
+    padding: sp(2),
   },
   servings: {
     fontSize: sp(11),

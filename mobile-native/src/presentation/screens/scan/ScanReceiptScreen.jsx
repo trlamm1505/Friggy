@@ -1,6 +1,14 @@
+/**
+ * ScanReceiptScreen
+ *
+ * B2 — nối vào BE thật (thay `setTimeout` + Alert giả).
+ * Luồng giống `ScanFoodPhotoScreen`, chỉ khác scanType = 'receipt'
+ * (`POST /fridge/scan/receipt` -> AI parse danh sách thực phẩm).
+ * Dùng chung `useScanFlow()` nên không lặp lại logic upload + poll.
+ */
+
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Pressable, Image, Alert } from 'react-native';
-import { useTheme } from '../../theme/ThemeContext';
+import { View, Text, StyleSheet, Pressable, Image, ActivityIndicator } from 'react-native';
 import { sp } from '../../utils/responsive';
 import { FontWeights, FontFamily } from '../../theme/typography';
 import { useTranslation } from 'react-i18next';
@@ -8,30 +16,43 @@ import { useNavigation } from '@react-navigation/native';
 import { ChevronLeft, Image as ImageIcon, RotateCw, Receipt } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { CustomButton } from '../../components/common/CustomButton';
+import { ErrorState } from '../../components/common/ErrorState';
+import { useScanFlow } from '../../hooks/useScanFlow';
+import { Routes } from '../../../shared/constants/routes';
 
 export const ScanReceiptScreen = () => {
   const { t } = useTranslation();
   const navigation = useNavigation();
   const [imageUri, setImageUri] = useState(null);
-  const [processing, setProcessing] = useState(false);
+  const { phase, error, startScan, clearError } = useScanFlow();
+
+  const busy = phase === 'uploading' || phase === 'polling';
 
   const pickImage = async (fromCamera) => {
+    if (busy) return;
     const result = fromCamera
       ? await ImagePicker.launchCameraAsync({ quality: 0.9, allowsEditing: true })
       : await ImagePicker.launchImageLibraryAsync({ quality: 0.9, allowsEditing: true });
     if (!result.canceled && result.assets && result.assets[0]) {
       setImageUri(result.assets[0].uri);
+      clearError();
     }
   };
 
-  const handleProcess = () => {
-    setProcessing(true);
-    setTimeout(() => {
-      setProcessing(false);
-      Alert.alert(t('scan.processing'), 'Đã nhận diện 8 món từ hóa đơn', [
-        { text: 'OK', onPress: () => navigation.goBack() },
-      ]);
-    }, 1500);
+  const handleProcess = async () => {
+    if (!imageUri || busy) return;
+    try {
+      const result = await startScan('receipt', imageUri);
+      // `null` = user rời màn giữa chừng -> bỏ qua, không điều hướng.
+      if (!result) return;
+      navigation.replace(Routes.ScanResultReview, {
+        scanId: result.scanId,
+        scanType: result.scanType,
+        items: result.items,
+      });
+    } catch {
+      // Lỗi đã lưu trong hook -> banner ErrorState bên dưới tự hiện.
+    }
   };
 
   return (
@@ -53,21 +74,41 @@ export const ScanReceiptScreen = () => {
             <Text style={styles.placeholderText}>{t('scan.captureImage')}</Text>
           </View>
         )}
+        {busy ? (
+          <View style={styles.progressOverlay}>
+            <ActivityIndicator size="large" color="#FFFFFF" />
+            <Text style={styles.progressText}>
+              {phase === 'uploading' ? t('scan.uploading') : t('scan.analyzingReceipt')}
+            </Text>
+          </View>
+        ) : null}
       </View>
+
+      {error && !busy ? (
+        <ErrorState message={error?.message} onRetry={handleProcess} style={styles.errorBox} />
+      ) : null}
 
       <View style={styles.bottom}>
         <View style={styles.actionRow}>
-          <Pressable onPress={() => pickImage(false)} style={styles.actionBtn} hitSlop={8}>
+          <Pressable onPress={() => pickImage(false)} disabled={busy} style={styles.actionBtn} hitSlop={8}>
             <ImageIcon color="#FFFFFF" size={26} />
             <Text style={styles.actionLabel}>{t('scan.fromGallery')}</Text>
           </Pressable>
 
-          <Pressable onPress={() => pickImage(true)} style={styles.captureBtn} hitSlop={8}>
+          <Pressable onPress={() => pickImage(true)} disabled={busy} style={styles.captureBtn} hitSlop={8}>
             <View style={styles.captureInner} />
           </Pressable>
 
           {imageUri ? (
-            <Pressable onPress={() => setImageUri(null)} style={styles.actionBtn} hitSlop={8}>
+            <Pressable
+              onPress={() => {
+                if (busy) return;
+                setImageUri(null);
+                clearError();
+              }}
+              style={styles.actionBtn}
+              hitSlop={8}
+            >
               <RotateCw color="#FFFFFF" size={26} />
               <Text style={styles.actionLabel}>{t('scan.retake')}</Text>
             </Pressable>
@@ -78,7 +119,7 @@ export const ScanReceiptScreen = () => {
 
         {imageUri ? (
           <View style={{ marginTop: 20 }}>
-            <CustomButton title={t('scan.usePhoto')} onPress={handleProcess} loading={processing} />
+            <CustomButton title={t('scan.usePhoto')} onPress={handleProcess} loading={busy} />
           </View>
         ) : null}
       </View>
@@ -132,6 +173,26 @@ const styles = StyleSheet.create({
     fontFamily: FontFamily.medium,
     fontWeight: FontWeights.medium,
     marginTop: 12,
+  },
+  progressOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+  },
+  progressText: {
+    color: '#FFFFFF',
+    fontFamily: FontFamily.semibold,
+    fontWeight: FontWeights.semibold,
+    fontSize: sp(14),
+    textAlign: 'center',
+    paddingHorizontal: 32,
+  },
+  errorBox: {
+    marginHorizontal: 16,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderRadius: 12,
   },
   bottom: {
     padding: 24,

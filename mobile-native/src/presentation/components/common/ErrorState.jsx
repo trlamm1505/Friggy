@@ -22,7 +22,6 @@ export const ErrorState = ({
   const { isDark } = useTheme();
   const { t } = useTranslation();
 
-  const textColor = isDark ? AppColors.darkTextSecondary : AppColors.textSecondary;
   const errorColor = isDark ? '#FF8A80' : AppColors.error;
 
   return (

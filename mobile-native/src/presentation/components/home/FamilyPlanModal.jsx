@@ -69,8 +69,13 @@ export const FamilyPlanModal = ({ visible, onClose, onSuccess }) => {
     setLoading(true);
     try {
       const packages = await userService.getAvailablePackages();
-      // BE `SubscriptionPlanResponseDto.name` = 'free' | 'individual' | 'family'
-      const familyPlan = packages.find((p) => p.name === 'family');
+      // BE `SubscriptionPlanResponseDto.name` = 'free' | 'individual' | 'family'.
+      // Tìm theo `name` chuẩn hoá, fallback theo `displayName` chứa "gia đình"
+      // (mock cũ dùng nhãn tiếng Việt).
+      const familyPlan =
+        packages.find((p) => p.name === 'family') ??
+        packages.find((p) => String(p.displayName ?? p.name).toLowerCase().includes('gia đình')) ??
+        packages.find((p) => String(p.displayName ?? p.name).toLowerCase().includes('family'));
       if (!familyPlan) {
         showError(t('familyPlan.planNotFound'));
         return;
@@ -87,7 +92,9 @@ export const FamilyPlanModal = ({ visible, onClose, onSuccess }) => {
         return;
       }
 
-      const result = await userService.subscribe(familyPlan.id);
+      // Truyền thêm `familyPlan.name` (tham số thứ 2) để mock biết gói nào
+      // đang mua. `RealUserService.subscribe(planId)` bỏ qua tham số này.
+      const result = await userService.subscribe(familyPlan.id, familyPlan.name);
       if (!mountedRef.current) return;
       setCheckout(result);
     } catch (e) {

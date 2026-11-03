@@ -104,7 +104,7 @@ export const PackageManagementScreen = () => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
   const { userService } = useServices();
-
+  
   const [subscribingPlanId, setSubscribingPlanId] = useState(null);
   const [plansSheetOpen, setPlansSheetOpen] = useState(false);
 
