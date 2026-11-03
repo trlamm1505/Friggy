@@ -25,8 +25,6 @@ import { EmptyState } from '../common/EmptyState';
 import { ErrorState } from '../common/ErrorState';
 
 // Ảnh minh hoạ từng món — để trống trước khi có asset.
-const MEAL_ART = null;
-
 // Map index của suggestion -> bữa ăn (data mock có 4 món tương ứng
 // sáng / trưa / tối / phụ). Khi nối API thật, lấy `mealType` từ response.
 const MEAL_SLOTS = [

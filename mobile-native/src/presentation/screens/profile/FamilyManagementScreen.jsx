@@ -44,6 +44,7 @@ import { showSuccess, showError } from '../../utils/helpers';
 import { useServices } from '../../../data/ServiceProvider';
 import { useAsyncData } from '../../hooks/useServiceHooks';
 import { FamilyPlanModal } from '../../components/home/FamilyPlanModal';
+import { FamilyTokenDialog } from '../../components/home/FamilyTokenDialog';
 
 export const FamilyManagementScreen = () => {
   const { isDark } = useTheme();
@@ -55,6 +56,7 @@ export const FamilyManagementScreen = () => {
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviting, setInviting] = useState(false);
   const [planModalOpen, setPlanModalOpen] = useState(false);
+  const [tokenDialogOpen, setTokenDialogOpen] = useState(false);
 
   // Load family bằng `useAsyncData` (hook có sẵn) thay vì `useEffect` + setState.
   //
@@ -249,7 +251,7 @@ export const FamilyManagementScreen = () => {
             <View style={{ width: '100%', marginTop: sp(10) }}>
               <CustomButton
                 title={t('familyManage.haveToken')}
-                onPress={() => setPlanModalOpen(true)}
+                onPress={() => setTokenDialogOpen(true)}
                 variant="outline"
                 height={48}
                 borderRadius={24}
@@ -262,6 +264,13 @@ export const FamilyManagementScreen = () => {
           key={`family-plan-modal-${planModalOpen ? 'open' : 'closed'}`}
           visible={planModalOpen}
           onClose={() => setPlanModalOpen(false)}
+          onSuccess={load}
+        />
+
+        {/* Dialog nhập token lời mời (accept + reject) - Flutter `:349-433`. */}
+        <FamilyTokenDialog
+          visible={tokenDialogOpen}
+          onClose={() => setTokenDialogOpen(false)}
           onSuccess={load}
         />
       </View>
