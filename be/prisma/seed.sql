@@ -12,8 +12,9 @@ SET FOREIGN_KEY_CHECKS = 0;
 -- [1] ROLES
 -- ============================================================
 INSERT IGNORE INTO `roles` (`id`, `name`, `description`, `createdAt`) VALUES
-  (1, 'admin', 'Ban quản trị hệ thống — toàn quyền truy cập Admin Dashboard', NOW()),
-  (2, 'user',  'Người dùng cuối — sử dụng ứng dụng quản lý tủ lạnh',          NOW());
+  (1, 'admin',   'Ban quản trị hệ thống — toàn quyền truy cập Admin Dashboard', NOW()),
+  (2, 'user',    'Người dùng cuối — sử dụng ứng dụng quản lý tủ lạnh',          NOW()),
+  (3, 'manager', 'Quản lý vận hành — quản lý nội dung, người dùng, giao dịch', NOW());
 
 -- ============================================================
 -- [1b] ADMIN ACCOUNT
@@ -33,7 +34,24 @@ INSERT IGNORE INTO `user_profiles` (`id`, `userId`, `displayName`, `updatedAt`) 
    'Friggy Admin', NOW());
 
 -- ============================================================
--- [1c] TEST USER ACCOUNT
+-- [1c] MANAGER ACCOUNT
+-- Email   : manager@friggy.vn
+-- Password: Friggy@Manager2026  (bcrypt hash rounds=10)
+-- ⚠️ Dùng quản lý vận hành nội dung & kinh doanh
+-- ============================================================
+INSERT IGNORE INTO `users` (`id`, `email`, `passwordHash`, `authProvider`, `status`, `roleId`, `isOnboardingCompleted`, `name`, `createdAt`, `updatedAt`) VALUES
+  ('00000000-0000-0000-0000-000000000003',
+   'manager@friggy.vn',
+   '$2b$10$ufMDqXnGkTPZg5RNZ8wr6.XsE56LNWN0h8dZtWJCGHs.fWQ18U7q6',
+   'email', 'active', 3, 1, 'Friggy Manager', NOW(), NOW());
+
+INSERT IGNORE INTO `user_profiles` (`id`, `userId`, `displayName`, `updatedAt`) VALUES
+  ('00000000-0000-0000-0000-000000000003',
+   '00000000-0000-0000-0000-000000000003',
+   'Friggy Manager', NOW());
+
+-- ============================================================
+-- [1d] TEST USER ACCOUNT
 -- Email   : user@friggy.vn
 -- Password: User@12345  (bcrypt rounds=10)
 -- ⚠️ Chỉ dùng cho môi trường dev/test
@@ -43,7 +61,7 @@ INSERT IGNORE INTO `users`
 VALUES
   ('00000000-0000-0000-0000-000000000002',
    'user@friggy.vn',
-   '$2b$10$96ezLLhHcO29v9tjkmdrMeEjEj8QzaaMSTWL.hwrKm9L3pVYkDMW.',
+   '$2b$10$PN2pRKa8gnM3B7smi1VCseyNMWy3KxomJLgApDXEeX5MomJ7X4L2q',
    'email', 'active', 2, 1, 'Test User', NOW(), NOW());
 
 INSERT IGNORE INTO `user_profiles`
@@ -52,6 +70,71 @@ VALUES
   ('00000000-0000-0000-0000-000000000002',
    '00000000-0000-0000-0000-000000000002',
    'Test User', NOW());
+
+-- ============================================================
+-- [1e] DEMO USER — Đầy đủ thông tin (profile + preferences + subscription)
+-- Email   : demo@friggy.vn
+-- Password: Demo@12345  (bcrypt rounds=10)
+-- ⚠️ Dùng để test đầy đủ luồng: tủ lạnh, meal plan, AI
+-- ============================================================
+INSERT IGNORE INTO `users`
+  (`id`, `email`, `passwordHash`, `authProvider`, `status`, `roleId`, `isOnboardingCompleted`, `name`, `createdAt`, `updatedAt`)
+VALUES
+  ('00000000-0000-0000-0000-000000000010',
+   'demo@friggy.vn',
+   '$2b$10$NxjdmHhGnRrE0eL1.B.4G.8H3bOpMcvXj7E.6mfDV8bPIOfpBJgLO',
+   'email', 'active', 2, 1, 'Nguyễn Minh Anh', NOW(), NOW());
+
+INSERT IGNORE INTO `user_profiles`
+  (`id`, `userId`, `displayName`, `avatarPath`, `dateOfBirth`, `gender`, `bio`, `updatedAt`)
+VALUES
+  ('00000000-0000-0000-0000-000000000010',
+   '00000000-0000-0000-0000-000000000010',
+   'Mai Đức Trọng',
+   '/public/avatars/demo_user.png',
+   '2004-05-13',
+   'female',
+   'Mình thích nấu ăn healthy, ưu tiên món Việt truyền thống và ít dầu mỡ.',
+   NOW());
+
+INSERT IGNORE INTO `user_preferences`
+  (`id`, `userId`, `weeklyBudget`, `dailyCalorieTarget`, `dietaryStyle`,
+   `preferSimpleRecipes`, `maxCookTimeMinutes`, `skillLevel`, `householdSize`,
+   `aiPersonalityMode`, `activityLevel`, `cookingFrequency`, `height`, `weight`,
+   `primaryGoal`, `expiryAlert`, `pushNotifications`, `shoppingReminder`, `updatedAt`)
+VALUES
+  ('00000000-0000-0000-0000-000000000010',
+   '00000000-0000-0000-0000-000000000010',
+   500000,        -- Ngân sách tuần: 500k VNĐ
+   1800,          -- Mục tiêu calories/ngày
+   'omnivore',    -- Chế độ ăn: tạp ăn
+   1,             -- Ưa công thức đơn giản
+   45,            -- Thời gian nấu tối đa: 45 phút
+   'intermediate', -- Kỹ năng: trung bình
+   2,             -- Hộ gia đình: 2 người
+   'friendly',    -- AI personality
+   'moderate',    -- Mức vận động
+   'daily',       -- Tần suất nấu
+   163,           -- Chiều cao (cm)
+   52,            -- Cân nặng (kg)
+   'healthy_eating', -- Mục tiêu chính
+   1, 1, 1,       -- Bật tất cả thông báo
+   NOW());
+
+-- Gói Individual cho demo user
+INSERT IGNORE INTO `user_subscriptions`
+  (`id`, `userId`, `planId`, `startDate`, `endDate`, `status`, `autoRenew`, `createdAt`, `updatedAt`)
+VALUES
+  ('00000000-0000-0000-0000-000000000010',
+   '00000000-0000-0000-0000-000000000010',
+   2,              -- planId=2: Gói Cá Nhân (Individual)
+   CURDATE(),
+   DATE_ADD(CURDATE(), INTERVAL 1 YEAR),
+   'active',
+   1,
+   NOW(), NOW());
+
+
 
 -- ============================================================
 -- [2] SUBSCRIPTION PLANS
@@ -230,7 +313,7 @@ INSERT IGNORE INTO `recipes` (`id`, `title`, `description`, `thumbnailPath`, `me
 -- [7] AI PROVIDER CONFIG
 -- ============================================================
 INSERT IGNORE INTO `ai_provider_configs` (`id`, `provider`, `modelName`, `encryptedApiKey`, `isActive`, `temperature`, `maxTokens`, `usageNote`, `activatedBy`, `updatedAt`, `createdAt`, `deletedAt`) VALUES
-  (1, 'gemini', 'gemini-2.5-flash-lite',
+  (1, 'gemini', 'bee/gemini-3.5-flash-lite',
    '98a790c52e646c24e9bbb25062607b62:a3b73e0803a3d8d9763fa4b2484921a1635a94bc8fd0579a9c545b1efafcfda0ee76a9a41be814d04efc94dc2a9b45c510a2e89f3590f0cde145fbdbc920002612283753bfdb9cf4c3277dfcde8f185b',
    1, 0.7, 8192, 'baseURL=https://platform.beeknoee.com/v1',
    '00000000-0000-0000-0000-000000000001', NOW(), NOW(), NULL);
@@ -349,13 +432,32 @@ Quy tắc:
 SET FOREIGN_KEY_CHECKS = 1;
 
 -- ============================================================
--- VERIFY
+-- VERIFY — Kiểm tra tất cả bảng đã seed
 -- ============================================================
-SELECT 'roles'                  AS `table`, COUNT(*) AS count FROM `roles`
-UNION ALL SELECT 'subscription_plans',      COUNT(*) FROM `subscription_plans`
-UNION ALL SELECT 'ingredient_categories',   COUNT(*) FROM `ingredient_categories`
-UNION ALL SELECT 'ingredients',             COUNT(*) FROM `ingredients`
-UNION ALL SELECT 'tags',                    COUNT(*) FROM `tags`
-UNION ALL SELECT 'recipes',                 COUNT(*) FROM `recipes`
-UNION ALL SELECT 'ai_system_prompts',       COUNT(*) FROM `ai_system_prompts`
-UNION ALL SELECT 'ai_provider_configs',     COUNT(*) FROM `ai_provider_configs`;
+SELECT '=== ACCOUNTS ===' AS section, '' AS `table`, NULL AS count
+
+UNION ALL SELECT '', 'roles',                  COUNT(*) FROM `roles`
+UNION ALL SELECT '', 'users',                  COUNT(*) FROM `users`
+UNION ALL SELECT '', 'user_profiles',          COUNT(*) FROM `user_profiles`
+UNION ALL SELECT '', 'user_preferences',       COUNT(*) FROM `user_preferences`
+UNION ALL SELECT '', 'user_subscriptions',     COUNT(*) FROM `user_subscriptions`
+
+UNION ALL SELECT '=== CATALOG ===', '', NULL
+
+UNION ALL SELECT '', 'subscription_plans',     COUNT(*) FROM `subscription_plans`
+UNION ALL SELECT '', 'ingredient_categories',  COUNT(*) FROM `ingredient_categories`
+UNION ALL SELECT '', 'ingredients',            COUNT(*) FROM `ingredients`
+UNION ALL SELECT '', 'tags',                   COUNT(*) FROM `tags`
+
+UNION ALL SELECT '=== RECIPES ===', '', NULL
+
+UNION ALL SELECT '', 'recipes',                COUNT(*) FROM `recipes`
+UNION ALL SELECT '', 'recipe_ingredients',     COUNT(*) FROM `recipe_ingredients`
+UNION ALL SELECT '', 'recipe_steps',           COUNT(*) FROM `recipe_steps`
+UNION ALL SELECT '', 'recipe_tags',            COUNT(*) FROM `recipe_tags`
+
+UNION ALL SELECT '=== AI ===', '', NULL
+
+UNION ALL SELECT '', 'ai_provider_configs',    COUNT(*) FROM `ai_provider_configs`
+UNION ALL SELECT '', 'ai_system_prompts',      COUNT(*) FROM `ai_system_prompts`;
+

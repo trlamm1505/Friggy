@@ -358,6 +358,28 @@ describe('RealUserService - getCurrentPlan', () => {
     expect(plan.price).toBe(0);
     expect(plan.features).toEqual([]);
   });
+
+  it('trả `status` để HomeScreen phân biệt active với pending', async () => {
+    // BE `UserSubscriptionResponseDto.status`: active | pending | cancelled | expired.
+    ApiClient.get.mockResolvedValue({
+      status: 'pending',
+      plan: { name: 'family', displayName: 'Gói Gia Đình' },
+    });
+
+    const plan = await service.getCurrentPlan();
+
+    expect(plan.status).toBe('pending');
+    // Flutter KHÔNG trả status -> bug banner hiện "Gia đình đang hoạt động"
+    // khi user còn đang chờ thanh toán.
+  });
+
+  it('BE trả null -> `status` mặc định `expired`, không phải `active`', async () => {
+    ApiClient.get.mockResolvedValue(null);
+
+    const plan = await service.getCurrentPlan();
+
+    expect(plan.status).toBe('expired');
+  });
 });
 
 // ═══════════════ Cài đặt thông báo ═══════════════

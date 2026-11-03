@@ -19,7 +19,7 @@
  * (`subscriptions.service.ts:239-244` -> `familyService.createGroupForOwner`).
  */
 
-import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -42,7 +42,9 @@ import { Crown, UserPlus, Trash2, Users } from 'lucide-react-native';
 import { CustomButton } from '../../components/common/CustomButton';
 import { showSuccess, showError } from '../../utils/helpers';
 import { useServices } from '../../../data/ServiceProvider';
+import { useAsyncData } from '../../hooks/useServiceHooks';
 import { FamilyPlanModal } from '../../components/home/FamilyPlanModal';
+import { FamilyTokenDialog } from '../../components/home/FamilyTokenDialog';
 
 export const FamilyManagementScreen = () => {
   const { isDark } = useTheme();
@@ -50,33 +52,26 @@ export const FamilyManagementScreen = () => {
   const navigation = useNavigation();
   const { userService } = useServices();
 
-  const [family, setFamily] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviting, setInviting] = useState(false);
   const [planModalOpen, setPlanModalOpen] = useState(false);
+  const [tokenDialogOpen, setTokenDialogOpen] = useState(false);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setLoadError(false);
-    try {
-      const data = await userService.getFamilyInfo();
-      setFamily(data);
-    } catch (e) {
-      if (__DEV__) console.warn('[FamilyManagementScreen] load error:', e?.message);
-      setLoadError(true);
-    } finally {
-      setLoading(false);
-    }
-  }, [userService]);
-
-  useEffect(() => {
-    // `load` là async -> setState chỉ chạy sau `await`.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    load();
-  }, [load]);
+  // Load family bằng `useAsyncData` (hook có sẵn) thay vì `useEffect` + setState.
+  //
+  // LÝ DO: eslint `react-hooks/set-state-in-effect` cấm gọi setState đồng bộ
+  // trong effect. `useAsyncData` đặt setState TRONG async callback (sau `await`)
+  // nên không bị rule này, và cho sẵn `loading` + `error` + `refetch`.
+  //
+  // `useServiceHooks.js` là file IMMUTABLE (P0.5) nhưng ta chỉ DÙNG hook có
+  // sẵn, không sửa file đó.
+  const {
+    data: family,
+    loading,
+    error: loadError,
+    refetch: load,
+  } = useAsyncData((s) => s.userService.getFamilyInfo(), null, []);
 
   const role = family?.role ?? 'none';
   const isOwner = role === 'owner';
@@ -95,7 +90,9 @@ export const FamilyManagementScreen = () => {
         status: 'active',
       });
     }
-    list.push(...family.members.map((m) => ({ ...m, role: m.status === 'pending' ? 'pending' : 'member' })));
+    list.push(
+      ...family.members.map((m) => ({ ...m, role: m.status === 'pending' ? 'pending' : 'member' }))
+    );
     return list;
   }, [family]);
 
@@ -118,7 +115,7 @@ export const FamilyManagementScreen = () => {
         },
       ]);
     },
-    [userService, t, load],
+    [userService, t, load]
   );
 
   const dissolve = useCallback(() => {
@@ -166,20 +163,41 @@ export const FamilyManagementScreen = () => {
   // ── Loading ──
   if (loading && !family) {
     return (
-      <View style={[styles.container, styles.center, { backgroundColor: isDark ? '#0E1611' : '#FFFFFF' }]}>
+      <View
+        style={[
+          styles.container,
+          styles.center,
+          { backgroundColor: isDark ? '#0E1611' : '#FFFFFF' },
+        ]}
+      >
         <ActivityIndicator size="large" color={AppColors.primary} />
       </View>
     );
   }
 
   // ── Load failed ──
+  // `loadError` là Error object (từ `useAsyncData`) -> truthy khi có lỗi.
+  // Lưu ý: service đã bọc `withFallback` nên lỗi 5xx/network đã trả mock,
+  // chỉ lỗi 4xx mới tới đây (xem SafeService - lỗi của user thì KHÔNG giấu).
   if (loadError && !family) {
     return (
-      <View style={[styles.container, styles.center, { backgroundColor: isDark ? '#0E1611' : '#FFFFFF' }]}>
+      <View
+        style={[
+          styles.container,
+          styles.center,
+          { backgroundColor: isDark ? '#0E1611' : '#FFFFFF' },
+        ]}
+      >
         <Text style={{ color: isDark ? '#FFFFFF' : AppColors.textPrimary, marginBottom: 12 }}>
           {t('familyManage.loadFailed')}
         </Text>
-        <CustomButton title={t('home.retry')} onPress={load} width={160} height={46} borderRadius={23} />
+        <CustomButton
+          title={t('home.retry')}
+          onPress={load}
+          width={160}
+          height={46}
+          borderRadius={23}
+        />
       </View>
     );
   }
@@ -214,7 +232,10 @@ export const FamilyManagementScreen = () => {
             <Text
               style={[
                 styles.emptyHint,
-                { color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary, fontSize: sp(12) },
+                {
+                  color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                  fontSize: sp(12),
+                },
               ]}
             >
               {t('familyManage.noGroupHint')}
@@ -230,7 +251,7 @@ export const FamilyManagementScreen = () => {
             <View style={{ width: '100%', marginTop: sp(10) }}>
               <CustomButton
                 title={t('familyManage.haveToken')}
-                onPress={() => setPlanModalOpen(true)}
+                onPress={() => setTokenDialogOpen(true)}
                 variant="outline"
                 height={48}
                 borderRadius={24}
@@ -240,8 +261,16 @@ export const FamilyManagementScreen = () => {
         </ScrollView>
 
         <FamilyPlanModal
+          key={`family-plan-modal-${planModalOpen ? 'open' : 'closed'}`}
           visible={planModalOpen}
           onClose={() => setPlanModalOpen(false)}
+          onSuccess={load}
+        />
+
+        {/* Dialog nhập token lời mời (accept + reject) - Flutter `:349-433`. */}
+        <FamilyTokenDialog
+          visible={tokenDialogOpen}
+          onClose={() => setTokenDialogOpen(false)}
           onSuccess={load}
         />
       </View>
@@ -285,7 +314,10 @@ export const FamilyManagementScreen = () => {
               <Text
                 style={[
                   styles.inviteSubtitle,
-                  { color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary, fontSize: sp(11) },
+                  {
+                    color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                    fontSize: sp(11),
+                  },
                 ]}
               >
                 {t('familyManage.activeMembers', {
@@ -300,7 +332,10 @@ export const FamilyManagementScreen = () => {
         <Text
           style={[
             styles.sectionTitle,
-            { color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary, fontSize: sp(11) },
+            {
+              color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+              fontSize: sp(11),
+            },
           ]}
         >
           {t('home.membersCount', { count: members.length })}
@@ -312,8 +347,8 @@ export const FamilyManagementScreen = () => {
           const roleColor = isOwnerRow
             ? { bg: AppColors.primary, fg: '#FFFFFF' }
             : isDark
-            ? { bg: '#233629', fg: AppColors.primaryLight }
-            : { bg: '#E8F5E9', fg: AppColors.forestAccent };
+              ? { bg: '#233629', fg: AppColors.primaryLight }
+              : { bg: '#E8F5E9', fg: AppColors.forestAccent };
 
           return (
             <View
@@ -326,21 +361,11 @@ export const FamilyManagementScreen = () => {
                 },
               ]}
             >
-              <View
-                style={[
-                  styles.avatar,
-                  { backgroundColor: roleColor.bg },
-                ]}
-              >
+              <View style={[styles.avatar, { backgroundColor: roleColor.bg }]}>
                 {isOwnerRow ? (
                   <Crown color={roleColor.fg} size={20} strokeWidth={2.5} />
                 ) : (
-                  <Text
-                    style={[
-                      styles.avatarText,
-                      { color: roleColor.fg, fontSize: sp(15) },
-                    ]}
-                  >
+                  <Text style={[styles.avatarText, { color: roleColor.fg, fontSize: sp(15) }]}>
                     {(m.name || 'U').charAt(0).toUpperCase()}
                   </Text>
                 )}
@@ -356,17 +381,12 @@ export const FamilyManagementScreen = () => {
                   {m.name}
                 </Text>
                 <View style={[styles.roleChip, { backgroundColor: roleColor.bg }]}>
-                  <Text
-                    style={[
-                      styles.roleText,
-                      { color: roleColor.fg, fontSize: sp(10) },
-                    ]}
-                  >
+                  <Text style={[styles.roleText, { color: roleColor.fg, fontSize: sp(10) }]}>
                     {isOwnerRow
                       ? t('home.owner').toUpperCase()
                       : isPending
-                      ? t('familyManage.pending').toUpperCase()
-                      : t('home.member').toUpperCase()}
+                        ? t('familyManage.pending').toUpperCase()
+                        : t('home.member').toUpperCase()}
                   </Text>
                 </View>
               </View>
@@ -400,7 +420,10 @@ export const FamilyManagementScreen = () => {
           <Text
             style={[
               styles.ownerOnlyHint,
-              { color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary, fontSize: sp(11) },
+              {
+                color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                fontSize: sp(11),
+              },
             ]}
           >
             {t('familyManage.ownerOnlyHint')}
@@ -429,7 +452,10 @@ export const FamilyManagementScreen = () => {
           <View
             style={[
               styles.dialog,
-              { backgroundColor: isDark ? '#142018' : '#FFFFFF', borderColor: isDark ? '#2E4D36' : '#E0E8E1' },
+              {
+                backgroundColor: isDark ? '#142018' : '#FFFFFF',
+                borderColor: isDark ? '#2E4D36' : '#E0E8E1',
+              },
             ]}
           >
             <Text
@@ -483,6 +509,7 @@ export const FamilyManagementScreen = () => {
       ) : null}
 
       <FamilyPlanModal
+        key={`family-plan-modal-${planModalOpen ? 'open' : 'closed'}`}
         visible={planModalOpen}
         onClose={() => setPlanModalOpen(false)}
         onSuccess={load}
@@ -595,21 +622,6 @@ const styles = StyleSheet.create({
   inviteActions: {
     flexDirection: 'row',
     gap: sp(8),
-  },
-  actionBtn: {
-    width: sp(36),
-    height: sp(36),
-    borderRadius: sp(18),
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  actionBtnPrimary: {
-    width: sp(36),
-    height: sp(36),
-    borderRadius: sp(18),
-    backgroundColor: AppColors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   sectionTitle: {
     fontFamily: FontFamily.bold,

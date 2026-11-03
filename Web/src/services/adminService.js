@@ -262,4 +262,42 @@ export const getAdminPaymentTransactionsApi = async (params = {}) => {
   return await axiosClient.get('/admin/payment-transactions', { params });
 };
 
+// ─────────────────────────────────────────────────────────────
+// SYSTEM CONFIGURATION (TOKEN & OTP SECURITY)
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Lấy cấu hình Token TTL hiện tại
+ * GET /api/v1/admin/system-config/token
+ */
+export const getAdminTokenConfigApi = async () => {
+  return await axiosClient.get('/admin/system-config/token');
+};
+
+/**
+ * Cập nhật cấu hình Token TTL (AccessToken & RefreshToken)
+ * PATCH /api/v1/admin/system-config/token
+ * Body: { accessTokenTtl?: string, refreshTokenTtl?: string } (vd: '15m', '7d')
+ */
+export const updateAdminTokenConfigApi = async (data) => {
+  return await axiosClient.patch('/admin/system-config/token', data);
+};
+
+/**
+ * Lấy cấu hình OTP và số lần thử sai tối đa trước khi khóa
+ * GET /api/v1/admin/system-config/otp
+ */
+export const getAdminOtpConfigApi = async () => {
+  return await axiosClient.get('/admin/system-config/otp');
+};
+
+/**
+ * Cập nhật cấu hình OTP và số lần thử sai tối đa trước khi khóa
+ * PATCH /api/v1/admin/system-config/otp
+ * Body: { ttlSeconds?: number, maxAttempts?: number }
+ */
+export const updateAdminOtpConfigApi = async (data) => {
+  return await axiosClient.patch('/admin/system-config/otp', data);
+};
+
 

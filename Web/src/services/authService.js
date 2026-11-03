@@ -58,4 +58,5 @@ export const logoutHelper = async () => {
   localStorage.removeItem('refreshToken');
   localStorage.removeItem('token');
   localStorage.removeItem('user');
+  localStorage.removeItem('is_mock_user');
 };

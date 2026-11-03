@@ -96,11 +96,27 @@ export class MealPlanGraphService {
         budget,
       });
 
+      // Resolve familyGroupId: owner hoặc member đều lấy đúng group
+      const ownedGroup = await this.prisma.familyGroup.findUnique({
+        where: { ownerId: userId },
+        select: { id: true, status: true },
+      });
+      if (ownedGroup?.status === 'active') {
+        context.familyGroupId = ownedGroup.id;
+      } else {
+        const membership = await this.prisma.familyMember.findFirst({
+          where: { userId, status: 'active' },
+          select: { familyGroupId: true },
+        });
+        context.familyGroupId = membership?.familyGroupId ?? null;
+      }
+
       await this.emitProgress(channel, 'supervisor_done', {
         message: 'Đã có đủ thông tin',
         allergies: context.allergies.length,
         ingredientsInFridge: context.availableIngredients.length,
       });
+
 
       // ── Bước 2: Nutrition + Accountant chạy SONG SONG ──
       await this.emitProgress(channel, 'agents_parallel_start', {

@@ -12,6 +12,7 @@ import { PrismaModule } from 'src/modules-system/prisma/prisma.module';
 import { RedisModule } from 'src/modules-system/redis/redis.module';
 import { MealPlanningController } from './meal-planning.controller';
 import { MealPlanningService } from './meal-planning.service';
+import { FamilyModule } from '../family/family.module';
 
 // RabbitMqPublisherModule là Global (đăng ký ở AppModule) — inject trực tiếp service
 
@@ -19,6 +20,7 @@ import { MealPlanningService } from './meal-planning.service';
   imports: [
     PrismaModule,
     RedisModule, // Cần RedisService cho SSE pub/sub trong controller
+    FamilyModule, // FamilyGateway cho realtime broadcast
   ],
   controllers: [MealPlanningController],
   providers: [MealPlanningService],

@@ -1,12 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import {
-  View,
-  ScrollView,
-  Animated,
-  Easing,
-  Platform,
-  RefreshControl,
-} from 'react-native';
+import { View, ScrollView, Animated, Easing, Platform, RefreshControl } from 'react-native';
 import { useTheme } from '../../theme/ThemeContext';
 import { AppColors } from '../../theme/colors';
 import { sp } from '../../utils/responsive';
@@ -174,17 +167,15 @@ export const HomeScreen = () => {
         </ScrollView>
       </Animated.View>
 
-      {/* Paywall Gói Gia Đình (QR PayOS + nhập token lời mời).
-          ⚠️ SỬA BUG DEV B: modal được import + có state `planModalOpen` nhưng
-          KHÔNG được render -> bấm "Gia đình" ở PremiumBanner không mở được
-          paywall (setPlanModalOpen(true) không có gì để hiện). */}
+      {/* Paywall Gói Gia đình (QR PayOS + nhập token lời mời) - Sprint A3.
+          PHẢI render ở đây thì `setPlanModalOpen(true)` mới mở được modal;
+          nếu chỉ set state mà không render <FamilyPlanModal> thì bấm "Dùng thử
+          ngay" không có gì xảy ra. */}
       <FamilyPlanModal
+        key={`family-plan-modal-${planModalOpen ? 'open' : 'closed'}`}
         visible={planModalOpen}
         onClose={() => setPlanModalOpen(false)}
-        onSuccess={() => {
-          setPlanModalOpen(false);
-          refetchPlan();
-        }}
+        onSuccess={refetchPlan}
       />
     </ScreenBackground>
   );

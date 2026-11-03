@@ -3482,6 +3482,7 @@ export type UserSavedRecipeScalarFieldEnum = (typeof UserSavedRecipeScalarFieldE
 export const FridgeItemScalarFieldEnum = {
   id: 'id',
   userId: 'userId',
+  familyGroupId: 'familyGroupId',
   ingredientId: 'ingredientId',
   quantity: 'quantity',
   unit: 'unit',
@@ -3489,6 +3490,8 @@ export const FridgeItemScalarFieldEnum = {
   expiresAt: 'expiresAt',
   storageLocation: 'storageLocation',
   addedBy: 'addedBy',
+  version: 'version',
+  lastUpdatedById: 'lastUpdatedById',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
   deletedAt: 'deletedAt',
@@ -3534,6 +3537,7 @@ export type UserAllergyScalarFieldEnum = (typeof UserAllergyScalarFieldEnum)[key
 export const WeeklyPlanScalarFieldEnum = {
   id: 'id',
   userId: 'userId',
+  familyGroupId: 'familyGroupId',
   weekStartDate: 'weekStartDate',
   totalBudget: 'totalBudget',
   actualCost: 'actualCost',
@@ -3578,6 +3582,7 @@ export type MealSlotScalarFieldEnum = (typeof MealSlotScalarFieldEnum)[keyof typ
 export const ShoppingListScalarFieldEnum = {
   id: 'id',
   userId: 'userId',
+  familyGroupId: 'familyGroupId',
   weeklyPlanId: 'weeklyPlanId',
   title: 'title',
   status: 'status',
@@ -3949,6 +3954,7 @@ export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
 
 
 export const RoleOrderByRelevanceFieldEnum = {
+  name: 'name',
   description: 'description'
 } as const
 
@@ -4080,7 +4086,9 @@ export type UserSavedRecipeOrderByRelevanceFieldEnum = (typeof UserSavedRecipeOr
 export const FridgeItemOrderByRelevanceFieldEnum = {
   id: 'id',
   userId: 'userId',
-  unit: 'unit'
+  familyGroupId: 'familyGroupId',
+  unit: 'unit',
+  lastUpdatedById: 'lastUpdatedById'
 } as const
 
 export type FridgeItemOrderByRelevanceFieldEnum = (typeof FridgeItemOrderByRelevanceFieldEnum)[keyof typeof FridgeItemOrderByRelevanceFieldEnum]
@@ -4127,6 +4135,7 @@ export type UserAllergyOrderByRelevanceFieldEnum = (typeof UserAllergyOrderByRel
 export const WeeklyPlanOrderByRelevanceFieldEnum = {
   id: 'id',
   userId: 'userId',
+  familyGroupId: 'familyGroupId',
   aiSessionId: 'aiSessionId'
 } as const
 
@@ -4154,6 +4163,7 @@ export type MealSlotOrderByRelevanceFieldEnum = (typeof MealSlotOrderByRelevance
 export const ShoppingListOrderByRelevanceFieldEnum = {
   id: 'id',
   userId: 'userId',
+  familyGroupId: 'familyGroupId',
   weeklyPlanId: 'weeklyPlanId',
   title: 'title'
 } as const
@@ -4381,13 +4391,6 @@ export type SystemConfigOrderByRelevanceFieldEnum = (typeof SystemConfigOrderByR
  * Reference to a field of type 'Int'
  */
 export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int'>
-    
-
-
-/**
- * Reference to a field of type 'RoleName'
- */
-export type EnumRoleNameFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'RoleName'>
     
 
 

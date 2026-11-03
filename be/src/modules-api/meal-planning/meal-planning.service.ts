@@ -15,6 +15,8 @@ import {
   Injectable,
   Logger,
   NotFoundException,
+  BadRequestException,
+  Optional,
 } from '@nestjs/common';
 import { PrismaService } from 'src/modules-system/prisma/prisma.service';
 import { v4 as uuidv4 } from 'uuid';
@@ -22,6 +24,7 @@ import { MEAL_PLAN_ROUTING_KEY, AI_SLOT_REGENERATE_ROUTING_KEY, AI_EXPIRING_MEAL
 import { RabbitMqPublisherService } from 'src/modules-system/rabbit-mq/rabbit-mq-publisher.service';
 import { normalizeToBaseUnit, canCompare } from 'src/common/utils/unit.util';
 import { estimateExpiryDate } from 'src/common/utils/expiry-estimator.util';
+import { SocketService } from 'src/modules-system/socket/socket.service';
 import type {
   GenerateMealPlanDto,
   UpdateMealPlanDto,
@@ -38,6 +41,7 @@ export class MealPlanningService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly rabbitMq: RabbitMqPublisherService,
+    @Optional() private readonly socketService: SocketService,
   ) { }
 
   // ─────────────────────────────────────────────────────────
@@ -75,11 +79,19 @@ export class MealPlanningService {
   // GET /plans — Danh sách kế hoạch tuần
   // ─────────────────────────────────────────────────────────
   async getPlans(userId: string) {
+    const familyGroupId = await this.resolveFamilyGroupId(userId);
+
+    const where: any = familyGroupId
+      ? { familyGroupId, deletedAt: null }
+      : { userId, familyGroupId: null, deletedAt: null };
+
     const plans = await this.prisma.weeklyPlan.findMany({
-      where: { userId, deletedAt: null },
+      where,
       orderBy: { weekStartDate: 'desc' },
       select: {
         id: true,
+        userId: true,
+        familyGroupId: true,
         weekStartDate: true,
         totalBudget: true,
         actualCost: true,
@@ -95,6 +107,7 @@ export class MealPlanningService {
       createdAt: p.createdAt.toISOString(),
     }));
   }
+
 
   // ─────────────────────────────────────────────────────────
   // GET /plans/:id — Chi tiết kế hoạch tuần (kèm daily + slots)
@@ -224,8 +237,37 @@ export class MealPlanningService {
 
     // Idempotent guard: chỉ trừ nguyên liệu lần đầu tiên đánh dấu hoàn thành
     // slot.completedAt === null = chưa nấu, dto.completed === true = mới tick xong
-    if (dto.completed === true && !slot.completedAt && slot.recipeId) {
-      await this.consumeIngredientsForSlot(userId, slotId, slot.recipeId, slot.servings);
+    const targetRecipeId = dto.recipeId !== undefined ? dto.recipeId : slot.recipeId;
+    const targetServings = dto.servings !== undefined ? dto.servings : slot.servings;
+    if (dto.completed === true && !slot.completedAt && targetRecipeId) {
+      // Resolve familyGroupId để truy vấn tủ lạnh đúng scope
+      const familyGroupId = await this.resolveFamilyGroupId(userId);
+      const consumedIngredients = await this.consumeIngredientsForSlot(
+        userId,
+        familyGroupId,
+        slotId,
+        targetRecipeId,
+        targetServings,
+      );
+
+      // Broadcast Socket.IO event nếu thuộc gia đình
+      if (familyGroupId && this.socketService) {
+        const userProfile = await this.prisma.userProfile.findUnique({
+          where: { userId },
+          select: { displayName: true },
+        });
+        const recipe = await this.prisma.recipe.findUnique({
+          where: { id: targetRecipeId },
+          select: { title: true },
+        });
+        this.socketService.emitMealSlotCompleted(
+          familyGroupId,
+          slotId,
+          recipe?.title ?? 'Bữa ăn',
+          consumedIngredients,
+          userProfile?.displayName ?? 'Thành viên',
+        );
+      }
     }
 
     return updated;
@@ -661,19 +703,37 @@ export class MealPlanningService {
   }
 
   // ─────────────────────────────────────────────────────────
+  // DataScopeHelper — giống FridgeService
+  // ─────────────────────────────────────────────────────────
+  private async resolveFamilyGroupId(userId: string): Promise<string | null> {
+    const ownedGroup = await this.prisma.familyGroup.findUnique({
+      where: { ownerId: userId },
+      select: { id: true, status: true },
+    });
+    if (ownedGroup?.status === 'active') return ownedGroup.id;
+
+    const membership = await this.prisma.familyMember.findFirst({
+      where: { userId, status: 'active' },
+      select: { familyGroupId: true },
+    });
+    return membership?.familyGroupId ?? null;
+  }
+
+
+  // ─────────────────────────────────────────────────────────
   // Private: Build Map<ingredientId, { quantity, baseUnit }>
-  // Tổng hợp FridgeItem còn hạn và chưa tiêu thụ
+  // Tổng hợp FridgeItem còn trong tủ và chưa tiêu thụ
   // ─────────────────────────────────────────────────────────
   private async buildFridgeMap(
     userId: string,
+    familyGroupId?: string | null,
   ): Promise<Map<number, { quantity: number; baseUnit: string }>> {
+    const where: any = familyGroupId
+      ? { familyGroupId, deletedAt: null, consumedAt: null, quantity: { gt: 0 } }
+      : { userId, familyGroupId: null, deletedAt: null, consumedAt: null, quantity: { gt: 0 } };
+
     const items = await this.prisma.fridgeItem.findMany({
-      where: {
-        userId,
-        deletedAt: null,
-        consumedAt: null,
-        OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
-      },
+      where,
       select: { ingredientId: true, quantity: true, unit: true },
     });
 
@@ -691,74 +751,105 @@ export class MealPlanningService {
   }
 
   // ─────────────────────────────────────────────────────────
-  // Private: FIFO consume nguyên liệu khi nấu xong
+  // Private: FIFO consume nguyên liệu khi nấu xong (hỗ trợ family scope + transaction)
   // ─────────────────────────────────────────────────────────
   private async consumeIngredientsForSlot(
     userId: string,
+    familyGroupId: string | null,
     slotId: string,
     recipeId: string,
     servings: number,
-  ): Promise<void> {
+  ): Promise<Array<{ name: string; quantity: number; unit: string }>> {
     const recipe = await this.prisma.recipe.findUnique({
       where: { id: recipeId },
       include: {
-        ingredients: { where: { deletedAt: null, isOptional: false } },
+        ingredients: {
+          where: { deletedAt: null },
+          include: { ingredient: { select: { name: true } } },
+        },
       },
     });
-    if (!recipe) return;
+    if (!recipe) return [];
 
-    const scale = servings / (recipe.servings || 1);
+    const baseServings = Math.max(1, recipe.servings || 1);
+    const actualServings = Math.max(1, servings || baseServings);
+    const scale = actualServings / baseServings;
 
-    for (const ri of recipe.ingredients) {
-      const scaledQty = ri.quantity * scale;
-      const { quantity: neededNorm, baseUnit: neededUnit } = normalizeToBaseUnit(scaledQty, ri.unit);
+    const consumed: Array<{ name: string; quantity: number; unit: string }> = [];
 
-      const fridgeItems = await this.prisma.fridgeItem.findMany({
-        where: {
-          userId,
-          ingredientId: ri.ingredientId,
-          deletedAt: null,
-          consumedAt: null,
-          OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
-        },
-        orderBy: [{ expiresAt: 'asc' }, { createdAt: 'asc' }],
-      });
+    // Chạy trong transaction — Pessimistic locking: tránh 2 người cùng nấu lúc cùng trừ âm kho
+    await this.prisma.$transaction(async (tx) => {
+      for (const ri of recipe.ingredients) {
+        const scaledQty = ri.quantity * scale;
+        const { quantity: neededNorm, baseUnit: neededUnit } = normalizeToBaseUnit(scaledQty, ri.unit);
+        if (neededNorm <= 0) continue;
 
-      let remaining = neededNorm;
+        // Query FIFO: tủ lạnh chung nếu family, riêng nếu cá nhân
+        const fridgeWhere: any = familyGroupId
+          ? { familyGroupId, ingredientId: ri.ingredientId, deletedAt: null, consumedAt: null, quantity: { gt: 0 } }
+          : { userId, familyGroupId: null, ingredientId: ri.ingredientId, deletedAt: null, consumedAt: null, quantity: { gt: 0 } };
 
-      for (const fridgeItem of fridgeItems) {
-        if (remaining <= 0) break;
+        const fridgeItems = await tx.fridgeItem.findMany({
+          where: fridgeWhere,
+          orderBy: [{ expiresAt: 'asc' }, { createdAt: 'asc' }],
+        });
 
-        const { quantity: availNorm, baseUnit: availUnit } = normalizeToBaseUnit(
-          fridgeItem.quantity, fridgeItem.unit,
-        );
-        if (!canCompare(availUnit, neededUnit)) continue;
+        let remaining = neededNorm;
 
-        if (availNorm <= remaining) {
-          await this.prisma.fridgeItem.update({
-            where: { id: fridgeItem.id },
-            data: { consumedAt: new Date() },
+        for (const fridgeItem of fridgeItems) {
+          if (remaining <= 0) break;
+
+          const { quantity: availNorm, baseUnit: availUnit } = normalizeToBaseUnit(
+            fridgeItem.quantity,
+            fridgeItem.unit,
+          );
+          if (!canCompare(availUnit, neededUnit)) continue;
+
+          if (availNorm <= remaining) {
+            await tx.fridgeItem.update({
+              where: { id: fridgeItem.id },
+              data: { consumedAt: new Date(), quantity: 0, version: { increment: 1 } },
+            });
+            remaining -= availNorm;
+          } else {
+            const leftNorm = availNorm - remaining;
+            const { quantity: factor } = normalizeToBaseUnit(1, fridgeItem.unit);
+            const leftOriginal = factor > 0 ? leftNorm / factor : leftNorm;
+            const roundedLeft = Math.round(leftOriginal * 100) / 100;
+
+            if (roundedLeft <= 0) {
+              await tx.fridgeItem.update({
+                where: { id: fridgeItem.id },
+                data: { consumedAt: new Date(), quantity: 0, version: { increment: 1 } },
+              });
+            } else {
+              await tx.fridgeItem.update({
+                where: { id: fridgeItem.id },
+                data: { quantity: roundedLeft, version: { increment: 1 } },
+              });
+            }
+            remaining = 0;
+          }
+        }
+
+        const usedQty = neededNorm - remaining;
+        if (usedQty > 0) {
+          consumed.push({
+            name: (ri as any).ingredient?.name ?? `ingredient#${ri.ingredientId}`,
+            quantity: Math.round(scaledQty * 100) / 100,
+            unit: ri.unit,
           });
-          remaining -= availNorm;
-        } else {
-          const leftNorm = availNorm - remaining;
-          const { quantity: factor } = normalizeToBaseUnit(1, fridgeItem.unit);
-          const leftOriginal = factor > 0 ? leftNorm / factor : leftNorm;
-          await this.prisma.fridgeItem.update({
-            where: { id: fridgeItem.id },
-            data: { quantity: Math.max(0, Math.round(leftOriginal * 100) / 100) },
-          });
-          remaining = 0;
+        }
+
+        if (remaining > 0 && !ri.isOptional) {
+          this.logger.warn(
+            `[MealPlanning] Tủ lạnh thiếu ${remaining.toFixed(1)}${neededUnit} ingredientId=${ri.ingredientId} khi nấu slotId=${slotId}`,
+          );
         }
       }
+    });
 
-      if (remaining > 0) {
-        this.logger.warn(
-          `[MealPlanning] Tủ lạnh thiếu ${remaining.toFixed(1)}${neededUnit} ingredientId=${ri.ingredientId} khi nấu slotId=${slotId}`,
-        );
-      }
-    }
-
-    this.logger.log(`[MealPlanning] Đã trừ ng.liệu (FIFO) cho slotId=${slotId}`);
+    this.logger.log(`[MealPlanning] Đã trừ ng.liệu (FIFO+TX) cho slotId=${slotId} recipeId=${recipeId}`);
+    return consumed;
   }
 }
