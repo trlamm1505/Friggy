@@ -25,6 +25,8 @@ import { RabbitMqPublisherService } from 'src/modules-system/rabbit-mq/rabbit-mq
 import { normalizeToBaseUnit, canCompare } from 'src/common/utils/unit.util';
 import { estimateExpiryDate } from 'src/common/utils/expiry-estimator.util';
 import { SocketService } from 'src/modules-system/socket/socket.service';
+import { RedisService } from 'src/modules-system/redis/redis.service';
+
 import type {
   GenerateMealPlanDto,
   UpdateMealPlanDto,
@@ -42,6 +44,7 @@ export class MealPlanningService {
     private readonly prisma: PrismaService,
     private readonly rabbitMq: RabbitMqPublisherService,
     @Optional() private readonly socketService: SocketService,
+    @Optional() private readonly redisService: RedisService,
   ) { }
 
   // ─────────────────────────────────────────────────────────
@@ -59,12 +62,16 @@ export class MealPlanningService {
       `📋 [MealPlanning] Publish job tạo thực đơn lên RabbitMQ: jobId=${jobId} | userId=${userId}`,
     );
 
+    // Lấy danh sách supplier ingredient IDs được ưu tiên
+    const priorityIngredientIds = await this.getActivePriorityIngredientIds();
+
     // Publish message lên RabbitMQ → AI Service sẽ consume và xử lý
     await this.rabbitMq.publish(MEAL_PLAN_ROUTING_KEY, {
       jobId,
       userId,
       weekStartDate: dto.weekStartDate,
       budget: dto.budget,
+      priorityIngredientIds,
     });
 
     return {
@@ -73,6 +80,43 @@ export class MealPlanningService {
       streamUrl: `/meal-planning/plans/generate/${jobId}/stream`,
       message: 'Yêu cầu tạo thực đơn đã được gửi đến AI Service. Kết nối vào streamUrl để nhận tiến độ.',
     };
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Private: Lấy supplier ingredient IDs được ưu tiên trong meal plan
+  // ─────────────────────────────────────────────────────────────────────────
+
+  /**
+   * Truy vấn DB lấy supplier ingredients đã approved, supplier còn hạn gói.
+   * Cache vào Redis 300s với key 'supplier:promoted:ingredientIds'.
+   */
+  private async getActivePriorityIngredientIds(): Promise<string[]> {
+    if (!this.redisService) return [];
+
+    const cacheKey = 'supplier:promoted:ingredientIds';
+    const cached = await this.redisService.get<string[]>(cacheKey);
+    if (cached) return cached;
+
+    const now = new Date();
+
+    const activeIngredients = await this.prisma.supplierIngredient.findMany({
+      where: {
+        status: 'approved',
+        deletedAt: null,
+        profile: {
+          deletedAt: null,
+          subscription: {
+            status: 'active',
+            endDate: { gt: now },
+          },
+        },
+      },
+      select: { id: true },
+    });
+
+    const ids = activeIngredients.map((i) => i.id);
+    await this.redisService.set(cacheKey, ids, 300);
+    return ids;
   }
 
   // ─────────────────────────────────────────────────────────
@@ -108,60 +152,32 @@ export class MealPlanningService {
     }));
   }
 
-
   // ─────────────────────────────────────────────────────────
-  // GET /plans/:id — Chi tiết kế hoạch tuần (kèm daily + slots)
-  // ─────────────────────────────────────────────────────────
+  // GET /plans/:id - Chi tiet ke hoach
   async getPlanDetail(userId: string, planId: string) {
+    const familyGroupId = await this.resolveFamilyGroupId(userId);
+    const where: any = familyGroupId
+      ? { id: planId, familyGroupId, deletedAt: null }
+      : { id: planId, userId, deletedAt: null };
+
     const plan = await this.prisma.weeklyPlan.findFirst({
-      where: { id: planId, userId, deletedAt: null },
+      where,
       include: {
         dailyPlans: {
-          where: { deletedAt: null },
           orderBy: { dayOfWeek: 'asc' },
           include: {
             mealSlots: {
-              where: { deletedAt: null },
               orderBy: { mealType: 'asc' },
-              include: {
-                recipe: { select: { id: true, title: true } },
-              },
             },
           },
         },
       },
     });
 
-    if (!plan) throw new NotFoundException('Không tìm thấy kế hoạch');
-
-    return {
-      id: plan.id,
-      weekStartDate: plan.weekStartDate.toISOString().split('T')[0],
-      totalBudget: plan.totalBudget,
-      actualCost: plan.actualCost,
-      status: plan.status,
-      generatedByAi: plan.generatedByAi,
-      createdAt: plan.createdAt.toISOString(),
-      dailyPlans: plan.dailyPlans.map((d) => ({
-        id: d.id,
-        dayOfWeek: d.dayOfWeek,
-        date: d.date.toISOString().split('T')[0],
-        dailyBudget: d.dailyBudget,
-        mealSlots: d.mealSlots.map((s) => ({
-          id: s.id,
-          mealType: s.mealType,
-          recipeId: s.recipeId,
-          recipeName: s.recipe?.title ?? null,
-          servings: s.servings,
-          estimatedCost: s.estimatedCost,
-          note: s.note,
-          completedAt: s.completedAt?.toISOString() ?? null,
-        })),
-      })),
-    };
+    if (!plan) throw new NotFoundException('Khong tim thay ke hoach');
+    return plan;
   }
 
-  // ─────────────────────────────────────────────────────────
   // PATCH /plans/:id — Cập nhật trạng thái kế hoạch
   // ─────────────────────────────────────────────────────────
   async updatePlan(userId: string, planId: string, dto: UpdateMealPlanDto) {

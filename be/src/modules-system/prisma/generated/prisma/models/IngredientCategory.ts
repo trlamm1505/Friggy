@@ -267,6 +267,7 @@ export type IngredientCategoryWhereInput = {
   parent?: Prisma.XOR<Prisma.IngredientCategoryNullableScalarRelationFilter, Prisma.IngredientCategoryWhereInput> | null
   children?: Prisma.IngredientCategoryListRelationFilter
   ingredients?: Prisma.IngredientListRelationFilter
+  supplierIngredients?: Prisma.SupplierIngredientListRelationFilter
 }
 
 export type IngredientCategoryOrderByWithRelationInput = {
@@ -282,6 +283,7 @@ export type IngredientCategoryOrderByWithRelationInput = {
   parent?: Prisma.IngredientCategoryOrderByWithRelationInput
   children?: Prisma.IngredientCategoryOrderByRelationAggregateInput
   ingredients?: Prisma.IngredientOrderByRelationAggregateInput
+  supplierIngredients?: Prisma.SupplierIngredientOrderByRelationAggregateInput
   _relevance?: Prisma.IngredientCategoryOrderByRelevanceInput
 }
 
@@ -301,6 +303,7 @@ export type IngredientCategoryWhereUniqueInput = Prisma.AtLeast<{
   parent?: Prisma.XOR<Prisma.IngredientCategoryNullableScalarRelationFilter, Prisma.IngredientCategoryWhereInput> | null
   children?: Prisma.IngredientCategoryListRelationFilter
   ingredients?: Prisma.IngredientListRelationFilter
+  supplierIngredients?: Prisma.SupplierIngredientListRelationFilter
 }, "id" | "name">
 
 export type IngredientCategoryOrderByWithAggregationInput = {
@@ -346,6 +349,7 @@ export type IngredientCategoryCreateInput = {
   parent?: Prisma.IngredientCategoryCreateNestedOneWithoutChildrenInput
   children?: Prisma.IngredientCategoryCreateNestedManyWithoutParentInput
   ingredients?: Prisma.IngredientCreateNestedManyWithoutCategoryInput
+  supplierIngredients?: Prisma.SupplierIngredientCreateNestedManyWithoutCategoryInput
 }
 
 export type IngredientCategoryUncheckedCreateInput = {
@@ -360,6 +364,7 @@ export type IngredientCategoryUncheckedCreateInput = {
   deletedAt?: Date | string | null
   children?: Prisma.IngredientCategoryUncheckedCreateNestedManyWithoutParentInput
   ingredients?: Prisma.IngredientUncheckedCreateNestedManyWithoutCategoryInput
+  supplierIngredients?: Prisma.SupplierIngredientUncheckedCreateNestedManyWithoutCategoryInput
 }
 
 export type IngredientCategoryUpdateInput = {
@@ -373,6 +378,7 @@ export type IngredientCategoryUpdateInput = {
   parent?: Prisma.IngredientCategoryUpdateOneWithoutChildrenNestedInput
   children?: Prisma.IngredientCategoryUpdateManyWithoutParentNestedInput
   ingredients?: Prisma.IngredientUpdateManyWithoutCategoryNestedInput
+  supplierIngredients?: Prisma.SupplierIngredientUpdateManyWithoutCategoryNestedInput
 }
 
 export type IngredientCategoryUncheckedUpdateInput = {
@@ -387,6 +393,7 @@ export type IngredientCategoryUncheckedUpdateInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   children?: Prisma.IngredientCategoryUncheckedUpdateManyWithoutParentNestedInput
   ingredients?: Prisma.IngredientUncheckedUpdateManyWithoutCategoryNestedInput
+  supplierIngredients?: Prisma.SupplierIngredientUncheckedUpdateManyWithoutCategoryNestedInput
 }
 
 export type IngredientCategoryCreateManyInput = {
@@ -573,6 +580,20 @@ export type IngredientCategoryUpdateOneRequiredWithoutIngredientsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.IngredientCategoryUpdateToOneWithWhereWithoutIngredientsInput, Prisma.IngredientCategoryUpdateWithoutIngredientsInput>, Prisma.IngredientCategoryUncheckedUpdateWithoutIngredientsInput>
 }
 
+export type IngredientCategoryCreateNestedOneWithoutSupplierIngredientsInput = {
+  create?: Prisma.XOR<Prisma.IngredientCategoryCreateWithoutSupplierIngredientsInput, Prisma.IngredientCategoryUncheckedCreateWithoutSupplierIngredientsInput>
+  connectOrCreate?: Prisma.IngredientCategoryCreateOrConnectWithoutSupplierIngredientsInput
+  connect?: Prisma.IngredientCategoryWhereUniqueInput
+}
+
+export type IngredientCategoryUpdateOneRequiredWithoutSupplierIngredientsNestedInput = {
+  create?: Prisma.XOR<Prisma.IngredientCategoryCreateWithoutSupplierIngredientsInput, Prisma.IngredientCategoryUncheckedCreateWithoutSupplierIngredientsInput>
+  connectOrCreate?: Prisma.IngredientCategoryCreateOrConnectWithoutSupplierIngredientsInput
+  upsert?: Prisma.IngredientCategoryUpsertWithoutSupplierIngredientsInput
+  connect?: Prisma.IngredientCategoryWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.IngredientCategoryUpdateToOneWithWhereWithoutSupplierIngredientsInput, Prisma.IngredientCategoryUpdateWithoutSupplierIngredientsInput>, Prisma.IngredientCategoryUncheckedUpdateWithoutSupplierIngredientsInput>
+}
+
 export type IngredientCategoryCreateWithoutChildrenInput = {
   name: string
   iconPath?: string | null
@@ -583,6 +604,7 @@ export type IngredientCategoryCreateWithoutChildrenInput = {
   deletedAt?: Date | string | null
   parent?: Prisma.IngredientCategoryCreateNestedOneWithoutChildrenInput
   ingredients?: Prisma.IngredientCreateNestedManyWithoutCategoryInput
+  supplierIngredients?: Prisma.SupplierIngredientCreateNestedManyWithoutCategoryInput
 }
 
 export type IngredientCategoryUncheckedCreateWithoutChildrenInput = {
@@ -596,6 +618,7 @@ export type IngredientCategoryUncheckedCreateWithoutChildrenInput = {
   createdAt?: Date | string
   deletedAt?: Date | string | null
   ingredients?: Prisma.IngredientUncheckedCreateNestedManyWithoutCategoryInput
+  supplierIngredients?: Prisma.SupplierIngredientUncheckedCreateNestedManyWithoutCategoryInput
 }
 
 export type IngredientCategoryCreateOrConnectWithoutChildrenInput = {
@@ -613,6 +636,7 @@ export type IngredientCategoryCreateWithoutParentInput = {
   deletedAt?: Date | string | null
   children?: Prisma.IngredientCategoryCreateNestedManyWithoutParentInput
   ingredients?: Prisma.IngredientCreateNestedManyWithoutCategoryInput
+  supplierIngredients?: Prisma.SupplierIngredientCreateNestedManyWithoutCategoryInput
 }
 
 export type IngredientCategoryUncheckedCreateWithoutParentInput = {
@@ -626,6 +650,7 @@ export type IngredientCategoryUncheckedCreateWithoutParentInput = {
   deletedAt?: Date | string | null
   children?: Prisma.IngredientCategoryUncheckedCreateNestedManyWithoutParentInput
   ingredients?: Prisma.IngredientUncheckedCreateNestedManyWithoutCategoryInput
+  supplierIngredients?: Prisma.SupplierIngredientUncheckedCreateNestedManyWithoutCategoryInput
 }
 
 export type IngredientCategoryCreateOrConnectWithoutParentInput = {
@@ -659,6 +684,7 @@ export type IngredientCategoryUpdateWithoutChildrenInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   parent?: Prisma.IngredientCategoryUpdateOneWithoutChildrenNestedInput
   ingredients?: Prisma.IngredientUpdateManyWithoutCategoryNestedInput
+  supplierIngredients?: Prisma.SupplierIngredientUpdateManyWithoutCategoryNestedInput
 }
 
 export type IngredientCategoryUncheckedUpdateWithoutChildrenInput = {
@@ -672,6 +698,7 @@ export type IngredientCategoryUncheckedUpdateWithoutChildrenInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   ingredients?: Prisma.IngredientUncheckedUpdateManyWithoutCategoryNestedInput
+  supplierIngredients?: Prisma.SupplierIngredientUncheckedUpdateManyWithoutCategoryNestedInput
 }
 
 export type IngredientCategoryUpsertWithWhereUniqueWithoutParentInput = {
@@ -715,6 +742,7 @@ export type IngredientCategoryCreateWithoutIngredientsInput = {
   deletedAt?: Date | string | null
   parent?: Prisma.IngredientCategoryCreateNestedOneWithoutChildrenInput
   children?: Prisma.IngredientCategoryCreateNestedManyWithoutParentInput
+  supplierIngredients?: Prisma.SupplierIngredientCreateNestedManyWithoutCategoryInput
 }
 
 export type IngredientCategoryUncheckedCreateWithoutIngredientsInput = {
@@ -728,6 +756,7 @@ export type IngredientCategoryUncheckedCreateWithoutIngredientsInput = {
   createdAt?: Date | string
   deletedAt?: Date | string | null
   children?: Prisma.IngredientCategoryUncheckedCreateNestedManyWithoutParentInput
+  supplierIngredients?: Prisma.SupplierIngredientUncheckedCreateNestedManyWithoutCategoryInput
 }
 
 export type IngredientCategoryCreateOrConnectWithoutIngredientsInput = {
@@ -756,6 +785,7 @@ export type IngredientCategoryUpdateWithoutIngredientsInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   parent?: Prisma.IngredientCategoryUpdateOneWithoutChildrenNestedInput
   children?: Prisma.IngredientCategoryUpdateManyWithoutParentNestedInput
+  supplierIngredients?: Prisma.SupplierIngredientUpdateManyWithoutCategoryNestedInput
 }
 
 export type IngredientCategoryUncheckedUpdateWithoutIngredientsInput = {
@@ -769,6 +799,77 @@ export type IngredientCategoryUncheckedUpdateWithoutIngredientsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   children?: Prisma.IngredientCategoryUncheckedUpdateManyWithoutParentNestedInput
+  supplierIngredients?: Prisma.SupplierIngredientUncheckedUpdateManyWithoutCategoryNestedInput
+}
+
+export type IngredientCategoryCreateWithoutSupplierIngredientsInput = {
+  name: string
+  iconPath?: string | null
+  defaultShelfLifeDays?: number | null
+  freezerShelfLifeDays?: number | null
+  pantryShelfLifeDays?: number | null
+  createdAt?: Date | string
+  deletedAt?: Date | string | null
+  parent?: Prisma.IngredientCategoryCreateNestedOneWithoutChildrenInput
+  children?: Prisma.IngredientCategoryCreateNestedManyWithoutParentInput
+  ingredients?: Prisma.IngredientCreateNestedManyWithoutCategoryInput
+}
+
+export type IngredientCategoryUncheckedCreateWithoutSupplierIngredientsInput = {
+  id?: number
+  name: string
+  iconPath?: string | null
+  parentId?: number | null
+  defaultShelfLifeDays?: number | null
+  freezerShelfLifeDays?: number | null
+  pantryShelfLifeDays?: number | null
+  createdAt?: Date | string
+  deletedAt?: Date | string | null
+  children?: Prisma.IngredientCategoryUncheckedCreateNestedManyWithoutParentInput
+  ingredients?: Prisma.IngredientUncheckedCreateNestedManyWithoutCategoryInput
+}
+
+export type IngredientCategoryCreateOrConnectWithoutSupplierIngredientsInput = {
+  where: Prisma.IngredientCategoryWhereUniqueInput
+  create: Prisma.XOR<Prisma.IngredientCategoryCreateWithoutSupplierIngredientsInput, Prisma.IngredientCategoryUncheckedCreateWithoutSupplierIngredientsInput>
+}
+
+export type IngredientCategoryUpsertWithoutSupplierIngredientsInput = {
+  update: Prisma.XOR<Prisma.IngredientCategoryUpdateWithoutSupplierIngredientsInput, Prisma.IngredientCategoryUncheckedUpdateWithoutSupplierIngredientsInput>
+  create: Prisma.XOR<Prisma.IngredientCategoryCreateWithoutSupplierIngredientsInput, Prisma.IngredientCategoryUncheckedCreateWithoutSupplierIngredientsInput>
+  where?: Prisma.IngredientCategoryWhereInput
+}
+
+export type IngredientCategoryUpdateToOneWithWhereWithoutSupplierIngredientsInput = {
+  where?: Prisma.IngredientCategoryWhereInput
+  data: Prisma.XOR<Prisma.IngredientCategoryUpdateWithoutSupplierIngredientsInput, Prisma.IngredientCategoryUncheckedUpdateWithoutSupplierIngredientsInput>
+}
+
+export type IngredientCategoryUpdateWithoutSupplierIngredientsInput = {
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  iconPath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  defaultShelfLifeDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  freezerShelfLifeDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  pantryShelfLifeDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  parent?: Prisma.IngredientCategoryUpdateOneWithoutChildrenNestedInput
+  children?: Prisma.IngredientCategoryUpdateManyWithoutParentNestedInput
+  ingredients?: Prisma.IngredientUpdateManyWithoutCategoryNestedInput
+}
+
+export type IngredientCategoryUncheckedUpdateWithoutSupplierIngredientsInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  iconPath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  parentId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  defaultShelfLifeDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  freezerShelfLifeDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  pantryShelfLifeDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  children?: Prisma.IngredientCategoryUncheckedUpdateManyWithoutParentNestedInput
+  ingredients?: Prisma.IngredientUncheckedUpdateManyWithoutCategoryNestedInput
 }
 
 export type IngredientCategoryCreateManyParentInput = {
@@ -792,6 +893,7 @@ export type IngredientCategoryUpdateWithoutParentInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   children?: Prisma.IngredientCategoryUpdateManyWithoutParentNestedInput
   ingredients?: Prisma.IngredientUpdateManyWithoutCategoryNestedInput
+  supplierIngredients?: Prisma.SupplierIngredientUpdateManyWithoutCategoryNestedInput
 }
 
 export type IngredientCategoryUncheckedUpdateWithoutParentInput = {
@@ -805,6 +907,7 @@ export type IngredientCategoryUncheckedUpdateWithoutParentInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   children?: Prisma.IngredientCategoryUncheckedUpdateManyWithoutParentNestedInput
   ingredients?: Prisma.IngredientUncheckedUpdateManyWithoutCategoryNestedInput
+  supplierIngredients?: Prisma.SupplierIngredientUncheckedUpdateManyWithoutCategoryNestedInput
 }
 
 export type IngredientCategoryUncheckedUpdateManyWithoutParentInput = {
@@ -826,11 +929,13 @@ export type IngredientCategoryUncheckedUpdateManyWithoutParentInput = {
 export type IngredientCategoryCountOutputType = {
   children: number
   ingredients: number
+  supplierIngredients: number
 }
 
 export type IngredientCategoryCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   children?: boolean | IngredientCategoryCountOutputTypeCountChildrenArgs
   ingredients?: boolean | IngredientCategoryCountOutputTypeCountIngredientsArgs
+  supplierIngredients?: boolean | IngredientCategoryCountOutputTypeCountSupplierIngredientsArgs
 }
 
 /**
@@ -857,6 +962,13 @@ export type IngredientCategoryCountOutputTypeCountIngredientsArgs<ExtArgs extend
   where?: Prisma.IngredientWhereInput
 }
 
+/**
+ * IngredientCategoryCountOutputType without action
+ */
+export type IngredientCategoryCountOutputTypeCountSupplierIngredientsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.SupplierIngredientWhereInput
+}
+
 
 export type IngredientCategorySelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -871,6 +983,7 @@ export type IngredientCategorySelect<ExtArgs extends runtime.Types.Extensions.In
   parent?: boolean | Prisma.IngredientCategory$parentArgs<ExtArgs>
   children?: boolean | Prisma.IngredientCategory$childrenArgs<ExtArgs>
   ingredients?: boolean | Prisma.IngredientCategory$ingredientsArgs<ExtArgs>
+  supplierIngredients?: boolean | Prisma.IngredientCategory$supplierIngredientsArgs<ExtArgs>
   _count?: boolean | Prisma.IngredientCategoryCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["ingredientCategory"]>
 
@@ -893,6 +1006,7 @@ export type IngredientCategoryInclude<ExtArgs extends runtime.Types.Extensions.I
   parent?: boolean | Prisma.IngredientCategory$parentArgs<ExtArgs>
   children?: boolean | Prisma.IngredientCategory$childrenArgs<ExtArgs>
   ingredients?: boolean | Prisma.IngredientCategory$ingredientsArgs<ExtArgs>
+  supplierIngredients?: boolean | Prisma.IngredientCategory$supplierIngredientsArgs<ExtArgs>
   _count?: boolean | Prisma.IngredientCategoryCountOutputTypeDefaultArgs<ExtArgs>
 }
 
@@ -902,6 +1016,7 @@ export type $IngredientCategoryPayload<ExtArgs extends runtime.Types.Extensions.
     parent: Prisma.$IngredientCategoryPayload<ExtArgs> | null
     children: Prisma.$IngredientCategoryPayload<ExtArgs>[]
     ingredients: Prisma.$IngredientPayload<ExtArgs>[]
+    supplierIngredients: Prisma.$SupplierIngredientPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: number
@@ -1256,6 +1371,7 @@ export interface Prisma__IngredientCategoryClient<T, Null = never, ExtArgs exten
   parent<T extends Prisma.IngredientCategory$parentArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.IngredientCategory$parentArgs<ExtArgs>>): Prisma.Prisma__IngredientCategoryClient<runtime.Types.Result.GetResult<Prisma.$IngredientCategoryPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   children<T extends Prisma.IngredientCategory$childrenArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.IngredientCategory$childrenArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$IngredientCategoryPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   ingredients<T extends Prisma.IngredientCategory$ingredientsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.IngredientCategory$ingredientsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$IngredientPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  supplierIngredients<T extends Prisma.IngredientCategory$supplierIngredientsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.IngredientCategory$supplierIngredientsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$SupplierIngredientPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1706,6 +1822,30 @@ export type IngredientCategory$ingredientsArgs<ExtArgs extends runtime.Types.Ext
   take?: number
   skip?: number
   distinct?: Prisma.IngredientScalarFieldEnum | Prisma.IngredientScalarFieldEnum[]
+}
+
+/**
+ * IngredientCategory.supplierIngredients
+ */
+export type IngredientCategory$supplierIngredientsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the SupplierIngredient
+   */
+  select?: Prisma.SupplierIngredientSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the SupplierIngredient
+   */
+  omit?: Prisma.SupplierIngredientOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.SupplierIngredientInclude<ExtArgs> | null
+  where?: Prisma.SupplierIngredientWhereInput
+  orderBy?: Prisma.SupplierIngredientOrderByWithRelationInput | Prisma.SupplierIngredientOrderByWithRelationInput[]
+  cursor?: Prisma.SupplierIngredientWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.SupplierIngredientScalarFieldEnum | Prisma.SupplierIngredientScalarFieldEnum[]
 }
 
 /**

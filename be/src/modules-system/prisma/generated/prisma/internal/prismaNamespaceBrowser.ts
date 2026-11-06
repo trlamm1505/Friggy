@@ -92,7 +92,12 @@ export const ModelName = {
   PaymentTransaction: 'PaymentTransaction',
   FamilyGroup: 'FamilyGroup',
   FamilyMember: 'FamilyMember',
-  SystemConfig: 'SystemConfig'
+  SystemConfig: 'SystemConfig',
+  SupplierProfile: 'SupplierProfile',
+  SupplierPlan: 'SupplierPlan',
+  SupplierSubscription: 'SupplierSubscription',
+  SupplierIngredient: 'SupplierIngredient',
+  SupplierPaymentTransaction: 'SupplierPaymentTransaction'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -764,6 +769,105 @@ export const SystemConfigScalarFieldEnum = {
 export type SystemConfigScalarFieldEnum = (typeof SystemConfigScalarFieldEnum)[keyof typeof SystemConfigScalarFieldEnum]
 
 
+export const SupplierProfileScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  companyName: 'companyName',
+  contactPhone: 'contactPhone',
+  address: 'address',
+  logoPath: 'logoPath',
+  description: 'description',
+  isVerified: 'isVerified',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  deletedAt: 'deletedAt'
+} as const
+
+export type SupplierProfileScalarFieldEnum = (typeof SupplierProfileScalarFieldEnum)[keyof typeof SupplierProfileScalarFieldEnum]
+
+
+export const SupplierPlanScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  displayName: 'displayName',
+  priceVnd: 'priceVnd',
+  billingCycle: 'billingCycle',
+  maxIngredients: 'maxIngredients',
+  features: 'features',
+  isActive: 'isActive',
+  createdAt: 'createdAt',
+  deletedAt: 'deletedAt'
+} as const
+
+export type SupplierPlanScalarFieldEnum = (typeof SupplierPlanScalarFieldEnum)[keyof typeof SupplierPlanScalarFieldEnum]
+
+
+export const SupplierSubscriptionScalarFieldEnum = {
+  id: 'id',
+  profileId: 'profileId',
+  planId: 'planId',
+  startDate: 'startDate',
+  endDate: 'endDate',
+  status: 'status',
+  autoRenew: 'autoRenew',
+  cancelledAt: 'cancelledAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  deletedAt: 'deletedAt'
+} as const
+
+export type SupplierSubscriptionScalarFieldEnum = (typeof SupplierSubscriptionScalarFieldEnum)[keyof typeof SupplierSubscriptionScalarFieldEnum]
+
+
+export const SupplierIngredientScalarFieldEnum = {
+  id: 'id',
+  profileId: 'profileId',
+  name: 'name',
+  categoryId: 'categoryId',
+  defaultUnit: 'defaultUnit',
+  caloriesPer100g: 'caloriesPer100g',
+  averagePricePerUnit: 'averagePricePerUnit',
+  imagePath: 'imagePath',
+  description: 'description',
+  brand: 'brand',
+  barcode: 'barcode',
+  status: 'status',
+  rejectionReason: 'rejectionReason',
+  reviewedBy: 'reviewedBy',
+  reviewedAt: 'reviewedAt',
+  linkedIngredientId: 'linkedIngredientId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  deletedAt: 'deletedAt'
+} as const
+
+export type SupplierIngredientScalarFieldEnum = (typeof SupplierIngredientScalarFieldEnum)[keyof typeof SupplierIngredientScalarFieldEnum]
+
+
+export const SupplierPaymentTransactionScalarFieldEnum = {
+  id: 'id',
+  profileId: 'profileId',
+  planId: 'planId',
+  type: 'type',
+  amount: 'amount',
+  status: 'status',
+  paymentMethod: 'paymentMethod',
+  paymentRef: 'paymentRef',
+  payosOrderCode: 'payosOrderCode',
+  payosPaymentLinkId: 'payosPaymentLinkId',
+  payosTransactionRef: 'payosTransactionRef',
+  description: 'description',
+  checkoutUrl: 'checkoutUrl',
+  qrCode: 'qrCode',
+  expiredAt: 'expiredAt',
+  paidAt: 'paidAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type SupplierPaymentTransactionScalarFieldEnum = (typeof SupplierPaymentTransactionScalarFieldEnum)[keyof typeof SupplierPaymentTransactionScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -1221,4 +1325,68 @@ export const SystemConfigOrderByRelevanceFieldEnum = {
 } as const
 
 export type SystemConfigOrderByRelevanceFieldEnum = (typeof SystemConfigOrderByRelevanceFieldEnum)[keyof typeof SystemConfigOrderByRelevanceFieldEnum]
+
+
+export const SupplierProfileOrderByRelevanceFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  companyName: 'companyName',
+  contactPhone: 'contactPhone',
+  address: 'address',
+  logoPath: 'logoPath',
+  description: 'description'
+} as const
+
+export type SupplierProfileOrderByRelevanceFieldEnum = (typeof SupplierProfileOrderByRelevanceFieldEnum)[keyof typeof SupplierProfileOrderByRelevanceFieldEnum]
+
+
+export const SupplierPlanOrderByRelevanceFieldEnum = {
+  name: 'name',
+  displayName: 'displayName',
+  billingCycle: 'billingCycle'
+} as const
+
+export type SupplierPlanOrderByRelevanceFieldEnum = (typeof SupplierPlanOrderByRelevanceFieldEnum)[keyof typeof SupplierPlanOrderByRelevanceFieldEnum]
+
+
+export const SupplierSubscriptionOrderByRelevanceFieldEnum = {
+  id: 'id',
+  profileId: 'profileId',
+  status: 'status'
+} as const
+
+export type SupplierSubscriptionOrderByRelevanceFieldEnum = (typeof SupplierSubscriptionOrderByRelevanceFieldEnum)[keyof typeof SupplierSubscriptionOrderByRelevanceFieldEnum]
+
+
+export const SupplierIngredientOrderByRelevanceFieldEnum = {
+  id: 'id',
+  profileId: 'profileId',
+  name: 'name',
+  defaultUnit: 'defaultUnit',
+  imagePath: 'imagePath',
+  description: 'description',
+  brand: 'brand',
+  barcode: 'barcode',
+  rejectionReason: 'rejectionReason',
+  reviewedBy: 'reviewedBy'
+} as const
+
+export type SupplierIngredientOrderByRelevanceFieldEnum = (typeof SupplierIngredientOrderByRelevanceFieldEnum)[keyof typeof SupplierIngredientOrderByRelevanceFieldEnum]
+
+
+export const SupplierPaymentTransactionOrderByRelevanceFieldEnum = {
+  id: 'id',
+  profileId: 'profileId',
+  type: 'type',
+  status: 'status',
+  paymentMethod: 'paymentMethod',
+  paymentRef: 'paymentRef',
+  payosPaymentLinkId: 'payosPaymentLinkId',
+  payosTransactionRef: 'payosTransactionRef',
+  description: 'description',
+  checkoutUrl: 'checkoutUrl',
+  qrCode: 'qrCode'
+} as const
+
+export type SupplierPaymentTransactionOrderByRelevanceFieldEnum = (typeof SupplierPaymentTransactionOrderByRelevanceFieldEnum)[keyof typeof SupplierPaymentTransactionOrderByRelevanceFieldEnum]
 

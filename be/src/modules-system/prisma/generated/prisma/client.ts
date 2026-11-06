@@ -249,3 +249,28 @@ export type FamilyMember = Prisma.FamilyMemberModel
  * 
  */
 export type SystemConfig = Prisma.SystemConfigModel
+/**
+ * Model SupplierProfile
+ * 
+ */
+export type SupplierProfile = Prisma.SupplierProfileModel
+/**
+ * Model SupplierPlan
+ * 
+ */
+export type SupplierPlan = Prisma.SupplierPlanModel
+/**
+ * Model SupplierSubscription
+ * 
+ */
+export type SupplierSubscription = Prisma.SupplierSubscriptionModel
+/**
+ * Model SupplierIngredient
+ * 
+ */
+export type SupplierIngredient = Prisma.SupplierIngredientModel
+/**
+ * Model SupplierPaymentTransaction
+ * 
+ */
+export type SupplierPaymentTransaction = Prisma.SupplierPaymentTransactionModel

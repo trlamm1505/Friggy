@@ -59,6 +59,18 @@ import { AdminBroadcastService } from './broadcast/admin-broadcast.service';
 import { AdminRolesController } from './roles/admin-roles.controller';
 import { AdminRolesService } from './roles/admin-roles.service';
 
+// 🔷 Supplier Ingredients (Admin Review)
+import { AdminSupplierIngredientsController } from './supplier-ingredients/admin-supplier-ingredients.controller';
+import { AdminSupplierIngredientsService } from './supplier-ingredients/admin-supplier-ingredients.service';
+
+// 🔷 Suppliers (Admin Management)
+import { AdminSuppliersController } from './suppliers/admin-suppliers.controller';
+import { AdminSuppliersService } from './suppliers/admin-suppliers.service';
+
+// 🔷 Supplier Plans (Admin CRUD)
+import { AdminSupplierPlansController } from './supplier-plans/admin-supplier-plans.controller';
+import { AdminSupplierPlansService } from './supplier-plans/admin-supplier-plans.service';
+
 @Module({
   imports: [
     PrismaModule,
@@ -81,6 +93,10 @@ import { AdminRolesService } from './roles/admin-roles.service';
     AdminSessionsController,
     AdminActivityLogsController,
     AdminBroadcastController,
+    // 🔷 Supplier
+    AdminSupplierIngredientsController,
+    AdminSuppliersController,
+    AdminSupplierPlansController,
   ],
   providers: [
     AdminAiService,
@@ -98,6 +114,10 @@ import { AdminRolesService } from './roles/admin-roles.service';
     AdminSessionsService,
     AdminActivityLogsService,
     AdminBroadcastService,
+    // 🔷 Supplier
+    AdminSupplierIngredientsService,
+    AdminSuppliersService,
+    AdminSupplierPlansService,
   ],
 })
 export class AdminModule {}

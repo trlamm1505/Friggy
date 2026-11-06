@@ -52,7 +52,7 @@ async function bootstrap() {
         `| **[Chỉ Admin]** | Chỉ tài khoản admin (siêu quản trị) mới có quyền |\n` +
         `| **[Admin | Manager]** | Cả admin lẫn manager đều có quyền |\n\n` +
         `> **Manager** có thể quản lý nội dung & kinh doanh nhưng không được truy cập cấu hình kỹ thuật (AI, Cron Jobs, tạo/sửa/xoá gói cước).`,
-  )
+    )
     .setVersion('1.0')
     .addServer(
       APP_URL,
@@ -80,22 +80,81 @@ async function bootstrap() {
     )
     .addTag('Family', 'Gói Gia Đình — Mời thành viên, Chấp nhận, Giải tán')
     .addTag('Meal Planning', 'Thực đơn tuần & Danh sách mua')
+    .addTag('Supplier', 'Nhà cung cấp thực phẩm — Hồ sơ, Gói cước')
+    .addTag(
+      'Supplier / Ingredients',
+      'Nhà cung cấp — Quản lý nguyên liệu (thêm, sửa, xóa, import Excel)',
+    )
     .addTag('AI Chat', 'Đầu bếp AI — Chat có tài khoản & Chatbot công khai')
     .addTag('AI Public Chat', 'API Chat public (Chatbot SEO)')
-    .addTag('Admin / AI', '[Chỉ Admin] Cấu hình AI provider & system prompt — chỉ tài khoản admin mới được phép')
-    .addTag('Admin / Cron', '[Chỉ Admin] Điều khiển cron job — bật/tắt, đổi schedule, trigger thủ công')
-    .addTag('Admin / Ingredients', '[Admin | Manager] Quản lý nguyên liệu & danh mục nguyên liệu')
-    .addTag('Admin / Payment Transactions', '[Admin | Manager] Xem toàn bộ lịch sử giao dịch thanh toán')
-    .addTag('Admin / Plans', '[Chỉ Admin] Tạo / Sửa / Xoá gói cước | [Admin | Manager] Xem danh sách gói')
-    .addTag('Admin / Recipes', '[Admin | Manager] Quản lý công thức nấu ăn hệ thống')
-    .addTag('Admin / Roles', '[Chỉ Admin] Quản lý danh sách vai trò (roles) & cập nhật mô tả')
-    .addTag('Admin / Sponsors', '[Admin | Manager] Quản lý nhà tài trợ & chiến dịch quảng cáo')
-    .addTag('Admin / Stats', '[Admin | Manager] Dashboard thống kê — người dùng, doanh thu, AI usage')
-    .addTag('Admin / Users', '[Admin | Manager] Quản lý tài khoản & trạng thái người dùng')
-    .addTag('Admin / Sessions & AI Quota', '[Chỉ Admin] Quản lý phiên đăng nhập & ghi đè quota AI theo user')
-    .addTag('Admin / System Config', '[Chỉ Admin] Cấu hình hệ thống runtime: Token TTL, OTP, Bảo trì, Health')
-    .addTag('Admin / Activity Logs', '[Chỉ Admin] Lịch sử hoạt động của admin và manager')
-    .addTag('Admin / Broadcast', '[Chỉ Admin] Gửi thông báo đẩy hàng loạt đến nhóm người dùng')
+    .addTag(
+      'Admin / AI',
+      '[Chỉ Admin] Cấu hình AI provider & system prompt — chỉ tài khoản admin mới được phép',
+    )
+    .addTag(
+      'Admin / Cron',
+      '[Chỉ Admin] Điều khiển cron job — bật/tắt, đổi schedule, trigger thủ công',
+    )
+    .addTag(
+      'Admin / Ingredients',
+      '[Admin | Manager] Quản lý nguyên liệu & danh mục nguyên liệu',
+    )
+    .addTag(
+      'Admin / Payment Transactions',
+      '[Admin | Manager] Xem toàn bộ lịch sử giao dịch thanh toán',
+    )
+    .addTag(
+      'Admin / Plans',
+      '[Chỉ Admin] Tạo / Sửa / Xoá gói cước | [Admin | Manager] Xem danh sách gói',
+    )
+    .addTag(
+      'Admin / Recipes',
+      '[Admin | Manager] Quản lý công thức nấu ăn hệ thống',
+    )
+    .addTag(
+      'Admin / Roles',
+      '[Chỉ Admin] Quản lý danh sách vai trò (roles) & cập nhật mô tả',
+    )
+    .addTag(
+      'Admin / Sponsors',
+      '[Admin | Manager] Quản lý nhà tài trợ & chiến dịch quảng cáo',
+    )
+    .addTag(
+      'Admin / Stats',
+      '[Admin | Manager] Dashboard thống kê — người dùng, doanh thu, AI usage',
+    )
+    .addTag(
+      'Admin / Users',
+      '[Admin | Manager] Quản lý tài khoản & trạng thái người dùng',
+    )
+    .addTag(
+      'Admin / Sessions & AI Quota',
+      '[Chỉ Admin] Quản lý phiên đăng nhập & ghi đè quota AI theo user',
+    )
+    .addTag(
+      'Admin / System Config',
+      '[Chỉ Admin] Cấu hình hệ thống runtime: Token TTL, OTP, Bảo trì, Health',
+    )
+    .addTag(
+      'Admin / Activity Logs',
+      '[Chỉ Admin] Lịch sử hoạt động của admin và manager',
+    )
+    .addTag(
+      'Admin / Broadcast',
+      '[Chỉ Admin] Gửi thông báo đẩy hàng loạt đến nhóm người dùng',
+    )
+    .addTag(
+      'Admin / Supplier Ingredients',
+      '[Admin | Manager] Duyệt / từ chối nguyên liệu do nhà cung cấp đệ trình',
+    )
+    .addTag(
+      'Admin / Suppliers',
+      '[Admin | Manager] Xem danh sách & xác minh nhà cung cấp thực phẩm',
+    )
+    .addTag(
+      'Admin / Supplier Plans',
+      '[Chỉ Admin] Tạo / Sửa / Xoá gói cước dành cho nhà cung cấp',
+    )
     .build();
 
   const document = SwaggerModule.createDocument(app, swaggerConfig);

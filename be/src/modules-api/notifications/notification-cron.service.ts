@@ -19,6 +19,9 @@ import type { ClientProxy } from '@nestjs/microservices';
 export const CRON_EXPIRY_WARNING = 'expiry_warning';
 export const CRON_WEEKLY_REMIND = 'weekly_plan_remind';
 export const CRON_SUBSCRIPTION_REMINDER = 'subscription_renewal_reminder';
+export const CRON_SUPPLIER_EXPIRY_WARNING = 'supplier_expiry_warning';
+export const CRON_SUPPLIER_EXPIRY_DEACTIVATE = 'supplier_expiry_deactivate';
+export const CRON_SUPPLIER_INGREDIENT_CLEANUP = 'supplier_ingredient_cleanup';
 
 // ─── Mặc định nếu DB chưa có seed ─────────────────────────────────────────
 const DEFAULT_CRON_CONFIGS = [
@@ -39,6 +42,24 @@ const DEFAULT_CRON_CONFIGS = [
     cronExpression: '0 9 * * *',
     isEnabled: true,
     description: 'Nhắc gia hạn gói có phí — hàng ngày 9:00 (gửi email nếu còn 7 ngày)',
+  },
+  {
+    name: CRON_SUPPLIER_EXPIRY_WARNING,
+    cronExpression: '0 8 * * *',
+    isEnabled: true,
+    description: 'Canh bao goi nha cung cap sap het han (7 ngay)',
+  },
+  {
+    name: CRON_SUPPLIER_EXPIRY_DEACTIVATE,
+    cronExpression: '5 0 * * *',
+    isEnabled: true,
+    description: 'Huy kich hoat goi nha cung cap da het han',
+  },
+  {
+    name: CRON_SUPPLIER_INGREDIENT_CLEANUP,
+    cronExpression: '10 0 * * *',
+    isEnabled: true,
+    description: 'Archive nguyen lieu supplier khi goi het han',
   },
 ];
 
@@ -162,6 +183,12 @@ export class NotificationCronService implements OnModuleInit {
         return () => this.remindWeeklyPlan();
       case CRON_SUBSCRIPTION_REMINDER:
         return () => this.sendSubscriptionRenewalReminders();
+      case CRON_SUPPLIER_EXPIRY_WARNING:
+        return () => this.runSupplierExpiryWarning();
+      case CRON_SUPPLIER_EXPIRY_DEACTIVATE:
+        return () => this.runSupplierExpiryDeactivate();
+      case CRON_SUPPLIER_INGREDIENT_CLEANUP:
+        return () => this.runSupplierIngredientCleanup();
       default:
         return null;
     }
@@ -470,6 +497,137 @@ export class NotificationCronService implements OnModuleInit {
       await this.updateLastRun(jobName, 'success');
     } catch (err: any) {
       this.logger.error(`[Cron:${jobName}] Lỗi: ${err?.message}`);
+      await this.updateLastRun(jobName, 'failed');
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Handler: Supplier Expiry Warning — cảnh báo gói sắp hết hạn 7 ngày
+  // ─────────────────────────────────────────────────────────────────────────
+  async runSupplierExpiryWarning(): Promise<void> {
+    const jobName = CRON_SUPPLIER_EXPIRY_WARNING;
+    this.logger.log(`[Cron:${jobName}] Start`);
+    try {
+      const now = new Date();
+      const in7days = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+      const startOf7 = new Date(in7days); startOf7.setHours(0, 0, 0, 0);
+      const endOf7 = new Date(in7days); endOf7.setHours(23, 59, 59, 999);
+
+      const subs = await this.prisma.supplierSubscription.findMany({
+        where: { status: 'active', endDate: { gte: startOf7, lte: endOf7 } },
+        include: { profile: { include: { user: true } }, plan: true },
+      });
+
+      for (const sub of subs) {
+        const userId = sub.profile.userId;
+        const endStr = sub.endDate.toLocaleDateString('vi-VN');
+        await Promise.all([
+          this.prisma.notification.create({
+            data: {
+              userId,
+              type: 'supplier_package_expiring' as any,
+              title: 'Goi nha cung cap sap het han',
+              body: `Goi "${sub.plan.displayName}" het han vao ${endStr}. Gia han de tiep tuc dich vu.`,
+              isRead: false,
+              metadata: { planId: sub.planId, endDate: sub.endDate.toISOString() },
+            },
+          }),
+          this.fcmService.sendToUser(userId, {
+            title: 'Goi nha cung cap sap het han',
+            body: `Goi "${sub.plan.displayName}" het han vao ${endStr}.`,
+          }),
+        ]);
+      }
+
+      this.logger.log(`[Cron:${jobName}] Sent ${subs.length} warnings`);
+      await this.updateLastRun(jobName, 'success');
+    } catch (err: any) {
+      this.logger.error(`[Cron:${jobName}] Error: ${err?.message}`);
+      await this.updateLastRun(jobName, 'failed');
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Handler: Supplier Expiry Deactivate — hủy kích hoạt gói đã hết hạn
+  // ─────────────────────────────────────────────────────────────────────────
+  async runSupplierExpiryDeactivate(): Promise<void> {
+    const jobName = CRON_SUPPLIER_EXPIRY_DEACTIVATE;
+    this.logger.log(`[Cron:${jobName}] Start`);
+    try {
+      const now = new Date();
+      const expiredSubs = await this.prisma.supplierSubscription.findMany({
+        where: { status: 'active', endDate: { lt: now } },
+        include: { profile: { include: { user: true } }, plan: true },
+      });
+
+      const userRole = await this.prisma.role.findFirst({ where: { name: 'user' } });
+
+      for (const sub of expiredSubs) {
+        await this.prisma.supplierSubscription.update({
+          where: { id: sub.id },
+          data: { status: 'expired' },
+        });
+
+        if (userRole) {
+          await this.prisma.user.update({
+            where: { id: sub.profile.userId },
+            data: { roleId: userRole.id },
+          });
+        }
+
+        const userId = sub.profile.userId;
+        await Promise.all([
+          this.prisma.notification.create({
+            data: {
+              userId,
+              type: 'supplier_package_expired' as any,
+              title: 'Goi nha cung cap da het han',
+              body: `Goi "${sub.plan.displayName}" da het han. Mua goi moi de tiep tuc dich vu.`,
+              isRead: false,
+              metadata: { planId: sub.planId },
+            },
+          }),
+          this.fcmService.sendToUser(userId, {
+            title: 'Goi nha cung cap da het han',
+            body: `Goi "${sub.plan.displayName}" da het han.`,
+          }),
+        ]);
+      }
+
+      this.logger.log(`[Cron:${jobName}] Deactivated ${expiredSubs.length} subscriptions`);
+      await this.updateLastRun(jobName, 'success');
+    } catch (err: any) {
+      this.logger.error(`[Cron:${jobName}] Error: ${err?.message}`);
+      await this.updateLastRun(jobName, 'failed');
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Handler: Supplier Ingredient Cleanup — archive nguyên liệu khi gói hết hạn
+  // ─────────────────────────────────────────────────────────────────────────
+  async runSupplierIngredientCleanup(): Promise<void> {
+    const jobName = CRON_SUPPLIER_INGREDIENT_CLEANUP;
+    this.logger.log(`[Cron:${jobName}] Start`);
+    try {
+      const now = new Date();
+      const { count } = await this.prisma.supplierIngredient.updateMany({
+        where: {
+          status: 'approved',
+          deletedAt: null,
+          profile: {
+            subscription: {
+              status: 'expired',
+              endDate: { lt: now },
+            },
+          },
+        },
+        data: { status: 'archived' },
+      });
+
+      this.logger.log(`[Cron:${jobName}] Archived ${count} supplier ingredients`);
+      await this.updateLastRun(jobName, 'success');
+    } catch (err: any) {
+      this.logger.error(`[Cron:${jobName}] Error: ${err?.message}`);
       await this.updateLastRun(jobName, 'failed');
     }
   }

@@ -322,6 +322,8 @@ export type UserWhereInput = {
   role?: Prisma.XOR<Prisma.RoleScalarRelationFilter, Prisma.RoleWhereInput>
   weeklyPlans?: Prisma.WeeklyPlanListRelationFilter
   devices?: Prisma.UserDeviceListRelationFilter
+  supplierProfile?: Prisma.XOR<Prisma.SupplierProfileNullableScalarRelationFilter, Prisma.SupplierProfileWhereInput> | null
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientListRelationFilter
 }
 
 export type UserOrderByWithRelationInput = {
@@ -362,6 +364,8 @@ export type UserOrderByWithRelationInput = {
   role?: Prisma.RoleOrderByWithRelationInput
   weeklyPlans?: Prisma.WeeklyPlanOrderByRelationAggregateInput
   devices?: Prisma.UserDeviceOrderByRelationAggregateInput
+  supplierProfile?: Prisma.SupplierProfileOrderByWithRelationInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientOrderByRelationAggregateInput
   _relevance?: Prisma.UserOrderByRelevanceInput
 }
 
@@ -406,6 +410,8 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   role?: Prisma.XOR<Prisma.RoleScalarRelationFilter, Prisma.RoleWhereInput>
   weeklyPlans?: Prisma.WeeklyPlanListRelationFilter
   devices?: Prisma.UserDeviceListRelationFilter
+  supplierProfile?: Prisma.XOR<Prisma.SupplierProfileNullableScalarRelationFilter, Prisma.SupplierProfileWhereInput> | null
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientListRelationFilter
 }, "id" | "email" | "googleId">
 
 export type UserOrderByWithAggregationInput = {
@@ -489,6 +495,8 @@ export type UserCreateInput = {
   role: Prisma.RoleCreateNestedOneWithoutUsersInput
   weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutUserInput
   devices?: Prisma.UserDeviceCreateNestedManyWithoutUserInput
+  supplierProfile?: Prisma.SupplierProfileCreateNestedOneWithoutUserInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientCreateNestedManyWithoutReviewerInput
 }
 
 export type UserUncheckedCreateInput = {
@@ -528,6 +536,8 @@ export type UserUncheckedCreateInput = {
   paymentTransactions?: Prisma.PaymentTransactionUncheckedCreateNestedManyWithoutUserInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutUserInput
   devices?: Prisma.UserDeviceUncheckedCreateNestedManyWithoutUserInput
+  supplierProfile?: Prisma.SupplierProfileUncheckedCreateNestedOneWithoutUserInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientUncheckedCreateNestedManyWithoutReviewerInput
 }
 
 export type UserUpdateInput = {
@@ -567,6 +577,8 @@ export type UserUpdateInput = {
   role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutUserNestedInput
   devices?: Prisma.UserDeviceUpdateManyWithoutUserNestedInput
+  supplierProfile?: Prisma.SupplierProfileUpdateOneWithoutUserNestedInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientUpdateManyWithoutReviewerNestedInput
 }
 
 export type UserUncheckedUpdateInput = {
@@ -606,6 +618,8 @@ export type UserUncheckedUpdateInput = {
   paymentTransactions?: Prisma.PaymentTransactionUncheckedUpdateManyWithoutUserNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutUserNestedInput
   devices?: Prisma.UserDeviceUncheckedUpdateManyWithoutUserNestedInput
+  supplierProfile?: Prisma.SupplierProfileUncheckedUpdateOneWithoutUserNestedInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientUncheckedUpdateManyWithoutReviewerNestedInput
 }
 
 export type UserCreateManyInput = {
@@ -1115,6 +1129,36 @@ export type UserUpdateOneWithoutFamilyMembershipsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutFamilyMembershipsInput, Prisma.UserUpdateWithoutFamilyMembershipsInput>, Prisma.UserUncheckedUpdateWithoutFamilyMembershipsInput>
 }
 
+export type UserCreateNestedOneWithoutSupplierProfileInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutSupplierProfileInput, Prisma.UserUncheckedCreateWithoutSupplierProfileInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutSupplierProfileInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutSupplierProfileNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutSupplierProfileInput, Prisma.UserUncheckedCreateWithoutSupplierProfileInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutSupplierProfileInput
+  upsert?: Prisma.UserUpsertWithoutSupplierProfileInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutSupplierProfileInput, Prisma.UserUpdateWithoutSupplierProfileInput>, Prisma.UserUncheckedUpdateWithoutSupplierProfileInput>
+}
+
+export type UserCreateNestedOneWithoutReviewedSupplierIngredientsInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutReviewedSupplierIngredientsInput, Prisma.UserUncheckedCreateWithoutReviewedSupplierIngredientsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutReviewedSupplierIngredientsInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneWithoutReviewedSupplierIngredientsNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutReviewedSupplierIngredientsInput, Prisma.UserUncheckedCreateWithoutReviewedSupplierIngredientsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutReviewedSupplierIngredientsInput
+  upsert?: Prisma.UserUpsertWithoutReviewedSupplierIngredientsInput
+  disconnect?: Prisma.UserWhereInput | boolean
+  delete?: Prisma.UserWhereInput | boolean
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutReviewedSupplierIngredientsInput, Prisma.UserUpdateWithoutReviewedSupplierIngredientsInput>, Prisma.UserUncheckedUpdateWithoutReviewedSupplierIngredientsInput>
+}
+
 export type UserCreateWithoutRoleInput = {
   id?: string
   email?: string | null
@@ -1151,6 +1195,8 @@ export type UserCreateWithoutRoleInput = {
   paymentTransactions?: Prisma.PaymentTransactionCreateNestedManyWithoutUserInput
   weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutUserInput
   devices?: Prisma.UserDeviceCreateNestedManyWithoutUserInput
+  supplierProfile?: Prisma.SupplierProfileCreateNestedOneWithoutUserInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientCreateNestedManyWithoutReviewerInput
 }
 
 export type UserUncheckedCreateWithoutRoleInput = {
@@ -1189,6 +1235,8 @@ export type UserUncheckedCreateWithoutRoleInput = {
   paymentTransactions?: Prisma.PaymentTransactionUncheckedCreateNestedManyWithoutUserInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutUserInput
   devices?: Prisma.UserDeviceUncheckedCreateNestedManyWithoutUserInput
+  supplierProfile?: Prisma.SupplierProfileUncheckedCreateNestedOneWithoutUserInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientUncheckedCreateNestedManyWithoutReviewerInput
 }
 
 export type UserCreateOrConnectWithoutRoleInput = {
@@ -1274,6 +1322,8 @@ export type UserCreateWithoutProfileInput = {
   role: Prisma.RoleCreateNestedOneWithoutUsersInput
   weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutUserInput
   devices?: Prisma.UserDeviceCreateNestedManyWithoutUserInput
+  supplierProfile?: Prisma.SupplierProfileCreateNestedOneWithoutUserInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientCreateNestedManyWithoutReviewerInput
 }
 
 export type UserUncheckedCreateWithoutProfileInput = {
@@ -1312,6 +1362,8 @@ export type UserUncheckedCreateWithoutProfileInput = {
   paymentTransactions?: Prisma.PaymentTransactionUncheckedCreateNestedManyWithoutUserInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutUserInput
   devices?: Prisma.UserDeviceUncheckedCreateNestedManyWithoutUserInput
+  supplierProfile?: Prisma.SupplierProfileUncheckedCreateNestedOneWithoutUserInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientUncheckedCreateNestedManyWithoutReviewerInput
 }
 
 export type UserCreateOrConnectWithoutProfileInput = {
@@ -1366,6 +1418,8 @@ export type UserUpdateWithoutProfileInput = {
   role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutUserNestedInput
   devices?: Prisma.UserDeviceUpdateManyWithoutUserNestedInput
+  supplierProfile?: Prisma.SupplierProfileUpdateOneWithoutUserNestedInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientUpdateManyWithoutReviewerNestedInput
 }
 
 export type UserUncheckedUpdateWithoutProfileInput = {
@@ -1404,6 +1458,8 @@ export type UserUncheckedUpdateWithoutProfileInput = {
   paymentTransactions?: Prisma.PaymentTransactionUncheckedUpdateManyWithoutUserNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutUserNestedInput
   devices?: Prisma.UserDeviceUncheckedUpdateManyWithoutUserNestedInput
+  supplierProfile?: Prisma.SupplierProfileUncheckedUpdateOneWithoutUserNestedInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientUncheckedUpdateManyWithoutReviewerNestedInput
 }
 
 export type UserCreateWithoutPreferencesInput = {
@@ -1442,6 +1498,8 @@ export type UserCreateWithoutPreferencesInput = {
   role: Prisma.RoleCreateNestedOneWithoutUsersInput
   weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutUserInput
   devices?: Prisma.UserDeviceCreateNestedManyWithoutUserInput
+  supplierProfile?: Prisma.SupplierProfileCreateNestedOneWithoutUserInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientCreateNestedManyWithoutReviewerInput
 }
 
 export type UserUncheckedCreateWithoutPreferencesInput = {
@@ -1480,6 +1538,8 @@ export type UserUncheckedCreateWithoutPreferencesInput = {
   paymentTransactions?: Prisma.PaymentTransactionUncheckedCreateNestedManyWithoutUserInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutUserInput
   devices?: Prisma.UserDeviceUncheckedCreateNestedManyWithoutUserInput
+  supplierProfile?: Prisma.SupplierProfileUncheckedCreateNestedOneWithoutUserInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientUncheckedCreateNestedManyWithoutReviewerInput
 }
 
 export type UserCreateOrConnectWithoutPreferencesInput = {
@@ -1534,6 +1594,8 @@ export type UserUpdateWithoutPreferencesInput = {
   role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutUserNestedInput
   devices?: Prisma.UserDeviceUpdateManyWithoutUserNestedInput
+  supplierProfile?: Prisma.SupplierProfileUpdateOneWithoutUserNestedInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientUpdateManyWithoutReviewerNestedInput
 }
 
 export type UserUncheckedUpdateWithoutPreferencesInput = {
@@ -1572,6 +1634,8 @@ export type UserUncheckedUpdateWithoutPreferencesInput = {
   paymentTransactions?: Prisma.PaymentTransactionUncheckedUpdateManyWithoutUserNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutUserNestedInput
   devices?: Prisma.UserDeviceUncheckedUpdateManyWithoutUserNestedInput
+  supplierProfile?: Prisma.SupplierProfileUncheckedUpdateOneWithoutUserNestedInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientUncheckedUpdateManyWithoutReviewerNestedInput
 }
 
 export type UserCreateWithoutRefreshTokensInput = {
@@ -1610,6 +1674,8 @@ export type UserCreateWithoutRefreshTokensInput = {
   role: Prisma.RoleCreateNestedOneWithoutUsersInput
   weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutUserInput
   devices?: Prisma.UserDeviceCreateNestedManyWithoutUserInput
+  supplierProfile?: Prisma.SupplierProfileCreateNestedOneWithoutUserInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientCreateNestedManyWithoutReviewerInput
 }
 
 export type UserUncheckedCreateWithoutRefreshTokensInput = {
@@ -1648,6 +1714,8 @@ export type UserUncheckedCreateWithoutRefreshTokensInput = {
   paymentTransactions?: Prisma.PaymentTransactionUncheckedCreateNestedManyWithoutUserInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutUserInput
   devices?: Prisma.UserDeviceUncheckedCreateNestedManyWithoutUserInput
+  supplierProfile?: Prisma.SupplierProfileUncheckedCreateNestedOneWithoutUserInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientUncheckedCreateNestedManyWithoutReviewerInput
 }
 
 export type UserCreateOrConnectWithoutRefreshTokensInput = {
@@ -1702,6 +1770,8 @@ export type UserUpdateWithoutRefreshTokensInput = {
   role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutUserNestedInput
   devices?: Prisma.UserDeviceUpdateManyWithoutUserNestedInput
+  supplierProfile?: Prisma.SupplierProfileUpdateOneWithoutUserNestedInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientUpdateManyWithoutReviewerNestedInput
 }
 
 export type UserUncheckedUpdateWithoutRefreshTokensInput = {
@@ -1740,6 +1810,8 @@ export type UserUncheckedUpdateWithoutRefreshTokensInput = {
   paymentTransactions?: Prisma.PaymentTransactionUncheckedUpdateManyWithoutUserNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutUserNestedInput
   devices?: Prisma.UserDeviceUncheckedUpdateManyWithoutUserNestedInput
+  supplierProfile?: Prisma.SupplierProfileUncheckedUpdateOneWithoutUserNestedInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientUncheckedUpdateManyWithoutReviewerNestedInput
 }
 
 export type UserCreateWithoutAuthoredRecipesInput = {
@@ -1778,6 +1850,8 @@ export type UserCreateWithoutAuthoredRecipesInput = {
   role: Prisma.RoleCreateNestedOneWithoutUsersInput
   weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutUserInput
   devices?: Prisma.UserDeviceCreateNestedManyWithoutUserInput
+  supplierProfile?: Prisma.SupplierProfileCreateNestedOneWithoutUserInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientCreateNestedManyWithoutReviewerInput
 }
 
 export type UserUncheckedCreateWithoutAuthoredRecipesInput = {
@@ -1816,6 +1890,8 @@ export type UserUncheckedCreateWithoutAuthoredRecipesInput = {
   paymentTransactions?: Prisma.PaymentTransactionUncheckedCreateNestedManyWithoutUserInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutUserInput
   devices?: Prisma.UserDeviceUncheckedCreateNestedManyWithoutUserInput
+  supplierProfile?: Prisma.SupplierProfileUncheckedCreateNestedOneWithoutUserInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientUncheckedCreateNestedManyWithoutReviewerInput
 }
 
 export type UserCreateOrConnectWithoutAuthoredRecipesInput = {
@@ -1870,6 +1946,8 @@ export type UserUpdateWithoutAuthoredRecipesInput = {
   role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutUserNestedInput
   devices?: Prisma.UserDeviceUpdateManyWithoutUserNestedInput
+  supplierProfile?: Prisma.SupplierProfileUpdateOneWithoutUserNestedInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientUpdateManyWithoutReviewerNestedInput
 }
 
 export type UserUncheckedUpdateWithoutAuthoredRecipesInput = {
@@ -1908,6 +1986,8 @@ export type UserUncheckedUpdateWithoutAuthoredRecipesInput = {
   paymentTransactions?: Prisma.PaymentTransactionUncheckedUpdateManyWithoutUserNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutUserNestedInput
   devices?: Prisma.UserDeviceUncheckedUpdateManyWithoutUserNestedInput
+  supplierProfile?: Prisma.SupplierProfileUncheckedUpdateOneWithoutUserNestedInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientUncheckedUpdateManyWithoutReviewerNestedInput
 }
 
 export type UserCreateWithoutSavedRecipesInput = {
@@ -1946,6 +2026,8 @@ export type UserCreateWithoutSavedRecipesInput = {
   role: Prisma.RoleCreateNestedOneWithoutUsersInput
   weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutUserInput
   devices?: Prisma.UserDeviceCreateNestedManyWithoutUserInput
+  supplierProfile?: Prisma.SupplierProfileCreateNestedOneWithoutUserInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientCreateNestedManyWithoutReviewerInput
 }
 
 export type UserUncheckedCreateWithoutSavedRecipesInput = {
@@ -1984,6 +2066,8 @@ export type UserUncheckedCreateWithoutSavedRecipesInput = {
   paymentTransactions?: Prisma.PaymentTransactionUncheckedCreateNestedManyWithoutUserInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutUserInput
   devices?: Prisma.UserDeviceUncheckedCreateNestedManyWithoutUserInput
+  supplierProfile?: Prisma.SupplierProfileUncheckedCreateNestedOneWithoutUserInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientUncheckedCreateNestedManyWithoutReviewerInput
 }
 
 export type UserCreateOrConnectWithoutSavedRecipesInput = {
@@ -2038,6 +2122,8 @@ export type UserUpdateWithoutSavedRecipesInput = {
   role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutUserNestedInput
   devices?: Prisma.UserDeviceUpdateManyWithoutUserNestedInput
+  supplierProfile?: Prisma.SupplierProfileUpdateOneWithoutUserNestedInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientUpdateManyWithoutReviewerNestedInput
 }
 
 export type UserUncheckedUpdateWithoutSavedRecipesInput = {
@@ -2076,6 +2162,8 @@ export type UserUncheckedUpdateWithoutSavedRecipesInput = {
   paymentTransactions?: Prisma.PaymentTransactionUncheckedUpdateManyWithoutUserNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutUserNestedInput
   devices?: Prisma.UserDeviceUncheckedUpdateManyWithoutUserNestedInput
+  supplierProfile?: Prisma.SupplierProfileUncheckedUpdateOneWithoutUserNestedInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientUncheckedUpdateManyWithoutReviewerNestedInput
 }
 
 export type UserCreateWithoutFridgeItemsInput = {
@@ -2114,6 +2202,8 @@ export type UserCreateWithoutFridgeItemsInput = {
   role: Prisma.RoleCreateNestedOneWithoutUsersInput
   weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutUserInput
   devices?: Prisma.UserDeviceCreateNestedManyWithoutUserInput
+  supplierProfile?: Prisma.SupplierProfileCreateNestedOneWithoutUserInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientCreateNestedManyWithoutReviewerInput
 }
 
 export type UserUncheckedCreateWithoutFridgeItemsInput = {
@@ -2152,6 +2242,8 @@ export type UserUncheckedCreateWithoutFridgeItemsInput = {
   paymentTransactions?: Prisma.PaymentTransactionUncheckedCreateNestedManyWithoutUserInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutUserInput
   devices?: Prisma.UserDeviceUncheckedCreateNestedManyWithoutUserInput
+  supplierProfile?: Prisma.SupplierProfileUncheckedCreateNestedOneWithoutUserInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientUncheckedCreateNestedManyWithoutReviewerInput
 }
 
 export type UserCreateOrConnectWithoutFridgeItemsInput = {
@@ -2206,6 +2298,8 @@ export type UserUpdateWithoutFridgeItemsInput = {
   role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutUserNestedInput
   devices?: Prisma.UserDeviceUpdateManyWithoutUserNestedInput
+  supplierProfile?: Prisma.SupplierProfileUpdateOneWithoutUserNestedInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientUpdateManyWithoutReviewerNestedInput
 }
 
 export type UserUncheckedUpdateWithoutFridgeItemsInput = {
@@ -2244,6 +2338,8 @@ export type UserUncheckedUpdateWithoutFridgeItemsInput = {
   paymentTransactions?: Prisma.PaymentTransactionUncheckedUpdateManyWithoutUserNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutUserNestedInput
   devices?: Prisma.UserDeviceUncheckedUpdateManyWithoutUserNestedInput
+  supplierProfile?: Prisma.SupplierProfileUncheckedUpdateOneWithoutUserNestedInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientUncheckedUpdateManyWithoutReviewerNestedInput
 }
 
 export type UserCreateWithoutScanLogsInput = {
@@ -2282,6 +2378,8 @@ export type UserCreateWithoutScanLogsInput = {
   role: Prisma.RoleCreateNestedOneWithoutUsersInput
   weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutUserInput
   devices?: Prisma.UserDeviceCreateNestedManyWithoutUserInput
+  supplierProfile?: Prisma.SupplierProfileCreateNestedOneWithoutUserInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientCreateNestedManyWithoutReviewerInput
 }
 
 export type UserUncheckedCreateWithoutScanLogsInput = {
@@ -2320,6 +2418,8 @@ export type UserUncheckedCreateWithoutScanLogsInput = {
   paymentTransactions?: Prisma.PaymentTransactionUncheckedCreateNestedManyWithoutUserInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutUserInput
   devices?: Prisma.UserDeviceUncheckedCreateNestedManyWithoutUserInput
+  supplierProfile?: Prisma.SupplierProfileUncheckedCreateNestedOneWithoutUserInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientUncheckedCreateNestedManyWithoutReviewerInput
 }
 
 export type UserCreateOrConnectWithoutScanLogsInput = {
@@ -2374,6 +2474,8 @@ export type UserUpdateWithoutScanLogsInput = {
   role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutUserNestedInput
   devices?: Prisma.UserDeviceUpdateManyWithoutUserNestedInput
+  supplierProfile?: Prisma.SupplierProfileUpdateOneWithoutUserNestedInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientUpdateManyWithoutReviewerNestedInput
 }
 
 export type UserUncheckedUpdateWithoutScanLogsInput = {
@@ -2412,6 +2514,8 @@ export type UserUncheckedUpdateWithoutScanLogsInput = {
   paymentTransactions?: Prisma.PaymentTransactionUncheckedUpdateManyWithoutUserNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutUserNestedInput
   devices?: Prisma.UserDeviceUncheckedUpdateManyWithoutUserNestedInput
+  supplierProfile?: Prisma.SupplierProfileUncheckedUpdateOneWithoutUserNestedInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientUncheckedUpdateManyWithoutReviewerNestedInput
 }
 
 export type UserCreateWithoutAllergiesInput = {
@@ -2450,6 +2554,8 @@ export type UserCreateWithoutAllergiesInput = {
   role: Prisma.RoleCreateNestedOneWithoutUsersInput
   weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutUserInput
   devices?: Prisma.UserDeviceCreateNestedManyWithoutUserInput
+  supplierProfile?: Prisma.SupplierProfileCreateNestedOneWithoutUserInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientCreateNestedManyWithoutReviewerInput
 }
 
 export type UserUncheckedCreateWithoutAllergiesInput = {
@@ -2488,6 +2594,8 @@ export type UserUncheckedCreateWithoutAllergiesInput = {
   paymentTransactions?: Prisma.PaymentTransactionUncheckedCreateNestedManyWithoutUserInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutUserInput
   devices?: Prisma.UserDeviceUncheckedCreateNestedManyWithoutUserInput
+  supplierProfile?: Prisma.SupplierProfileUncheckedCreateNestedOneWithoutUserInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientUncheckedCreateNestedManyWithoutReviewerInput
 }
 
 export type UserCreateOrConnectWithoutAllergiesInput = {
@@ -2542,6 +2650,8 @@ export type UserUpdateWithoutAllergiesInput = {
   role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutUserNestedInput
   devices?: Prisma.UserDeviceUpdateManyWithoutUserNestedInput
+  supplierProfile?: Prisma.SupplierProfileUpdateOneWithoutUserNestedInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientUpdateManyWithoutReviewerNestedInput
 }
 
 export type UserUncheckedUpdateWithoutAllergiesInput = {
@@ -2580,6 +2690,8 @@ export type UserUncheckedUpdateWithoutAllergiesInput = {
   paymentTransactions?: Prisma.PaymentTransactionUncheckedUpdateManyWithoutUserNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutUserNestedInput
   devices?: Prisma.UserDeviceUncheckedUpdateManyWithoutUserNestedInput
+  supplierProfile?: Prisma.SupplierProfileUncheckedUpdateOneWithoutUserNestedInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientUncheckedUpdateManyWithoutReviewerNestedInput
 }
 
 export type UserCreateWithoutWeeklyPlansInput = {
@@ -2618,6 +2730,8 @@ export type UserCreateWithoutWeeklyPlansInput = {
   paymentTransactions?: Prisma.PaymentTransactionCreateNestedManyWithoutUserInput
   role: Prisma.RoleCreateNestedOneWithoutUsersInput
   devices?: Prisma.UserDeviceCreateNestedManyWithoutUserInput
+  supplierProfile?: Prisma.SupplierProfileCreateNestedOneWithoutUserInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientCreateNestedManyWithoutReviewerInput
 }
 
 export type UserUncheckedCreateWithoutWeeklyPlansInput = {
@@ -2656,6 +2770,8 @@ export type UserUncheckedCreateWithoutWeeklyPlansInput = {
   subscription?: Prisma.UserSubscriptionUncheckedCreateNestedOneWithoutUserInput
   paymentTransactions?: Prisma.PaymentTransactionUncheckedCreateNestedManyWithoutUserInput
   devices?: Prisma.UserDeviceUncheckedCreateNestedManyWithoutUserInput
+  supplierProfile?: Prisma.SupplierProfileUncheckedCreateNestedOneWithoutUserInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientUncheckedCreateNestedManyWithoutReviewerInput
 }
 
 export type UserCreateOrConnectWithoutWeeklyPlansInput = {
@@ -2710,6 +2826,8 @@ export type UserUpdateWithoutWeeklyPlansInput = {
   paymentTransactions?: Prisma.PaymentTransactionUpdateManyWithoutUserNestedInput
   role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
   devices?: Prisma.UserDeviceUpdateManyWithoutUserNestedInput
+  supplierProfile?: Prisma.SupplierProfileUpdateOneWithoutUserNestedInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientUpdateManyWithoutReviewerNestedInput
 }
 
 export type UserUncheckedUpdateWithoutWeeklyPlansInput = {
@@ -2748,6 +2866,8 @@ export type UserUncheckedUpdateWithoutWeeklyPlansInput = {
   subscription?: Prisma.UserSubscriptionUncheckedUpdateOneWithoutUserNestedInput
   paymentTransactions?: Prisma.PaymentTransactionUncheckedUpdateManyWithoutUserNestedInput
   devices?: Prisma.UserDeviceUncheckedUpdateManyWithoutUserNestedInput
+  supplierProfile?: Prisma.SupplierProfileUncheckedUpdateOneWithoutUserNestedInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientUncheckedUpdateManyWithoutReviewerNestedInput
 }
 
 export type UserCreateWithoutShoppingListsInput = {
@@ -2786,6 +2906,8 @@ export type UserCreateWithoutShoppingListsInput = {
   role: Prisma.RoleCreateNestedOneWithoutUsersInput
   weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutUserInput
   devices?: Prisma.UserDeviceCreateNestedManyWithoutUserInput
+  supplierProfile?: Prisma.SupplierProfileCreateNestedOneWithoutUserInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientCreateNestedManyWithoutReviewerInput
 }
 
 export type UserUncheckedCreateWithoutShoppingListsInput = {
@@ -2824,6 +2946,8 @@ export type UserUncheckedCreateWithoutShoppingListsInput = {
   paymentTransactions?: Prisma.PaymentTransactionUncheckedCreateNestedManyWithoutUserInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutUserInput
   devices?: Prisma.UserDeviceUncheckedCreateNestedManyWithoutUserInput
+  supplierProfile?: Prisma.SupplierProfileUncheckedCreateNestedOneWithoutUserInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientUncheckedCreateNestedManyWithoutReviewerInput
 }
 
 export type UserCreateOrConnectWithoutShoppingListsInput = {
@@ -2878,6 +3002,8 @@ export type UserUpdateWithoutShoppingListsInput = {
   role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutUserNestedInput
   devices?: Prisma.UserDeviceUpdateManyWithoutUserNestedInput
+  supplierProfile?: Prisma.SupplierProfileUpdateOneWithoutUserNestedInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientUpdateManyWithoutReviewerNestedInput
 }
 
 export type UserUncheckedUpdateWithoutShoppingListsInput = {
@@ -2916,6 +3042,8 @@ export type UserUncheckedUpdateWithoutShoppingListsInput = {
   paymentTransactions?: Prisma.PaymentTransactionUncheckedUpdateManyWithoutUserNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutUserNestedInput
   devices?: Prisma.UserDeviceUncheckedUpdateManyWithoutUserNestedInput
+  supplierProfile?: Prisma.SupplierProfileUncheckedUpdateOneWithoutUserNestedInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientUncheckedUpdateManyWithoutReviewerNestedInput
 }
 
 export type UserCreateWithoutActivatedPromptsInput = {
@@ -2954,6 +3082,8 @@ export type UserCreateWithoutActivatedPromptsInput = {
   role: Prisma.RoleCreateNestedOneWithoutUsersInput
   weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutUserInput
   devices?: Prisma.UserDeviceCreateNestedManyWithoutUserInput
+  supplierProfile?: Prisma.SupplierProfileCreateNestedOneWithoutUserInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientCreateNestedManyWithoutReviewerInput
 }
 
 export type UserUncheckedCreateWithoutActivatedPromptsInput = {
@@ -2992,6 +3122,8 @@ export type UserUncheckedCreateWithoutActivatedPromptsInput = {
   paymentTransactions?: Prisma.PaymentTransactionUncheckedCreateNestedManyWithoutUserInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutUserInput
   devices?: Prisma.UserDeviceUncheckedCreateNestedManyWithoutUserInput
+  supplierProfile?: Prisma.SupplierProfileUncheckedCreateNestedOneWithoutUserInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientUncheckedCreateNestedManyWithoutReviewerInput
 }
 
 export type UserCreateOrConnectWithoutActivatedPromptsInput = {
@@ -3046,6 +3178,8 @@ export type UserUpdateWithoutActivatedPromptsInput = {
   role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutUserNestedInput
   devices?: Prisma.UserDeviceUpdateManyWithoutUserNestedInput
+  supplierProfile?: Prisma.SupplierProfileUpdateOneWithoutUserNestedInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientUpdateManyWithoutReviewerNestedInput
 }
 
 export type UserUncheckedUpdateWithoutActivatedPromptsInput = {
@@ -3084,6 +3218,8 @@ export type UserUncheckedUpdateWithoutActivatedPromptsInput = {
   paymentTransactions?: Prisma.PaymentTransactionUncheckedUpdateManyWithoutUserNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutUserNestedInput
   devices?: Prisma.UserDeviceUncheckedUpdateManyWithoutUserNestedInput
+  supplierProfile?: Prisma.SupplierProfileUncheckedUpdateOneWithoutUserNestedInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientUncheckedUpdateManyWithoutReviewerNestedInput
 }
 
 export type UserCreateWithoutChatSessionsInput = {
@@ -3122,6 +3258,8 @@ export type UserCreateWithoutChatSessionsInput = {
   role: Prisma.RoleCreateNestedOneWithoutUsersInput
   weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutUserInput
   devices?: Prisma.UserDeviceCreateNestedManyWithoutUserInput
+  supplierProfile?: Prisma.SupplierProfileCreateNestedOneWithoutUserInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientCreateNestedManyWithoutReviewerInput
 }
 
 export type UserUncheckedCreateWithoutChatSessionsInput = {
@@ -3160,6 +3298,8 @@ export type UserUncheckedCreateWithoutChatSessionsInput = {
   paymentTransactions?: Prisma.PaymentTransactionUncheckedCreateNestedManyWithoutUserInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutUserInput
   devices?: Prisma.UserDeviceUncheckedCreateNestedManyWithoutUserInput
+  supplierProfile?: Prisma.SupplierProfileUncheckedCreateNestedOneWithoutUserInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientUncheckedCreateNestedManyWithoutReviewerInput
 }
 
 export type UserCreateOrConnectWithoutChatSessionsInput = {
@@ -3214,6 +3354,8 @@ export type UserUpdateWithoutChatSessionsInput = {
   role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutUserNestedInput
   devices?: Prisma.UserDeviceUpdateManyWithoutUserNestedInput
+  supplierProfile?: Prisma.SupplierProfileUpdateOneWithoutUserNestedInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientUpdateManyWithoutReviewerNestedInput
 }
 
 export type UserUncheckedUpdateWithoutChatSessionsInput = {
@@ -3252,6 +3394,8 @@ export type UserUncheckedUpdateWithoutChatSessionsInput = {
   paymentTransactions?: Prisma.PaymentTransactionUncheckedUpdateManyWithoutUserNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutUserNestedInput
   devices?: Prisma.UserDeviceUncheckedUpdateManyWithoutUserNestedInput
+  supplierProfile?: Prisma.SupplierProfileUncheckedUpdateOneWithoutUserNestedInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientUncheckedUpdateManyWithoutReviewerNestedInput
 }
 
 export type UserCreateWithoutActivatedConfigsInput = {
@@ -3290,6 +3434,8 @@ export type UserCreateWithoutActivatedConfigsInput = {
   role: Prisma.RoleCreateNestedOneWithoutUsersInput
   weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutUserInput
   devices?: Prisma.UserDeviceCreateNestedManyWithoutUserInput
+  supplierProfile?: Prisma.SupplierProfileCreateNestedOneWithoutUserInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientCreateNestedManyWithoutReviewerInput
 }
 
 export type UserUncheckedCreateWithoutActivatedConfigsInput = {
@@ -3328,6 +3474,8 @@ export type UserUncheckedCreateWithoutActivatedConfigsInput = {
   paymentTransactions?: Prisma.PaymentTransactionUncheckedCreateNestedManyWithoutUserInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutUserInput
   devices?: Prisma.UserDeviceUncheckedCreateNestedManyWithoutUserInput
+  supplierProfile?: Prisma.SupplierProfileUncheckedCreateNestedOneWithoutUserInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientUncheckedCreateNestedManyWithoutReviewerInput
 }
 
 export type UserCreateOrConnectWithoutActivatedConfigsInput = {
@@ -3382,6 +3530,8 @@ export type UserUpdateWithoutActivatedConfigsInput = {
   role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutUserNestedInput
   devices?: Prisma.UserDeviceUpdateManyWithoutUserNestedInput
+  supplierProfile?: Prisma.SupplierProfileUpdateOneWithoutUserNestedInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientUpdateManyWithoutReviewerNestedInput
 }
 
 export type UserUncheckedUpdateWithoutActivatedConfigsInput = {
@@ -3420,6 +3570,8 @@ export type UserUncheckedUpdateWithoutActivatedConfigsInput = {
   paymentTransactions?: Prisma.PaymentTransactionUncheckedUpdateManyWithoutUserNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutUserNestedInput
   devices?: Prisma.UserDeviceUncheckedUpdateManyWithoutUserNestedInput
+  supplierProfile?: Prisma.SupplierProfileUncheckedUpdateOneWithoutUserNestedInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientUncheckedUpdateManyWithoutReviewerNestedInput
 }
 
 export type UserCreateWithoutAiUsageLogsInput = {
@@ -3458,6 +3610,8 @@ export type UserCreateWithoutAiUsageLogsInput = {
   role: Prisma.RoleCreateNestedOneWithoutUsersInput
   weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutUserInput
   devices?: Prisma.UserDeviceCreateNestedManyWithoutUserInput
+  supplierProfile?: Prisma.SupplierProfileCreateNestedOneWithoutUserInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientCreateNestedManyWithoutReviewerInput
 }
 
 export type UserUncheckedCreateWithoutAiUsageLogsInput = {
@@ -3496,6 +3650,8 @@ export type UserUncheckedCreateWithoutAiUsageLogsInput = {
   paymentTransactions?: Prisma.PaymentTransactionUncheckedCreateNestedManyWithoutUserInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutUserInput
   devices?: Prisma.UserDeviceUncheckedCreateNestedManyWithoutUserInput
+  supplierProfile?: Prisma.SupplierProfileUncheckedCreateNestedOneWithoutUserInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientUncheckedCreateNestedManyWithoutReviewerInput
 }
 
 export type UserCreateOrConnectWithoutAiUsageLogsInput = {
@@ -3550,6 +3706,8 @@ export type UserUpdateWithoutAiUsageLogsInput = {
   role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutUserNestedInput
   devices?: Prisma.UserDeviceUpdateManyWithoutUserNestedInput
+  supplierProfile?: Prisma.SupplierProfileUpdateOneWithoutUserNestedInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientUpdateManyWithoutReviewerNestedInput
 }
 
 export type UserUncheckedUpdateWithoutAiUsageLogsInput = {
@@ -3588,6 +3746,8 @@ export type UserUncheckedUpdateWithoutAiUsageLogsInput = {
   paymentTransactions?: Prisma.PaymentTransactionUncheckedUpdateManyWithoutUserNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutUserNestedInput
   devices?: Prisma.UserDeviceUncheckedUpdateManyWithoutUserNestedInput
+  supplierProfile?: Prisma.SupplierProfileUncheckedUpdateOneWithoutUserNestedInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientUncheckedUpdateManyWithoutReviewerNestedInput
 }
 
 export type UserCreateWithoutAdminLogsInput = {
@@ -3626,6 +3786,8 @@ export type UserCreateWithoutAdminLogsInput = {
   role: Prisma.RoleCreateNestedOneWithoutUsersInput
   weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutUserInput
   devices?: Prisma.UserDeviceCreateNestedManyWithoutUserInput
+  supplierProfile?: Prisma.SupplierProfileCreateNestedOneWithoutUserInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientCreateNestedManyWithoutReviewerInput
 }
 
 export type UserUncheckedCreateWithoutAdminLogsInput = {
@@ -3664,6 +3826,8 @@ export type UserUncheckedCreateWithoutAdminLogsInput = {
   paymentTransactions?: Prisma.PaymentTransactionUncheckedCreateNestedManyWithoutUserInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutUserInput
   devices?: Prisma.UserDeviceUncheckedCreateNestedManyWithoutUserInput
+  supplierProfile?: Prisma.SupplierProfileUncheckedCreateNestedOneWithoutUserInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientUncheckedCreateNestedManyWithoutReviewerInput
 }
 
 export type UserCreateOrConnectWithoutAdminLogsInput = {
@@ -3718,6 +3882,8 @@ export type UserUpdateWithoutAdminLogsInput = {
   role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutUserNestedInput
   devices?: Prisma.UserDeviceUpdateManyWithoutUserNestedInput
+  supplierProfile?: Prisma.SupplierProfileUpdateOneWithoutUserNestedInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientUpdateManyWithoutReviewerNestedInput
 }
 
 export type UserUncheckedUpdateWithoutAdminLogsInput = {
@@ -3756,6 +3922,8 @@ export type UserUncheckedUpdateWithoutAdminLogsInput = {
   paymentTransactions?: Prisma.PaymentTransactionUncheckedUpdateManyWithoutUserNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutUserNestedInput
   devices?: Prisma.UserDeviceUncheckedUpdateManyWithoutUserNestedInput
+  supplierProfile?: Prisma.SupplierProfileUncheckedUpdateOneWithoutUserNestedInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientUncheckedUpdateManyWithoutReviewerNestedInput
 }
 
 export type UserCreateWithoutNotificationsInput = {
@@ -3794,6 +3962,8 @@ export type UserCreateWithoutNotificationsInput = {
   role: Prisma.RoleCreateNestedOneWithoutUsersInput
   weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutUserInput
   devices?: Prisma.UserDeviceCreateNestedManyWithoutUserInput
+  supplierProfile?: Prisma.SupplierProfileCreateNestedOneWithoutUserInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientCreateNestedManyWithoutReviewerInput
 }
 
 export type UserUncheckedCreateWithoutNotificationsInput = {
@@ -3832,6 +4002,8 @@ export type UserUncheckedCreateWithoutNotificationsInput = {
   paymentTransactions?: Prisma.PaymentTransactionUncheckedCreateNestedManyWithoutUserInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutUserInput
   devices?: Prisma.UserDeviceUncheckedCreateNestedManyWithoutUserInput
+  supplierProfile?: Prisma.SupplierProfileUncheckedCreateNestedOneWithoutUserInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientUncheckedCreateNestedManyWithoutReviewerInput
 }
 
 export type UserCreateOrConnectWithoutNotificationsInput = {
@@ -3886,6 +4058,8 @@ export type UserUpdateWithoutNotificationsInput = {
   role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutUserNestedInput
   devices?: Prisma.UserDeviceUpdateManyWithoutUserNestedInput
+  supplierProfile?: Prisma.SupplierProfileUpdateOneWithoutUserNestedInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientUpdateManyWithoutReviewerNestedInput
 }
 
 export type UserUncheckedUpdateWithoutNotificationsInput = {
@@ -3924,6 +4098,8 @@ export type UserUncheckedUpdateWithoutNotificationsInput = {
   paymentTransactions?: Prisma.PaymentTransactionUncheckedUpdateManyWithoutUserNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutUserNestedInput
   devices?: Prisma.UserDeviceUncheckedUpdateManyWithoutUserNestedInput
+  supplierProfile?: Prisma.SupplierProfileUncheckedUpdateOneWithoutUserNestedInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientUncheckedUpdateManyWithoutReviewerNestedInput
 }
 
 export type UserCreateWithoutDevicesInput = {
@@ -3962,6 +4138,8 @@ export type UserCreateWithoutDevicesInput = {
   paymentTransactions?: Prisma.PaymentTransactionCreateNestedManyWithoutUserInput
   role: Prisma.RoleCreateNestedOneWithoutUsersInput
   weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutUserInput
+  supplierProfile?: Prisma.SupplierProfileCreateNestedOneWithoutUserInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientCreateNestedManyWithoutReviewerInput
 }
 
 export type UserUncheckedCreateWithoutDevicesInput = {
@@ -4000,6 +4178,8 @@ export type UserUncheckedCreateWithoutDevicesInput = {
   subscription?: Prisma.UserSubscriptionUncheckedCreateNestedOneWithoutUserInput
   paymentTransactions?: Prisma.PaymentTransactionUncheckedCreateNestedManyWithoutUserInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutUserInput
+  supplierProfile?: Prisma.SupplierProfileUncheckedCreateNestedOneWithoutUserInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientUncheckedCreateNestedManyWithoutReviewerInput
 }
 
 export type UserCreateOrConnectWithoutDevicesInput = {
@@ -4054,6 +4234,8 @@ export type UserUpdateWithoutDevicesInput = {
   paymentTransactions?: Prisma.PaymentTransactionUpdateManyWithoutUserNestedInput
   role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutUserNestedInput
+  supplierProfile?: Prisma.SupplierProfileUpdateOneWithoutUserNestedInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientUpdateManyWithoutReviewerNestedInput
 }
 
 export type UserUncheckedUpdateWithoutDevicesInput = {
@@ -4092,6 +4274,8 @@ export type UserUncheckedUpdateWithoutDevicesInput = {
   subscription?: Prisma.UserSubscriptionUncheckedUpdateOneWithoutUserNestedInput
   paymentTransactions?: Prisma.PaymentTransactionUncheckedUpdateManyWithoutUserNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutUserNestedInput
+  supplierProfile?: Prisma.SupplierProfileUncheckedUpdateOneWithoutUserNestedInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientUncheckedUpdateManyWithoutReviewerNestedInput
 }
 
 export type UserCreateWithoutSubscriptionInput = {
@@ -4130,6 +4314,8 @@ export type UserCreateWithoutSubscriptionInput = {
   role: Prisma.RoleCreateNestedOneWithoutUsersInput
   weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutUserInput
   devices?: Prisma.UserDeviceCreateNestedManyWithoutUserInput
+  supplierProfile?: Prisma.SupplierProfileCreateNestedOneWithoutUserInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientCreateNestedManyWithoutReviewerInput
 }
 
 export type UserUncheckedCreateWithoutSubscriptionInput = {
@@ -4168,6 +4354,8 @@ export type UserUncheckedCreateWithoutSubscriptionInput = {
   paymentTransactions?: Prisma.PaymentTransactionUncheckedCreateNestedManyWithoutUserInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutUserInput
   devices?: Prisma.UserDeviceUncheckedCreateNestedManyWithoutUserInput
+  supplierProfile?: Prisma.SupplierProfileUncheckedCreateNestedOneWithoutUserInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientUncheckedCreateNestedManyWithoutReviewerInput
 }
 
 export type UserCreateOrConnectWithoutSubscriptionInput = {
@@ -4222,6 +4410,8 @@ export type UserUpdateWithoutSubscriptionInput = {
   role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutUserNestedInput
   devices?: Prisma.UserDeviceUpdateManyWithoutUserNestedInput
+  supplierProfile?: Prisma.SupplierProfileUpdateOneWithoutUserNestedInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientUpdateManyWithoutReviewerNestedInput
 }
 
 export type UserUncheckedUpdateWithoutSubscriptionInput = {
@@ -4260,6 +4450,8 @@ export type UserUncheckedUpdateWithoutSubscriptionInput = {
   paymentTransactions?: Prisma.PaymentTransactionUncheckedUpdateManyWithoutUserNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutUserNestedInput
   devices?: Prisma.UserDeviceUncheckedUpdateManyWithoutUserNestedInput
+  supplierProfile?: Prisma.SupplierProfileUncheckedUpdateOneWithoutUserNestedInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientUncheckedUpdateManyWithoutReviewerNestedInput
 }
 
 export type UserCreateWithoutPaymentTransactionsInput = {
@@ -4298,6 +4490,8 @@ export type UserCreateWithoutPaymentTransactionsInput = {
   role: Prisma.RoleCreateNestedOneWithoutUsersInput
   weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutUserInput
   devices?: Prisma.UserDeviceCreateNestedManyWithoutUserInput
+  supplierProfile?: Prisma.SupplierProfileCreateNestedOneWithoutUserInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientCreateNestedManyWithoutReviewerInput
 }
 
 export type UserUncheckedCreateWithoutPaymentTransactionsInput = {
@@ -4336,6 +4530,8 @@ export type UserUncheckedCreateWithoutPaymentTransactionsInput = {
   subscription?: Prisma.UserSubscriptionUncheckedCreateNestedOneWithoutUserInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutUserInput
   devices?: Prisma.UserDeviceUncheckedCreateNestedManyWithoutUserInput
+  supplierProfile?: Prisma.SupplierProfileUncheckedCreateNestedOneWithoutUserInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientUncheckedCreateNestedManyWithoutReviewerInput
 }
 
 export type UserCreateOrConnectWithoutPaymentTransactionsInput = {
@@ -4390,6 +4586,8 @@ export type UserUpdateWithoutPaymentTransactionsInput = {
   role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutUserNestedInput
   devices?: Prisma.UserDeviceUpdateManyWithoutUserNestedInput
+  supplierProfile?: Prisma.SupplierProfileUpdateOneWithoutUserNestedInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientUpdateManyWithoutReviewerNestedInput
 }
 
 export type UserUncheckedUpdateWithoutPaymentTransactionsInput = {
@@ -4428,6 +4626,8 @@ export type UserUncheckedUpdateWithoutPaymentTransactionsInput = {
   subscription?: Prisma.UserSubscriptionUncheckedUpdateOneWithoutUserNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutUserNestedInput
   devices?: Prisma.UserDeviceUncheckedUpdateManyWithoutUserNestedInput
+  supplierProfile?: Prisma.SupplierProfileUncheckedUpdateOneWithoutUserNestedInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientUncheckedUpdateManyWithoutReviewerNestedInput
 }
 
 export type UserCreateWithoutFamilyOwnedInput = {
@@ -4466,6 +4666,8 @@ export type UserCreateWithoutFamilyOwnedInput = {
   role: Prisma.RoleCreateNestedOneWithoutUsersInput
   weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutUserInput
   devices?: Prisma.UserDeviceCreateNestedManyWithoutUserInput
+  supplierProfile?: Prisma.SupplierProfileCreateNestedOneWithoutUserInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientCreateNestedManyWithoutReviewerInput
 }
 
 export type UserUncheckedCreateWithoutFamilyOwnedInput = {
@@ -4504,6 +4706,8 @@ export type UserUncheckedCreateWithoutFamilyOwnedInput = {
   paymentTransactions?: Prisma.PaymentTransactionUncheckedCreateNestedManyWithoutUserInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutUserInput
   devices?: Prisma.UserDeviceUncheckedCreateNestedManyWithoutUserInput
+  supplierProfile?: Prisma.SupplierProfileUncheckedCreateNestedOneWithoutUserInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientUncheckedCreateNestedManyWithoutReviewerInput
 }
 
 export type UserCreateOrConnectWithoutFamilyOwnedInput = {
@@ -4558,6 +4762,8 @@ export type UserUpdateWithoutFamilyOwnedInput = {
   role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutUserNestedInput
   devices?: Prisma.UserDeviceUpdateManyWithoutUserNestedInput
+  supplierProfile?: Prisma.SupplierProfileUpdateOneWithoutUserNestedInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientUpdateManyWithoutReviewerNestedInput
 }
 
 export type UserUncheckedUpdateWithoutFamilyOwnedInput = {
@@ -4596,6 +4802,8 @@ export type UserUncheckedUpdateWithoutFamilyOwnedInput = {
   paymentTransactions?: Prisma.PaymentTransactionUncheckedUpdateManyWithoutUserNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutUserNestedInput
   devices?: Prisma.UserDeviceUncheckedUpdateManyWithoutUserNestedInput
+  supplierProfile?: Prisma.SupplierProfileUncheckedUpdateOneWithoutUserNestedInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientUncheckedUpdateManyWithoutReviewerNestedInput
 }
 
 export type UserCreateWithoutFamilyMembershipsInput = {
@@ -4634,6 +4842,8 @@ export type UserCreateWithoutFamilyMembershipsInput = {
   role: Prisma.RoleCreateNestedOneWithoutUsersInput
   weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutUserInput
   devices?: Prisma.UserDeviceCreateNestedManyWithoutUserInput
+  supplierProfile?: Prisma.SupplierProfileCreateNestedOneWithoutUserInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientCreateNestedManyWithoutReviewerInput
 }
 
 export type UserUncheckedCreateWithoutFamilyMembershipsInput = {
@@ -4672,6 +4882,8 @@ export type UserUncheckedCreateWithoutFamilyMembershipsInput = {
   paymentTransactions?: Prisma.PaymentTransactionUncheckedCreateNestedManyWithoutUserInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutUserInput
   devices?: Prisma.UserDeviceUncheckedCreateNestedManyWithoutUserInput
+  supplierProfile?: Prisma.SupplierProfileUncheckedCreateNestedOneWithoutUserInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientUncheckedCreateNestedManyWithoutReviewerInput
 }
 
 export type UserCreateOrConnectWithoutFamilyMembershipsInput = {
@@ -4726,6 +4938,8 @@ export type UserUpdateWithoutFamilyMembershipsInput = {
   role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutUserNestedInput
   devices?: Prisma.UserDeviceUpdateManyWithoutUserNestedInput
+  supplierProfile?: Prisma.SupplierProfileUpdateOneWithoutUserNestedInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientUpdateManyWithoutReviewerNestedInput
 }
 
 export type UserUncheckedUpdateWithoutFamilyMembershipsInput = {
@@ -4764,6 +4978,360 @@ export type UserUncheckedUpdateWithoutFamilyMembershipsInput = {
   paymentTransactions?: Prisma.PaymentTransactionUncheckedUpdateManyWithoutUserNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutUserNestedInput
   devices?: Prisma.UserDeviceUncheckedUpdateManyWithoutUserNestedInput
+  supplierProfile?: Prisma.SupplierProfileUncheckedUpdateOneWithoutUserNestedInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientUncheckedUpdateManyWithoutReviewerNestedInput
+}
+
+export type UserCreateWithoutSupplierProfileInput = {
+  id?: string
+  email?: string | null
+  passwordHash?: string | null
+  googleId?: string | null
+  googleEmail?: string | null
+  authProvider: $Enums.AuthProvider
+  status?: $Enums.UserStatus
+  lastLoginAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  isOnboardingCompleted?: boolean
+  name?: string | null
+  aiQuotaOverride?: number | null
+  adminLogs?: Prisma.AdminActivityLogCreateNestedManyWithoutAdminInput
+  activatedConfigs?: Prisma.AiProviderConfigCreateNestedManyWithoutActivatedByUserInput
+  activatedPrompts?: Prisma.AiSystemPromptCreateNestedManyWithoutActivatedByUserInput
+  aiUsageLogs?: Prisma.AiUsageLogCreateNestedManyWithoutUserInput
+  chatSessions?: Prisma.ChatSessionCreateNestedManyWithoutUserInput
+  fridgeItems?: Prisma.FridgeItemCreateNestedManyWithoutUserInput
+  scanLogs?: Prisma.IngredientScanLogCreateNestedManyWithoutUserInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  familyOwned?: Prisma.FamilyGroupCreateNestedOneWithoutOwnerInput
+  familyMemberships?: Prisma.FamilyMemberCreateNestedManyWithoutUserInput
+  authoredRecipes?: Prisma.RecipeCreateNestedManyWithoutAuthorInput
+  refreshTokens?: Prisma.RefreshTokenCreateNestedManyWithoutUserInput
+  shoppingLists?: Prisma.ShoppingListCreateNestedManyWithoutUserInput
+  allergies?: Prisma.UserAllergyCreateNestedManyWithoutUserInput
+  preferences?: Prisma.UserPreferenceCreateNestedOneWithoutUserInput
+  profile?: Prisma.UserProfileCreateNestedOneWithoutUserInput
+  savedRecipes?: Prisma.UserSavedRecipeCreateNestedManyWithoutUserInput
+  subscription?: Prisma.UserSubscriptionCreateNestedOneWithoutUserInput
+  paymentTransactions?: Prisma.PaymentTransactionCreateNestedManyWithoutUserInput
+  role: Prisma.RoleCreateNestedOneWithoutUsersInput
+  weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutUserInput
+  devices?: Prisma.UserDeviceCreateNestedManyWithoutUserInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientCreateNestedManyWithoutReviewerInput
+}
+
+export type UserUncheckedCreateWithoutSupplierProfileInput = {
+  id?: string
+  email?: string | null
+  passwordHash?: string | null
+  googleId?: string | null
+  googleEmail?: string | null
+  authProvider: $Enums.AuthProvider
+  status?: $Enums.UserStatus
+  roleId: number
+  lastLoginAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  isOnboardingCompleted?: boolean
+  name?: string | null
+  aiQuotaOverride?: number | null
+  adminLogs?: Prisma.AdminActivityLogUncheckedCreateNestedManyWithoutAdminInput
+  activatedConfigs?: Prisma.AiProviderConfigUncheckedCreateNestedManyWithoutActivatedByUserInput
+  activatedPrompts?: Prisma.AiSystemPromptUncheckedCreateNestedManyWithoutActivatedByUserInput
+  aiUsageLogs?: Prisma.AiUsageLogUncheckedCreateNestedManyWithoutUserInput
+  chatSessions?: Prisma.ChatSessionUncheckedCreateNestedManyWithoutUserInput
+  fridgeItems?: Prisma.FridgeItemUncheckedCreateNestedManyWithoutUserInput
+  scanLogs?: Prisma.IngredientScanLogUncheckedCreateNestedManyWithoutUserInput
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  familyOwned?: Prisma.FamilyGroupUncheckedCreateNestedOneWithoutOwnerInput
+  familyMemberships?: Prisma.FamilyMemberUncheckedCreateNestedManyWithoutUserInput
+  authoredRecipes?: Prisma.RecipeUncheckedCreateNestedManyWithoutAuthorInput
+  refreshTokens?: Prisma.RefreshTokenUncheckedCreateNestedManyWithoutUserInput
+  shoppingLists?: Prisma.ShoppingListUncheckedCreateNestedManyWithoutUserInput
+  allergies?: Prisma.UserAllergyUncheckedCreateNestedManyWithoutUserInput
+  preferences?: Prisma.UserPreferenceUncheckedCreateNestedOneWithoutUserInput
+  profile?: Prisma.UserProfileUncheckedCreateNestedOneWithoutUserInput
+  savedRecipes?: Prisma.UserSavedRecipeUncheckedCreateNestedManyWithoutUserInput
+  subscription?: Prisma.UserSubscriptionUncheckedCreateNestedOneWithoutUserInput
+  paymentTransactions?: Prisma.PaymentTransactionUncheckedCreateNestedManyWithoutUserInput
+  weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutUserInput
+  devices?: Prisma.UserDeviceUncheckedCreateNestedManyWithoutUserInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientUncheckedCreateNestedManyWithoutReviewerInput
+}
+
+export type UserCreateOrConnectWithoutSupplierProfileInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutSupplierProfileInput, Prisma.UserUncheckedCreateWithoutSupplierProfileInput>
+}
+
+export type UserUpsertWithoutSupplierProfileInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutSupplierProfileInput, Prisma.UserUncheckedUpdateWithoutSupplierProfileInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutSupplierProfileInput, Prisma.UserUncheckedCreateWithoutSupplierProfileInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutSupplierProfileInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutSupplierProfileInput, Prisma.UserUncheckedUpdateWithoutSupplierProfileInput>
+}
+
+export type UserUpdateWithoutSupplierProfileInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  googleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  googleEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
+  status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiQuotaOverride?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  adminLogs?: Prisma.AdminActivityLogUpdateManyWithoutAdminNestedInput
+  activatedConfigs?: Prisma.AiProviderConfigUpdateManyWithoutActivatedByUserNestedInput
+  activatedPrompts?: Prisma.AiSystemPromptUpdateManyWithoutActivatedByUserNestedInput
+  aiUsageLogs?: Prisma.AiUsageLogUpdateManyWithoutUserNestedInput
+  chatSessions?: Prisma.ChatSessionUpdateManyWithoutUserNestedInput
+  fridgeItems?: Prisma.FridgeItemUpdateManyWithoutUserNestedInput
+  scanLogs?: Prisma.IngredientScanLogUpdateManyWithoutUserNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  familyOwned?: Prisma.FamilyGroupUpdateOneWithoutOwnerNestedInput
+  familyMemberships?: Prisma.FamilyMemberUpdateManyWithoutUserNestedInput
+  authoredRecipes?: Prisma.RecipeUpdateManyWithoutAuthorNestedInput
+  refreshTokens?: Prisma.RefreshTokenUpdateManyWithoutUserNestedInput
+  shoppingLists?: Prisma.ShoppingListUpdateManyWithoutUserNestedInput
+  allergies?: Prisma.UserAllergyUpdateManyWithoutUserNestedInput
+  preferences?: Prisma.UserPreferenceUpdateOneWithoutUserNestedInput
+  profile?: Prisma.UserProfileUpdateOneWithoutUserNestedInput
+  savedRecipes?: Prisma.UserSavedRecipeUpdateManyWithoutUserNestedInput
+  subscription?: Prisma.UserSubscriptionUpdateOneWithoutUserNestedInput
+  paymentTransactions?: Prisma.PaymentTransactionUpdateManyWithoutUserNestedInput
+  role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
+  weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutUserNestedInput
+  devices?: Prisma.UserDeviceUpdateManyWithoutUserNestedInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientUpdateManyWithoutReviewerNestedInput
+}
+
+export type UserUncheckedUpdateWithoutSupplierProfileInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  googleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  googleEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
+  status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+  roleId?: Prisma.IntFieldUpdateOperationsInput | number
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiQuotaOverride?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  adminLogs?: Prisma.AdminActivityLogUncheckedUpdateManyWithoutAdminNestedInput
+  activatedConfigs?: Prisma.AiProviderConfigUncheckedUpdateManyWithoutActivatedByUserNestedInput
+  activatedPrompts?: Prisma.AiSystemPromptUncheckedUpdateManyWithoutActivatedByUserNestedInput
+  aiUsageLogs?: Prisma.AiUsageLogUncheckedUpdateManyWithoutUserNestedInput
+  chatSessions?: Prisma.ChatSessionUncheckedUpdateManyWithoutUserNestedInput
+  fridgeItems?: Prisma.FridgeItemUncheckedUpdateManyWithoutUserNestedInput
+  scanLogs?: Prisma.IngredientScanLogUncheckedUpdateManyWithoutUserNestedInput
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  familyOwned?: Prisma.FamilyGroupUncheckedUpdateOneWithoutOwnerNestedInput
+  familyMemberships?: Prisma.FamilyMemberUncheckedUpdateManyWithoutUserNestedInput
+  authoredRecipes?: Prisma.RecipeUncheckedUpdateManyWithoutAuthorNestedInput
+  refreshTokens?: Prisma.RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
+  shoppingLists?: Prisma.ShoppingListUncheckedUpdateManyWithoutUserNestedInput
+  allergies?: Prisma.UserAllergyUncheckedUpdateManyWithoutUserNestedInput
+  preferences?: Prisma.UserPreferenceUncheckedUpdateOneWithoutUserNestedInput
+  profile?: Prisma.UserProfileUncheckedUpdateOneWithoutUserNestedInput
+  savedRecipes?: Prisma.UserSavedRecipeUncheckedUpdateManyWithoutUserNestedInput
+  subscription?: Prisma.UserSubscriptionUncheckedUpdateOneWithoutUserNestedInput
+  paymentTransactions?: Prisma.PaymentTransactionUncheckedUpdateManyWithoutUserNestedInput
+  weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutUserNestedInput
+  devices?: Prisma.UserDeviceUncheckedUpdateManyWithoutUserNestedInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientUncheckedUpdateManyWithoutReviewerNestedInput
+}
+
+export type UserCreateWithoutReviewedSupplierIngredientsInput = {
+  id?: string
+  email?: string | null
+  passwordHash?: string | null
+  googleId?: string | null
+  googleEmail?: string | null
+  authProvider: $Enums.AuthProvider
+  status?: $Enums.UserStatus
+  lastLoginAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  isOnboardingCompleted?: boolean
+  name?: string | null
+  aiQuotaOverride?: number | null
+  adminLogs?: Prisma.AdminActivityLogCreateNestedManyWithoutAdminInput
+  activatedConfigs?: Prisma.AiProviderConfigCreateNestedManyWithoutActivatedByUserInput
+  activatedPrompts?: Prisma.AiSystemPromptCreateNestedManyWithoutActivatedByUserInput
+  aiUsageLogs?: Prisma.AiUsageLogCreateNestedManyWithoutUserInput
+  chatSessions?: Prisma.ChatSessionCreateNestedManyWithoutUserInput
+  fridgeItems?: Prisma.FridgeItemCreateNestedManyWithoutUserInput
+  scanLogs?: Prisma.IngredientScanLogCreateNestedManyWithoutUserInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  familyOwned?: Prisma.FamilyGroupCreateNestedOneWithoutOwnerInput
+  familyMemberships?: Prisma.FamilyMemberCreateNestedManyWithoutUserInput
+  authoredRecipes?: Prisma.RecipeCreateNestedManyWithoutAuthorInput
+  refreshTokens?: Prisma.RefreshTokenCreateNestedManyWithoutUserInput
+  shoppingLists?: Prisma.ShoppingListCreateNestedManyWithoutUserInput
+  allergies?: Prisma.UserAllergyCreateNestedManyWithoutUserInput
+  preferences?: Prisma.UserPreferenceCreateNestedOneWithoutUserInput
+  profile?: Prisma.UserProfileCreateNestedOneWithoutUserInput
+  savedRecipes?: Prisma.UserSavedRecipeCreateNestedManyWithoutUserInput
+  subscription?: Prisma.UserSubscriptionCreateNestedOneWithoutUserInput
+  paymentTransactions?: Prisma.PaymentTransactionCreateNestedManyWithoutUserInput
+  role: Prisma.RoleCreateNestedOneWithoutUsersInput
+  weeklyPlans?: Prisma.WeeklyPlanCreateNestedManyWithoutUserInput
+  devices?: Prisma.UserDeviceCreateNestedManyWithoutUserInput
+  supplierProfile?: Prisma.SupplierProfileCreateNestedOneWithoutUserInput
+}
+
+export type UserUncheckedCreateWithoutReviewedSupplierIngredientsInput = {
+  id?: string
+  email?: string | null
+  passwordHash?: string | null
+  googleId?: string | null
+  googleEmail?: string | null
+  authProvider: $Enums.AuthProvider
+  status?: $Enums.UserStatus
+  roleId: number
+  lastLoginAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  isOnboardingCompleted?: boolean
+  name?: string | null
+  aiQuotaOverride?: number | null
+  adminLogs?: Prisma.AdminActivityLogUncheckedCreateNestedManyWithoutAdminInput
+  activatedConfigs?: Prisma.AiProviderConfigUncheckedCreateNestedManyWithoutActivatedByUserInput
+  activatedPrompts?: Prisma.AiSystemPromptUncheckedCreateNestedManyWithoutActivatedByUserInput
+  aiUsageLogs?: Prisma.AiUsageLogUncheckedCreateNestedManyWithoutUserInput
+  chatSessions?: Prisma.ChatSessionUncheckedCreateNestedManyWithoutUserInput
+  fridgeItems?: Prisma.FridgeItemUncheckedCreateNestedManyWithoutUserInput
+  scanLogs?: Prisma.IngredientScanLogUncheckedCreateNestedManyWithoutUserInput
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  familyOwned?: Prisma.FamilyGroupUncheckedCreateNestedOneWithoutOwnerInput
+  familyMemberships?: Prisma.FamilyMemberUncheckedCreateNestedManyWithoutUserInput
+  authoredRecipes?: Prisma.RecipeUncheckedCreateNestedManyWithoutAuthorInput
+  refreshTokens?: Prisma.RefreshTokenUncheckedCreateNestedManyWithoutUserInput
+  shoppingLists?: Prisma.ShoppingListUncheckedCreateNestedManyWithoutUserInput
+  allergies?: Prisma.UserAllergyUncheckedCreateNestedManyWithoutUserInput
+  preferences?: Prisma.UserPreferenceUncheckedCreateNestedOneWithoutUserInput
+  profile?: Prisma.UserProfileUncheckedCreateNestedOneWithoutUserInput
+  savedRecipes?: Prisma.UserSavedRecipeUncheckedCreateNestedManyWithoutUserInput
+  subscription?: Prisma.UserSubscriptionUncheckedCreateNestedOneWithoutUserInput
+  paymentTransactions?: Prisma.PaymentTransactionUncheckedCreateNestedManyWithoutUserInput
+  weeklyPlans?: Prisma.WeeklyPlanUncheckedCreateNestedManyWithoutUserInput
+  devices?: Prisma.UserDeviceUncheckedCreateNestedManyWithoutUserInput
+  supplierProfile?: Prisma.SupplierProfileUncheckedCreateNestedOneWithoutUserInput
+}
+
+export type UserCreateOrConnectWithoutReviewedSupplierIngredientsInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutReviewedSupplierIngredientsInput, Prisma.UserUncheckedCreateWithoutReviewedSupplierIngredientsInput>
+}
+
+export type UserUpsertWithoutReviewedSupplierIngredientsInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutReviewedSupplierIngredientsInput, Prisma.UserUncheckedUpdateWithoutReviewedSupplierIngredientsInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutReviewedSupplierIngredientsInput, Prisma.UserUncheckedCreateWithoutReviewedSupplierIngredientsInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutReviewedSupplierIngredientsInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutReviewedSupplierIngredientsInput, Prisma.UserUncheckedUpdateWithoutReviewedSupplierIngredientsInput>
+}
+
+export type UserUpdateWithoutReviewedSupplierIngredientsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  googleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  googleEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
+  status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiQuotaOverride?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  adminLogs?: Prisma.AdminActivityLogUpdateManyWithoutAdminNestedInput
+  activatedConfigs?: Prisma.AiProviderConfigUpdateManyWithoutActivatedByUserNestedInput
+  activatedPrompts?: Prisma.AiSystemPromptUpdateManyWithoutActivatedByUserNestedInput
+  aiUsageLogs?: Prisma.AiUsageLogUpdateManyWithoutUserNestedInput
+  chatSessions?: Prisma.ChatSessionUpdateManyWithoutUserNestedInput
+  fridgeItems?: Prisma.FridgeItemUpdateManyWithoutUserNestedInput
+  scanLogs?: Prisma.IngredientScanLogUpdateManyWithoutUserNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  familyOwned?: Prisma.FamilyGroupUpdateOneWithoutOwnerNestedInput
+  familyMemberships?: Prisma.FamilyMemberUpdateManyWithoutUserNestedInput
+  authoredRecipes?: Prisma.RecipeUpdateManyWithoutAuthorNestedInput
+  refreshTokens?: Prisma.RefreshTokenUpdateManyWithoutUserNestedInput
+  shoppingLists?: Prisma.ShoppingListUpdateManyWithoutUserNestedInput
+  allergies?: Prisma.UserAllergyUpdateManyWithoutUserNestedInput
+  preferences?: Prisma.UserPreferenceUpdateOneWithoutUserNestedInput
+  profile?: Prisma.UserProfileUpdateOneWithoutUserNestedInput
+  savedRecipes?: Prisma.UserSavedRecipeUpdateManyWithoutUserNestedInput
+  subscription?: Prisma.UserSubscriptionUpdateOneWithoutUserNestedInput
+  paymentTransactions?: Prisma.PaymentTransactionUpdateManyWithoutUserNestedInput
+  role?: Prisma.RoleUpdateOneRequiredWithoutUsersNestedInput
+  weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutUserNestedInput
+  devices?: Prisma.UserDeviceUpdateManyWithoutUserNestedInput
+  supplierProfile?: Prisma.SupplierProfileUpdateOneWithoutUserNestedInput
+}
+
+export type UserUncheckedUpdateWithoutReviewedSupplierIngredientsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  googleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  googleEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  authProvider?: Prisma.EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
+  status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+  roleId?: Prisma.IntFieldUpdateOperationsInput | number
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  isOnboardingCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiQuotaOverride?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  adminLogs?: Prisma.AdminActivityLogUncheckedUpdateManyWithoutAdminNestedInput
+  activatedConfigs?: Prisma.AiProviderConfigUncheckedUpdateManyWithoutActivatedByUserNestedInput
+  activatedPrompts?: Prisma.AiSystemPromptUncheckedUpdateManyWithoutActivatedByUserNestedInput
+  aiUsageLogs?: Prisma.AiUsageLogUncheckedUpdateManyWithoutUserNestedInput
+  chatSessions?: Prisma.ChatSessionUncheckedUpdateManyWithoutUserNestedInput
+  fridgeItems?: Prisma.FridgeItemUncheckedUpdateManyWithoutUserNestedInput
+  scanLogs?: Prisma.IngredientScanLogUncheckedUpdateManyWithoutUserNestedInput
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  familyOwned?: Prisma.FamilyGroupUncheckedUpdateOneWithoutOwnerNestedInput
+  familyMemberships?: Prisma.FamilyMemberUncheckedUpdateManyWithoutUserNestedInput
+  authoredRecipes?: Prisma.RecipeUncheckedUpdateManyWithoutAuthorNestedInput
+  refreshTokens?: Prisma.RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
+  shoppingLists?: Prisma.ShoppingListUncheckedUpdateManyWithoutUserNestedInput
+  allergies?: Prisma.UserAllergyUncheckedUpdateManyWithoutUserNestedInput
+  preferences?: Prisma.UserPreferenceUncheckedUpdateOneWithoutUserNestedInput
+  profile?: Prisma.UserProfileUncheckedUpdateOneWithoutUserNestedInput
+  savedRecipes?: Prisma.UserSavedRecipeUncheckedUpdateManyWithoutUserNestedInput
+  subscription?: Prisma.UserSubscriptionUncheckedUpdateOneWithoutUserNestedInput
+  paymentTransactions?: Prisma.PaymentTransactionUncheckedUpdateManyWithoutUserNestedInput
+  weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutUserNestedInput
+  devices?: Prisma.UserDeviceUncheckedUpdateManyWithoutUserNestedInput
+  supplierProfile?: Prisma.SupplierProfileUncheckedUpdateOneWithoutUserNestedInput
 }
 
 export type UserCreateManyRoleInput = {
@@ -4819,6 +5387,8 @@ export type UserUpdateWithoutRoleInput = {
   paymentTransactions?: Prisma.PaymentTransactionUpdateManyWithoutUserNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUpdateManyWithoutUserNestedInput
   devices?: Prisma.UserDeviceUpdateManyWithoutUserNestedInput
+  supplierProfile?: Prisma.SupplierProfileUpdateOneWithoutUserNestedInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientUpdateManyWithoutReviewerNestedInput
 }
 
 export type UserUncheckedUpdateWithoutRoleInput = {
@@ -4857,6 +5427,8 @@ export type UserUncheckedUpdateWithoutRoleInput = {
   paymentTransactions?: Prisma.PaymentTransactionUncheckedUpdateManyWithoutUserNestedInput
   weeklyPlans?: Prisma.WeeklyPlanUncheckedUpdateManyWithoutUserNestedInput
   devices?: Prisma.UserDeviceUncheckedUpdateManyWithoutUserNestedInput
+  supplierProfile?: Prisma.SupplierProfileUncheckedUpdateOneWithoutUserNestedInput
+  reviewedSupplierIngredients?: Prisma.SupplierIngredientUncheckedUpdateManyWithoutReviewerNestedInput
 }
 
 export type UserUncheckedUpdateManyWithoutRoleInput = {
@@ -4899,6 +5471,7 @@ export type UserCountOutputType = {
   paymentTransactions: number
   weeklyPlans: number
   devices: number
+  reviewedSupplierIngredients: number
 }
 
 export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -4919,6 +5492,7 @@ export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.I
   paymentTransactions?: boolean | UserCountOutputTypeCountPaymentTransactionsArgs
   weeklyPlans?: boolean | UserCountOutputTypeCountWeeklyPlansArgs
   devices?: boolean | UserCountOutputTypeCountDevicesArgs
+  reviewedSupplierIngredients?: boolean | UserCountOutputTypeCountReviewedSupplierIngredientsArgs
 }
 
 /**
@@ -5050,6 +5624,13 @@ export type UserCountOutputTypeCountDevicesArgs<ExtArgs extends runtime.Types.Ex
   where?: Prisma.UserDeviceWhereInput
 }
 
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountReviewedSupplierIngredientsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.SupplierIngredientWhereInput
+}
+
 
 export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -5089,6 +5670,8 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   role?: boolean | Prisma.RoleDefaultArgs<ExtArgs>
   weeklyPlans?: boolean | Prisma.User$weeklyPlansArgs<ExtArgs>
   devices?: boolean | Prisma.User$devicesArgs<ExtArgs>
+  supplierProfile?: boolean | Prisma.User$supplierProfileArgs<ExtArgs>
+  reviewedSupplierIngredients?: boolean | Prisma.User$reviewedSupplierIngredientsArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["user"]>
 
@@ -5136,6 +5719,8 @@ export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   role?: boolean | Prisma.RoleDefaultArgs<ExtArgs>
   weeklyPlans?: boolean | Prisma.User$weeklyPlansArgs<ExtArgs>
   devices?: boolean | Prisma.User$devicesArgs<ExtArgs>
+  supplierProfile?: boolean | Prisma.User$supplierProfileArgs<ExtArgs>
+  reviewedSupplierIngredients?: boolean | Prisma.User$reviewedSupplierIngredientsArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }
 
@@ -5164,6 +5749,8 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     role: Prisma.$RolePayload<ExtArgs>
     weeklyPlans: Prisma.$WeeklyPlanPayload<ExtArgs>[]
     devices: Prisma.$UserDevicePayload<ExtArgs>[]
+    supplierProfile: Prisma.$SupplierProfilePayload<ExtArgs> | null
+    reviewedSupplierIngredients: Prisma.$SupplierIngredientPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -5543,6 +6130,8 @@ export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Typ
   role<T extends Prisma.RoleDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.RoleDefaultArgs<ExtArgs>>): Prisma.Prisma__RoleClient<runtime.Types.Result.GetResult<Prisma.$RolePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   weeklyPlans<T extends Prisma.User$weeklyPlansArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$weeklyPlansArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$WeeklyPlanPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   devices<T extends Prisma.User$devicesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$devicesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$UserDevicePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  supplierProfile<T extends Prisma.User$supplierProfileArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$supplierProfileArgs<ExtArgs>>): Prisma.Prisma__SupplierProfileClient<runtime.Types.Result.GetResult<Prisma.$SupplierProfilePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  reviewedSupplierIngredients<T extends Prisma.User$reviewedSupplierIngredientsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$reviewedSupplierIngredientsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$SupplierIngredientPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -6416,6 +7005,49 @@ export type User$devicesArgs<ExtArgs extends runtime.Types.Extensions.InternalAr
   take?: number
   skip?: number
   distinct?: Prisma.UserDeviceScalarFieldEnum | Prisma.UserDeviceScalarFieldEnum[]
+}
+
+/**
+ * User.supplierProfile
+ */
+export type User$supplierProfileArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the SupplierProfile
+   */
+  select?: Prisma.SupplierProfileSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the SupplierProfile
+   */
+  omit?: Prisma.SupplierProfileOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.SupplierProfileInclude<ExtArgs> | null
+  where?: Prisma.SupplierProfileWhereInput
+}
+
+/**
+ * User.reviewedSupplierIngredients
+ */
+export type User$reviewedSupplierIngredientsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the SupplierIngredient
+   */
+  select?: Prisma.SupplierIngredientSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the SupplierIngredient
+   */
+  omit?: Prisma.SupplierIngredientOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.SupplierIngredientInclude<ExtArgs> | null
+  where?: Prisma.SupplierIngredientWhereInput
+  orderBy?: Prisma.SupplierIngredientOrderByWithRelationInput | Prisma.SupplierIngredientOrderByWithRelationInput[]
+  cursor?: Prisma.SupplierIngredientWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.SupplierIngredientScalarFieldEnum | Prisma.SupplierIngredientScalarFieldEnum[]
 }
 
 /**
