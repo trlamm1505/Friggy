@@ -54,6 +54,13 @@ export class CreateSupplierIngredientDto {
   @IsOptional()
   @IsString()
   description?: string;
+
+  @ApiPropertyOptional({
+    type: 'string',
+    format: 'binary',
+    description: 'Ảnh nguyên liệu (JPEG/PNG/WEBP, tối đa 5MB) — optional',
+  })
+  image?: any;
 }
 
 export class UpdateSupplierIngredientDto {

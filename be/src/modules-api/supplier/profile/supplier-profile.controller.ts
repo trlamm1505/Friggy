@@ -21,6 +21,7 @@ import type {
   SupplierPlanResponseDto,
   SupplierSubscriptionResponseDto,
   SupplierSubscribeResponseDto,
+  SupplierPaymentTransactionDto,
 } from './dto/supplier-response.dto';
 
 @ApiTags('Supplier')
@@ -92,6 +93,14 @@ export class SupplierProfileController {
   @ApiOperation({ summary: '[Supplier] Hủy tự động gia hạn gói' })
   cancelAutoRenewal(@CurrentUser() user: JwtPayload) {
     return this.service.cancelAutoRenewal(user.sub);
+  }
+
+  @Get('payment-history')
+  @Roles('food_supplier')
+  @ApiOperation({ summary: '[Supplier] Lịch sử giao dịch thanh toán của nhà cung cấp' })
+  @ApiResponse({ status: 200, type: [Object] })
+  getPaymentHistory(@CurrentUser() user: JwtPayload): Promise<SupplierPaymentTransactionDto[]> {
+    return this.service.getPaymentHistory(user.sub);
   }
 }
 

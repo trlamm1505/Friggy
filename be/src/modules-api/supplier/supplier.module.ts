@@ -5,6 +5,7 @@ import { SupplierIngredientsController } from './ingredients/supplier-ingredient
 import { SupplierIngredientsService } from './ingredients/supplier-ingredients.service';
 import { SupplierApplicationController } from './application/supplier-application.controller';
 import { SupplierApplicationService } from './application/supplier-application.service';
+import { SupplierPaymentCron } from './supplier-payment.cron';
 import { PrismaModule } from 'src/modules-system/prisma/prisma.module';
 import { FcmModule } from 'src/modules-system/fcm/fcm.module';
 import { RedisModule } from 'src/modules-system/redis/redis.module';
@@ -23,6 +24,7 @@ import { SupplierActiveGuard } from 'src/common/guards/supplier-active.guard';
     SupplierProfileService,
     SupplierIngredientsService,
     SupplierActiveGuard,
+    SupplierPaymentCron,
   ],
   exports: [SupplierIngredientsService],
 })

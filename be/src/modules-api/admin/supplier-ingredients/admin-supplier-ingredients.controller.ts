@@ -1,6 +1,8 @@
-import { Controller, Get, Patch, Param, Body, Query, Req } from '@nestjs/common';
+import { Controller, Get, Patch, Param, Body, Query } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiParam } from '@nestjs/swagger';
 import { Roles } from 'src/common/decorators/roles.decorator';
+import { CurrentUser } from 'src/common/decorators/current-user.decorator';
+import type { JwtPayload } from 'src/common/interfaces/jwt-payload.interface';
 import { AdminSupplierIngredientsService } from './admin-supplier-ingredients.service';
 import {
   ListSupplierIngredientsDto,
@@ -17,8 +19,8 @@ export class AdminSupplierIngredientsController {
 
   @Get()
   @ApiOperation({ summary: '[Admin] Danh sách nguyên liệu supplier (filter by status/profileId)' })
-  findAll(@Query() dto: ListSupplierIngredientsDto, @Req() req: any) {
-    return this.service.findAll(dto, req.user.userId);
+  findAll(@Query() dto: ListSupplierIngredientsDto, @CurrentUser() user: JwtPayload) {
+    return this.service.findAll(dto, user.sub);
   }
 
   @Get(':id')
@@ -31,14 +33,14 @@ export class AdminSupplierIngredientsController {
   @Patch(':id/approve')
   @ApiOperation({ summary: '[Admin] Duyệt nguyên liệu supplier (optionally merge to global)' })
   @ApiParam({ name: 'id', description: 'Supplier ingredient ID' })
-  approve(@Param('id') id: string, @Body() dto: ApproveSupplierIngredientDto, @Req() req: any) {
-    return this.service.approve(id, dto, req.user.userId);
+  approve(@Param('id') id: string, @Body() dto: ApproveSupplierIngredientDto, @CurrentUser() user: JwtPayload) {
+    return this.service.approve(id, dto, user.sub);
   }
 
   @Patch(':id/reject')
   @ApiOperation({ summary: '[Admin] Từ chối nguyên liệu supplier' })
   @ApiParam({ name: 'id', description: 'Supplier ingredient ID' })
-  reject(@Param('id') id: string, @Body() dto: RejectSupplierIngredientDto, @Req() req: any) {
-    return this.service.reject(id, dto, req.user.userId);
+  reject(@Param('id') id: string, @Body() dto: RejectSupplierIngredientDto, @CurrentUser() user: JwtPayload) {
+    return this.service.reject(id, dto, user.sub);
   }
 }
