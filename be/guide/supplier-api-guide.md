@@ -117,7 +117,7 @@ Auth: Không cần
 | `phone` | ❌ | max 20 ký tự |
 | `address` | ❌ | max 255 ký tự |
 | `description` | ❌ | không giới hạn |
-| `website` | ❌ | max 255 ký tự |
+| `website` | ❌ | URL hợp lệ (https://...), max 255 ký tự |
 
 **Response `201`:**
 
@@ -418,6 +418,41 @@ Auth: food_supplier
 
 ---
 
+### 5.5 Lịch sử giao dịch thanh toán
+
+```
+GET /supplier/payment-history
+Auth: food_supplier
+```
+
+**Response `200`:** (mảng, sắp xếp mới nhất trước)
+
+```json
+[
+  {
+    "id": "uuid",
+    "type": "subscribe",
+    "amount": 299000,
+    "status": "paid",
+    "paymentRef": "FRIGGY-SUP-1234567890",
+    "description": "Gói NCC Standard",
+    "checkoutUrl": "https://pay.payos.vn/...",
+    "paidAt": "2026-11-08T10:30:00.000Z",
+    "createdAt": "2026-11-08T10:15:00.000Z",
+    "planName": "Standard"
+  }
+]
+```
+
+| Field | Mô tả |
+|---|---|
+| `type` | `subscribe` (mua mới) hoặc `renewal` (gia hạn) |
+| `status` | `pending` / `paid` / `failed` / `cancelled` |
+| `checkoutUrl` | Link thanh toán PayOS (chỉ có khi `pending`) |
+| `paidAt` | Thời điểm thanh toán thành công, `null` nếu chưa thanh toán |
+
+---
+
 ## 6. Supplier — Quản lý nguyên liệu
 
 > Tất cả yêu cầu role `food_supplier`.  
@@ -503,23 +538,12 @@ Auth: food_supplier
 ```
 POST /supplier/ingredients
 Auth: food_supplier + subscription active
-Content-Type: application/json
+Content-Type: multipart/form-data
 ```
 
-**Request body:**
+> Endpoint nhận **multipart/form-data** — truyền các field dữ liệu kèm file ảnh tùy chọn.
 
-```json
-{
-  "name": "Thịt bò Úc",
-  "categoryId": 3,
-  "defaultUnit": "kg",
-  "caloriesPer100g": 250,
-  "averagePricePerUnit": 150000,
-  "brand": "ABC Farm",
-  "barcode": "8938505737946",
-  "description": "Thịt bò nhập khẩu từ Úc, chứng nhận hữu cơ"
-}
-```
+**Form fields:**
 
 | Field | Bắt buộc | Giới hạn |
 |---|---|---|
@@ -531,10 +555,28 @@ Content-Type: application/json
 | `brand` | ❌ | max 100 ký tự |
 | `barcode` | ❌ | max 50 ký tự |
 | `description` | ❌ | không giới hạn |
+| `image` | ❌ | File ảnh JPEG/PNG/WEBP, tối đa 5MB |
+
+**Ví dụ gửi bằng axios:**
+
+```ts
+const formData = new FormData();
+formData.append('name', 'Thịt bò Úc');
+formData.append('categoryId', '3');
+formData.append('defaultUnit', 'kg');
+formData.append('averagePricePerUnit', '150000');
+formData.append('brand', 'ABC Farm');
+formData.append('image', imageFile); // File object — optional
+
+await axios.post('/supplier/ingredients', formData, {
+  headers: { 'Content-Type': 'multipart/form-data' },
+});
+```
 
 **Response `201`:** `SupplierIngredientResponseDto` với `status: "pending"`.
 
-> Nguyên liệu mới luôn ở trạng thái `pending` — cần admin duyệt trước khi hiển thị cho người dùng cuối.
+> Nguyên liệu mới luôn ở trạng thái `pending` — cần admin duyệt trước khi hiển thị cho người dùng cuối.  
+> Nếu có ảnh, `imagePath` trả về dạng `/ingredients/{uuid}.jpg`.
 
 **Lỗi:**
 
@@ -556,9 +598,33 @@ Content-Type: multipart/form-data
 
 | Form field | Giá trị |
 |---|---|
-| `file` | File `.xlsx` đã điền theo template (max 10MB) |
+| `file` | File `.xlsx` đã điền theo template (max 5MB) |
 
 > **Rate limit:** Mỗi ngày tối đa **5 lần** import (reset lúc 00:00). Nếu vượt quá → `400`.
+
+#### Cấu trúc Excel
+
+| Cột | Header | Bắt buộc | Ghi chú |
+|---|---|---|---|
+| A | `name*` | ✅ | Tên nguyên liệu, max 150 ký tự |
+| B | `categoryId*` | ✅ | ID danh mục (xem sheet "Danh mục tham khảo") |
+| C | `defaultUnit*` | ✅ | Đơn vị mặc định: kg, g, lít, cái... |
+| D | `caloriesPer100g` | ❌ | Số thực |
+| E | `averagePricePerUnit` | ❌ | Số nguyên (VND) |
+| F | `brand` | ❌ | Thương hiệu |
+| G | `barcode` | ❌ | Mã vạch |
+| H | `description` | ❌ | Mô tả |
+
+#### Nhúng ảnh vào Excel
+
+Supplier có thể nhúng ảnh cho từng nguyên liệu trực tiếp trong Excel:
+
+1. Click chuột phải vào ô tương ứng với **row của nguyên liệu** → `Insert Image` (hoặc dùng `Insert > Pictures`)
+2. Ảnh phải nằm **trong vùng của row đó** (không thả tự do ngoài vùng dữ liệu)
+3. Hỗ trợ định dạng: JPEG, PNG, WEBP
+4. Server sẽ tự động map ảnh → nguyên liệu theo vị trí row và lưu vào `imagePath`
+
+> **Lưu ý:** Nếu 1 row có nhiều ảnh, chỉ ảnh đầu tiên được lưu. Các row không có ảnh sẽ có `imagePath: null`.
 
 **Response `201`:**
 

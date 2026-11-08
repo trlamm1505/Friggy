@@ -66,7 +66,7 @@ export class MailController {
             message.to,
             message.data.contactName,
             message.data.companyName,
-            message.data.setPasswordUrl,
+            message.data.token,
           );
           break;
         case 'supplier_application_rejected':

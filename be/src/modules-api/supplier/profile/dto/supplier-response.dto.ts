@@ -1,5 +1,18 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
+export class SupplierPaymentTransactionDto {
+  @ApiProperty() id!: string;
+  @ApiProperty({ description: 'subscribe | renewal' }) type!: string;
+  @ApiProperty() amount!: number;
+  @ApiProperty({ description: 'pending | paid | failed | cancelled' }) status!: string;
+  @ApiProperty() paymentRef!: string;
+  @ApiPropertyOptional() description!: string | null;
+  @ApiPropertyOptional() checkoutUrl!: string | null;
+  @ApiPropertyOptional() paidAt!: string | null;
+  @ApiProperty() createdAt!: string;
+  @ApiProperty({ description: 'Tên gói cước' }) planName!: string;
+}
+
 export class SupplierProfileResponseDto {
   @ApiProperty() id: string;
   @ApiProperty() userId: string;

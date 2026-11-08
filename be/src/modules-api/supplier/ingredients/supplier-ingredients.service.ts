@@ -8,7 +8,7 @@ import {
 import { PrismaService } from 'src/modules-system/prisma/prisma.service';
 import { RedisService } from 'src/modules-system/redis/redis.service';
 import { v4 as uuid } from 'uuid';
-import { existsSync, unlinkSync } from 'fs';
+import { existsSync, unlinkSync, writeFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const ExcelJS = require('exceljs') as any;
@@ -98,7 +98,7 @@ export class SupplierIngredientsService {
 
   // ── Create ────────────────────────────────────────────────────────────────
 
-  async create(userId: string, dto: CreateSupplierIngredientDto): Promise<SupplierIngredientResponseDto> {
+  async create(userId: string, dto: CreateSupplierIngredientDto, image?: Express.Multer.File): Promise<SupplierIngredientResponseDto> {
     const profile = await this.getProfile(userId);
 
     // Kiểm tra category tồn tại
@@ -109,7 +109,12 @@ export class SupplierIngredientsService {
 
     // Kiểm tra giới hạn gói
     const sub = await this.prisma.supplierSubscription.findUnique({ where: { profileId: profile.id } });
-    if (sub) await this.checkIngredientLimit(profile.id, sub.planId);
+    if (!sub) {
+      throw new ForbiddenException('Bạn cần có gói cước active để thêm nguyên liệu');
+    }
+    await this.checkIngredientLimit(profile.id, sub.planId);
+
+    const imagePath = image ? `/ingredients/${image.filename}` : null;
 
     const ingredient = await this.prisma.supplierIngredient.create({
       data: {
@@ -123,6 +128,7 @@ export class SupplierIngredientsService {
         brand: dto.brand?.trim() ?? null,
         barcode: dto.barcode?.trim() ?? null,
         description: dto.description?.trim() ?? null,
+        imagePath,
       },
       include: { category: { select: { name: true } } },
     });
@@ -204,7 +210,10 @@ export class SupplierIngredientsService {
     // Lấy giới hạn từ DB
     const sub = await this.prisma.supplierSubscription.findUnique({ where: { profileId: profile.id } });
     const plan = sub ? await this.prisma.supplierPlan.findUnique({ where: { id: sub.planId } }) : null;
-    const maxIngredients = plan?.maxIngredients ?? 50;
+    if (!plan) {
+      throw new ForbiddenException('Bạn cần có gói cước active để import nguyên liệu');
+    }
+    const maxIngredients = plan.maxIngredients;
 
     // Lấy systemconfig giới hạn rows
     const maxRowsConfig = await this.prisma.systemConfig.findUnique({ where: { key: 'supplier.ingredient.maxPerImport' } });
@@ -215,6 +224,26 @@ export class SupplierIngredientsService {
     await workbook.xlsx.load(file.buffer);
     const sheet = workbook.getWorksheet(1);
     if (!sheet) throw new BadRequestException('File Excel không có sheet dữ liệu');
+
+    // ── Extract embedded images từ Excel ──────────────────────────────────
+    // nativeRow là 0-indexed: row 0 = header, row 1 = data row đầu tiên
+    const rowImageMap = new Map<number, { buffer: Buffer; extension: string }>();
+    try {
+      const sheetImages = (sheet as any).getImages() as Array<{
+        imageId: number;
+        range: { tl: { nativeRow: number; nativeCol: number } };
+      }>;
+      for (const img of sheetImages) {
+        const imageData = workbook.getImage(img.imageId) as { buffer: Buffer | ArrayBuffer; extension: string };
+        const buffer = Buffer.isBuffer(imageData.buffer)
+          ? imageData.buffer
+          : Buffer.from(imageData.buffer as ArrayBuffer);
+        const ext = ['jpeg', 'jpg', 'png', 'webp'].includes(imageData.extension)
+          ? imageData.extension
+          : 'jpg';
+        rowImageMap.set(img.range.tl.nativeRow, { buffer, extension: ext });
+      }
+    } catch { /* ExcelJS version không support getImages — bỏ qua */ }
 
     // Load all valid categories
     const categories = await this.prisma.ingredientCategory.findMany({
@@ -279,7 +308,9 @@ export class SupplierIngredientsService {
         brand: brand || null,
         barcode: barcode || null,
         description: description || null,
+        imagePath: null,       // sẽ set bên dưới nếu có ảnh
         status: 'pending',
+        _nativeRow: rowNumber - 1, // 0-indexed để map với rowImageMap
       });
     });
 
@@ -294,8 +325,27 @@ export class SupplierIngredientsService {
       failedRows.push({ row: 0, name: '', reason: `Chỉ import được ${allowed} nguyên liệu (đã đạt giới hạn gói)` });
     }
 
-    if (toInsert.length > 0) {
-      await this.prisma.supplierIngredient.createMany({ data: toInsert });
+    // ── Lưu ảnh từ Excel vào disk ─────────────────────────────────────────
+    if (rowImageMap.size > 0) {
+      const imageDir = join(process.cwd(), 'public', 'ingredients');
+      mkdirSync(imageDir, { recursive: true });
+
+      for (const item of toInsert) {
+        const imgData = rowImageMap.get(item._nativeRow as number);
+        if (imgData) {
+          const ext = imgData.extension === 'jpeg' ? 'jpg' : imgData.extension;
+          const filename = `${uuid()}.${ext}`;
+          writeFileSync(join(imageDir, filename), imgData.buffer);
+          item.imagePath = `/ingredients/${filename}`;
+        }
+      }
+    }
+
+    // Xóa field tạm trước khi insert DB
+    const dbRecords = toInsert.map(({ _nativeRow: _r, ...rest }) => rest);
+
+    if (dbRecords.length > 0) {
+      await this.prisma.supplierIngredient.createMany({ data: dbRecords });
     }
 
     // Tăng rate limit counter, TTL = phần còn lại của ngày (tính giây)
@@ -304,14 +354,14 @@ export class SupplierIngredientsService {
     const ttlSeconds = Math.floor((endOfDay.getTime() - now.getTime()) / 1000);
     await this.redis.set(rateLimitKey, importCount + 1, ttlSeconds);
 
-    this.logger.log(`[Supplier] Import Excel: ${toInsert.length} success, ${failedRows.length} failed for profile ${profile.id}`);
+    this.logger.log(`[Supplier] Import Excel: ${dbRecords.length} success, ${failedRows.length} failed for profile ${profile.id}`);
 
     return {
-      total: toInsert.length + failedRows.length,
-      success: toInsert.length,
+      total: dbRecords.length + failedRows.length,
+      success: dbRecords.length,
       failed: failedRows.length,
       failedRows,
-      pendingCount: toInsert.length,
+      pendingCount: dbRecords.length,
     };
   }
 

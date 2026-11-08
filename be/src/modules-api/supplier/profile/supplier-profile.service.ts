@@ -14,6 +14,7 @@ import type {
   SupplierPlanResponseDto,
   SupplierSubscriptionResponseDto,
   SupplierSubscribeResponseDto,
+  SupplierPaymentTransactionDto,
 } from './dto/supplier-response.dto';
 import type { SupplierSubscribeDto } from './dto/supplier-subscription.dto';
 import { PayOsService } from 'src/modules-system/payos/payos.service';
@@ -198,6 +199,34 @@ export class SupplierProfileService {
     });
 
     return { message: 'Đã hủy tự động gia hạn. Gói sẽ hết hạn vào ngày đã đăng ký.' };
+  }
+
+  // ── Payment history ───────────────────────────────────────────────────────
+
+  async getPaymentHistory(userId: string): Promise<SupplierPaymentTransactionDto[]> {
+    const profile = await this.prisma.supplierProfile.findUnique({ where: { userId } });
+    if (!profile || profile.deletedAt) {
+      throw new NotFoundException('Không tìm thấy hồ sơ nhà cung cấp');
+    }
+
+    const txs = await this.prisma.supplierPaymentTransaction.findMany({
+      where: { profileId: profile.id },
+      include: { plan: { select: { displayName: true } } },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return txs.map((tx) => ({
+      id: tx.id,
+      type: tx.type,
+      amount: tx.amount,
+      status: tx.status,
+      paymentRef: tx.paymentRef ?? '',
+      description: tx.description ?? null,
+      checkoutUrl: tx.checkoutUrl ?? null,
+      paidAt: tx.paidAt ? tx.paidAt.toISOString() : null,
+      createdAt: tx.createdAt.toISOString(),
+      planName: tx.plan?.displayName ?? '',
+    }));
   }
 
   // ── Mappers ───────────────────────────────────────────────────────────────

@@ -76,14 +76,20 @@ export class AdminSupplierApplicationsService {
   // ── Approve ───────────────────────────────────────────────────────────────
 
   async approve(id: string, adminId: string) {
-    const app = await this.prisma.supplierApplication.findUnique({ where: { id } });
+    const app = await this.prisma.supplierApplication.findUnique({
+      where: { id },
+    });
     if (!app) throw new NotFoundException('Không tìm thấy đơn đăng ký');
     if (app.status !== 'pending') {
-      throw new ConflictException(`Đơn đã được xử lý (trạng thái: ${app.status})`);
+      throw new ConflictException(
+        `Đơn đã được xử lý (trạng thái: ${app.status})`,
+      );
     }
 
     // Check email chưa có User
-    const existingUser = await this.prisma.user.findUnique({ where: { email: app.email } });
+    const existingUser = await this.prisma.user.findUnique({
+      where: { email: app.email },
+    });
     if (existingUser) {
       throw new ConflictException('Email này đã tồn tại trong hệ thống');
     }
@@ -93,7 +99,9 @@ export class AdminSupplierApplicationsService {
       where: { name: 'food_supplier', deletedAt: null },
     });
     if (!supplierRole) {
-      throw new BadRequestException('Role food_supplier chưa được tạo trong hệ thống');
+      throw new BadRequestException(
+        'Role food_supplier chưa được tạo trong hệ thống',
+      );
     }
 
     // Tạo User + SupplierProfile trong 1 transaction
@@ -145,10 +153,6 @@ export class AdminSupplierApplicationsService {
     const redisKey = `supplier:set-password:${setPasswordToken}`;
     await this.redis.set(redisKey, newUserId, this.SET_PASSWORD_TTL);
 
-    // Build set-password URL
-    const frontendUrl = process.env.FRONTEND_URL ?? 'http://localhost:3000';
-    const setPasswordUrl = `${frontendUrl}/supplier/set-password?token=${setPasswordToken}`;
-
     // Ghi AdminActivityLog
     await this.prisma.adminActivityLog.create({
       data: {
@@ -161,29 +165,38 @@ export class AdminSupplierApplicationsService {
       },
     });
 
-    // Gửi email duyệt + link set password
+    // Gửi email duyệt + token đặt mật khẩu (email-service tự build URL)
     this.emailClient.emit('email.send', {
       type: 'supplier_application_approved',
       to: app.email,
       data: {
         contactName: app.contactName,
         companyName: app.companyName,
-        setPasswordUrl,
+        token: setPasswordToken,
       },
     });
 
-    this.logger.log(`[Admin] Approved supplier application ${id} → userId: ${newUserId}`);
+    this.logger.log(
+      `[Admin] Approved supplier application ${id} → userId: ${newUserId}`,
+    );
 
-    return { message: 'Đã duyệt đơn. Tài khoản đã được tạo và email đã được gửi.', userId: newUserId };
+    return {
+      message: 'Đã duyệt đơn. Tài khoản đã được tạo và email đã được gửi.',
+      userId: newUserId,
+    };
   }
 
   // ── Reject ────────────────────────────────────────────────────────────────
 
   async reject(id: string, dto: ReviewSupplierApplicationDto, adminId: string) {
-    const app = await this.prisma.supplierApplication.findUnique({ where: { id } });
+    const app = await this.prisma.supplierApplication.findUnique({
+      where: { id },
+    });
     if (!app) throw new NotFoundException('Không tìm thấy đơn đăng ký');
     if (app.status !== 'pending') {
-      throw new ConflictException(`Đơn đã được xử lý (trạng thái: ${app.status})`);
+      throw new ConflictException(
+        `Đơn đã được xử lý (trạng thái: ${app.status})`,
+      );
     }
 
     if (!dto.rejectionReason?.trim()) {
@@ -208,7 +221,11 @@ export class AdminSupplierApplicationsService {
         action: 'reject_supplier_application',
         targetEntity: 'supplier_applications',
         targetId: id,
-        newValue: { email: app.email, companyName: app.companyName, reason: dto.rejectionReason },
+        newValue: {
+          email: app.email,
+          companyName: app.companyName,
+          reason: dto.rejectionReason,
+        },
       },
     });
 
@@ -223,7 +240,9 @@ export class AdminSupplierApplicationsService {
       },
     });
 
-    this.logger.log(`[Admin] Rejected supplier application ${id} - ${app.email}`);
+    this.logger.log(
+      `[Admin] Rejected supplier application ${id} - ${app.email}`,
+    );
 
     return { message: 'Đã từ chối đơn và gửi email thông báo.' };
   }

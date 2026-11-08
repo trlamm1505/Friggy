@@ -41,25 +41,26 @@ const DEFAULT_CRON_CONFIGS = [
     name: CRON_SUBSCRIPTION_REMINDER,
     cronExpression: '0 9 * * *',
     isEnabled: true,
-    description: 'Nhắc gia hạn gói có phí — hàng ngày 9:00 (gửi email nếu còn 7 ngày)',
+    description:
+      'Nhắc gia hạn gói có phí — hàng ngày 9:00 (gửi email nếu còn 7 ngày)',
   },
   {
     name: CRON_SUPPLIER_EXPIRY_WARNING,
     cronExpression: '0 8 * * *',
     isEnabled: true,
-    description: 'Canh bao goi nha cung cap sap het han (7 ngay)',
+    description: 'Cảnh báo gói nhà cung cấp hết hạn (7 ngày)',
   },
   {
     name: CRON_SUPPLIER_EXPIRY_DEACTIVATE,
     cronExpression: '5 0 * * *',
     isEnabled: true,
-    description: 'Huy kich hoat goi nha cung cap da het han',
+    description: 'Hủy kích hoạt gói nhà cung cấp đã hết hạn',
   },
   {
     name: CRON_SUPPLIER_INGREDIENT_CLEANUP,
     cronExpression: '10 0 * * *',
     isEnabled: true,
-    description: 'Archive nguyen lieu supplier khi goi het han',
+    description: 'Archive nguyên liệu supplier khi gói hết hạn',
   },
 ];
 
@@ -82,7 +83,9 @@ export class NotificationCronService implements OnModuleInit {
       await this.seedDefaultConfigs();
       await this.registerAllJobs();
     } catch (err) {
-      this.logger.error(`⚠️ Khởi tạo cron service thất bại (sẽ tiếp tục chạy): ${(err as Error)?.message}`);
+      this.logger.error(
+        `⚠️ Khởi tạo cron service thất bại (sẽ tiếp tục chạy): ${(err as Error)?.message}`,
+      );
     }
   }
 
@@ -99,7 +102,9 @@ export class NotificationCronService implements OnModuleInit {
         }
         return; // thành công
       } catch (err) {
-        this.logger.warn(`⏳ Seed cron configs attempt ${attempt}/${retries} failed, retry sau ${delayMs}ms...`);
+        this.logger.warn(
+          `⏳ Seed cron configs attempt ${attempt}/${retries} failed, retry sau ${delayMs}ms...`,
+        );
         if (attempt === retries) throw err;
         await new Promise((r) => setTimeout(r, delayMs));
         delayMs *= 2; // exponential backoff
@@ -130,7 +135,9 @@ export class NotificationCronService implements OnModuleInit {
     // Xóa job cũ nếu đang chạy
     try {
       this.schedulerRegistry.deleteCronJob(name);
-    } catch { /* chưa có job — bỏ qua */ }
+    } catch {
+      /* chưa có job — bỏ qua */
+    }
 
     const handler = this.getHandler(name);
     if (!handler) {
@@ -147,18 +154,24 @@ export class NotificationCronService implements OnModuleInit {
     this.schedulerRegistry.addCronJob(name, job as any);
     job.start();
 
-    this.logger.log(`⏰ Đã đăng ký cron [${name}] với schedule: ${cronExpression}`);
+    this.logger.log(
+      `⏰ Đã đăng ký cron [${name}] với schedule: ${cronExpression}`,
+    );
   }
 
   unregisterJob(name: string) {
     try {
       this.schedulerRegistry.deleteCronJob(name);
       this.logger.log(`🛑 Đã hủy cron [${name}]`);
-    } catch { /* job không tồn tại — bỏ qua */ }
+    } catch {
+      /* job không tồn tại — bỏ qua */
+    }
   }
 
   /** Trigger 1 job thủ công ngay lập tức */
-  async triggerJob(name: string): Promise<{ success: boolean; message: string }> {
+  async triggerJob(
+    name: string,
+  ): Promise<{ success: boolean; message: string }> {
     const handler = this.getHandler(name);
     if (!handler) {
       return { success: false, message: `Không có handler cho cron: ${name}` };
@@ -166,7 +179,10 @@ export class NotificationCronService implements OnModuleInit {
 
     try {
       await handler();
-      return { success: true, message: `Cron [${name}] đã chạy thủ công thành công` };
+      return {
+        success: true,
+        message: `Cron [${name}] đã chạy thủ công thành công`,
+      };
     } catch (err: any) {
       return { success: false, message: err?.message ?? 'Lỗi không xác định' };
     }
@@ -200,7 +216,9 @@ export class NotificationCronService implements OnModuleInit {
   // ─────────────────────────────────────────────────────────
   async checkExpiringItems(): Promise<void> {
     const jobName = CRON_EXPIRY_WARNING;
-    this.logger.log(`🔔 [Cron:${jobName}] Bắt đầu kiểm tra nguyên liệu sắp hết hạn`);
+    this.logger.log(
+      `🔔 [Cron:${jobName}] Bắt đầu kiểm tra nguyên liệu sắp hết hạn`,
+    );
 
     const withinDays = 3;
     const thresholdDate = new Date();
@@ -277,7 +295,9 @@ export class NotificationCronService implements OnModuleInit {
       notifCreated++;
     }
 
-    this.logger.log(`✅ [Cron:${jobName}] Đã tạo ${notifCreated} notifications`);
+    this.logger.log(
+      `✅ [Cron:${jobName}] Đã tạo ${notifCreated} notifications`,
+    );
     await this.updateLastRun(jobName, 'success');
   }
 
@@ -484,10 +504,17 @@ export class NotificationCronService implements OnModuleInit {
         for (const sub of expiredSubs) {
           await this.prisma.userSubscription.update({
             where: { id: sub.id },
-            data: { planId: freePlan.id, status: 'active', endDate: null, autoRenew: false },
+            data: {
+              planId: freePlan.id,
+              status: 'active',
+              endDate: null,
+              autoRenew: false,
+            },
           });
           downgraded++;
-          this.logger.log(`Hạ cấp userId=${sub.userId} từ ${sub.plan.name} → free`);
+          this.logger.log(
+            `Hạ cấp userId=${sub.userId} từ ${sub.plan.name} → free`,
+          );
         }
       }
 
@@ -510,8 +537,10 @@ export class NotificationCronService implements OnModuleInit {
     try {
       const now = new Date();
       const in7days = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-      const startOf7 = new Date(in7days); startOf7.setHours(0, 0, 0, 0);
-      const endOf7 = new Date(in7days); endOf7.setHours(23, 59, 59, 999);
+      const startOf7 = new Date(in7days);
+      startOf7.setHours(0, 0, 0, 0);
+      const endOf7 = new Date(in7days);
+      endOf7.setHours(23, 59, 59, 999);
 
       const subs = await this.prisma.supplierSubscription.findMany({
         where: { status: 'active', endDate: { gte: startOf7, lte: endOf7 } },
@@ -529,7 +558,10 @@ export class NotificationCronService implements OnModuleInit {
               title: 'Goi nha cung cap sap het han',
               body: `Goi "${sub.plan.displayName}" het han vao ${endStr}. Gia han de tiep tuc dich vu.`,
               isRead: false,
-              metadata: { planId: sub.planId, endDate: sub.endDate.toISOString() },
+              metadata: {
+                planId: sub.planId,
+                endDate: sub.endDate.toISOString(),
+              },
             },
           }),
           this.fcmService.sendToUser(userId, {
@@ -560,7 +592,9 @@ export class NotificationCronService implements OnModuleInit {
         include: { profile: { include: { user: true } }, plan: true },
       });
 
-      const userRole = await this.prisma.role.findFirst({ where: { name: 'user' } });
+      const userRole = await this.prisma.role.findFirst({
+        where: { name: 'user' },
+      });
 
       for (const sub of expiredSubs) {
         await this.prisma.supplierSubscription.update({
@@ -594,7 +628,9 @@ export class NotificationCronService implements OnModuleInit {
         ]);
       }
 
-      this.logger.log(`[Cron:${jobName}] Deactivated ${expiredSubs.length} subscriptions`);
+      this.logger.log(
+        `[Cron:${jobName}] Deactivated ${expiredSubs.length} subscriptions`,
+      );
       await this.updateLastRun(jobName, 'success');
     } catch (err: any) {
       this.logger.error(`[Cron:${jobName}] Error: ${err?.message}`);
@@ -624,7 +660,9 @@ export class NotificationCronService implements OnModuleInit {
         data: { status: 'archived' },
       });
 
-      this.logger.log(`[Cron:${jobName}] Archived ${count} supplier ingredients`);
+      this.logger.log(
+        `[Cron:${jobName}] Archived ${count} supplier ingredients`,
+      );
       await this.updateLastRun(jobName, 'success');
     } catch (err: any) {
       this.logger.error(`[Cron:${jobName}] Error: ${err?.message}`);

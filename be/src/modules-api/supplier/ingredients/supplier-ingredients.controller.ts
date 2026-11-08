@@ -1,7 +1,7 @@
 import {
   Controller, Get, Post, Patch, Delete,
   Body, Param, Query, UseInterceptors,
-  UploadedFile, Res, HttpCode, HttpStatus,
+  UploadedFile, UploadedFiles, Res, HttpCode, HttpStatus,
   BadRequestException, UseGuards,
 } from '@nestjs/common';
 import {
@@ -9,11 +9,11 @@ import {
   ApiParam, ApiResponse, ApiConsumes,
 } from '@nestjs/swagger';
 import type { Response } from 'express';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { FileInterceptor, FileFieldsInterceptor } from '@nestjs/platform-express';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { SupplierActiveGuard } from 'src/common/guards/supplier-active.guard';
-import { multerExcelConfig } from 'src/common/configs/multer.config';
+import { multerExcelConfig, multerIngredientConfig } from 'src/common/configs/multer.config';
 import type { JwtPayload } from 'src/common/interfaces/jwt-payload.interface';
 import { SupplierIngredientsService } from './supplier-ingredients.service';
 import {
@@ -66,12 +66,15 @@ export class SupplierIngredientsController {
   @Post()
   @UseGuards(SupplierActiveGuard)
   @ApiOperation({ summary: '[Supplier] Thêm 1 nguyên liệu → trạng thái pending chờ duyệt' })
+  @ApiConsumes('multipart/form-data')
   @ApiResponse({ status: 201, type: Object })
+  @UseInterceptors(FileInterceptor('image', multerIngredientConfig))
   create(
     @CurrentUser() user: JwtPayload,
     @Body() dto: CreateSupplierIngredientDto,
+    @UploadedFile() image?: Express.Multer.File,
   ): Promise<SupplierIngredientResponseDto> {
-    return this.service.create(user.sub, dto);
+    return this.service.create(user.sub, dto, image);
   }
 
   @Post('import')
