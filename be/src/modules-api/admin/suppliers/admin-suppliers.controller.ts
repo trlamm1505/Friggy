@@ -1,6 +1,8 @@
-import { Controller, Get, Patch, Param, Body, Query, Req } from '@nestjs/common';
+import { Controller, Get, Patch, Param, Body, Query } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiParam } from '@nestjs/swagger';
 import { Roles } from 'src/common/decorators/roles.decorator';
+import { CurrentUser } from 'src/common/decorators/current-user.decorator';
+import type { JwtPayload } from 'src/common/interfaces/jwt-payload.interface';
 import { AdminSuppliersService } from './admin-suppliers.service';
 import { ListSuppliersDto, VerifySupplierDto } from './dto/admin-suppliers.dto';
 
@@ -27,7 +29,7 @@ export class AdminSuppliersController {
   @Patch(':id/verify')
   @ApiOperation({ summary: '[Admin] Xác minh / thu hồi xác minh nhà cung cấp' })
   @ApiParam({ name: 'id', description: 'Supplier profile ID' })
-  verify(@Param('id') id: string, @Body() dto: VerifySupplierDto, @Req() req: any) {
-    return this.service.verify(id, dto, req.user.userId);
+  verify(@Param('id') id: string, @Body() dto: VerifySupplierDto, @CurrentUser() user: JwtPayload) {
+    return this.service.verify(id, dto, user.sub);
   }
 }

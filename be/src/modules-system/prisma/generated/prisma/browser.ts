@@ -252,3 +252,8 @@ export type SupplierIngredient = Prisma.SupplierIngredientModel
  * 
  */
 export type SupplierPaymentTransaction = Prisma.SupplierPaymentTransactionModel
+/**
+ * Model SupplierApplication
+ * 
+ */
+export type SupplierApplication = Prisma.SupplierApplicationModel

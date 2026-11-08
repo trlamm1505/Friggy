@@ -443,7 +443,8 @@ export const ModelName = {
   SupplierPlan: 'SupplierPlan',
   SupplierSubscription: 'SupplierSubscription',
   SupplierIngredient: 'SupplierIngredient',
-  SupplierPaymentTransaction: 'SupplierPaymentTransaction'
+  SupplierPaymentTransaction: 'SupplierPaymentTransaction',
+  SupplierApplication: 'SupplierApplication'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -459,7 +460,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "role" | "user" | "emailOtp" | "userProfile" | "userPreference" | "refreshToken" | "ingredientCategory" | "ingredient" | "tag" | "recipe" | "recipeIngredient" | "recipeStep" | "recipeTag" | "userSavedRecipe" | "fridgeItem" | "ingredientScanLog" | "userAllergy" | "weeklyPlan" | "dailyPlan" | "mealSlot" | "shoppingList" | "shoppingListItem" | "aiSystemPrompt" | "chatSession" | "chatMessage" | "aiEvaluationLog" | "aiProviderConfig" | "aiUsageLog" | "sponsor" | "sponsorCampaign" | "campaignRecipe" | "ingredientPurchaseLink" | "adminActivityLog" | "notification" | "userDevice" | "cronJobConfig" | "subscriptionPlan" | "userSubscription" | "paymentTransaction" | "familyGroup" | "familyMember" | "systemConfig" | "supplierProfile" | "supplierPlan" | "supplierSubscription" | "supplierIngredient" | "supplierPaymentTransaction"
+    modelProps: "role" | "user" | "emailOtp" | "userProfile" | "userPreference" | "refreshToken" | "ingredientCategory" | "ingredient" | "tag" | "recipe" | "recipeIngredient" | "recipeStep" | "recipeTag" | "userSavedRecipe" | "fridgeItem" | "ingredientScanLog" | "userAllergy" | "weeklyPlan" | "dailyPlan" | "mealSlot" | "shoppingList" | "shoppingListItem" | "aiSystemPrompt" | "chatSession" | "chatMessage" | "aiEvaluationLog" | "aiProviderConfig" | "aiUsageLog" | "sponsor" | "sponsorCampaign" | "campaignRecipe" | "ingredientPurchaseLink" | "adminActivityLog" | "notification" | "userDevice" | "cronJobConfig" | "subscriptionPlan" | "userSubscription" | "paymentTransaction" | "familyGroup" | "familyMember" | "systemConfig" | "supplierProfile" | "supplierPlan" | "supplierSubscription" | "supplierIngredient" | "supplierPaymentTransaction" | "supplierApplication"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -3565,6 +3566,72 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    SupplierApplication: {
+      payload: Prisma.$SupplierApplicationPayload<ExtArgs>
+      fields: Prisma.SupplierApplicationFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.SupplierApplicationFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SupplierApplicationPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.SupplierApplicationFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SupplierApplicationPayload>
+        }
+        findFirst: {
+          args: Prisma.SupplierApplicationFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SupplierApplicationPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.SupplierApplicationFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SupplierApplicationPayload>
+        }
+        findMany: {
+          args: Prisma.SupplierApplicationFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SupplierApplicationPayload>[]
+        }
+        create: {
+          args: Prisma.SupplierApplicationCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SupplierApplicationPayload>
+        }
+        createMany: {
+          args: Prisma.SupplierApplicationCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        delete: {
+          args: Prisma.SupplierApplicationDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SupplierApplicationPayload>
+        }
+        update: {
+          args: Prisma.SupplierApplicationUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SupplierApplicationPayload>
+        }
+        deleteMany: {
+          args: Prisma.SupplierApplicationDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.SupplierApplicationUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        upsert: {
+          args: Prisma.SupplierApplicationUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SupplierApplicationPayload>
+        }
+        aggregate: {
+          args: Prisma.SupplierApplicationAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateSupplierApplication>
+        }
+        groupBy: {
+          args: Prisma.SupplierApplicationGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.SupplierApplicationGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.SupplierApplicationCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.SupplierApplicationCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -4356,6 +4423,28 @@ export const SupplierPaymentTransactionScalarFieldEnum = {
 export type SupplierPaymentTransactionScalarFieldEnum = (typeof SupplierPaymentTransactionScalarFieldEnum)[keyof typeof SupplierPaymentTransactionScalarFieldEnum]
 
 
+export const SupplierApplicationScalarFieldEnum = {
+  id: 'id',
+  companyName: 'companyName',
+  contactName: 'contactName',
+  email: 'email',
+  phone: 'phone',
+  address: 'address',
+  description: 'description',
+  website: 'website',
+  status: 'status',
+  rejectionReason: 'rejectionReason',
+  reviewedAt: 'reviewedAt',
+  reviewedBy: 'reviewedBy',
+  userId: 'userId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  deletedAt: 'deletedAt'
+} as const
+
+export type SupplierApplicationScalarFieldEnum = (typeof SupplierApplicationScalarFieldEnum)[keyof typeof SupplierApplicationScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -4879,6 +4968,24 @@ export const SupplierPaymentTransactionOrderByRelevanceFieldEnum = {
 export type SupplierPaymentTransactionOrderByRelevanceFieldEnum = (typeof SupplierPaymentTransactionOrderByRelevanceFieldEnum)[keyof typeof SupplierPaymentTransactionOrderByRelevanceFieldEnum]
 
 
+export const SupplierApplicationOrderByRelevanceFieldEnum = {
+  id: 'id',
+  companyName: 'companyName',
+  contactName: 'contactName',
+  email: 'email',
+  phone: 'phone',
+  address: 'address',
+  description: 'description',
+  website: 'website',
+  status: 'status',
+  rejectionReason: 'rejectionReason',
+  reviewedBy: 'reviewedBy',
+  userId: 'userId'
+} as const
+
+export type SupplierApplicationOrderByRelevanceFieldEnum = (typeof SupplierApplicationOrderByRelevanceFieldEnum)[keyof typeof SupplierApplicationOrderByRelevanceFieldEnum]
+
+
 
 /**
  * Field references
@@ -5348,6 +5455,7 @@ export type GlobalOmitConfig = {
   supplierSubscription?: Prisma.SupplierSubscriptionOmit
   supplierIngredient?: Prisma.SupplierIngredientOmit
   supplierPaymentTransaction?: Prisma.SupplierPaymentTransactionOmit
+  supplierApplication?: Prisma.SupplierApplicationOmit
 }
 
 /* Types for Logging */

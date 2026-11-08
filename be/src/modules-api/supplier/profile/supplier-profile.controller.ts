@@ -14,7 +14,7 @@ import { Public } from 'src/common/decorators/public.decorator';
 import { multerSponsorConfig } from 'src/common/configs/multer.config';
 import type { JwtPayload } from 'src/common/interfaces/jwt-payload.interface';
 import { SupplierProfileService } from './supplier-profile.service';
-import { RegisterSupplierDto, UpdateSupplierProfileDto } from './dto/supplier-profile.dto';
+import { UpdateSupplierProfileDto } from './dto/supplier-profile.dto';
 import { SupplierSubscribeDto } from './dto/supplier-subscription.dto';
 import type {
   SupplierProfileResponseDto,
@@ -28,16 +28,6 @@ import type {
 @Controller('supplier')
 export class SupplierProfileController {
   constructor(private readonly service: SupplierProfileService) {}
-
-  @Post('register')
-  @ApiOperation({ summary: 'Đăng ký làm nhà cung cấp thực phẩm (tạo SupplierProfile)' })
-  @ApiResponse({ status: 201, type: Object })
-  register(
-    @CurrentUser() user: JwtPayload,
-    @Body() dto: RegisterSupplierDto,
-  ): Promise<SupplierProfileResponseDto> {
-    return this.service.register(user.sub, dto);
-  }
 
   @Get('me')
   @Roles('food_supplier')
@@ -86,7 +76,8 @@ export class SupplierProfileController {
   }
 
   @Post('subscribe')
-  @ApiOperation({ summary: 'Mua gói nhà cung cấp → nhận link thanh toán PayOS' })
+  @Roles('food_supplier')
+  @ApiOperation({ summary: '[Supplier] Mua gói nhà cung cấp → nhận link thanh toán PayOS' })
   @ApiResponse({ status: 201, type: Object })
   subscribe(
     @CurrentUser() user: JwtPayload,

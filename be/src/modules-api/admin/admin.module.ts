@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { RedisModule } from 'src/modules-system/redis/redis.module';
 import { PrismaModule } from 'src/modules-system/prisma/prisma.module';
 import { FcmModule } from 'src/modules-system/fcm/fcm.module';
 
@@ -71,11 +72,20 @@ import { AdminSuppliersService } from './suppliers/admin-suppliers.service';
 import { AdminSupplierPlansController } from './supplier-plans/admin-supplier-plans.controller';
 import { AdminSupplierPlansService } from './supplier-plans/admin-supplier-plans.service';
 
+// 🔷 Supplier Applications (B2B Onboarding)
+import { AdminSupplierApplicationsController } from './supplier-applications/admin-supplier-applications.controller';
+import { AdminSupplierApplicationsService } from './supplier-applications/admin-supplier-applications.service';
+
+// 🔷 Supplier Payment Transactions
+import { AdminSupplierPaymentTransactionsController } from './supplier-payment-transactions/admin-supplier-payment-transactions.controller';
+import { AdminSupplierPaymentTransactionsService } from './supplier-payment-transactions/admin-supplier-payment-transactions.service';
+
 @Module({
   imports: [
     PrismaModule,
     NotificationsModule,
     FcmModule,
+    RedisModule,
   ],
   controllers: [
     AdminAiController,
@@ -97,6 +107,8 @@ import { AdminSupplierPlansService } from './supplier-plans/admin-supplier-plans
     AdminSupplierIngredientsController,
     AdminSuppliersController,
     AdminSupplierPlansController,
+    AdminSupplierApplicationsController,
+    AdminSupplierPaymentTransactionsController,
   ],
   providers: [
     AdminAiService,
@@ -118,6 +130,8 @@ import { AdminSupplierPlansService } from './supplier-plans/admin-supplier-plans
     AdminSupplierIngredientsService,
     AdminSuppliersService,
     AdminSupplierPlansService,
+    AdminSupplierApplicationsService,
+    AdminSupplierPaymentTransactionsService,
   ],
 })
 export class AdminModule {}

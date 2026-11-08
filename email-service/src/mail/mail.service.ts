@@ -407,6 +407,145 @@ export class MailService implements OnModuleInit {
 
   // ─── Family Dissolved ────────────────────────────────
 
+
+  // ─── Supplier Application: Received ──────────────────────────────────
+
+  async sendSupplierApplicationReceived(
+    to: string,
+    companyName: string,
+    contactName: string,
+  ): Promise<void> {
+    const content = `
+      <h2 class="title" style="margin:0 0 8px;color:#1b4332;font-size:22px;font-weight:700;">
+        📋 Đơn đăng ký đối tác đã được tiếp nhận
+      </h2>
+      <p class="text-muted" style="margin:0 0 20px;color:#52b788;font-size:14px;">
+        Chào ${contactName}!
+      </p>
+      <p class="text-body" style="margin:0 0 20px;color:#374151;font-size:15px;line-height:1.8;">
+        Chúng tôi đã nhận được đơn đăng ký đối tác cung cấp thực phẩm của
+        <strong style="color:#2d6a4f;">${companyName}</strong>.
+        Đội ngũ Friggy sẽ xem xét và phản hồi trong <strong>1–3 ngày làm việc</strong>.
+      </p>
+      <div class="info-box" style="background:#f0faf5;border-left:4px solid #40916c;
+           padding:16px 20px;border-radius:8px;margin:0 0 24px;">
+        <p style="margin:0;color:#374151;font-size:14px;line-height:1.6;">
+          📌 Khi đơn được duyệt, bạn sẽ nhận được email kèm <strong>link đặt mật khẩu</strong>
+          để kích hoạt tài khoản đối tác Friggy.
+        </p>
+      </div>
+      <p class="text-muted" style="margin:0;color:#9ca3af;font-size:13px;">
+        Nếu có thắc mắc, vui lòng liên hệ <a href="mailto:partner@friggy.vn" style="color:#40916c;">partner@friggy.vn</a>
+      </p>`;
+
+    await this.send({
+      to,
+      subject: '[Friggy] Đơn đăng ký đối tác đã được tiếp nhận',
+      html: layout(content),
+    });
+    this.logger.log(`✅ SupplierApplicationReceived → ${to}`);
+  }
+
+  // ─── Supplier Application: Approved ──────────────────────────────────
+
+  async sendSupplierApplicationApproved(
+    to: string,
+    contactName: string,
+    companyName: string,
+    setPasswordUrl: string,
+  ): Promise<void> {
+    const content = `
+      <h2 class="title" style="margin:0 0 8px;color:#1b4332;font-size:22px;font-weight:700;">
+        🎉 Chúc mừng! Đơn đăng ký đối tác được chấp thuận
+      </h2>
+      <p class="text-muted" style="margin:0 0 20px;color:#52b788;font-size:14px;">
+        Chào ${contactName}!
+      </p>
+      <p class="text-body" style="margin:0 0 20px;color:#374151;font-size:15px;line-height:1.8;">
+        Chúng tôi vui mừng thông báo rằng đơn đăng ký đối tác cung cấp thực phẩm của
+        <strong style="color:#2d6a4f;">${companyName}</strong> đã được <strong>chấp thuận</strong>.
+        Tài khoản đối tác Friggy đã được tạo với email này.
+      </p>
+      <div class="info-box" style="background:#f0faf5;border-left:4px solid #40916c;
+           padding:16px 20px;border-radius:8px;margin:0 0 28px;">
+        <p style="margin:0 0 8px;color:#1b4332;font-size:14px;font-weight:600;">Các bước tiếp theo:</p>
+        <p style="margin:0;color:#374151;font-size:14px;line-height:1.8;">
+          1. Nhấn nút bên dưới để đặt mật khẩu cho tài khoản<br>
+          2. Đăng nhập vào Friggy bằng email này<br>
+          3. Chọn gói cước phù hợp và bắt đầu đăng tải nguyên liệu
+        </p>
+      </div>
+      <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="margin:0 0 20px;">
+        <tr><td align="center">
+          <a href="${setPasswordUrl}"
+             style="display:inline-block;padding:16px 40px;background:#2d6a4f;color:#ffffff;
+                    text-decoration:none;border-radius:10px;font-size:16px;font-weight:700;
+                    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;"
+             class="btn-primary">
+            🔑 Đặt mật khẩu và bắt đầu
+          </a>
+        </td></tr>
+      </table>
+      <p class="text-muted" style="margin:0 0 8px;color:#9ca3af;font-size:12px;text-align:center;">
+        Liên kết có hiệu lực trong <strong>7 ngày</strong>.
+      </p>
+      <p class="text-muted" style="margin:0;color:#9ca3af;font-size:12px;text-align:center;">
+        Nếu bạn không đăng ký, hãy bỏ qua email này hoặc liên hệ
+        <a href="mailto:partner@friggy.vn" style="color:#40916c;">partner@friggy.vn</a>
+      </p>`;
+
+    await this.send({
+      to,
+      subject: '[Friggy] ✅ Đơn đăng ký đối tác được chấp thuận — Đặt mật khẩu ngay',
+      html: layout(content),
+    });
+    this.logger.log(`✅ SupplierApplicationApproved → ${to}`);
+  }
+
+  // ─── Supplier Application: Rejected ──────────────────────────────────
+
+  async sendSupplierApplicationRejected(
+    to: string,
+    contactName: string,
+    companyName: string,
+    reason?: string,
+  ): Promise<void> {
+    const reasonHtml = reason
+      ? `<div class="danger-box" style="background:#fff5f5;border-left:4px solid #ef4444;
+              padding:16px 20px;border-radius:8px;margin:16px 0 24px;">
+           <p class="danger-text" style="margin:0 0 4px;font-weight:600;color:#dc2626;font-size:14px;">Lý do:</p>
+           <p style="margin:0;color:#374151;font-size:14px;line-height:1.6;">${reason}</p>
+         </div>`
+      : '';
+
+    const content = `
+      <h2 class="title" style="margin:0 0 8px;color:#1b4332;font-size:22px;font-weight:700;">
+        📋 Thông báo kết quả đăng ký đối tác Friggy
+      </h2>
+      <p class="text-muted" style="margin:0 0 20px;color:#52b788;font-size:14px;">
+        Chào ${contactName}!
+      </p>
+      <p class="text-body" style="margin:0 0 16px;color:#374151;font-size:15px;line-height:1.8;">
+        Sau khi xem xét, chúng tôi rất tiếc phải thông báo rằng đơn đăng ký đối tác của
+        <strong style="color:#2d6a4f;">${companyName}</strong> chưa được chấp thuận ở thời điểm này.
+      </p>
+      ${reasonHtml}
+      <p class="text-body" style="margin:0 0 20px;color:#374151;font-size:15px;line-height:1.8;">
+        Nếu bạn muốn cung cấp thêm thông tin hoặc có câu hỏi, hãy liên hệ với chúng tôi qua
+        <a href="mailto:partner@friggy.vn" style="color:#40916c;font-weight:600;">partner@friggy.vn</a>.
+        Chúng tôi sẵn sàng hỗ trợ bạn.
+      </p>
+      <p class="text-muted" style="margin:0;color:#9ca3af;font-size:13px;">
+        Cảm ơn bạn đã quan tâm đến chương trình đối tác Friggy.
+      </p>`;
+
+    await this.send({
+      to,
+      subject: '[Friggy] Thông báo kết quả đăng ký đối tác',
+      html: layout(content),
+    });
+    this.logger.log(`✅ SupplierApplicationRejected → ${to}`);
+  }
   async sendFamilyDissolved(to: string): Promise<void> {
     const content = `
       <h2 class="title" style="margin:0 0 8px;color:#1b4332;font-size:22px;font-weight:700;">

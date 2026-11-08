@@ -85,8 +85,20 @@ async function bootstrap() {
       'Supplier / Ingredients',
       'Nhà cung cấp — Quản lý nguyên liệu (thêm, sửa, xóa, import Excel)',
     )
+    .addTag(
+      'Supplier / Applications',
+      '[Public] Nộp đơn & đặt mật khẩu tài khoản đối tác cung cấp thực phẩm',
+    )
     .addTag('AI Chat', 'Đầu bếp AI — Chat có tài khoản & Chatbot công khai')
     .addTag('AI Public Chat', 'API Chat public (Chatbot SEO)')
+    .addTag(
+      'Admin / Supplier Applications',
+      '[Admin | Manager] Xem xét, duyệt hoặc từ chối đơn đăng ký đối tác cung cấp thực phẩm',
+    )
+    .addTag(
+      'Admin / Supplier Payment Transactions',
+      '[Admin | Manager] Xem toàn bộ lịch sử giao dịch thanh toán của nhà cung cấp',
+    )
     .addTag(
       'Admin / AI',
       '[Chỉ Admin] Cấu hình AI provider & system prompt — chỉ tài khoản admin mới được phép',

@@ -3,13 +3,12 @@ import {
   ConflictException,
   NotFoundException,
   BadRequestException,
-  ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from 'src/modules-system/prisma/prisma.service';
 import { v4 as uuid } from 'uuid';
 import { existsSync, unlinkSync } from 'fs';
 import { join } from 'path';
-import type { RegisterSupplierDto, UpdateSupplierProfileDto } from './dto/supplier-profile.dto';
+import type { UpdateSupplierProfileDto } from './dto/supplier-profile.dto';
 import type {
   SupplierProfileResponseDto,
   SupplierPlanResponseDto,
@@ -25,36 +24,6 @@ export class SupplierProfileService {
     private readonly prisma: PrismaService,
     private readonly payOsService: PayOsService,
   ) {}
-
-  // ── Register ──────────────────────────────────────────────────────────────
-
-  async register(userId: string, dto: RegisterSupplierDto): Promise<SupplierProfileResponseDto> {
-    const existing = await this.prisma.supplierProfile.findUnique({ where: { userId } });
-    if (existing && !existing.deletedAt) {
-      throw new ConflictException('Bạn đã đăng ký làm nhà cung cấp rồi');
-    }
-
-    const profile = await this.prisma.supplierProfile.upsert({
-      where: { userId },
-      create: {
-        id: uuid(),
-        userId,
-        companyName: dto.companyName.trim(),
-        contactPhone: dto.contactPhone?.trim() ?? null,
-        address: dto.address?.trim() ?? null,
-        description: dto.description?.trim() ?? null,
-      },
-      update: {
-        companyName: dto.companyName.trim(),
-        contactPhone: dto.contactPhone?.trim() ?? null,
-        address: dto.address?.trim() ?? null,
-        description: dto.description?.trim() ?? null,
-        deletedAt: null,
-      },
-    });
-
-    return this.mapProfile(profile);
-  }
 
   // ── Get my profile ────────────────────────────────────────────────────────
 

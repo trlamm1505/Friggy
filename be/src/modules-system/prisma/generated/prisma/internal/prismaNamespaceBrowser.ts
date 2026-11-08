@@ -97,7 +97,8 @@ export const ModelName = {
   SupplierPlan: 'SupplierPlan',
   SupplierSubscription: 'SupplierSubscription',
   SupplierIngredient: 'SupplierIngredient',
-  SupplierPaymentTransaction: 'SupplierPaymentTransaction'
+  SupplierPaymentTransaction: 'SupplierPaymentTransaction',
+  SupplierApplication: 'SupplierApplication'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -868,6 +869,28 @@ export const SupplierPaymentTransactionScalarFieldEnum = {
 export type SupplierPaymentTransactionScalarFieldEnum = (typeof SupplierPaymentTransactionScalarFieldEnum)[keyof typeof SupplierPaymentTransactionScalarFieldEnum]
 
 
+export const SupplierApplicationScalarFieldEnum = {
+  id: 'id',
+  companyName: 'companyName',
+  contactName: 'contactName',
+  email: 'email',
+  phone: 'phone',
+  address: 'address',
+  description: 'description',
+  website: 'website',
+  status: 'status',
+  rejectionReason: 'rejectionReason',
+  reviewedAt: 'reviewedAt',
+  reviewedBy: 'reviewedBy',
+  userId: 'userId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  deletedAt: 'deletedAt'
+} as const
+
+export type SupplierApplicationScalarFieldEnum = (typeof SupplierApplicationScalarFieldEnum)[keyof typeof SupplierApplicationScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -1389,4 +1412,22 @@ export const SupplierPaymentTransactionOrderByRelevanceFieldEnum = {
 } as const
 
 export type SupplierPaymentTransactionOrderByRelevanceFieldEnum = (typeof SupplierPaymentTransactionOrderByRelevanceFieldEnum)[keyof typeof SupplierPaymentTransactionOrderByRelevanceFieldEnum]
+
+
+export const SupplierApplicationOrderByRelevanceFieldEnum = {
+  id: 'id',
+  companyName: 'companyName',
+  contactName: 'contactName',
+  email: 'email',
+  phone: 'phone',
+  address: 'address',
+  description: 'description',
+  website: 'website',
+  status: 'status',
+  rejectionReason: 'rejectionReason',
+  reviewedBy: 'reviewedBy',
+  userId: 'userId'
+} as const
+
+export type SupplierApplicationOrderByRelevanceFieldEnum = (typeof SupplierApplicationOrderByRelevanceFieldEnum)[keyof typeof SupplierApplicationOrderByRelevanceFieldEnum]
 
