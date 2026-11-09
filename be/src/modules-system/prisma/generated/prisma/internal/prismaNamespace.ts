@@ -438,7 +438,13 @@ export const ModelName = {
   PaymentTransaction: 'PaymentTransaction',
   FamilyGroup: 'FamilyGroup',
   FamilyMember: 'FamilyMember',
-  SystemConfig: 'SystemConfig'
+  SystemConfig: 'SystemConfig',
+  SupplierProfile: 'SupplierProfile',
+  SupplierPlan: 'SupplierPlan',
+  SupplierSubscription: 'SupplierSubscription',
+  SupplierIngredient: 'SupplierIngredient',
+  SupplierPaymentTransaction: 'SupplierPaymentTransaction',
+  SupplierApplication: 'SupplierApplication'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -454,7 +460,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "role" | "user" | "emailOtp" | "userProfile" | "userPreference" | "refreshToken" | "ingredientCategory" | "ingredient" | "tag" | "recipe" | "recipeIngredient" | "recipeStep" | "recipeTag" | "userSavedRecipe" | "fridgeItem" | "ingredientScanLog" | "userAllergy" | "weeklyPlan" | "dailyPlan" | "mealSlot" | "shoppingList" | "shoppingListItem" | "aiSystemPrompt" | "chatSession" | "chatMessage" | "aiEvaluationLog" | "aiProviderConfig" | "aiUsageLog" | "sponsor" | "sponsorCampaign" | "campaignRecipe" | "ingredientPurchaseLink" | "adminActivityLog" | "notification" | "userDevice" | "cronJobConfig" | "subscriptionPlan" | "userSubscription" | "paymentTransaction" | "familyGroup" | "familyMember" | "systemConfig"
+    modelProps: "role" | "user" | "emailOtp" | "userProfile" | "userPreference" | "refreshToken" | "ingredientCategory" | "ingredient" | "tag" | "recipe" | "recipeIngredient" | "recipeStep" | "recipeTag" | "userSavedRecipe" | "fridgeItem" | "ingredientScanLog" | "userAllergy" | "weeklyPlan" | "dailyPlan" | "mealSlot" | "shoppingList" | "shoppingListItem" | "aiSystemPrompt" | "chatSession" | "chatMessage" | "aiEvaluationLog" | "aiProviderConfig" | "aiUsageLog" | "sponsor" | "sponsorCampaign" | "campaignRecipe" | "ingredientPurchaseLink" | "adminActivityLog" | "notification" | "userDevice" | "cronJobConfig" | "subscriptionPlan" | "userSubscription" | "paymentTransaction" | "familyGroup" | "familyMember" | "systemConfig" | "supplierProfile" | "supplierPlan" | "supplierSubscription" | "supplierIngredient" | "supplierPaymentTransaction" | "supplierApplication"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -3230,6 +3236,402 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    SupplierProfile: {
+      payload: Prisma.$SupplierProfilePayload<ExtArgs>
+      fields: Prisma.SupplierProfileFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.SupplierProfileFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SupplierProfilePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.SupplierProfileFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SupplierProfilePayload>
+        }
+        findFirst: {
+          args: Prisma.SupplierProfileFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SupplierProfilePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.SupplierProfileFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SupplierProfilePayload>
+        }
+        findMany: {
+          args: Prisma.SupplierProfileFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SupplierProfilePayload>[]
+        }
+        create: {
+          args: Prisma.SupplierProfileCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SupplierProfilePayload>
+        }
+        createMany: {
+          args: Prisma.SupplierProfileCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        delete: {
+          args: Prisma.SupplierProfileDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SupplierProfilePayload>
+        }
+        update: {
+          args: Prisma.SupplierProfileUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SupplierProfilePayload>
+        }
+        deleteMany: {
+          args: Prisma.SupplierProfileDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.SupplierProfileUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        upsert: {
+          args: Prisma.SupplierProfileUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SupplierProfilePayload>
+        }
+        aggregate: {
+          args: Prisma.SupplierProfileAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateSupplierProfile>
+        }
+        groupBy: {
+          args: Prisma.SupplierProfileGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.SupplierProfileGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.SupplierProfileCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.SupplierProfileCountAggregateOutputType> | number
+        }
+      }
+    }
+    SupplierPlan: {
+      payload: Prisma.$SupplierPlanPayload<ExtArgs>
+      fields: Prisma.SupplierPlanFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.SupplierPlanFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SupplierPlanPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.SupplierPlanFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SupplierPlanPayload>
+        }
+        findFirst: {
+          args: Prisma.SupplierPlanFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SupplierPlanPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.SupplierPlanFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SupplierPlanPayload>
+        }
+        findMany: {
+          args: Prisma.SupplierPlanFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SupplierPlanPayload>[]
+        }
+        create: {
+          args: Prisma.SupplierPlanCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SupplierPlanPayload>
+        }
+        createMany: {
+          args: Prisma.SupplierPlanCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        delete: {
+          args: Prisma.SupplierPlanDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SupplierPlanPayload>
+        }
+        update: {
+          args: Prisma.SupplierPlanUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SupplierPlanPayload>
+        }
+        deleteMany: {
+          args: Prisma.SupplierPlanDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.SupplierPlanUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        upsert: {
+          args: Prisma.SupplierPlanUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SupplierPlanPayload>
+        }
+        aggregate: {
+          args: Prisma.SupplierPlanAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateSupplierPlan>
+        }
+        groupBy: {
+          args: Prisma.SupplierPlanGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.SupplierPlanGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.SupplierPlanCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.SupplierPlanCountAggregateOutputType> | number
+        }
+      }
+    }
+    SupplierSubscription: {
+      payload: Prisma.$SupplierSubscriptionPayload<ExtArgs>
+      fields: Prisma.SupplierSubscriptionFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.SupplierSubscriptionFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SupplierSubscriptionPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.SupplierSubscriptionFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SupplierSubscriptionPayload>
+        }
+        findFirst: {
+          args: Prisma.SupplierSubscriptionFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SupplierSubscriptionPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.SupplierSubscriptionFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SupplierSubscriptionPayload>
+        }
+        findMany: {
+          args: Prisma.SupplierSubscriptionFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SupplierSubscriptionPayload>[]
+        }
+        create: {
+          args: Prisma.SupplierSubscriptionCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SupplierSubscriptionPayload>
+        }
+        createMany: {
+          args: Prisma.SupplierSubscriptionCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        delete: {
+          args: Prisma.SupplierSubscriptionDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SupplierSubscriptionPayload>
+        }
+        update: {
+          args: Prisma.SupplierSubscriptionUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SupplierSubscriptionPayload>
+        }
+        deleteMany: {
+          args: Prisma.SupplierSubscriptionDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.SupplierSubscriptionUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        upsert: {
+          args: Prisma.SupplierSubscriptionUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SupplierSubscriptionPayload>
+        }
+        aggregate: {
+          args: Prisma.SupplierSubscriptionAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateSupplierSubscription>
+        }
+        groupBy: {
+          args: Prisma.SupplierSubscriptionGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.SupplierSubscriptionGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.SupplierSubscriptionCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.SupplierSubscriptionCountAggregateOutputType> | number
+        }
+      }
+    }
+    SupplierIngredient: {
+      payload: Prisma.$SupplierIngredientPayload<ExtArgs>
+      fields: Prisma.SupplierIngredientFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.SupplierIngredientFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SupplierIngredientPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.SupplierIngredientFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SupplierIngredientPayload>
+        }
+        findFirst: {
+          args: Prisma.SupplierIngredientFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SupplierIngredientPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.SupplierIngredientFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SupplierIngredientPayload>
+        }
+        findMany: {
+          args: Prisma.SupplierIngredientFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SupplierIngredientPayload>[]
+        }
+        create: {
+          args: Prisma.SupplierIngredientCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SupplierIngredientPayload>
+        }
+        createMany: {
+          args: Prisma.SupplierIngredientCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        delete: {
+          args: Prisma.SupplierIngredientDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SupplierIngredientPayload>
+        }
+        update: {
+          args: Prisma.SupplierIngredientUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SupplierIngredientPayload>
+        }
+        deleteMany: {
+          args: Prisma.SupplierIngredientDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.SupplierIngredientUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        upsert: {
+          args: Prisma.SupplierIngredientUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SupplierIngredientPayload>
+        }
+        aggregate: {
+          args: Prisma.SupplierIngredientAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateSupplierIngredient>
+        }
+        groupBy: {
+          args: Prisma.SupplierIngredientGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.SupplierIngredientGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.SupplierIngredientCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.SupplierIngredientCountAggregateOutputType> | number
+        }
+      }
+    }
+    SupplierPaymentTransaction: {
+      payload: Prisma.$SupplierPaymentTransactionPayload<ExtArgs>
+      fields: Prisma.SupplierPaymentTransactionFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.SupplierPaymentTransactionFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SupplierPaymentTransactionPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.SupplierPaymentTransactionFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SupplierPaymentTransactionPayload>
+        }
+        findFirst: {
+          args: Prisma.SupplierPaymentTransactionFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SupplierPaymentTransactionPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.SupplierPaymentTransactionFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SupplierPaymentTransactionPayload>
+        }
+        findMany: {
+          args: Prisma.SupplierPaymentTransactionFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SupplierPaymentTransactionPayload>[]
+        }
+        create: {
+          args: Prisma.SupplierPaymentTransactionCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SupplierPaymentTransactionPayload>
+        }
+        createMany: {
+          args: Prisma.SupplierPaymentTransactionCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        delete: {
+          args: Prisma.SupplierPaymentTransactionDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SupplierPaymentTransactionPayload>
+        }
+        update: {
+          args: Prisma.SupplierPaymentTransactionUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SupplierPaymentTransactionPayload>
+        }
+        deleteMany: {
+          args: Prisma.SupplierPaymentTransactionDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.SupplierPaymentTransactionUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        upsert: {
+          args: Prisma.SupplierPaymentTransactionUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SupplierPaymentTransactionPayload>
+        }
+        aggregate: {
+          args: Prisma.SupplierPaymentTransactionAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateSupplierPaymentTransaction>
+        }
+        groupBy: {
+          args: Prisma.SupplierPaymentTransactionGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.SupplierPaymentTransactionGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.SupplierPaymentTransactionCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.SupplierPaymentTransactionCountAggregateOutputType> | number
+        }
+      }
+    }
+    SupplierApplication: {
+      payload: Prisma.$SupplierApplicationPayload<ExtArgs>
+      fields: Prisma.SupplierApplicationFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.SupplierApplicationFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SupplierApplicationPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.SupplierApplicationFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SupplierApplicationPayload>
+        }
+        findFirst: {
+          args: Prisma.SupplierApplicationFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SupplierApplicationPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.SupplierApplicationFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SupplierApplicationPayload>
+        }
+        findMany: {
+          args: Prisma.SupplierApplicationFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SupplierApplicationPayload>[]
+        }
+        create: {
+          args: Prisma.SupplierApplicationCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SupplierApplicationPayload>
+        }
+        createMany: {
+          args: Prisma.SupplierApplicationCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        delete: {
+          args: Prisma.SupplierApplicationDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SupplierApplicationPayload>
+        }
+        update: {
+          args: Prisma.SupplierApplicationUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SupplierApplicationPayload>
+        }
+        deleteMany: {
+          args: Prisma.SupplierApplicationDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.SupplierApplicationUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        upsert: {
+          args: Prisma.SupplierApplicationUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SupplierApplicationPayload>
+        }
+        aggregate: {
+          args: Prisma.SupplierApplicationAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateSupplierApplication>
+        }
+        groupBy: {
+          args: Prisma.SupplierApplicationGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.SupplierApplicationGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.SupplierApplicationCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.SupplierApplicationCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -3922,6 +4324,127 @@ export const SystemConfigScalarFieldEnum = {
 export type SystemConfigScalarFieldEnum = (typeof SystemConfigScalarFieldEnum)[keyof typeof SystemConfigScalarFieldEnum]
 
 
+export const SupplierProfileScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  companyName: 'companyName',
+  contactPhone: 'contactPhone',
+  address: 'address',
+  logoPath: 'logoPath',
+  description: 'description',
+  isVerified: 'isVerified',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  deletedAt: 'deletedAt'
+} as const
+
+export type SupplierProfileScalarFieldEnum = (typeof SupplierProfileScalarFieldEnum)[keyof typeof SupplierProfileScalarFieldEnum]
+
+
+export const SupplierPlanScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  displayName: 'displayName',
+  priceVnd: 'priceVnd',
+  billingCycle: 'billingCycle',
+  maxIngredients: 'maxIngredients',
+  features: 'features',
+  isActive: 'isActive',
+  createdAt: 'createdAt',
+  deletedAt: 'deletedAt'
+} as const
+
+export type SupplierPlanScalarFieldEnum = (typeof SupplierPlanScalarFieldEnum)[keyof typeof SupplierPlanScalarFieldEnum]
+
+
+export const SupplierSubscriptionScalarFieldEnum = {
+  id: 'id',
+  profileId: 'profileId',
+  planId: 'planId',
+  startDate: 'startDate',
+  endDate: 'endDate',
+  status: 'status',
+  autoRenew: 'autoRenew',
+  cancelledAt: 'cancelledAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  deletedAt: 'deletedAt'
+} as const
+
+export type SupplierSubscriptionScalarFieldEnum = (typeof SupplierSubscriptionScalarFieldEnum)[keyof typeof SupplierSubscriptionScalarFieldEnum]
+
+
+export const SupplierIngredientScalarFieldEnum = {
+  id: 'id',
+  profileId: 'profileId',
+  name: 'name',
+  categoryId: 'categoryId',
+  defaultUnit: 'defaultUnit',
+  caloriesPer100g: 'caloriesPer100g',
+  averagePricePerUnit: 'averagePricePerUnit',
+  imagePath: 'imagePath',
+  description: 'description',
+  brand: 'brand',
+  barcode: 'barcode',
+  status: 'status',
+  rejectionReason: 'rejectionReason',
+  reviewedBy: 'reviewedBy',
+  reviewedAt: 'reviewedAt',
+  linkedIngredientId: 'linkedIngredientId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  deletedAt: 'deletedAt'
+} as const
+
+export type SupplierIngredientScalarFieldEnum = (typeof SupplierIngredientScalarFieldEnum)[keyof typeof SupplierIngredientScalarFieldEnum]
+
+
+export const SupplierPaymentTransactionScalarFieldEnum = {
+  id: 'id',
+  profileId: 'profileId',
+  planId: 'planId',
+  type: 'type',
+  amount: 'amount',
+  status: 'status',
+  paymentMethod: 'paymentMethod',
+  paymentRef: 'paymentRef',
+  payosOrderCode: 'payosOrderCode',
+  payosPaymentLinkId: 'payosPaymentLinkId',
+  payosTransactionRef: 'payosTransactionRef',
+  description: 'description',
+  checkoutUrl: 'checkoutUrl',
+  qrCode: 'qrCode',
+  expiredAt: 'expiredAt',
+  paidAt: 'paidAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type SupplierPaymentTransactionScalarFieldEnum = (typeof SupplierPaymentTransactionScalarFieldEnum)[keyof typeof SupplierPaymentTransactionScalarFieldEnum]
+
+
+export const SupplierApplicationScalarFieldEnum = {
+  id: 'id',
+  companyName: 'companyName',
+  contactName: 'contactName',
+  email: 'email',
+  phone: 'phone',
+  address: 'address',
+  description: 'description',
+  website: 'website',
+  status: 'status',
+  rejectionReason: 'rejectionReason',
+  reviewedAt: 'reviewedAt',
+  reviewedBy: 'reviewedBy',
+  userId: 'userId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  deletedAt: 'deletedAt'
+} as const
+
+export type SupplierApplicationScalarFieldEnum = (typeof SupplierApplicationScalarFieldEnum)[keyof typeof SupplierApplicationScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -4381,6 +4904,88 @@ export const SystemConfigOrderByRelevanceFieldEnum = {
 export type SystemConfigOrderByRelevanceFieldEnum = (typeof SystemConfigOrderByRelevanceFieldEnum)[keyof typeof SystemConfigOrderByRelevanceFieldEnum]
 
 
+export const SupplierProfileOrderByRelevanceFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  companyName: 'companyName',
+  contactPhone: 'contactPhone',
+  address: 'address',
+  logoPath: 'logoPath',
+  description: 'description'
+} as const
+
+export type SupplierProfileOrderByRelevanceFieldEnum = (typeof SupplierProfileOrderByRelevanceFieldEnum)[keyof typeof SupplierProfileOrderByRelevanceFieldEnum]
+
+
+export const SupplierPlanOrderByRelevanceFieldEnum = {
+  name: 'name',
+  displayName: 'displayName',
+  billingCycle: 'billingCycle'
+} as const
+
+export type SupplierPlanOrderByRelevanceFieldEnum = (typeof SupplierPlanOrderByRelevanceFieldEnum)[keyof typeof SupplierPlanOrderByRelevanceFieldEnum]
+
+
+export const SupplierSubscriptionOrderByRelevanceFieldEnum = {
+  id: 'id',
+  profileId: 'profileId',
+  status: 'status'
+} as const
+
+export type SupplierSubscriptionOrderByRelevanceFieldEnum = (typeof SupplierSubscriptionOrderByRelevanceFieldEnum)[keyof typeof SupplierSubscriptionOrderByRelevanceFieldEnum]
+
+
+export const SupplierIngredientOrderByRelevanceFieldEnum = {
+  id: 'id',
+  profileId: 'profileId',
+  name: 'name',
+  defaultUnit: 'defaultUnit',
+  imagePath: 'imagePath',
+  description: 'description',
+  brand: 'brand',
+  barcode: 'barcode',
+  rejectionReason: 'rejectionReason',
+  reviewedBy: 'reviewedBy'
+} as const
+
+export type SupplierIngredientOrderByRelevanceFieldEnum = (typeof SupplierIngredientOrderByRelevanceFieldEnum)[keyof typeof SupplierIngredientOrderByRelevanceFieldEnum]
+
+
+export const SupplierPaymentTransactionOrderByRelevanceFieldEnum = {
+  id: 'id',
+  profileId: 'profileId',
+  type: 'type',
+  status: 'status',
+  paymentMethod: 'paymentMethod',
+  paymentRef: 'paymentRef',
+  payosPaymentLinkId: 'payosPaymentLinkId',
+  payosTransactionRef: 'payosTransactionRef',
+  description: 'description',
+  checkoutUrl: 'checkoutUrl',
+  qrCode: 'qrCode'
+} as const
+
+export type SupplierPaymentTransactionOrderByRelevanceFieldEnum = (typeof SupplierPaymentTransactionOrderByRelevanceFieldEnum)[keyof typeof SupplierPaymentTransactionOrderByRelevanceFieldEnum]
+
+
+export const SupplierApplicationOrderByRelevanceFieldEnum = {
+  id: 'id',
+  companyName: 'companyName',
+  contactName: 'contactName',
+  email: 'email',
+  phone: 'phone',
+  address: 'address',
+  description: 'description',
+  website: 'website',
+  status: 'status',
+  rejectionReason: 'rejectionReason',
+  reviewedBy: 'reviewedBy',
+  userId: 'userId'
+} as const
+
+export type SupplierApplicationOrderByRelevanceFieldEnum = (typeof SupplierApplicationOrderByRelevanceFieldEnum)[keyof typeof SupplierApplicationOrderByRelevanceFieldEnum]
+
+
 
 /**
  * Field references
@@ -4645,6 +5250,13 @@ export type EnumNotificationTypeFieldRefInput<$PrismaModel> = FieldRefInputType<
 export type BigIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BigInt'>
     
 
+
+/**
+ * Reference to a field of type 'SupplierIngredientStatus'
+ */
+export type EnumSupplierIngredientStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'SupplierIngredientStatus'>
+    
+
 /**
  * Batch Payload for updateMany & deleteMany & createMany
  */
@@ -4838,6 +5450,12 @@ export type GlobalOmitConfig = {
   familyGroup?: Prisma.FamilyGroupOmit
   familyMember?: Prisma.FamilyMemberOmit
   systemConfig?: Prisma.SystemConfigOmit
+  supplierProfile?: Prisma.SupplierProfileOmit
+  supplierPlan?: Prisma.SupplierPlanOmit
+  supplierSubscription?: Prisma.SupplierSubscriptionOmit
+  supplierIngredient?: Prisma.SupplierIngredientOmit
+  supplierPaymentTransaction?: Prisma.SupplierPaymentTransactionOmit
+  supplierApplication?: Prisma.SupplierApplicationOmit
 }
 
 /* Types for Logging */

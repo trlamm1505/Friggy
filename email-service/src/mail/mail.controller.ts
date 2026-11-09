@@ -4,7 +4,8 @@ import { MailService } from './mail.service';
 
 interface EmailMessage {
   type: 'otp' | 'welcome' | 'subscription_reminder' | 'password_changed'
-      | 'family_invite' | 'family_removed' | 'family_dissolved';
+      | 'family_invite' | 'family_removed' | 'family_dissolved'
+      | 'supplier_application_received' | 'supplier_application_approved' | 'supplier_application_rejected';
   to: string;
   data: any;
 }
@@ -51,6 +52,32 @@ export class MailController {
         case 'family_dissolved':
           await this.mailService.sendFamilyDissolved(message.to);
           break;
+
+        // ── Supplier Application ──────────────────────────────────────────
+        case 'supplier_application_received':
+          await this.mailService.sendSupplierApplicationReceived(
+            message.to,
+            message.data.companyName,
+            message.data.contactName,
+          );
+          break;
+        case 'supplier_application_approved':
+          await this.mailService.sendSupplierApplicationApproved(
+            message.to,
+            message.data.contactName,
+            message.data.companyName,
+            message.data.token,
+          );
+          break;
+        case 'supplier_application_rejected':
+          await this.mailService.sendSupplierApplicationRejected(
+            message.to,
+            message.data.contactName,
+            message.data.companyName,
+            message.data.reason,
+          );
+          break;
+
         default:
           this.logger.warn(`⚠️ Email type không xác định: ${(message as any).type}`);
       }

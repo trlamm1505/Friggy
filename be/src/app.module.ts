@@ -23,6 +23,7 @@ import { PublicChatModule } from './modules-api/public-chat/public-chat.module';
 import { PaymentTransactionsModule } from './modules-api/payment-transactions/payment-transactions.module';
 import { FamilyModule } from './modules-api/family/family.module';
 import { EmailClientModule } from './modules-system/email-client/email-client.module';
+import { SupplierModule } from './modules-api/supplier/supplier.module';
 
 // Global guards
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
@@ -65,6 +66,7 @@ import { TokensModule } from './modules-system/tokens/tokens.module';
     PaymentTransactionsModule,
     FamilyModule,
     EmailClientModule,
+    SupplierModule,
   ],
   controllers: [],
   providers: [

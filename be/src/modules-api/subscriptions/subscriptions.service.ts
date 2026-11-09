@@ -4,11 +4,14 @@ import {
   BadRequestException,
   ConflictException,
   Logger,
+  Optional,
 } from '@nestjs/common';
 import { PrismaService } from 'src/modules-system/prisma/prisma.service';
 import { PayOsService } from 'src/modules-system/payos/payos.service';
 import { PaymentTransactionsService } from '../payment-transactions/payment-transactions.service';
 import { FamilyService } from '../family/family.service';
+import { FcmService } from 'src/modules-system/fcm/fcm.service';
+import { RedisService } from 'src/modules-system/redis/redis.service';
 import { InvalidSignatureError } from '@payos/node';
 import { v4 as uuid } from 'uuid';
 import type { SubscribeDto } from './dto/subscriptions.dto';
@@ -29,6 +32,8 @@ export class SubscriptionsService {
     private readonly payOsService: PayOsService,
     private readonly paymentTxService: PaymentTransactionsService,
     private readonly familyService: FamilyService,
+    @Optional() private readonly fcmService: FcmService,
+    @Optional() private readonly redisService: RedisService,
   ) {}
 
   // ─────────────────────────────────────────────────────────
@@ -194,9 +199,13 @@ export class SubscriptionsService {
     const { orderCode, code } = webhookData;
     this.logger.log(`[Webhook] orderCode=${orderCode} code=${code}`);
 
-    // Tìm transaction theo payosOrderCode
+    // Tìm transaction theo payosOrderCode — thử user trước, rồi supplier
     const tx = await this.paymentTxService.findByOrderCode(BigInt(orderCode));
     if (!tx) {
+      // Fallback: kiểm tra xem có phải supplier transaction không
+      const supplierHandled = await this.handleSupplierWebhook(BigInt(orderCode), code);
+      if (supplierHandled) return { received: true };
+
       this.logger.warn(`[Webhook] Không tìm thấy transaction với orderCode=${orderCode}`);
       return { received: false };
     }
@@ -440,5 +449,106 @@ export class SubscriptionsService {
       plan: this.mapPlan(s.plan),
       createdAt: s.createdAt.toISOString(),
     };
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Private: Xử lý webhook cho supplier payment (fallback từ handleWebhook)
+  // ─────────────────────────────────────────────────────────────────────────
+
+  private async handleSupplierWebhook(orderCode: bigint, code: string): Promise<boolean> {
+    const tx = await this.prisma.supplierPaymentTransaction.findFirst({
+      where: { payosOrderCode: orderCode, status: 'pending' },
+      include: { profile: { include: { user: true } }, plan: true },
+    });
+
+    if (!tx) return false; // không phải supplier tx
+
+    if (code !== '00') {
+      // Thanh toán thất bại — chỉ cập nhật status
+      await this.prisma.supplierPaymentTransaction.update({
+        where: { id: tx.id },
+        data: { status: 'cancelled' },
+      });
+      this.logger.log(`[Webhook/Supplier] Transaction cancelled orderCode=${orderCode}`);
+      return true;
+    }
+
+    // Thanh toán thành công
+    const now = new Date();
+    const endDate = new Date(now);
+    if (tx.plan.billingCycle === 'yearly') {
+      endDate.setFullYear(endDate.getFullYear() + 1);
+    } else {
+      endDate.setMonth(endDate.getMonth() + 1);
+    }
+    endDate.setHours(23, 59, 59, 0);
+
+    // Tìm role food_supplier
+    const supplierRole = await this.prisma.role.findFirst({ where: { name: 'food_supplier' } });
+    if (!supplierRole) {
+      this.logger.error('[Webhook/Supplier] food_supplier role not found in DB');
+      return false;
+    }
+
+    // Nâng role user lên food_supplier
+    await this.prisma.user.update({
+      where: { id: tx.profile.userId },
+      data: { roleId: supplierRole.id },
+    });
+
+    // Upsert subscription (hỗ trợ gia hạn)
+    await this.prisma.supplierSubscription.upsert({
+      where: { profileId: tx.profileId },
+      create: {
+        id: uuid(),
+        profileId: tx.profileId,
+        planId: tx.planId,
+        status: 'active',
+        startDate: now,
+        endDate,
+      },
+      update: {
+        planId: tx.planId,
+        status: 'active',
+        startDate: now,
+        endDate,
+        autoRenew: true,
+        cancelledAt: null,
+        deletedAt: null,
+      },
+    });
+
+    // Đánh dấu tx hoàn thành
+    await this.prisma.supplierPaymentTransaction.update({
+      where: { id: tx.id },
+      data: { status: 'completed', paidAt: now },
+    });
+
+    // Invalidate Redis cache
+    if (this.redisService) {
+      await this.redisService.del(`supplier:sub:active:${tx.profile.userId}`);
+    }
+
+    // Notification + FCM
+    await Promise.all([
+      this.prisma.notification.create({
+        data: {
+          id: uuid(),
+          userId: tx.profile.userId,
+          type: 'supplier_package_activated' as any,
+          isRead: false,
+          title: 'Gói nhà cung cấp đã được kích hoạt',
+          body: `Gói "${tx.plan.displayName}" đã được kích hoạt thành công. Bạn có thể bắt đầu thêm nguyên liệu.`,
+          metadata: { planId: tx.plan.id, planName: tx.plan.displayName },
+        },
+      }),
+      this.fcmService?.sendToUser(tx.profile.userId, {
+        title: 'Gói nhà cung cấp đã được kích hoạt',
+        body: `Gói "${tx.plan.displayName}" đã được kích hoạt thành công.`,
+      }),
+    ]);
+
+    this.logger.log(`[Webhook/Supplier] Activated plan "${tx.plan.displayName}" for user ${tx.profile.userId}`);
+    return true;
   }
 }

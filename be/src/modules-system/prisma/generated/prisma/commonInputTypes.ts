@@ -895,6 +895,23 @@ export type BigIntNullableWithAggregatesFilter<$PrismaModel = never> = {
   _max?: Prisma.NestedBigIntNullableFilter<$PrismaModel>
 }
 
+export type EnumSupplierIngredientStatusFilter<$PrismaModel = never> = {
+  equals?: $Enums.SupplierIngredientStatus | Prisma.EnumSupplierIngredientStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.SupplierIngredientStatus[]
+  notIn?: $Enums.SupplierIngredientStatus[]
+  not?: Prisma.NestedEnumSupplierIngredientStatusFilter<$PrismaModel> | $Enums.SupplierIngredientStatus
+}
+
+export type EnumSupplierIngredientStatusWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.SupplierIngredientStatus | Prisma.EnumSupplierIngredientStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.SupplierIngredientStatus[]
+  notIn?: $Enums.SupplierIngredientStatus[]
+  not?: Prisma.NestedEnumSupplierIngredientStatusWithAggregatesFilter<$PrismaModel> | $Enums.SupplierIngredientStatus
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumSupplierIngredientStatusFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumSupplierIngredientStatusFilter<$PrismaModel>
+}
+
 export type NestedIntFilter<$PrismaModel = never> = {
   equals?: number | Prisma.IntFieldRefInput<$PrismaModel>
   in?: number[]
@@ -1715,6 +1732,23 @@ export type NestedBigIntNullableWithAggregatesFilter<$PrismaModel = never> = {
   _sum?: Prisma.NestedBigIntNullableFilter<$PrismaModel>
   _min?: Prisma.NestedBigIntNullableFilter<$PrismaModel>
   _max?: Prisma.NestedBigIntNullableFilter<$PrismaModel>
+}
+
+export type NestedEnumSupplierIngredientStatusFilter<$PrismaModel = never> = {
+  equals?: $Enums.SupplierIngredientStatus | Prisma.EnumSupplierIngredientStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.SupplierIngredientStatus[]
+  notIn?: $Enums.SupplierIngredientStatus[]
+  not?: Prisma.NestedEnumSupplierIngredientStatusFilter<$PrismaModel> | $Enums.SupplierIngredientStatus
+}
+
+export type NestedEnumSupplierIngredientStatusWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.SupplierIngredientStatus | Prisma.EnumSupplierIngredientStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.SupplierIngredientStatus[]
+  notIn?: $Enums.SupplierIngredientStatus[]
+  not?: Prisma.NestedEnumSupplierIngredientStatusWithAggregatesFilter<$PrismaModel> | $Enums.SupplierIngredientStatus
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumSupplierIngredientStatusFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumSupplierIngredientStatusFilter<$PrismaModel>
 }
 
 

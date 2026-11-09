@@ -57,6 +57,10 @@ model User {
   role                  Role                @relation(fields: [roleId], references: [id])
   weeklyPlans           WeeklyPlan[]
   devices               UserDevice[]
+  supplierProfile       SupplierProfile?
+  reviewedSupplierIngredients SupplierIngredient[] @relation("SupplierIngredientReviewer")
+  supplierApplication  SupplierApplication?
+  reviewedApplications SupplierApplication[] @relation("ApplicationReviewer")
 
   @@index([roleId], map: "users_roleId_fkey")
   @@map("users")
@@ -146,6 +150,8 @@ model IngredientCategory {
   children                IngredientCategory[] @relation("CategoryHierarchy")
   ingredients             Ingredient[]
 
+  supplierIngredients   SupplierIngredient[]
+
   @@index([parentId], map: "ingredient_categories_parentId_fkey")
   @@map("ingredient_categories")
 }
@@ -168,6 +174,8 @@ model Ingredient {
   recipeIngredients   RecipeIngredient[]
   shoppingItems       ShoppingListItem[]
   allergies           UserAllergy[]
+
+  supplierLinks         SupplierIngredient[] @relation("SupplierLinkedIngredient")
 
   @@index([categoryId], map: "ingredients_categoryId_fkey")
   @@map("ingredients")
@@ -940,6 +948,11 @@ enum NotificationType {
   family_rejected
   family_removed
   family_dissolved
+  supplier_package_activated
+  supplier_package_expiring
+  supplier_package_expired
+  ingredient_approved
+  ingredient_rejected
 }
 
 // ─────────────────────────────────────────────────────────
@@ -999,3 +1012,162 @@ model SystemConfig {
   @@map("system_configs")
 }
 
+
+// _________________________________________________________________________________
+// Supplier / Food Provider Models
+// _________________________________________________________________________________
+
+model SupplierProfile {
+  id           String    @id @default(uuid()) @db.Char(36)
+  userId       String    @unique @db.Char(36)
+  companyName  String    @db.VarChar(150)
+  contactPhone String?   @db.VarChar(20)
+  address      String?   @db.VarChar(255)
+  logoPath     String?   @db.VarChar(512)
+  description  String?   @db.Text
+  isVerified   Boolean   @default(false)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
+
+  user                User                        @relation(fields: [userId], references: [id])
+  subscription        SupplierSubscription?
+  ingredients         SupplierIngredient[]
+  paymentTransactions SupplierPaymentTransaction[]
+
+  @@map("supplier_profiles")
+}
+
+model SupplierPlan {
+  id             Int       @id @default(autoincrement())
+  name           String    @unique @db.VarChar(50)
+  displayName    String    @db.VarChar(100)
+  priceVnd       Int
+  billingCycle   String    @db.VarChar(20)
+  maxIngredients Int       @default(50)
+  features       Json
+  isActive       Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+  deletedAt      DateTime?
+
+  subscriptions       SupplierSubscription[]
+  paymentTransactions SupplierPaymentTransaction[]
+
+  @@map("supplier_plans")
+}
+
+model SupplierSubscription {
+  id          String    @id @default(uuid()) @db.Char(36)
+  profileId   String    @unique @db.Char(36)
+  planId      Int
+  startDate   DateTime  @db.Date
+  endDate     DateTime  @db.Date
+  status      String    @db.VarChar(20)
+  autoRenew   Boolean   @default(true)
+  cancelledAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  profile SupplierProfile @relation(fields: [profileId], references: [id])
+  plan    SupplierPlan    @relation(fields: [planId], references: [id])
+
+  @@index([status, endDate])
+  @@index([planId])
+  @@map("supplier_subscriptions")
+}
+
+model SupplierIngredient {
+  id                  String                   @id @default(uuid()) @db.Char(36)
+  profileId           String                   @db.Char(36)
+  name                String                   @db.VarChar(150)
+  categoryId          Int
+  defaultUnit         String                   @db.VarChar(30)
+  caloriesPer100g     Float?
+  averagePricePerUnit Int?
+  imagePath           String?                  @db.VarChar(512)
+  description         String?                  @db.Text
+  brand               String?                  @db.VarChar(100)
+  barcode             String?                  @db.VarChar(50)
+  status              SupplierIngredientStatus @default(pending)
+  rejectionReason     String?                  @db.VarChar(255)
+  reviewedBy          String?                  @db.Char(36)
+  reviewedAt          DateTime?
+  linkedIngredientId  Int?
+  createdAt           DateTime                 @default(now())
+  updatedAt           DateTime                 @updatedAt
+  deletedAt           DateTime?
+
+  profile          SupplierProfile    @relation(fields: [profileId], references: [id])
+  category         IngredientCategory @relation(fields: [categoryId], references: [id])
+  reviewer         User?              @relation("SupplierIngredientReviewer", fields: [reviewedBy], references: [id])
+  linkedIngredient Ingredient?        @relation("SupplierLinkedIngredient", fields: [linkedIngredientId], references: [id])
+
+  @@index([profileId, status])
+  @@index([status])
+  @@index([categoryId])
+  @@index([linkedIngredientId])
+  @@map("supplier_ingredients")
+}
+
+model SupplierPaymentTransaction {
+  id                  String    @id @default(uuid()) @db.Char(36)
+  profileId           String    @db.Char(36)
+  planId              Int
+  type                String    @db.VarChar(20)
+  amount              Int
+  status              String    @db.VarChar(20)
+  paymentMethod       String    @default("payos") @db.VarChar(30)
+  paymentRef          String?   @unique @db.VarChar(100)
+  payosOrderCode      BigInt?   @unique
+  payosPaymentLinkId  String?   @db.VarChar(100)
+  payosTransactionRef String?   @db.VarChar(100)
+  description         String?   @db.VarChar(100)
+  checkoutUrl         String?   @db.VarChar(500)
+  qrCode              String?   @db.Text
+  expiredAt           DateTime?
+  paidAt              DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  profile SupplierProfile @relation(fields: [profileId], references: [id])
+  plan    SupplierPlan    @relation(fields: [planId], references: [id])
+
+  @@index([profileId])
+  @@index([status, expiredAt])
+  @@index([planId])
+  @@map("supplier_payment_transactions")
+}
+
+enum SupplierIngredientStatus {
+  pending
+  approved
+  rejected
+  archived
+}
+
+model SupplierApplication {
+  id              String    @id @default(uuid()) @db.Char(36)
+  companyName     String    @db.VarChar(150)
+  contactName     String    @db.VarChar(100)
+  email           String    @db.VarChar(255)
+  phone           String?   @db.VarChar(20)
+  address         String?   @db.VarChar(255)
+  description     String?   @db.Text
+  website         String?   @db.VarChar(255)
+  status          String    @default("pending") @db.VarChar(20)
+  rejectionReason String?   @db.Text
+  reviewedAt      DateTime?
+  reviewedBy      String?   @db.Char(36)
+  userId          String?   @unique @db.Char(36)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  deletedAt       DateTime?
+
+  user     User? @relation(fields: [userId], references: [id])
+  reviewer User? @relation("ApplicationReviewer", fields: [reviewedBy], references: [id])
+
+  @@index([status])
+  @@index([email])
+  @@map("supplier_applications")
+}

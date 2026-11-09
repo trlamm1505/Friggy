@@ -298,7 +298,22 @@ export const NotificationType = {
   family_joined: 'family_joined',
   family_rejected: 'family_rejected',
   family_removed: 'family_removed',
-  family_dissolved: 'family_dissolved'
+  family_dissolved: 'family_dissolved',
+  supplier_package_activated: 'supplier_package_activated',
+  supplier_package_expiring: 'supplier_package_expiring',
+  supplier_package_expired: 'supplier_package_expired',
+  ingredient_approved: 'ingredient_approved',
+  ingredient_rejected: 'ingredient_rejected'
 } as const
 
 export type NotificationType = (typeof NotificationType)[keyof typeof NotificationType]
+
+
+export const SupplierIngredientStatus = {
+  pending: 'pending',
+  approved: 'approved',
+  rejected: 'rejected',
+  archived: 'archived'
+} as const
+
+export type SupplierIngredientStatus = (typeof SupplierIngredientStatus)[keyof typeof SupplierIngredientStatus]

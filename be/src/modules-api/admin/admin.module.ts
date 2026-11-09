@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { RedisModule } from 'src/modules-system/redis/redis.module';
 import { PrismaModule } from 'src/modules-system/prisma/prisma.module';
 import { FcmModule } from 'src/modules-system/fcm/fcm.module';
 
@@ -59,11 +60,32 @@ import { AdminBroadcastService } from './broadcast/admin-broadcast.service';
 import { AdminRolesController } from './roles/admin-roles.controller';
 import { AdminRolesService } from './roles/admin-roles.service';
 
+// 🔷 Supplier Ingredients (Admin Review)
+import { AdminSupplierIngredientsController } from './supplier-ingredients/admin-supplier-ingredients.controller';
+import { AdminSupplierIngredientsService } from './supplier-ingredients/admin-supplier-ingredients.service';
+
+// 🔷 Suppliers (Admin Management)
+import { AdminSuppliersController } from './suppliers/admin-suppliers.controller';
+import { AdminSuppliersService } from './suppliers/admin-suppliers.service';
+
+// 🔷 Supplier Plans (Admin CRUD)
+import { AdminSupplierPlansController } from './supplier-plans/admin-supplier-plans.controller';
+import { AdminSupplierPlansService } from './supplier-plans/admin-supplier-plans.service';
+
+// 🔷 Supplier Applications (B2B Onboarding)
+import { AdminSupplierApplicationsController } from './supplier-applications/admin-supplier-applications.controller';
+import { AdminSupplierApplicationsService } from './supplier-applications/admin-supplier-applications.service';
+
+// 🔷 Supplier Payment Transactions
+import { AdminSupplierPaymentTransactionsController } from './supplier-payment-transactions/admin-supplier-payment-transactions.controller';
+import { AdminSupplierPaymentTransactionsService } from './supplier-payment-transactions/admin-supplier-payment-transactions.service';
+
 @Module({
   imports: [
     PrismaModule,
     NotificationsModule,
     FcmModule,
+    RedisModule,
   ],
   controllers: [
     AdminAiController,
@@ -81,6 +103,12 @@ import { AdminRolesService } from './roles/admin-roles.service';
     AdminSessionsController,
     AdminActivityLogsController,
     AdminBroadcastController,
+    // 🔷 Supplier
+    AdminSupplierIngredientsController,
+    AdminSuppliersController,
+    AdminSupplierPlansController,
+    AdminSupplierApplicationsController,
+    AdminSupplierPaymentTransactionsController,
   ],
   providers: [
     AdminAiService,
@@ -98,6 +126,12 @@ import { AdminRolesService } from './roles/admin-roles.service';
     AdminSessionsService,
     AdminActivityLogsService,
     AdminBroadcastService,
+    // 🔷 Supplier
+    AdminSupplierIngredientsService,
+    AdminSuppliersService,
+    AdminSupplierPlansService,
+    AdminSupplierApplicationsService,
+    AdminSupplierPaymentTransactionsService,
   ],
 })
 export class AdminModule {}

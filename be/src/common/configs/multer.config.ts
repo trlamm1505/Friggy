@@ -1,6 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
 import { MulterOptions } from '@nestjs/platform-express/multer/interfaces/multer-options.interface';
-import { diskStorage } from 'multer';
+import { diskStorage, memoryStorage } from 'multer';
 import { extname, join } from 'path';
 import { mkdirSync } from 'fs';
 import { v4 as uuid } from 'uuid';
@@ -86,4 +86,24 @@ export const multerCategoryIconConfig: MulterOptions = {
   storage: createStorage(() => 'categories'),
   fileFilter: imageFileFilter,
   limits: { fileSize: 2 * 1024 * 1024 }, // 2 MB
+};
+
+
+// ── Excel import (supplier bulk ingredient upload) ────────────────────────────
+export const multerExcelConfig: MulterOptions = {
+  storage: memoryStorage(),
+  fileFilter: (_, file, callback) => {
+    const allowedMimes = [
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.ms-excel',
+    ];
+    if (!allowedMimes.includes(file.mimetype)) {
+      return callback(
+        new BadRequestException('Chỉ chấp nhận file Excel (.xlsx hoặc .xls)'),
+        false,
+      );
+    }
+    callback(null, true);
+  },
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB
 };
