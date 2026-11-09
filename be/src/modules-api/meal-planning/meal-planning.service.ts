@@ -62,16 +62,12 @@ export class MealPlanningService {
       `📋 [MealPlanning] Publish job tạo thực đơn lên RabbitMQ: jobId=${jobId} | userId=${userId}`,
     );
 
-    // Lấy danh sách supplier ingredient IDs được ưu tiên
-    const priorityIngredientIds = await this.getActivePriorityIngredientIds();
-
     // Publish message lên RabbitMQ → AI Service sẽ consume và xử lý
     await this.rabbitMq.publish(MEAL_PLAN_ROUTING_KEY, {
       jobId,
       userId,
       weekStartDate: dto.weekStartDate,
       budget: dto.budget,
-      priorityIngredientIds,
     });
 
     return {
@@ -83,24 +79,23 @@ export class MealPlanningService {
   }
 
   // ─────────────────────────────────────────────────────────────────────────
-  // Private: Lấy supplier ingredient IDs được ưu tiên trong meal plan
+  // Private: Enrich shopping list items với supplier suggestions
   // ─────────────────────────────────────────────────────────────────────────
 
   /**
-   * Truy vấn DB lấy supplier ingredients đã approved, supplier còn hạn gói.
-   * Cache vào Redis 300s với key 'supplier:promoted:ingredientIds'.
+   * Với danh sách ingredientId (hệ thống), tìm tất cả supplier_ingredients
+   * đang active (approved + supplier còn hạn gói) có linkedIngredientId khớp.
+   * Trả về Map<ingredientId, SupplierSuggestion[]>
    */
-  private async getActivePriorityIngredientIds(): Promise<string[]> {
-    if (!this.redisService) return [];
-
-    const cacheKey = 'supplier:promoted:ingredientIds';
-    const cached = await this.redisService.get<string[]>(cacheKey);
-    if (cached) return cached;
+  private async enrichWithSuppliers(ingredientIds: number[]): Promise<
+    Map<number, { supplierIngredientId: string; name: string; companyName: string; price: number | null; imagePath: string | null }[]>
+  > {
+    if (!ingredientIds.length) return new Map();
 
     const now = new Date();
-
-    const activeIngredients = await this.prisma.supplierIngredient.findMany({
+    const rows = await this.prisma.supplierIngredient.findMany({
       where: {
+        linkedIngredientId: { in: ingredientIds },
         status: 'approved',
         deletedAt: null,
         profile: {
@@ -111,12 +106,30 @@ export class MealPlanningService {
           },
         },
       },
-      select: { id: true },
+      select: {
+        id: true,
+        name: true,
+        linkedIngredientId: true,
+        averagePricePerUnit: true,
+        imagePath: true,
+        profile: { select: { companyName: true } },
+      },
     });
 
-    const ids = activeIngredients.map((i) => i.id);
-    await this.redisService.set(cacheKey, ids, 300);
-    return ids;
+    const result = new Map<number, { supplierIngredientId: string; name: string; companyName: string; price: number | null; imagePath: string | null }[]>();
+    for (const row of rows) {
+      if (!row.linkedIngredientId) continue;
+      const list = result.get(row.linkedIngredientId) ?? [];
+      list.push({
+        supplierIngredientId: row.id,
+        name: row.name,
+        companyName: row.profile.companyName,
+        price: row.averagePricePerUnit ?? null,
+        imagePath: row.imagePath ?? null,
+      });
+      result.set(row.linkedIngredientId, list);
+    }
+    return result;
   }
 
   // ─────────────────────────────────────────────────────────
@@ -299,10 +312,14 @@ export class MealPlanningService {
       include: {
         items: {
           where: { deletedAt: null },
-          include: { ingredient: { select: { name: true } } },
+          include: { ingredient: { select: { id: true, name: true } } },
         },
       },
     });
+
+    // Collect tất cả ingredientId để lookup supplier một lần duy nhất
+    const allIngredientIds = [...new Set(lists.flatMap((l) => l.items.map((i) => i.ingredientId)))];
+    const supplierMap = await this.enrichWithSuppliers(allIngredientIds);
 
     return lists.map((list) => ({
       id: list.id,
@@ -313,12 +330,14 @@ export class MealPlanningService {
       createdAt: list.createdAt.toISOString(),
       items: list.items.map((item) => ({
         id: item.id,
+        ingredientId: item.ingredientId,
         ingredientName: item.ingredient.name,
         quantity: item.quantity,
         unit: item.unit,
         estimatedPrice: item.estimatedPrice,
         isPurchased: item.isPurchased,
         purchasedAt: item.purchasedAt?.toISOString() ?? null,
+        supplierSuggestions: supplierMap.get(item.ingredientId) ?? [],
       })),
     }));
   }
@@ -411,20 +430,20 @@ export class MealPlanningService {
         title,
         status: 'draft',
         totalEstimatedCost: Array.from(filteredMap.entries()).reduce((sum, [_id, val]) => {
-          return sum + Math.round((val.price ?? 0) * val.quantity / 100);
+          return sum + Math.round((val.price ?? 0) * val.quantity);
         }, 0),
         items: {
           create: Array.from(filteredMap.entries()).map(([ingredientId, val]) => ({
             ingredientId,
             quantity: Math.round(val.quantity * 10) / 10,
             unit: val.unit,
-            estimatedPrice: val.price ? Math.round(val.price * val.quantity / 100) : null,
+            estimatedPrice: val.price ? Math.round(val.price * val.quantity) : null,
           })),
         },
       },
       include: {
         items: {
-          include: { ingredient: { select: { name: true } } },
+          include: { ingredient: { select: { id: true, name: true } } },
         },
       },
     });
@@ -432,6 +451,10 @@ export class MealPlanningService {
     this.logger.log(
       `🛒 [MealPlanning] Tạo smart shopping list: id=${shoppingList.id} | ${shoppingList.items.length} ng.liệu (filter: ${isSmartFiltered})`,
     );
+
+    // Enrich supplier suggestions
+    const createdIngredientIds = shoppingList.items.map((i) => i.ingredientId);
+    const supplierMap = await this.enrichWithSuppliers(createdIngredientIds);
 
     return {
       id: shoppingList.id,
@@ -443,12 +466,14 @@ export class MealPlanningService {
       isSmartFiltered,
       items: shoppingList.items.map((item) => ({
         id: item.id,
+        ingredientId: item.ingredientId,
         ingredientName: item.ingredient.name,
         quantity: item.quantity,
         unit: item.unit,
         estimatedPrice: item.estimatedPrice,
         isPurchased: item.isPurchased,
         purchasedAt: null,
+        supplierSuggestions: supplierMap.get(item.ingredientId) ?? [],
       })),
     };
   }

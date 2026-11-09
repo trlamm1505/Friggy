@@ -30,6 +30,24 @@ export class SupplierIngredientsService {
 
   // ── Helpers ───────────────────────────────────────────────────────────────
 
+  /**
+   * Auto-match tên nguyên liệu supplier với bảng ingredients hệ thống.
+   * So sánh case-insensitive, substring 2 chiều.
+   * Chỉ trả về id nếu tìm được ĐÚNG 1 kết quả (tránh match nhầm).
+   */
+  private async autoMatchIngredient(name: string): Promise<number | null> {
+    const keyword = name.trim().toLowerCase();
+    const candidates = await this.prisma.ingredient.findMany({
+      where: { deletedAt: null },
+      select: { id: true, name: true },
+    });
+    const filtered = candidates.filter((i) => {
+      const sysName = i.name.toLowerCase();
+      return keyword.includes(sysName) || sysName.includes(keyword);
+    });
+    return filtered.length === 1 ? filtered[0].id : null;
+  }
+
   private async getProfile(userId: string) {
     const profile = await this.prisma.supplierProfile.findUnique({ where: { userId } });
     if (!profile || profile.deletedAt) {
@@ -116,6 +134,8 @@ export class SupplierIngredientsService {
 
     const imagePath = image ? `/ingredients/${image.filename}` : null;
 
+    const linkedIngredientId = await this.autoMatchIngredient(dto.name);
+
     const ingredient = await this.prisma.supplierIngredient.create({
       data: {
         id: uuid(),
@@ -129,6 +149,7 @@ export class SupplierIngredientsService {
         barcode: dto.barcode?.trim() ?? null,
         description: dto.description?.trim() ?? null,
         imagePath,
+        linkedIngredientId,
       },
       include: { category: { select: { name: true } } },
     });
@@ -325,6 +346,21 @@ export class SupplierIngredientsService {
       failedRows.push({ row: 0, name: '', reason: `Chỉ import được ${allowed} nguyên liệu (đã đạt giới hạn gói)` });
     }
 
+    // ── Auto-match linkedIngredientId (batch, tránh N+1) ──────────────────
+    // Load toàn bộ ingredients hệ thống 1 lần, match in-memory
+    const sysIngredients = await this.prisma.ingredient.findMany({
+      where: { deletedAt: null },
+      select: { id: true, name: true },
+    });
+    for (const item of toInsert) {
+      const keyword = (item.name as string).toLowerCase();
+      const filtered = sysIngredients.filter((i) => {
+        const sysName = i.name.toLowerCase();
+        return keyword.includes(sysName) || sysName.includes(keyword);
+      });
+      item.linkedIngredientId = filtered.length === 1 ? filtered[0].id : null;
+    }
+
     // ── Lưu ảnh từ Excel vào disk ─────────────────────────────────────────
     if (rowImageMap.size > 0) {
       const imageDir = join(process.cwd(), 'public', 'ingredients');
@@ -371,6 +407,9 @@ export class SupplierIngredientsService {
     const workbook = new ExcelJS.Workbook();
     const sheet = workbook.addWorksheet('Nguyên liệu');
 
+    // Cột 1-8: dữ liệu text
+    // Cột 9 (image): hướng dẫn — ảnh được nhúng trực tiếp vào cell (Insert → Image),
+    //   không phải nhập text. Mỗi ảnh đặt tại cùng hàng với nguyên liệu tương ứng.
     sheet.columns = [
       { header: 'name*', key: 'name', width: 30 },
       { header: 'categoryId*', key: 'categoryId', width: 15 },
@@ -380,15 +419,25 @@ export class SupplierIngredientsService {
       { header: 'brand', key: 'brand', width: 20 },
       { header: 'barcode', key: 'barcode', width: 18 },
       { header: 'description', key: 'description', width: 40 },
+      { header: 'image (nhúng ảnh vào đây — không nhập text)', key: 'image', width: 35 },
     ];
 
-    // Header style
-    sheet.getRow(1).font = { bold: true };
-    sheet.getRow(1).fill = {
-      type: 'pattern',
-      pattern: 'solid',
-      fgColor: { argb: 'FFD6E4F0' },
-    };
+    // Header style — cột thường: xanh nhạt, cột image: vàng nhạt
+    const headerRow = sheet.getRow(1);
+    headerRow.font = { bold: true };
+    headerRow.eachCell((cell, colNumber) => {
+      cell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: colNumber === 9 ? 'FFFFF3CD' : 'FFD6E4F0' }, // vàng cho cột ảnh
+      };
+      cell.alignment = { vertical: 'middle', wrapText: true };
+      if (colNumber === 9) {
+        cell.font = { bold: true, italic: true, color: { argb: 'FF856404' } };
+        // Thêm note hướng dẫn trực tiếp trên header cell
+        cell.note = 'Nhúng ảnh vào đây:\n1. Tăng Row Height lên ≥ 60px\n2. Chọn ô này → Insert → Pictures\n3. Chọn "Place over Cells" (KHÔNG dùng "Place in Cell")\n4. Chọn file ảnh (JPEG/PNG/WEBP, tối đa 5MB)\n\nXem sheet "Hướng dẫn" để biết thêm chi tiết.';
+      }
+    });
 
     // Example row
     sheet.addRow({
@@ -400,6 +449,47 @@ export class SupplierIngredientsService {
       brand: 'ABC Farm',
       barcode: '8938505737946',
       description: 'Thịt bò nhập khẩu từ Úc',
+      image: '', // ← để trống, nhúng ảnh vào đây bằng Insert → Image trong Excel
+    });
+    sheet.getRow(2).height = 60; // Chiều cao đủ để hiển thị ảnh thumbnail
+
+    // Sheet hướng dẫn riêng — không ảnh hưởng vùng data
+    const guideSheet = workbook.addWorksheet('Hướng dẫn');
+    guideSheet.getColumn(1).width = 110;
+    const guideLines: [string, boolean?][] = [
+      ['HƯỚNG DẪN IMPORT NGUYÊN LIỆU'],
+      [''],
+      ['1. Điền dữ liệu vào sheet "Nguyên liệu" từ hàng 3 trở xuống (hàng 2 là ví dụ mẫu).'],
+      ['2. Các cột có dấu * là bắt buộc: name*, categoryId*, defaultUnit*'],
+      ['3. categoryId: xem sheet "Danh mục tham khảo" để lấy đúng ID danh mục.'],
+      ['4. averagePricePerUnit: giá trên 1 đơn vị (ví dụ: gram → giá/gram, kg → giá/kg, bó → giá/bó).'],
+      [''],
+      ['HƯỚNG DẪN THÊM ẢNH (QUAN TRỌNG):'],
+      ['- Cột "image" (cột 9, màu vàng): ảnh được nhúng trực tiếp — KHÔNG nhập text.'],
+      [''],
+      ['  BƯỚC 1: Tăng chiều cao hàng lên tối thiểu 60px (click chuột phải vào số thứ tự hàng → Row Height → nhập 60).'],
+      ['  BƯỚC 2: Chọn ô tại cột 9 (cột "image") đúng hàng của nguyên liệu.'],
+      ['  BƯỚC 3: Vào Insert → Pictures → Place over Cells → This Device → chọn file ảnh.'],
+      ['           *** PHẢI chọn "Place over Cells" — KHÔNG dùng "Place in Cell" (hệ thống không đọc được định dạng đó). ***'],
+      ['  BƯỚC 4: Sau khi chèn, kéo góc ảnh để resize cho vừa trong cột (không nên để ảnh tràn sang cột khác).'],
+      [''],
+      ['- Định dạng hỗ trợ: JPEG, PNG, WEBP. Tối đa 5MB/ảnh.'],
+      ['- Ảnh phải nằm đúng hàng với nguyên liệu tương ứng.'],
+      ['- Nếu không có ảnh: bỏ trống cột đó — nguyên liệu vẫn được import bình thường.'],
+    ];
+    guideLines.forEach(([text], i) => {
+      const cell = guideSheet.getCell(`A${i + 1}`);
+      cell.value = text ?? '';
+      if (i === 0) {
+        cell.font = { bold: true, size: 13 };
+      } else if (text?.startsWith('HƯỚNG') || text?.startsWith('  BƯỚC')) {
+        cell.font = { bold: text.startsWith('HƯỚNG'), size: 11 };
+      } else if (text?.includes('*** PHẢI')) {
+        // Dòng cảnh báo quan trọng — đỏ, bold
+        cell.font = { bold: true, size: 11, color: { argb: 'FFCC0000' } };
+      } else {
+        cell.font = { size: 11 };
+      }
     });
 
     // Category reference sheet
@@ -414,6 +504,11 @@ export class SupplierIngredientsService {
       { header: 'Tên danh mục', key: 'name', width: 40 },
     ];
     refSheet.getRow(1).font = { bold: true };
+    refSheet.getRow(1).fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFD6E4F0' },
+    };
     categories.forEach(c => refSheet.addRow({ id: c.id, name: c.name }));
 
     return workbook.xlsx.writeBuffer() as Promise<Buffer>;

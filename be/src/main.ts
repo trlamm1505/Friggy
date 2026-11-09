@@ -3,6 +3,7 @@ import { AppModule } from './app.module';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { ValidationPipe, VersioningType } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { join } from 'path';
 import {
   PORT,
   NODE_ENV,
@@ -12,6 +13,12 @@ import {
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
+
+  // ── Static files (public/) ───────────────────────────────────────────
+  // GET /avatars/*      → be/public/avatars/
+  // GET /ingredients/*  → be/public/ingredients/
+  // GET /scans/*        → be/public/scans/
+  app.useStaticAssets(join(process.cwd(), 'public'));
 
   // ── Global API prefix & versioning ─────────────────────────────────────
   app.setGlobalPrefix('api');
