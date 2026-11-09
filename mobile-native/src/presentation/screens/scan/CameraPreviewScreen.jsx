@@ -38,6 +38,7 @@ import { ChevronLeft, Plus, Camera, Sparkles } from 'lucide-react-native';
 import { CustomButton } from '../../components/common/CustomButton';
 import { ErrorState } from '../../components/common/ErrorState';
 import { DetectionItem } from '../../components/scan/DetectionItem';
+import { CatalogPickerModal } from '../../components/scan/CatalogPickerModal';
 import { EmptyState } from '../../components/common/EmptyState';
 import { showSuccess } from '../../utils/helpers';
 import { useServices } from '../../../data/ServiceProvider';
@@ -92,6 +93,8 @@ export const CameraPreviewScreen = () => {
   const [items, setItems] = useState(initialItems);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
+  // clientId của món đang mở modal tra danh mục. null = modal đóng.
+  const [catalogTargetId, setCatalogTargetId] = useState(null);
 
   const updateField = useCallback((id, field, value) => {
     setItems((prev) => prev.map((it) => (it.clientId === id ? { ...it, [field]: value } : it)));
@@ -106,6 +109,37 @@ export const CameraPreviewScreen = () => {
   const remove = useCallback((id) => {
     setItems((prev) => prev.filter((it) => it.clientId !== id));
   }, []);
+
+  /**
+   * Mở modal tra danh mục cho 1 món.
+   *
+   * Món AI nhận diện mà không có trong bảng `ingredients` sẽ bị BE từ chối lúc
+   * confirm (`fridge.service.ts:497` -> 400). Chọn trong modal sẽ gắn đúng
+   * `ingredientId` + tên chuẩn của danh mục -> BE resolve chắc chắn.
+   */
+  const openCatalogPicker = useCallback((id) => {
+    setCatalogTargetId(id);
+  }, []);
+
+  const handleCatalogPicked = useCallback((option) => {
+    if (!catalogTargetId) return;
+    setItems((prev) =>
+      prev.map((it) =>
+        it.clientId === catalogTargetId
+          ? {
+              ...it,
+              ingredientId: option.id,
+              // Tên lấy theo danh mục (chuẩn hoá) để BE so khớp chắc chắn.
+              name: option.name,
+              unit: it.unit || option.defaultUnit || 'pcs',
+              needsConfirm: false,
+            }
+          : it
+      )
+    );
+    setCatalogTargetId(null);
+    setSaveError(null);
+  }, [catalogTargetId]);
 
   const addNew = useCallback(() => {
     const newItem = {
@@ -139,6 +173,25 @@ export const CameraPreviewScreen = () => {
         isEn
           ? 'Missing scan session. Please scan again.'
           : 'Thiếu phiên scan. Vui lòng quét lại.'
+      );
+      return;
+    }
+
+    // ── BẮT BUỘC: chặn món KHÔNG có trong danh mục hệ thống ──
+    // BE (`fridge.service.ts:497`) ném 400 cho món không resolve được, và
+    // KHÔNG bọc transaction -> các món trước đó đã vào tủ, món này thì mất.
+    // Chặn ở UI giúp user biết chính xác món nào cần sửa, thay vì nhận
+    // lỗi server chung chung rồi không biết món nào đã vào tủ.
+    const unmapped = validItems.filter(
+      (i) => i.ingredientId === null || i.ingredientId === undefined
+    );
+    if (unmapped.length > 0) {
+      Alert.alert(
+        isEn ? 'Not in the catalog' : 'Chưa có trong danh mục',
+        isEn
+          ? `${unmapped.length} item(s) are not in the system catalog. Please pick them from the catalog so they can be added.`
+          : `${unmapped.length} món chưa có trong danh mục hệ thống. Vui lòng chọn từ danh mục để có thể thêm vào tủ.`,
+        [{ text: t('home.cancel') }]
       );
       return;
     }
@@ -276,6 +329,8 @@ export const CameraPreviewScreen = () => {
                 onStorageChange={(s) => updateField(item.clientId, 'storageLocation', s)}
                 allergyWarning={item.allergyWarning}
                 needsConfirm={item.needsConfirm}
+                onPickFromCatalog={() => openCatalogPicker(item.clientId)}
+                catalogPicked={item.ingredientId !== null && item.ingredientId !== undefined}
               />
             ))}
 
@@ -316,6 +371,21 @@ export const CameraPreviewScreen = () => {
           loading={saving}
         />
       </View>
+
+      {/* ── Modal tra danh mục (món AI không map được DB) ──
+          CHỈ render khi `catalogTargetId !== null`. Nếu luôn render, modal
+          gọi `useSafeAreaInsets()` -> test không bọc `<SafeAreaProvider>`
+          sẽ văng lỗi "No safe area value available" dù modal đang đóng. */}
+      {catalogTargetId !== null ? (
+        <CatalogPickerModal
+          visible
+          onClose={() => setCatalogTargetId(null)}
+          onSelect={handleCatalogPicked}
+          initialQuery={
+            items.find((i) => i.clientId === catalogTargetId)?.name ?? ''
+          }
+        />
+      ) : null}
     </KeyboardAvoidingView>
   );
 };

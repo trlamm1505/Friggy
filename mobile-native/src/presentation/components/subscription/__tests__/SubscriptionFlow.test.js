@@ -15,7 +15,11 @@
 
 import { formatDate, statusLabel } from '../../../screens/subscription/PackageManagementScreen';
 import { describeAiUsage, formatVnd } from '../SubscriptionPlansSheet';
-import { buildTransferDescription } from '../PayOSPaymentSheet';
+import {
+  buildTransferDescription,
+  truncateTransferDescription,
+  PAYOS_MAX_DESCRIPTION_LENGTH,
+} from '../PayOSPaymentSheet';
 
 /** Giả lập `t()` của i18next: trả về key + interpolation. */
 const t = (key, opts) => {
@@ -89,7 +93,7 @@ describe('SubscriptionPlansSheet - formatVnd', () => {
 
 describe('PayOSPaymentSheet - buildTransferDescription', () => {
   it('khớp `description` BE gửi PayOS: "Friggy <tên gói>"', () => {
-    // BE: `description: \`Friggy ${plan.displayName}\`` (subscriptions.service.ts:128)
+    // BE: `description: \`Friggy ${plan.displayName}\`` (subscriptions.service.ts:125)
     expect(buildTransferDescription('individual', 'Gói Cá Nhân')).toBe('Friggy Gói Cá Nhân');
     expect(buildTransferDescription('family', 'Gói Gia Đình')).toBe('Friggy Gói Gia Đình');
   });
@@ -100,5 +104,73 @@ describe('PayOSPaymentSheet - buildTransferDescription', () => {
 
   it('thiếu cả hai -> vẫn trả chuỗi hợp lệ (không undefined)', () => {
     expect(buildTransferDescription(null, null)).toBe('Friggy');
+  });
+
+  it('gia hạn -> prefix "Gia hạn Friggy" (khớp BE `POST /subscriptions/renew`)', () => {
+    // BE: `description: \`Gia hạn Friggy ${sub.plan.displayName}\``
+    //       (subscriptions.service.ts:335)
+    //
+    // ⚠️ "Gia hạn Friggy Gói Gia Đình" = 27 ký tự > giới hạn 25 của PayOS
+    //   -> cả BE và RN đều rút gọn ở RANH GIỚI TỪ -> "Gia hạn Friggy Gói Gia".
+    expect(buildTransferDescription('individual', 'Gói Cá Nhân', true)).toBe(
+      'Gia hạn Friggy Gói Cá'
+    );
+    expect(buildTransferDescription('family', 'Gói Gia Đình', true)).toBe('Gia hạn Friggy Gói Gia');
+  });
+
+  it('gia hạn + thiếu displayName -> vẫn có prefix', () => {
+    expect(buildTransferDescription('family', null, true)).toBe('Gia hạn Friggy family');
+  });
+
+  it('gia hạn + thiếu cả hai -> trả chuỗi hợp lệ', () => {
+    expect(buildTransferDescription(null, null, true)).toBe('Gia hạn Friggy');
+  });
+
+  it('KHÔNG dùng viết tắt "GH" (chuỗi BE cũ không còn tồn tại)', () => {
+    expect(buildTransferDescription('individual', 'Gói Cá Nhân', true)).not.toContain('GH');
+  });
+});
+
+describe('PayOSPaymentSheet - truncateTransferDescription', () => {
+  it('chuỗi ngắn -> giữ nguyên', () => {
+    expect(truncateTransferDescription('Friggy Gói Cá Nhân')).toBe('Friggy Gói Cá Nhân');
+  });
+
+  it('chuỗi dài -> cắt ở RANH GIỚI TỪ (không cắt cụt)', () => {
+    const result = truncateTransferDescription('Gia hạn Friggy Gói Gia Đình');
+    expect(result.length).toBeLessThanOrEqual(PAYOS_MAX_DESCRIPTION_LENGTH);
+    expect(result).toBe('Gia hạn Friggy Gói Gia');
+    // Không được cắt giữa từ -> chuỗi phải là tiền tố của chuỗi gốc.
+    expect('Gia hạn Friggy Gói Gia Đình'.startsWith(result)).toBe(true);
+  });
+
+  it('không có khoảng trắng -> cắt cụt (phương án duy nhất)', () => {
+    const result = truncateTransferDescription('a'.repeat(40));
+    expect(result.length).toBe(PAYOS_MAX_DESCRIPTION_LENGTH);
+  });
+
+  it('chuỗi rỗng / null -> trả chuỗi rỗng', () => {
+    expect(truncateTransferDescription('')).toBe('');
+    expect(truncateTransferDescription(null)).toBe('');
+  });
+
+  it('khớp với BE `truncatePayosDescription` (mirror logic)', () => {
+    // BE: be/src/modules-system/payos/payos.service.ts
+    const beTruncate = (description) => {
+      const text = String(description ?? '').trim();
+      if (text.length <= 25) return text;
+      const cut = text.slice(0, 25);
+      const lastSpace = cut.lastIndexOf(' ');
+      return (lastSpace > 0 ? cut.slice(0, lastSpace) : cut).trim();
+    };
+    const samples = [
+      'Friggy Gói Cá Nhân',
+      'Gia hạn Friggy Gói Cá Nhân',
+      'Gia hạn Friggy Gói Gia Đình',
+      'Friggy Gói Gia Đình',
+    ];
+    for (const sample of samples) {
+      expect(truncateTransferDescription(sample)).toBe(beTruncate(sample));
+    }
   });
 });

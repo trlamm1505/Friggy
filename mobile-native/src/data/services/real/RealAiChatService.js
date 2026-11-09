@@ -121,12 +121,22 @@ export class RealAiChatService extends IAiChatService {
    * `GET /ai-chat/sessions/{id}` — chi tiết phiên + lịch sử message.
    *
    * @param {string} sessionId
+   * @param {{page?:number, limit?:number}} [params]
+   *   `limit` tối đa 100 (BE clamp). Mặc định 50 — dùng 100 khi nạp lại
+   *   lịch sử để hiện được nhiều tin nhắn nhất có thể.
    * @returns {Promise<{session:object, messages:object[]}|null>}
    */
-  async getSessionDetail(sessionId) {
+  async getSessionDetail(sessionId, params = {}) {
     if (!sessionId) return null;
 
-    const payload = await this.client.get(`/ai-chat/sessions/${sessionId}`);
+    const { page, limit } = params ?? {};
+    const query = {};
+    if (page) query.page = page;
+    if (limit) query.limit = limit;
+
+    const payload = await this.client.get(`/ai-chat/sessions/${sessionId}`, {
+      params: Object.keys(query).length ? query : undefined,
+    });
     if (!payload) return null;
 
     const messages = Array.isArray(payload.messages) ? payload.messages : [];

@@ -27,6 +27,12 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 // In-memory mutable copy
 let items = JSON.parse(JSON.stringify(inventoryMock.items));
 
+// Chuẩn hoá `version` cho các item có sẵn trong mock data (JSON gốc không có
+// field này). Mục đích: UI chạy mock và UI chạy BE có CÙNG shape `FridgeItem`
+// -> `item.version` luôn là số, không phải `undefined`.
+// BE khởi tạo `version` = 0 cho item mới (xem `fridge.service.ts`).
+items = items.map((it) => ({ ...it, version: it.version ?? 0 }));
+
 export class MockFridgeService extends IFridgeService {
   async getItems(filters = {}) {
     await sleep(MOCK_DELAY);
@@ -112,6 +118,9 @@ export class MockFridgeService extends IFridgeService {
       ...item,
       expiryDate,
       status: this._computeStatus(expiryDate),
+      // Mock hoá `version` giống BE (optimistic locking) để UI chạy mock
+      // và UI chạy BE có CÙNG hành vi: mỗi lần sửa -> version tăng 1.
+      version: 0,
     };
     items.push(newItem);
     return newItem;
@@ -121,7 +130,24 @@ export class MockFridgeService extends IFridgeService {
     await sleep(MOCK_DELAY);
     const idx = items.findIndex((i) => i.id === id);
     if (idx === -1) throw new Error('Item không tồn tại');
-    items[idx] = { ...items[idx], ...updates };
+
+    // Mô phỏng optimistic locking của BE: version sai -> 409 Conflict.
+    // BE: `fridge.service.ts:244` -> `ConflictException` khi `item.version !== dto.version`.
+    const incomingVersion = updates?.version;
+    if (incomingVersion !== undefined && incomingVersion !== null) {
+      const currentVersion = items[idx].version ?? 0;
+      if (Number(incomingVersion) !== currentVersion) {
+        throw new Error('Dữ liệu đã bị thay đổi bởi thành viên khác. Vui lòng tải lại.');
+      }
+    }
+
+    // `version` KHÔNG copy thẳng từ updates (nó là số version MỚI của BE).
+    const { version: _ignored, ...rest } = updates || {};
+    items[idx] = {
+      ...items[idx],
+      ...rest,
+      version: (items[idx].version ?? 0) + 1,
+    };
     if (updates.expiryDate) {
       items[idx].status = this._computeStatus(updates.expiryDate);
     }

@@ -228,6 +228,26 @@ export class IUserService {
   }
 
   /**
+   * Lượt AI đã dùng trong tuần hiện tại (GET /users/me/ai-usage).
+   *
+   * ⚠️ `limit = -1` nghĩa là KHÔNG giới hạn (gói cao cấp).
+   *   UI phải hiện "không giới hạn" thay vì "0/-1".
+   *
+   * @typedef {Object} AiUsage
+   * @property {number} used - số lượt đã dùng
+   * @property {number} limit - giới hạn/tuần (-1 = không giới hạn)
+   * @property {number} remaining - số lượt còn lại (-1 = không giới hạn)
+   * @property {string} plan - gói hiện tại
+   * @property {Object} breakdown - chi tiết usage từng feature
+   * @property {number} windowDays - cửa sổ tính (ngày)
+   *
+   * @returns {Promise<AiUsage>}
+   */
+  async getAiUsage() {
+    throw new Error('IUserService.getAiUsage() must be implemented');
+  }
+
+  /**
    * Lấy thông tin family
    * @returns {Promise<FamilyInfo>}
    */

@@ -11,8 +11,9 @@
  * Ảnh minh hoạ để trống (null) — cấu trúc layout đã sẵn sàng, chờ thay ảnh.
  */
 
-import React from 'react';
+import React, { useRef, useCallback, useEffect } from 'react';
 import { View, Text, Image, StyleSheet, Pressable } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { useTheme } from '../../theme/ThemeContext';
 import { AppColors } from '../../theme/colors';
 import { sp } from '../../utils/responsive';
@@ -29,10 +30,32 @@ import { ErrorState } from '../common/ErrorState';
 const COOKED_ART = require('../../../../assets/images/left.png'); // bữa đã nấu
 const ATTENTION_ART = require('../../../../assets/images/right.png'); // cần chú ý
 
-export const WeeklyStatisticsSection = ({ onDetailTap }) => {
+export const WeeklyStatisticsSection = ({ onDetailTap, refreshKey }) => {
   const { isDark } = useTheme();
   const { t } = useTranslation();
   const { data: stats, loading, error, refetch } = useWeeklyStats();
+
+  // ⚠️ `useAsyncData` tạo state RIÊNG cho mỗi nơi gọi hook -> `refetch`
+  //    ở HomeScreen KHÔNG update được số liệu ở đây. Vì vậy component này
+  //    tự refetch khi screen được focus lại (sau khi tick "Bắt đầu nấu" ở
+  //    màn chi tiết công thức) -> "Bữa đã nấu" tăng ngay.
+  const isFirstFocus = useRef(true);
+  useFocusEffect(
+    useCallback(() => {
+      if (isFirstFocus.current) {
+        isFirstFocus.current = false;
+        return undefined;
+      }
+      refetch();
+      return undefined;
+    }, [refetch])
+  );
+
+  // Tín hiệu pull-to-refresh từ Home -> refetch lại số liệu thống kê.
+  useEffect(() => {
+    if (refreshKey === undefined || refreshKey === 0) return;
+    refetch();
+  }, [refreshKey, refetch]);
 
   // ⚠️ B3: typedef `WeeklyStats` đã đổi sang shape của `GET /fridge/stats`
   // (`FridgeStatsResponseDto`): { mealsCooked, expiringSoonCount,

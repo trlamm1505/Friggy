@@ -421,4 +421,62 @@ export class IRecipeService {
   async toggleShoppingItemInList(listId, itemId) {
     throw new Error('IRecipeService.toggleShoppingItemInList() must be implemented');
   }
+
+  /**
+   * Giỏ mua đang dùng — `GET /meal-planning/shopping-lists/active`.
+   *
+   * ⚠️ BE tự tạo list rỗng nếu user chưa có list nào.
+   *
+   * @returns {Promise<ShoppingList|null>}
+   */
+  async getActiveShoppingList() {
+    throw new Error('IRecipeService.getActiveShoppingList() must be implemented');
+  }
+
+  /**
+   * Thêm 1 mặt hàng — `POST /meal-planning/shopping-lists/{listId}/items`.
+   *
+   * ⚠️ BE tự gộp lượng nếu list đã có cùng nguyên liệu.
+   *
+   * @param {string} listId
+   * @param {{ingredientId:number, quantity?:number, unit?:string}} item
+   * @returns {Promise<ShoppingItem|null>}
+   */
+  async addShoppingListItem(listId, item) {
+    throw new Error('IRecipeService.addShoppingListItem() must be implemented');
+  }
+
+  /**
+   * Thêm nguyên liệu còn thiếu của 1 slot vào giỏ mua —
+   * `POST /meal-planning/slots/{slotId}/missing-to-shopping-list`.
+   *
+   * @param {string} slotId
+   * @returns {Promise<{listId:string|null, addedCount:number, addedItems:object[]}>}
+   */
+  async addSlotMissingToShoppingList(slotId) {
+    throw new Error('IRecipeService.addSlotMissingToShoppingList() must be implemented');
+  }
+
+  /**
+   * Sửa lượng món — `PATCH /meal-planning/shopping-lists/{listId}/items/{itemId}`.
+   *
+   * @param {string} listId
+   * @param {string|number} itemId
+   * @param {{quantity?:number, isPurchased?:boolean}} payload
+   * @returns {Promise<ShoppingItem|null>}
+   */
+  async updateShoppingListItem(listId, itemId, payload) {
+    throw new Error('IRecipeService.updateShoppingListItem() must be implemented');
+  }
+
+  /**
+   * Xoá món — `DELETE /meal-planning/shopping-lists/{listId}/items/{itemId}`.
+   *
+   * @param {string} listId
+   * @param {string|number} itemId
+   * @returns {Promise<void>}
+   */
+  async removeShoppingListItem(listId, itemId) {
+    throw new Error('IRecipeService.removeShoppingListItem() must be implemented');
+  }
 }

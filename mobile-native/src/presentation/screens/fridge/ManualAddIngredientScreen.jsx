@@ -61,6 +61,7 @@ import { CustomTextField } from '../../components/common/CustomTextField';
 import { CustomButton } from '../../components/common/CustomButton';
 import { ExpiryDatePicker, toIsoDate } from '../../components/fridge/ExpiryDatePicker';
 import { showSuccess, showError } from '../../utils/helpers';
+import { normalizeIngredientName } from '../../utils/ingredientCatalog';
 import { useServices } from '../../../data/ServiceProvider';
 import { COMPARTMENT_LABEL } from '../../../data/services/real/RealFridgeService';
 
@@ -122,6 +123,9 @@ export const ManualAddIngredientScreen = () => {
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [searching, setSearching] = useState(false);
+  // true = đã search xong và KHÔNG có kết quả nào cho từ khoá hiện tại.
+  // Dùng để hiện dòng "không tìm thấy trong danh mục" thay vì im lặng.
+  const [noResult, setNoResult] = useState(false);
 
   const [unitPickerOpen, setUnitPickerOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -139,6 +143,7 @@ export const ManualAddIngredientScreen = () => {
       if (!q) {
         setSuggestions([]);
         setShowSuggestions(false);
+        setNoResult(false);
         return;
       }
 
@@ -152,12 +157,17 @@ export const ManualAddIngredientScreen = () => {
         .then((results) => {
           // Response đến sau request mới hơn -> bỏ qua.
           if (currentId !== requestIdRef.current) return;
-          setSuggestions(Array.isArray(results) ? results : []);
+          const list = Array.isArray(results) ? results : [];
+          setSuggestions(list);
           setShowSuggestions(true);
+          // Không có kết quả -> báo rõ cho user biết món này KHÔNG có
+          // trong danh mục hệ thống (BE sẽ trả 400 nếu gửi tên tự do).
+          setNoResult(list.length === 0);
         })
         .catch(() => {
           if (currentId !== requestIdRef.current) return;
           setSuggestions([]);
+          setNoResult(false);
         })
         .finally(() => {
           if (currentId === requestIdRef.current) setSearching(false);
@@ -176,6 +186,7 @@ export const ManualAddIngredientScreen = () => {
       if (!text.trim()) {
         setSuggestions([]);
         setShowSuggestions(false);
+        setNoResult(false);
         return;
       }
       searchTimer.current = setTimeout(() => runSearch(text), 300);
@@ -217,14 +228,35 @@ export const ManualAddIngredientScreen = () => {
     }
     if (saving) return;
 
+    // ── BẮT BUỘC: phải resolve được nguyên liệu trong danh mục hệ thống ──
+    // BE (`fridge.service.ts:177`) ném 400 "Nguyên liệu 'X' chưa có trong
+    // danh mục hệ thống" nếu không resolve được. Thay vì để user bấm Lưu rồi
+    // nhận lỗi server, ta chặn ngay ở UI với thông báo dễ hiểu.
+    //
+    // Nhưng KHÔNG bắt buộc user phải bấm vào gợi ý: nếu tên user gõ khớp
+    // CHÍNH XÁC một mục trong danh mục thì BE tự resolve được theo tên
+    // (`resolveIngredient` bước 2 — so khớp không dấu). Ta tự resolve trước
+    // để không chặn oan những case hợp lệ đó.
+    let resolvedIngredientId = selectedIngredientId;
+    if (!resolvedIngredientId) {
+      const exact = suggestions.find(
+        (s) => normalizeIngredientName(s?.name) === normalizeIngredientName(trimmedName)
+      );
+      if (exact) resolvedIngredientId = exact.id;
+    }
+    if (!resolvedIngredientId) {
+      showError(t('fridge.mustPickFromCatalog'));
+      return;
+    }
+
     setSaving(true);
     try {
       const isoExpiry = toIsoDate(expiryDate);
       await services.fridgeService.addItem({
         name: trimmedName,
         // `ingredientId` BẮT BUỘC để BE resolve được nguyên liệu trong danh mục.
-        // Không có nó -> `fridge.service.ts:141` throw BadRequest.
-        ...(selectedIngredientId ? { ingredientId: selectedIngredientId } : {}),
+        // Không có nó -> `fridge.service.ts:179` throw BadRequest.
+        ingredientId: resolvedIngredientId,
         quantity,
         unit,
         // UI `compartment` -> BE `storageLocation`.
@@ -238,13 +270,14 @@ export const ManualAddIngredientScreen = () => {
       navigation.goBack();
     } catch (e) {
       // 4xx không được fallback -> hiện lỗi thật cho user.
-      showError(e?.message || (isEn ? 'Failed to add ingredient' : 'Không thêm được nguyên liệu'));
+      showError(e?.message || t('fridge.addFailed'));
     } finally {
       setSaving(false);
     }
   }, [
     name,
     selectedIngredientId,
+    suggestions,
     quantity,
     unit,
     storageLocation,
@@ -253,6 +286,7 @@ export const ManualAddIngredientScreen = () => {
     services,
     navigation,
     isEn,
+    t,
   ]);
 
   const fieldLabelStyle = [
@@ -340,6 +374,29 @@ export const ManualAddIngredientScreen = () => {
                 />
               </Pressable>
             ))}
+          </View>
+        ) : null}
+
+        {/* ── Không tìm thấy trong danh mục ──
+            BE chỉ nhận nguyên liệu có trong bảng `ingredients`. Nếu im lặng,
+            user gõ xong bấm Lưu mới nhận lỗi 400 từ server -> rất khó hiểu.
+            Hiện rõ ngay tại chỗ để user biết món này chưa có sẵn. */}
+        {noResult && !searching ? (
+          <View
+            style={[
+              styles.noResultBox,
+              {
+                backgroundColor: isDark ? '#3D1F1A' : '#FFF4E5',
+                borderColor: isDark ? '#8D4A2A' : '#F5C77E',
+              },
+            ]}
+          >
+            <Text style={[styles.noResultTitle, { color: isDark ? '#FFB74D' : '#B26A00' }]}>
+              {t('fridge.notInCatalog')}
+            </Text>
+            <Text style={[styles.noResultHint, { color: isDark ? '#E0C9B8' : '#8A6A3C' }]}>
+              {t('fridge.notInCatalogHint')}
+            </Text>
           </View>
         ) : null}
 
@@ -442,6 +499,7 @@ export const ManualAddIngredientScreen = () => {
             value={expiryDate}
             onChange={setExpiryDate}
             placeholder={isEn ? 'Tap to set date (Optional)' : 'Bấm để chọn ngày (Không bắt buộc)'}
+            locale={isEn ? 'en' : 'vi'}
           />
         </View>
 
@@ -655,6 +713,26 @@ const styles = StyleSheet.create({
   searchingText: {
     fontSize: sp(12),
     fontFamily: FontFamily.regular,
+  },
+  // Hộp cảnh báo "không có trong danh mục hệ thống"
+  noResultBox: {
+    marginTop: sp(8),
+    marginLeft: sp(8),
+    marginRight: sp(8),
+    padding: sp(12),
+    borderRadius: sp(12),
+    borderWidth: 1,
+    gap: sp(4),
+  },
+  noResultTitle: {
+    fontSize: sp(13),
+    fontFamily: FontFamily.semibold,
+    fontWeight: FontWeights.semibold,
+  },
+  noResultHint: {
+    fontSize: sp(12),
+    fontFamily: FontFamily.regular,
+    lineHeight: sp(17),
   },
 
   // Số lượng + đơn vị

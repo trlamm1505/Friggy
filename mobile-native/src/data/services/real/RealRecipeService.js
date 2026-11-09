@@ -570,19 +570,31 @@ export class RealRecipeService {
    * ⚠️ BE dùng `completed` (boolean) để set `completedAt` (xem
    * `meal-planning.service.ts:208`). Gửi `completed: false` để bỏ tick.
    *
+   * ⚠️ BE trả kèm `consumedIngredients` = danh sách nguyên liệu ĐÃ TRỪ khỏi
+   *    tủ lạnh (chỉ có lần tick đầu tiên) -> FE hiển thị cho user biết đã
+   *    dùng bao nhiêu nguyên liệu. Trả về object để UI dùng.
+   *
    * @param {string} slotId
    * @param {{completed?:boolean, recipeId?:string|null, servings?:number, note?:string}} payload
-   * @returns {Promise<void>}
+   * @returns {Promise<{id:string,completedAt:string|null,consumedIngredients:Array}>}
    */
   async updateSlot(slotId, payload = {}) {
-    if (!slotId) return;
+    if (!slotId) return { id: slotId, completedAt: null, consumedIngredients: [] };
     const body = {};
     if (payload.completed !== undefined) body.completed = Boolean(payload.completed);
     if (payload.recipeId !== undefined) body.recipeId = payload.recipeId;
     if (payload.servings !== undefined) body.servings = payload.servings;
     if (payload.note !== undefined) body.note = payload.note;
 
-    await this.client.patch(`/meal-planning/slots/${slotId}`, body);
+    const result = await this.client.patch(`/meal-planning/slots/${slotId}`, body);
+
+    return {
+      id: result?.id ?? slotId,
+      completedAt: result?.completedAt ?? null,
+      consumedIngredients: Array.isArray(result?.consumedIngredients)
+        ? result.consumedIngredients
+        : [],
+    };
   }
 
   /**
@@ -716,6 +728,8 @@ export class RealRecipeService {
     if (!dto) return null;
     return {
       id: dto.id,
+      // BE `ingredientId` — cần để gọi endpoint thêm/xoá món lẻ.
+      ingredientId: dto.ingredientId ?? null,
       name: dto.ingredientName ?? '',
       quantity: dto.quantity ?? 0,
       unit: dto.unit ?? '',
@@ -820,6 +834,110 @@ export class RealRecipeService {
       throw new Error('Thiếu listId hoặc itemId để tick món mua');
     }
     await this.toggleShoppingItemInList(listId, itemId);
+  }
+
+  /**
+   * `GET /meal-planning/shopping-lists/active` — giỏ mua đang dùng.
+   *
+   * ⚠️ BE tự tạo list rỗng nếu user chưa có list nào -> luôn trả về 1 list.
+   *
+   * @returns {Promise<object|null>}
+   */
+  async getActiveShoppingList() {
+    const payload = await this.client.get('/meal-planning/shopping-lists/active');
+    if (!payload) return null;
+
+    return {
+      id: payload.id,
+      title: payload.title ?? '',
+      status: payload.status ?? 'active',
+      totalEstimatedCost: payload.totalEstimatedCost ?? null,
+      weeklyPlanId: payload.weeklyPlanId ?? null,
+      createdAt: payload.createdAt ?? null,
+      items: (payload.items ?? []).map((item) => this._toShoppingItem(item)).filter(Boolean),
+    };
+  }
+
+  /**
+   * `POST /meal-planning/shopping-lists/{listId}/items` — thêm 1 mặt hàng.
+   *
+   * ⚠️ BE tự GỘP lượng nếu list đã có cùng nguyên liệu.
+   *
+   * @param {string} listId
+   * @param {{ingredientId:number, quantity?:number, unit?:string}} item
+   * @returns {Promise<object|null>} item vừa thêm (đã map sang shape UI)
+   */
+  async addShoppingListItem(listId, item) {
+    if (!listId || !item?.ingredientId) return null;
+
+    const body = { ingredientId: item.ingredientId };
+    if (item.quantity !== undefined && item.quantity !== null) body.quantity = item.quantity;
+    if (item.unit) body.unit = item.unit;
+
+    const payload = await this.client.post(`/meal-planning/shopping-lists/${listId}/items`, body);
+    return this._toShoppingItem(payload);
+  }
+
+  /**
+   * `POST /meal-planning/slots/{slotId}/missing-to-shopping-list`
+   * — thêm mọi nguyên liệu CÒN THIẾU của 1 slot vào giỏ mua.
+   *
+   * ⚠️ Đây là API cho nút "+ Thêm vào DS" ở màn chi tiết công thức.
+   *   Trước đây nút này chỉ hiện toast giả (không gọi API, không điều hướng).
+   *
+   * @param {string} slotId
+   * @returns {Promise<{listId:string|null, addedCount:number, addedItems:object[]}>}
+   */
+  async addSlotMissingToShoppingList(slotId) {
+    if (!slotId) return { listId: null, addedCount: 0, addedItems: [] };
+
+    const payload = await this.client.post(`/meal-planning/slots/${slotId}/missing-to-shopping-list`);
+    return {
+      listId: payload?.listId ?? null,
+      addedCount: payload?.addedCount ?? 0,
+      addedItems: payload?.addedItems ?? [],
+    };
+  }
+
+  /**
+   * `PATCH /meal-planning/shopping-lists/{listId}/items/{itemId}` — sửa lượng.
+   *
+   * ⚠️ KHÁC với `toggleShoppingItemInList`: endpoint này KHÔNG tự thêm
+   *   vào tủ lạnh khi tick (chỉ `toggle` cũ mới làm vậy).
+   *
+   * @param {string} listId
+   * @param {string|number} itemId
+   * @param {{quantity?:number}} payload
+   * @returns {Promise<object|null>}
+   */
+  async updateShoppingListItem(listId, itemId, payload = {}) {
+    if (!listId || itemId === null || itemId === undefined) return null;
+
+    const body = {};
+    if (payload.quantity !== undefined && payload.quantity !== null) {
+      body.quantity = payload.quantity;
+    }
+    if (payload.isPurchased !== undefined) body.isPurchased = payload.isPurchased;
+
+    if (!Object.keys(body).length) return null;
+
+    const result = await this.client.patch(
+      `/meal-planning/shopping-lists/${listId}/items/${itemId}`,
+      body
+    );
+    return this._toShoppingItem(result);
+  }
+
+  /**
+   * `DELETE /meal-planning/shopping-lists/{listId}/items/{itemId}` — xoá mặt hàng.
+   *
+   * @param {string} listId
+   * @param {string|number} itemId
+   * @returns {Promise<void>}
+   */
+  async removeShoppingListItem(listId, itemId) {
+    if (!listId || itemId === null || itemId === undefined) return;
+    await this.client.delete(`/meal-planning/shopping-lists/${listId}/items/${itemId}`);
   }
 
   // ═══════════════ Weekly stats ═══════════════

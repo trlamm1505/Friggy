@@ -101,10 +101,17 @@ export class SlotRegenerateConsumer {
         `- Dùng tool search_recipes lọc theo mealType="${mealType}" và maxCost phù hợp`,
         `- Trả về đúng 3 gợi ý, mỗi gợi ý gồm: tên món, mô tả ngắn 1 câu, chi phí ước tính`,
         `- Format: danh sách đánh số 1. 2. 3.`,
+        // ⚠️ QUAN TRỌNG: tên món PHẢI là tên đúng như trong tool search_recipes
+        //    trả về, để FE đối chiếu được với danh sách công thức trong DB và
+        //    đổi món cho slot. Không thêm mỹ từ (vd "Món ngon", "Cà chua xào").
+        `- Mỗi dòng bắt đầu bằng TÊN MÓN đúng với catalog, rồi mới mô tả.`,
+        `Ví dụ đúng: "1. Canh rau cải thịt băm - canh ngọt thanh, dùng cải thảo và thịt băm - 25.000đ"`,
       ].join('\n');
 
       // Dùng SingleAgent để tìm gợi ý
       let suggestions = '';
+      let agentError: string | null = null;
+
       const stream$ = this.singleAgent.run({
         userId,
         featureType: 'slot_regenerate',
@@ -117,11 +124,33 @@ export class SlotRegenerateConsumer {
             if (event.event === 'chunk') {
               suggestions += event.data;
             }
+            // ⚠️ BẮT BUỘC: `SingleAgentService` KHÔNG throw — nó bắt lỗi rồi
+            //    emit `{ event: 'error', data: message }` qua chính stream.
+            //    Trước đây consumer chỉ lấy `chunk` -> lỗi AI (vd 402 hết credit)
+            //    bị NUỐT, `suggestions` rỗng, rồi vẫn emit `done` -> FE báo
+            //    "AI đã tìm được 3 gợi ý" nhưng không có gợi ý nào.
+            if (event.event === 'error') {
+              agentError =
+                typeof event.data === 'string' ? event.data : JSON.stringify(event.data);
+              this.logger.error(`❌ [SlotRegenerate] AI báo lỗi: ${agentError}`);
+            }
           },
           error: reject,
           complete: resolve,
         });
       });
+
+      // Lỗi từ agent (VD 402 hết credit AI) -> phải báo lỗi cho FE, KHÔNG
+      // được trả về `done` với nội dung rỗng.
+      if (agentError) {
+        await emit('error', { message: agentError });
+        return;
+      }
+
+      if (!suggestions.trim()) {
+        await emit('error', { message: 'AI không trả về gợi ý nào. Vui lòng thử lại.' });
+        return;
+      }
 
       await emit('done', {
         slotId,

@@ -9,13 +9,19 @@
  * ⚠️ BE trả item id là SỐ (`@ApiProperty({ example: 1 })`) và endpoint toggle
  * dùng `ParseIntPipe` -> PHẢI giữ nguyên kiểu số khi ghép `listId:itemId`.
  *
- * ⚠️ BE KHÔNG có endpoint xoá item hay thêm item lẻ -> các nút tương ứng
- *   vẫn hiển thị nhưng chỉ báo "chưa hỗ trợ" thay vì giả vờ thành công.
- *   (Thêm món chỉ khả dụng qua `createShoppingList` từ kế hoạch tuần.)
+ * ── CÁC THAO TÁC ĐÃ NỐI (BE đã có endpoint tương ứng) ─────────────────────
+ *   - Thêm món lẻ:   `POST   /meal-planning/shopping-lists/{listId}/items`
+ *   - Sửa số lượng:  `PATCH  /meal-planning/shopping-lists/{listId}/items/{itemId}`
+ *   - Xoá món:       `DELETE /meal-planning/shopping-lists/{listId}/items/{itemId}`
+ *   - Giỏ active:    `GET    /meal-planning/shopping-lists/active`
+ *
+ * ⚠️ Thêm món cần `ingredientId` (FK tới bảng `ingredients`) — KHÔNG nhận tên
+ *   tự do, giống hệt luồng thêm vào tủ lạnh. Vì vậy modal thêm món dùng
+ *   `CatalogPickerModal` (tra `GET /ingredients?search=`).
  */
 
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, Pressable, Alert } from 'react-native';
+import { View, Text, StyleSheet, FlatList, Pressable, Alert, Modal, TextInput } from 'react-native';
 import { useTheme } from '../../theme/ThemeContext';
 import { AppColors } from '../../theme/colors';
 import { sp } from '../../utils/responsive';
@@ -28,8 +34,9 @@ import { FilterChips } from '../../components/common/FilterChips';
 import { EmptyState } from '../../components/common/EmptyState';
 import { ErrorState } from '../../components/common/ErrorState';
 import { Skeleton } from '../../components/common/Skeleton';
-import { Check, Plus, Trash2 } from 'lucide-react-native';
-import { showError, showInfo } from '../../utils/helpers';
+import { CatalogPickerModal } from '../../components/scan/CatalogPickerModal';
+import { Check, Plus, Trash2, X, Minus } from 'lucide-react-native';
+import { showError, showSuccess } from '../../utils/helpers';
 import { useServices } from '../../../data/ServiceProvider';
 
 const FILTER_KEYS = {
@@ -50,6 +57,15 @@ export const ShoppingReminderScreen = () => {
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState(FILTER_KEYS.ALL);
   const [busyId, setBusyId] = useState(null);
+
+  // ── Modal thêm món ──
+  const [pickerVisible, setPickerVisible] = useState(false);
+  const [addingItem, setAddingItem] = useState(false);
+
+  // ── Modal sửa số lượng ──
+  const [editingItem, setEditingItem] = useState(null);
+  const [editQty, setEditQty] = useState('1');
+  const [savingQty, setSavingQty] = useState(false);
 
   const loadItems = useCallback(async () => {
     setLoading(true);
@@ -78,7 +94,7 @@ export const ShoppingReminderScreen = () => {
 
     if (search.trim()) {
       const q = search.toLowerCase().trim();
-      result = result.filter((i) => i.name.toLowerCase().includes(q));
+      result = result.filter((i) => (i.name ?? '').toLowerCase().includes(q));
     }
     return result;
   }, [items, filter, search]);
@@ -137,37 +153,152 @@ export const ShoppingReminderScreen = () => {
   );
 
   /**
-   * Xoá món — BE chưa có endpoint xoá item -> báo rõ cho user.
+   * Xoá món — `DELETE /meal-planning/shopping-lists/{listId}/items/{itemId}`.
+   *
+   * ⚠️ BE soft-delete -> item biến mất khỏi `GET /shopping-lists` sau reload.
    */
-  const remove = useCallback(() => {
-    Alert.alert(t('home.shoppingDelete'), t('home.shoppingDeleteNotSupported'), [
-      { text: t('home.cancel'), style: 'cancel' },
-    ]);
-  }, [t]);
+  const remove = useCallback(
+    (item) => {
+      if (busyId !== null) return;
+
+      Alert.alert(t('home.shoppingDelete'), item.name, [
+        { text: t('home.cancel'), style: 'cancel' },
+        {
+          text: t('home.shoppingDelete'),
+          style: 'destructive',
+          onPress: async () => {
+            setBusyId(item.id);
+            try {
+              await services.recipeService.removeShoppingListItem(item.listId, item.id);
+              setItems((prev) => prev.filter((it) => it.id !== item.id));
+              showSuccess(t('home.shoppingItemRemoved'));
+            } catch (e) {
+              showError(e?.message ?? t('home.error'));
+            } finally {
+              setBusyId(null);
+            }
+          },
+        },
+      ]);
+    },
+    [busyId, services, t]
+  );
 
   /**
-   * Thêm món — BE chỉ cho tạo list từ kế hoạch tuần -> hướng user sang đó.
+   * Thêm món — mở picker catalog (`GET /ingredients?search=`).
+   *
+   * ⚠️ BE bắt buộc `ingredientId` (FK) -> KHÔNG gửi tên tự do, sẽ bị 400.
    */
   const add = useCallback(() => {
-    showInfo(t('home.shoppingAddFromPlanHint'));
-  }, [t]);
+    setPickerVisible(true);
+  }, []);
+
+  /**
+   * Đã chọn 1 nguyên liệu trong catalog -> thêm vào giỏ active.
+   *
+   * @param {{id:number,name:string,defaultUnit?:string|null}} option
+   */
+  const handlePickIngredient = useCallback(
+    async (option) => {
+      setAddingItem(true);
+      try {
+        // Ưu tiên giỏ active; BE tự tạo list rỗng nếu chưa có.
+        const list = await services.recipeService.getActiveShoppingList();
+        const listId = list?.id ?? null;
+        if (!listId) {
+          showError(t('home.shoppingNoList'));
+          return;
+        }
+
+        await services.recipeService.addShoppingListItem(listId, {
+          ingredientId: option.id,
+          quantity: 1,
+          unit: option.defaultUnit ?? '',
+        });
+
+        showSuccess(t('home.shoppingAddedCount', { count: 1 }));
+        await loadItems();
+      } catch (e) {
+        showError(e?.message ?? t('home.error'));
+      } finally {
+        setAddingItem(false);
+      }
+    },
+    [services, t, loadItems]
+  );
+
+  /** Mở modal sửa số lượng. */
+  const openEditQuantity = useCallback((item) => {
+    setEditingItem(item);
+    setEditQty(String(item.quantity ?? 1));
+  }, []);
+
+  /** Lưu số lượng mới — `PATCH .../items/{itemId}`. */
+  const saveQuantity = useCallback(async () => {
+    if (!editingItem) return;
+
+    const qty = Number(editQty);
+    if (!Number.isFinite(qty) || qty <= 0) {
+      showError(t('home.error'));
+      return;
+    }
+
+    setSavingQty(true);
+    try {
+      const updated = await services.recipeService.updateShoppingListItem(
+        editingItem.listId,
+        editingItem.id,
+        { quantity: qty }
+      );
+      setItems((prev) =>
+        prev.map((it) =>
+          it.id === editingItem.id ? { ...it, quantity: updated?.quantity ?? qty } : it
+        )
+      );
+      setEditingItem(null);
+      showSuccess(t('home.shoppingQuantityUpdated'));
+    } catch (e) {
+      showError(e?.message ?? t('home.error'));
+    } finally {
+      setSavingQty(false);
+    }
+  }, [editingItem, editQty, services, t]);
 
   const clearCompleted = useCallback(() => {
-    const completedCount = items.filter((i) => i.done).length;
-    if (completedCount === 0) return;
+    const completed = items.filter((i) => i.done);
+    if (completed.length === 0) return;
+
     Alert.alert(
       t('home.shoppingClearCompleted'),
-      `${completedCount} ${t('home.shoppingCompleted')}`,
+      `${completed.length} ${t('home.shoppingCompleted')}`,
       [
         { text: t('home.cancel'), style: 'cancel' },
         {
           text: t('home.shoppingClearCompleted'),
           style: 'destructive',
-          onPress: () => setItems((prev) => prev.filter((i) => !i.done)),
+          onPress: async () => {
+            // Xoá từng item đã mua (BE chưa có endpoint xoá hàng loạt).
+            const targets = completed;
+            setBusyId('__batch__');
+            try {
+              await Promise.all(
+                targets.map((it) =>
+                  services.recipeService.removeShoppingListItem(it.listId, it.id)
+                )
+              );
+              setItems((prev) => prev.filter((i) => !i.done));
+              showSuccess(t('home.shoppingItemRemoved'));
+            } catch (e) {
+              showError(e?.message ?? t('home.error'));
+              await loadItems();
+            } finally {
+              setBusyId(null);
+            }
+          },
         },
       ]
     );
-  }, [items, t]);
+  }, [items, services, t, loadItems]);
 
   const hasFilters = search || filter !== FILTER_KEYS.ALL;
 
@@ -243,16 +374,20 @@ export const ShoppingReminderScreen = () => {
             onPress={clearCompleted}
             hitSlop={6}
             style={({ pressed }) => [styles.clearBtn, { opacity: pressed ? 0.6 : 1 }]}
+            accessibilityLabel={t('home.shoppingClearCompleted')}
           >
             <Trash2 color={isDark ? AppColors.primaryLight : AppColors.forestAccent} size={16} />
           </Pressable>
         ) : null}
         <Pressable
           onPress={add}
+          disabled={addingItem}
           style={({ pressed }) => [
             styles.addBtn,
-            { backgroundColor: AppColors.primary, opacity: pressed ? 0.85 : 1 },
+            { backgroundColor: AppColors.primary, opacity: addingItem ? 0.6 : pressed ? 0.85 : 1 },
           ]}
+          testID="shopping-add-item"
+          accessibilityLabel={t('home.shoppingAddItemTitle')}
         >
           <Plus color="#FFFFFF" size={20} strokeWidth={2.5} />
         </Pressable>
@@ -279,7 +414,8 @@ export const ShoppingReminderScreen = () => {
             item={item}
             busy={busyId === item.id}
             onToggle={() => toggle(item)}
-            onRemove={() => remove(item.id)}
+            onRemove={() => remove(item)}
+            onEditQuantity={() => openEditQuantity(item)}
           />
         )}
         ListEmptyComponent={
@@ -288,7 +424,7 @@ export const ShoppingReminderScreen = () => {
               emoji="🛒"
               title={t('home.shoppingEmpty')}
               hint={t('home.shoppingEmptyHint')}
-              actionText={t('home.shoppingCreateFromPlan')}
+              actionText={t('home.shoppingAddItemTitle')}
               onAction={add}
             />
           ) : hasFilters ? (
@@ -296,12 +432,126 @@ export const ShoppingReminderScreen = () => {
           ) : null
         }
       />
+
+      {/* ── Modal chọn nguyên liệu trong catalog ── */}
+      <CatalogPickerModal
+        visible={pickerVisible}
+        onClose={() => setPickerVisible(false)}
+        onSelect={handlePickIngredient}
+      />
+
+      {/* ── Modal sửa số lượng ── */}
+      <QuantityModal
+        visible={editingItem !== null}
+        item={editingItem}
+        value={editQty}
+        saving={savingQty}
+        onChange={setEditQty}
+        onSave={saveQuantity}
+        onClose={() => setEditingItem(null)}
+      />
     </View>
   );
 };
 
-const ShoppingItem = ({ item, busy, onToggle, onRemove }) => {
+/**
+ * Modal sửa số lượng của 1 mặt hàng.
+ */
+const QuantityModal = ({ visible, item, value, saving, onChange, onSave, onClose }) => {
   const { isDark } = useTheme();
+  const { t } = useTranslation();
+
+  const step = (delta) => {
+    const current = Number(value) || 0;
+    const next = Math.max(1, current + delta);
+    onChange(String(next));
+  };
+
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <View style={styles.modalBackdrop}>
+        <Pressable style={styles.modalBackdropPress} onPress={onClose} />
+        <View
+          style={[
+            styles.qtyCard,
+            { backgroundColor: isDark ? '#19271E' : '#FFFFFF' },
+          ]}
+        >
+          <View style={styles.modalHeader}>
+            <Text
+              style={[
+                styles.modalTitle,
+                { color: isDark ? '#FFFFFF' : AppColors.textPrimary },
+              ]}
+              numberOfLines={1}
+            >
+              {item?.name}
+            </Text>
+            <Pressable onPress={onClose} hitSlop={8}>
+              <X color={isDark ? AppColors.darkTextSecondary : AppColors.textSecondary} size={20} />
+            </Pressable>
+          </View>
+
+          <View style={styles.qtyRow}>
+            <Pressable
+              onPress={() => step(-1)}
+              style={[
+                styles.qtyBtn,
+                { backgroundColor: isDark ? '#233629' : '#F2F5F3' },
+              ]}
+              accessibilityLabel="-1"
+            >
+              <Minus color={isDark ? '#FFFFFF' : AppColors.textPrimary} size={18} />
+            </Pressable>
+
+            <TextInput
+              value={value}
+              onChangeText={onChange}
+              keyboardType="numeric"
+              style={[
+                styles.qtyInput,
+                {
+                  color: isDark ? '#FFFFFF' : AppColors.textPrimary,
+                  backgroundColor: isDark ? '#0E1611' : '#FFFFFF',
+                  borderColor: isDark ? '#2E4D36' : '#E3E8E4',
+                },
+              ]}
+            />
+
+            <Pressable
+              onPress={() => step(1)}
+              style={[
+                styles.qtyBtn,
+                { backgroundColor: isDark ? '#233629' : '#F2F5F3' },
+              ]}
+              accessibilityLabel="+1"
+            >
+              <Plus color={isDark ? '#FFFFFF' : AppColors.textPrimary} size={18} />
+            </Pressable>
+          </View>
+
+          <Pressable
+            onPress={onSave}
+            disabled={saving}
+            style={({ pressed }) => [
+              styles.saveQtyBtn,
+              { backgroundColor: AppColors.primary, opacity: saving ? 0.6 : pressed ? 0.85 : 1 },
+            ]}
+            testID="shopping-save-quantity"
+          >
+            <Text style={styles.saveQtyText}>
+              {saving ? t('common.loading') : t('home.shoppingEditQuantity')}
+            </Text>
+          </Pressable>
+        </View>
+      </View>
+    </Modal>
+  );
+};
+
+const ShoppingItem = ({ item, busy, onToggle, onRemove, onEditQuantity }) => {
+  const { isDark } = useTheme();
+  const { t } = useTranslation();
   return (
     <View
       style={[
@@ -325,10 +575,16 @@ const ShoppingItem = ({ item, busy, onToggle, onRemove }) => {
             opacity: pressed ? 0.7 : 1,
           },
         ]}
+        accessibilityLabel={item.name}
       >
         {item.done ? <Check color="#FFFFFF" size={14} strokeWidth={3} /> : null}
       </Pressable>
-      <Pressable onPress={onToggle} disabled={busy} style={{ flex: 1, marginLeft: sp(10) }}>
+      <Pressable
+        onPress={onEditQuantity}
+        disabled={busy}
+        style={{ flex: 1, marginLeft: sp(10) }}
+        testID={`shopping-item-${item.id}`}
+      >
         <Text
           style={[
             styles.itemName,
@@ -356,7 +612,9 @@ const ShoppingItem = ({ item, busy, onToggle, onRemove }) => {
       <Pressable
         onPress={onRemove}
         hitSlop={6}
+        disabled={busy}
         style={({ pressed }) => [styles.removeBtn, { opacity: pressed ? 0.6 : 1 }]}
+        accessibilityLabel={t('home.shoppingDelete')}
       >
         <Trash2 color={isDark ? AppColors.darkTextSecondary : AppColors.hintText} size={16} />
       </Pressable>
@@ -434,5 +692,69 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: sp(14),
     borderRadius: sp(12),
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: sp(24),
+  },
+  modalBackdropPress: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  qtyCard: {
+    width: '100%',
+    borderRadius: sp(16),
+    padding: sp(18),
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: sp(16),
+  },
+  modalTitle: {
+    flex: 1,
+    fontFamily: FontFamily.bold,
+    fontWeight: FontWeights.bold,
+    fontSize: sp(16),
+    marginRight: sp(8),
+  },
+  qtyRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: sp(16),
+    marginBottom: sp(16),
+  },
+  qtyBtn: {
+    width: sp(40),
+    height: sp(40),
+    borderRadius: sp(20),
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  qtyInput: {
+    minWidth: sp(72),
+    textAlign: 'center',
+    borderWidth: 1,
+    borderRadius: sp(10),
+    paddingVertical: sp(8),
+    paddingHorizontal: sp(10),
+    fontFamily: FontFamily.semibold,
+    fontWeight: FontWeights.semibold,
+    fontSize: sp(16),
+  },
+  saveQtyBtn: {
+    paddingVertical: sp(12),
+    borderRadius: sp(12),
+    alignItems: 'center',
+  },
+  saveQtyText: {
+    color: '#FFFFFF',
+    fontFamily: FontFamily.semibold,
+    fontWeight: FontWeights.semibold,
+    fontSize: sp(14),
   },
 });

@@ -76,6 +76,25 @@ export const getImageUrl = (url) => {
 const rawUseMocks = process.env.EXPO_PUBLIC_USE_MOCKS;
 const rawSafeFallback = process.env.EXPO_PUBLIC_SAFE_FALLBACK;
 
+/**
+ * Header để bỏ qua trang cảnh báo của ngrok.
+ *
+ * ⚠️ VÌ SAO CẦN:
+ *   Khi truy cập `https://xxx.ngrok-free.dev/...` từ trình duyệt, ngrok chèn
+ *   một trang HTML "ngrok-skip-browser-warning" trước khi trả response thật.
+ *   Header này bảo ngrok BỎ QUA trang cảnh báo đó.
+ *
+ * ⚠️ Gửi header này tới host khác (VD production) là vô hại - server đơn giản
+ *   bỏ qua header lạ. Vì vậy ta gửi LUÔN, không phân nhánh theo tên miền
+ *   (ngrok custom domain có thể không chứa chuỗi "ngrok").
+ */
+export const NGROK_SKIP_BROWSER_WARNING = 'ngrok-skip-browser-warning';
+
+/** Header dùng chung cho MỌI request (REST + SSE). */
+export const EXTRA_HEADERS = {
+  [NGROK_SKIP_BROWSER_WARNING]: 'true',
+};
+
 export const appConfig = {
   // Network
   API_BASE_URL: rawApiBaseUrl,
@@ -105,4 +124,8 @@ export const appConfig = {
   getServerBaseUrl,
   getFileBaseUrl,
   getImageUrl,
+
+  // Headers dùng chung (ngrok bypass warning)
+  EXTRA_HEADERS,
+  NGROK_SKIP_BROWSER_WARNING,
 };

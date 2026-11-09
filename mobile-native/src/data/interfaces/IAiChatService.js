@@ -75,9 +75,10 @@ export class IAiChatService {
   /**
    * GET /ai-chat/sessions/{id} — chi tiết phiên + lịch sử message.
    * @param {string} sessionId
+   * @param {{page?:number, limit?:number}} [params] - `limit` tối đa 100 (BE clamp)
    * @returns {Promise<{session:ChatSession, messages:ChatMessage[]}>}
    */
-  async getSessionDetail(sessionId) {
+  async getSessionDetail(sessionId, params) {
     throw new Error('IAiChatService.getSessionDetail() must be implemented');
   }
 

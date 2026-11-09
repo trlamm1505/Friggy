@@ -44,6 +44,10 @@ import { Sparkles, Info, Wand2, ShoppingCart, X } from 'lucide-react-native';
 import { Routes } from '../../../shared/constants/routes';
 import { showSuccess, showError, showInfo } from '../../utils/helpers';
 import { useServices } from '../../../data/ServiceProvider';
+import {
+  parseAiDishSuggestions,
+  matchDishToRecipes,
+} from '../../utils/aiDishSuggestions';
 
 /**
  * Nhãn ngày theo quy ước BE: 1=T2 ... 7=CN.
@@ -204,10 +208,19 @@ export const NextWeekSuggestionsScreen = () => {
   const applyNewRecipe = useCallback(
     async (slot, dishName) => {
       try {
+        // ⚠️ BE `PATCH /slots/:id` nhận `recipeId` (uuid của công thức).
+        //   Gợi ý của AI là TEXT -> phải tìm công thức khớp TÊN trong catalog.
+        //   `getRecipesFiltered({ search })` dựa vào tìm kiếm của BE -> nếu
+        //   tên AI có mô tả thêm ("... - 25.000đ") sẽ KHÔNG khớp. Vì vậy:
+        //   1. Thử search bằng tên đã tách sạch.
+        //   2. Nếu không khớp -> tải catalog và khớp mềm (`matchDishToRecipes`).
         const recipes = await services.recipeService.getRecipesFiltered({ search: dishName });
-        const match =
-          recipes.find((r) => dishName.toLowerCase().includes(r.name?.toLowerCase())) ??
-          recipes.find((r) => r.name?.toLowerCase().includes(dishName.slice(0, 12).toLowerCase()));
+        let match = matchDishToRecipes(dishName, recipes);
+
+        if (!match) {
+          const allRecipes = await services.recipeService.getRecipes();
+          match = matchDishToRecipes(dishName, allRecipes);
+        }
 
         if (!match) {
           showError(t('home.aiDishNotFound'));
@@ -292,12 +305,12 @@ export const NextWeekSuggestionsScreen = () => {
           throw new Error(t('home.aiError'));
         }
 
-        // Đưa 3 gợi ý (dạng "1. ... 2. ... 3. ...") vào Alert để user chọn.
-        const options = suggestions
-          .split('\n')
-          .map((line) => line.trim())
-          .filter((line) => /^\d+\./.test(line))
-          .map((line) => line.replace(/^\d+\.\s*/, ''));
+        // Đưa 3 gợi ý vào Alert để user chọn.
+        //
+        // ⚠️ AI trả dạng "1. Tên món - mô tả - 25.000đ" -> phải TÁCH tên món
+        //    ra, nếu không `search` sẽ không bao giờ khớp catalog.
+        const parsed = parseAiDishSuggestions(suggestions);
+        const options = parsed.map((p) => p.dishName).filter(Boolean);
 
         if (options.length === 0) {
           showInfo(suggestions);
@@ -635,8 +648,32 @@ export const NextWeekSuggestionsScreen = () => {
         state={slotDetail}
         onClose={() => setSlotDetail(null)}
         onOpenRecipe={(recipeId) => {
+          const slot = slotDetail?.slot ?? null;
           setSlotDetail(null);
-          navigation.navigate(Routes.RecipeDetail, { recipeId });
+          // ⚠️ Truyền `slotId` + `cooked` để màn chi tiết công thức có nút
+          // "Bắt đầu nấu" gọi đúng API tick slot (trừ nguyên liệu + đánh dấu).
+          navigation.navigate(Routes.RecipeDetail, {
+            recipeId,
+            slotId: slot?.id ?? undefined,
+            cooked: Boolean(slot?.cooked),
+          });
+        }}
+        onAddMissingToList={async () => {
+          const slotId = slotDetail?.slot?.id;
+          if (!slotId) return;
+          try {
+            const result = await services.recipeService.addSlotMissingToShoppingList(slotId);
+            const count = result?.addedCount ?? 0;
+            showSuccess(
+              count > 0
+                ? t('home.shoppingMissingAdded', { count })
+                : t('home.shoppingNothingMissing')
+            );
+            setSlotDetail(null);
+            navigation.navigate(Routes.ShoppingReminder);
+          } catch (e) {
+            showError(e?.message ?? t('home.error'));
+          }
         }}
       />
     </View>
@@ -649,7 +686,7 @@ export const NextWeekSuggestionsScreen = () => {
  * ⚠️ Được đặt trong file màn hình (không tách file mới) vì plan Mục 1 chỉ
  * cho DEV B tạo đúng danh sách file đã liệt kê.
  */
-const SlotDetailModal = ({ state, onClose, onOpenRecipe }) => {
+const SlotDetailModal = ({ state, onClose, onOpenRecipe, onAddMissingToList }) => {
   const { isDark } = useTheme();
   const { t } = useTranslation();
 
@@ -824,6 +861,36 @@ const SlotDetailModal = ({ state, onClose, onOpenRecipe }) => {
                   ]}
                 >
                   <Text style={styles.openRecipeText}>{t('recipe.viewDetail')}</Text>
+                </Pressable>
+              ) : null}
+
+              {/* Thêm nguyên liệu còn thiếu vào danh sách mua */}
+              {missingItems.length > 0 && onAddMissingToList ? (
+                <Pressable
+                  onPress={onAddMissingToList}
+                  style={({ pressed }) => [
+                    styles.addMissingBtn,
+                    {
+                      backgroundColor: isDark ? '#3D2E1A' : '#FFF3E0',
+                      borderColor: isDark ? '#5E4A35' : '#FFCC80',
+                      opacity: pressed ? 0.7 : 1,
+                    },
+                  ]}
+                  testID="slot-detail-add-missing-to-list"
+                  accessibilityLabel={t('home.shoppingAddMissingToList')}
+                >
+                  <ShoppingCart
+                    color={isDark ? AppColors.accentOrange : '#E65100'}
+                    size={16}
+                  />
+                  <Text
+                    style={[
+                      styles.addMissingText,
+                      { color: isDark ? AppColors.accentOrange : '#E65100' },
+                    ]}
+                  >
+                    {t('home.shoppingAddMissingToList')} ({missingItems.length})
+                  </Text>
                 </Pressable>
               ) : null}
 
@@ -1006,5 +1073,21 @@ const styles = StyleSheet.create({
     fontFamily: FontFamily.semibold,
     fontWeight: FontWeights.semibold,
     fontSize: sp(14),
+  },
+  addMissingBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: sp(8),
+    marginTop: sp(8),
+    paddingVertical: sp(12),
+    paddingHorizontal: sp(12),
+    borderRadius: sp(12),
+    borderWidth: 1,
+  },
+  addMissingText: {
+    fontFamily: FontFamily.semibold,
+    fontWeight: FontWeights.semibold,
+    fontSize: sp(13),
   },
 });

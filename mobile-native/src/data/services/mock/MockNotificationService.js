@@ -47,4 +47,28 @@ export class MockNotificationService extends INotificationService {
     await sleep(MOCK_DELAY / 4);
     return notifications.filter((n) => !n.read).length;
   }
+
+  // ═══════════════ FCM token (mock — không push thật) ═══════════════
+  //
+  // ⚠️ VÌ SAO CẦN 2 method này ở MOCK:
+  //   `ServiceParity.test.js` đòi mọi method public của Mock phải được Real
+  //   implement và ngược lại (contract đồng bộ 2 chiều). Real có
+  //   `registerFcmToken` / `removeFcmToken` (đăng ký FCM token cho push) ->
+  //   Mock cũng phải có để không lệch.
+  //   Mock KHÔNG push thật (không có Firebase) -> chỉ mô phỏng trả về.
+  //
+  // ⚠️ `registerFcmToken` KHÔNG tự bịa token:
+  //   Token giả -> nếu sau này RN nối Firebase, token giả có thể bị gửi lên BE
+  //   và gán cho user -> user nhận push của thiết bị khác. Nên caller phải
+  //   truyền token thật, mock chỉ echo lại.
+
+  async registerFcmToken(token, platform = 'android') {
+    await sleep(MOCK_DELAY / 4);
+    if (!token) throw new Error('Thiếu FCM token');
+    return { token, platform };
+  }
+
+  async removeFcmToken() {
+    await sleep(MOCK_DELAY / 4);
+  }
 }

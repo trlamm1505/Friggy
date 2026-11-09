@@ -36,9 +36,10 @@ import { sp } from '../../utils/responsive';
 import { FontWeights, FontFamily } from '../../theme/typography';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Send, Bot, User, Sparkles } from 'lucide-react-native';
-import { showInfo, showError } from '../../utils/helpers';
+import { Send, Bot, User, History, Plus, Trash2 } from 'lucide-react-native';
+import { showInfo, showError, showSuccess } from '../../utils/helpers';
 import { MessageBubble } from '../../components/chat/MessageBubble';
+import { AiChatHistorySheet } from '../../components/chat/AiChatHistorySheet';
 import { ScreenBackground } from '../../components/common/ScreenBackground';
 import { getRegisteredService, isMockMode } from '../../../data/api/ServiceRegistry';
 import { MockAiChatService } from '../../../data/services/mock/MockAiChatService';
@@ -131,6 +132,30 @@ const now = () => {
 };
 
 /**
+ * Chiều cao tổng của `CustomBottomNav` (bar 62 + padding trên/dưới + safe area).
+ *
+ * ⚠️ `CustomBottomNav` dùng `position: 'absolute'` -> nó ĐÈ lên mọi màn hình
+ * nằm trong tab. Màn hình nào có UI ở đáy (input bar, nút hành động) đều phải
+ * chừa đúng khoảng này, nếu không user sẽ không thấy / không bấm được.
+ *
+ * Nguồn sự thật: `CustomBottomNav.jsx` — `bar.height = 62`,
+ * `paddingBottom = insets.bottom > 0 ? insets.bottom + 4 : 16`.
+ * Dùng 100 (như `HomeScreen` / `FridgeInventoryScreen`) để có khoảng đệm an toàn.
+ */
+const BOTTOM_NAV_TOTAL_HEIGHT = 100;
+
+/**
+ * Format thời gian từ ISO string của BE (dùng khi nạp lại lịch sử chat).
+ * Trả về chuỗi rỗng nếu date không hợp lệ.
+ */
+const formatMessageTime = (iso) => {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+};
+
+/**
  * Lấy service AI Chat phù hợp với mode hiện tại.
  *
  * @returns {object} service có `createSession` / `sendMessage` / `streamSession`
@@ -165,7 +190,29 @@ export const AiChatScreen = () => {
   // Dùng để huỷ stream khi user gửi tin mới hoặc rời màn hình.
   const abortRef = useRef(null);
 
+  // Sheet lịch sử trò chuyện.
+  const [historyVisible, setHistoryVisible] = useState(false);
+  // Đang tạo session mới -> disable nút để tránh double-tap.
+  const [creatingSession, setCreatingSession] = useState(false);
+
   const suggestionKeys = ['aiSug1', 'aiSug2', 'aiSug3', 'aiSug4'];
+
+  /**
+   * Tạo phiên chat mới và dùng làm phiên hiện tại.
+   *
+   * @returns {Promise<object|null>} session vừa tạo, hoặc null nếu lỗi.
+   */
+  const createSession = useCallback(async () => {
+    const service = serviceRef.current;
+    if (!service) return null;
+    try {
+      const session = await service.createSession();
+      return session ?? null;
+    } catch (e) {
+      setError(e?.message ?? t('home.aiError'));
+      return null;
+    }
+  }, [t]);
 
   useEffect(() => {
     setTimeout(() => {
@@ -200,6 +247,126 @@ export const AiChatScreen = () => {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  /**
+   * Nạp danh sách phiên chat cho sheet lịch sử.
+   * Được truyền xuống `AiChatHistorySheet` qua prop `loadSessions`.
+   *
+   * ⚠️ Lọc bỏ phiên RỖNG (`messageCount === 0`):
+   *   `AiChatScreen` tạo 1 session ngay khi mở app (để user chat được ngay),
+   *   kể cả khi user chưa hỏi gì. Mỗi lần mở app lại sinh 1 phiên rỗng ->
+   *   danh sách lịch sử lại đầy phiên trống, user thấy rác.
+   *   Phiên rỗng không có giá trị gì trong "lịch sử trò chuyện" -> ẩn đi.
+   */
+  const loadSessions = useCallback(async () => {
+    const service = serviceRef.current;
+    if (!service) return [];
+    const list = await service.getSessions({ page: 1, limit: 50 });
+    return (Array.isArray(list) ? list : []).filter((s) => (s?.messageCount ?? 0) > 0);
+  }, []);
+
+  /**
+   * Mở lại một phiên chat đã có: nạp lịch sử message của phiên đó và
+   * hiển thị lại trong khung chat.
+   *
+   * ⚠️ Lịch sử BE có `role: 'user' | 'assistant'` -> UI dùng `sender: 'user' | 'ai'`.
+   */
+  const openSession = useCallback(
+    async (session) => {
+      const service = serviceRef.current;
+      if (!service?.getSessionDetail || !session?.id) return;
+
+      try {
+        // `limit: 100` = max BE cho phép -> nạp được nhiều lịch sử nhất có thể.
+        const detail = await service.getSessionDetail(session.id, { page: 1, limit: 100 });
+        const history = detail?.messages ?? [];
+
+        // Chuyển message BE -> shape của UI (sender/text/time).
+        const restored = history.map((m, idx) => ({
+          id: m.id ?? `hist-${idx}`,
+          sender: m.role === 'assistant' ? 'ai' : 'user',
+          text: m.content ?? '',
+          time: formatMessageTime(m.createdAt),
+          status: 'done',
+        }));
+
+        // Đang có phiên khác -> huỷ stream cũ trước khi chuyển.
+        abortRef.current?.abort();
+        sessionIdRef.current = session.id;
+        setStreamingText('');
+        setThinking(false);
+        setError(null);
+
+        setMessages(
+          restored.length > 0
+            ? restored
+            : [{ id: `w-${Date.now()}`, sender: 'ai', text: t('home.aiWelcome'), time: now() }]
+        );
+        setHistoryVisible(false);
+      } catch (e) {
+        showError(e?.message ?? t('home.aiHistoryLoadFailed'));
+      }
+    },
+    [t]
+  );
+
+  /**
+   * Tạo cuộc trò chuyện mới: huỷ stream, tạo session mới, reset khung chat.
+   */
+  const startNewChat = useCallback(async () => {
+    if (creatingSession) return;
+
+    setCreatingSession(true);
+    try {
+      const session = await createSession();
+      if (!session) {
+        showError(t('home.aiError'));
+        return;
+      }
+
+      abortRef.current?.abort();
+      sessionIdRef.current = session.id;
+      setMessages([
+        { id: `w-${Date.now()}`, sender: 'ai', text: t('home.aiWelcome'), time: now() },
+      ]);
+      setStreamingText('');
+      setThinking(false);
+      setError(null);
+      setHistoryVisible(false);
+      showSuccess(t('home.aiNewChatDone'));
+    } finally {
+      setCreatingSession(false);
+    }
+  }, [createSession, creatingSession, t]);
+
+  /**
+   * Xóa phiên chat hiện tại (hoặc phiên bất kỳ được gọi từ sheet lịch sử).
+   *
+   * ⚠️ Nếu xóa đúng phiên đang mở -> tạo phiên mới để user vẫn chat được.
+   */
+  const deleteSession = useCallback(
+    async (session) => {
+      const service = serviceRef.current;
+      if (!service?.deleteSession || !session?.id) return;
+
+      await service.deleteSession(session.id);
+
+      // Xóa phiên đang mở -> tạo phiên mới, reset khung chat.
+      if (session.id === sessionIdRef.current) {
+        const next = await createSession();
+        abortRef.current?.abort();
+        sessionIdRef.current = next?.id ?? null;
+        setMessages([
+          { id: `w-${Date.now()}`, sender: 'ai', text: t('home.aiWelcome'), time: now() },
+        ]);
+        setStreamingText('');
+        setThinking(false);
+      }
+
+      showSuccess(t('home.aiDeleteDone'));
+    },
+    [createSession, t]
+  );
 
   const send = useCallback(
     async (text) => {
@@ -381,14 +548,35 @@ export const AiChatScreen = () => {
     [send, t]
   );
 
-  const clearChat = useCallback(() => {
+  /**
+   * Xóa cuộc trò chuyện hiện tại.
+   *
+   * ⚠️ KHÔNG chỉ reset local: gọi `DELETE /ai-chat/sessions/{id}` để BE xoá
+   * thật, rồi tạo phiên mới -> user vẫn chat được ngay.
+   */
+  const clearChat = useCallback(async () => {
+    const service = serviceRef.current;
+    const currentId = sessionIdRef.current;
+
     abortRef.current?.abort();
-    setMessages([{ id: Date.now(), sender: 'ai', text: t('home.aiWelcome'), time: now() }]);
     setStreamingText('');
     setThinking(false);
     setError(null);
+
+    if (service?.deleteSession && currentId) {
+      try {
+        await service.deleteSession(currentId);
+      } catch (e) {
+        showError(e?.message ?? t('home.aiDeleteFailed'));
+        return;
+      }
+    }
+
+    const next = await createSession();
+    sessionIdRef.current = next?.id ?? null;
+    setMessages([{ id: Date.now(), sender: 'ai', text: t('home.aiWelcome'), time: now() }]);
     showInfo(t('home.aiClearChat'));
-  }, [t]);
+  }, [createSession, t]);
 
   return (
     <ScreenBackground>
@@ -423,16 +611,56 @@ export const AiChatScreen = () => {
               </Text>
             </View>
           </View>
-          <Pressable
-            onPress={clearChat}
-            hitSlop={8}
-            style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}
-          >
-            <Sparkles
-              color={isDark ? AppColors.darkTextSecondary : AppColors.textSecondary}
-              size={20}
-            />
-          </Pressable>
+          <View style={styles.headerActions}>
+            {/* 1. Xem lại lịch sử trò chuyện */}
+            <Pressable
+              onPress={() => setHistoryVisible(true)}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel={t('home.aiHistory')}
+              style={({ pressed }) => [styles.headerBtn, { opacity: pressed ? 0.6 : 1 }]}
+            >
+              <History
+                color={isDark ? AppColors.darkTextSecondary : AppColors.textSecondary}
+                size={20}
+                strokeWidth={2}
+              />
+            </Pressable>
+
+            {/* 2. Tạo cuộc trò chuyện mới */}
+            <Pressable
+              onPress={startNewChat}
+              disabled={creatingSession}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel={t('home.aiNewChat')}
+              style={({ pressed }) => [
+                styles.headerBtn,
+                { opacity: creatingSession ? 0.4 : pressed ? 0.6 : 1 },
+              ]}
+            >
+              <Plus
+                color={isDark ? AppColors.darkTextSecondary : AppColors.textSecondary}
+                size={20}
+                strokeWidth={2}
+              />
+            </Pressable>
+
+            {/* 3. Xóa cuộc trò chuyện hiện tại */}
+            <Pressable
+              onPress={clearChat}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel={t('home.aiDeleteChat')}
+              style={({ pressed }) => [styles.headerBtn, { opacity: pressed ? 0.6 : 1 }]}
+            >
+              <Trash2
+                color={isDark ? AppColors.darkTextSecondary : AppColors.textSecondary}
+                size={19}
+                strokeWidth={2}
+              />
+            </Pressable>
+          </View>
         </View>
 
         <ScrollView
@@ -535,6 +763,12 @@ export const AiChatScreen = () => {
             {
               backgroundColor: isDark ? '#0E1611' : '#FFFFFF',
               borderTopColor: isDark ? '#2E4D36' : '#E3E8E4',
+              // ⚠️ BẮT BUỘC: `CustomBottomNav` dùng `position: 'absolute'` và nằm
+              // ĐÈ lên content. Không paddingBottom ở đây thì ô nhập + nút Gửi bị
+              // bottom nav che -> user không thấy và không bấm được.
+              // Chiều cao nav = bar 62 + paddingBottom (insets.bottom + 4, fallback 16).
+              // Chuẩn khớp với `HomeScreen` / `FridgeInventoryScreen` (dùng 100).
+              paddingBottom: BOTTOM_NAV_TOTAL_HEIGHT + (insets.bottom > 0 ? insets.bottom : 0),
             },
           ]}
         >
@@ -566,6 +800,16 @@ export const AiChatScreen = () => {
           </Pressable>
         </View>
       </KeyboardAvoidingView>
+
+      {/* Sheet lịch sử trò chuyện */}
+      <AiChatHistorySheet
+        visible={historyVisible}
+        onClose={() => setHistoryVisible(false)}
+        onSelectSession={openSession}
+        onDeleteSession={deleteSession}
+        loadSessions={loadSessions}
+        currentSessionId={sessionIdRef.current}
+      />
     </ScreenBackground>
   );
 };
@@ -614,6 +858,17 @@ const styles = StyleSheet.create({
   headerStatus: {
     fontFamily: FontFamily.semibold,
     fontWeight: FontWeights.semibold,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: sp(4),
+  },
+  headerBtn: {
+    width: 34,
+    height: 34,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   messages: {
     flex: 1,

@@ -15,7 +15,7 @@
  */
 
 import { create as createAxiosInstance } from 'axios';
-import { appConfig } from '../../shared/config/appConfig';
+import { appConfig, EXTRA_HEADERS } from '../../shared/config/appConfig';
 import { TokenStorage } from '../storage/TokenStorage';
 import { ApiException } from './ApiException';
 
@@ -47,14 +47,14 @@ const emitApiEvent = (event, payload) => {
 const client = createAxiosInstance({
   baseURL: appConfig.API_BASE_URL,
   timeout: appConfig.TIMEOUT_MS,
-  headers: { 'Content-Type': 'application/json' },
+  headers: { 'Content-Type': 'application/json', ...EXTRA_HEADERS },
 });
 
 // Client gốc, KHÔNG qua interceptor - dùng để gọi /auth/refresh tránh loop vô hạn
 const rawClient = createAxiosInstance({
   baseURL: appConfig.API_BASE_URL,
   timeout: appConfig.TIMEOUT_MS,
-  headers: { 'Content-Type': 'application/json' },
+  headers: { 'Content-Type': 'application/json', ...EXTRA_HEADERS },
 });
 
 // BẮT BUỘC 6: 401 ở các endpoint này = sai thông tin đăng nhập (sai mật khẩu,
@@ -164,12 +164,18 @@ const ACCESS_TTL_FALLBACK_SECONDS = 900;
 
 client.interceptors.request.use(
   (config) => {
+    // Header bypass cảnh báo ngrok (bỏ qua trang HTML chèn của ngrok).
+    // Gắn ở interceptor để MỌI request đều có, kể cả request có `headers` riêng.
+    config.headers = config.headers || {};
+    if (!config.headers[appConfig.NGROK_SKIP_BROWSER_WARNING]) {
+      config.headers[appConfig.NGROK_SKIP_BROWSER_WARNING] = 'true';
+    }
+
     // BẮT BUỘC 3: endpoint public -> không gắn Bearer
     if (config.skipAuth) return config;
 
     const token = TokenStorage.getAccessToken();
     if (token) {
-      config.headers = config.headers || {};
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
@@ -263,7 +269,7 @@ client.interceptors.response.use(
           method: 'post',
           url: '/auth/refresh',
           data: { refreshToken },
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', ...EXTRA_HEADERS },
         });
 
         // BẮT BUỘC 1: áp dụng cùng quy tắc unwrap
@@ -350,7 +356,7 @@ export const ApiClient = {
       method: 'post',
       url,
       data: formData,
-      headers: { 'Content-Type': 'multipart/form-data' },
+      headers: { 'Content-Type': 'multipart/form-data', ...EXTRA_HEADERS },
     });
   },
 

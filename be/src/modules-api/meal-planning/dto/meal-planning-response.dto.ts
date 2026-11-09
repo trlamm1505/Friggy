@@ -119,6 +119,12 @@ export class ShoppingListItemResponseDto {
   @ApiProperty({ example: 1 })
   id: number;
 
+  @ApiProperty({
+    example: 9,
+    description: 'ID nguyên liệu trong catalog — FE cần id này để thêm/xoá món lẻ',
+  })
+  ingredientId: number;
+
   @ApiProperty({ example: 'Thịt bò' })
   ingredientName: string;
 

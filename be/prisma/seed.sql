@@ -172,10 +172,11 @@ INSERT IGNORE INTO `ingredient_categories` (`id`, `name`, `iconPath`, `parentId`
   (15, 'Thịt bò',     '/public/icons/cat_beef.png',     2, 3, NOW()),
   (16, 'Thịt gà',     '/public/icons/cat_chicken.png',  2, 3, NOW()),
   (17, 'Cá',          '/public/icons/cat_fish.png',     3, 2, NOW()),
-  (18, 'Tôm & Cua',   '/public/icons/cat_shrimp.png',   3, 2, NOW());
+  (18, 'Tôm & Cua',   '/public/icons/cat_shrimp.png',   3, 2, NOW()),
+  (19, 'Trái cây',    '/public/icons/cat_fruits.png',   1, 7, NOW());
 
 -- ============================================================
--- [4] INGREDIENTS (~61 nguyên liệu phổ biến người Việt)
+-- [4] INGREDIENTS (73 nguyên liệu phổ biến người Việt)
 -- ============================================================
 INSERT IGNORE INTO `ingredients` (`id`, `name`, `categoryId`, `defaultUnit`, `caloriesPer100g`, `averagePricePerUnit`, `imagePath`, `isCommon`, `createdAt`, `updatedAt`) VALUES
   -- Rau lá xanh (cat 11)
@@ -253,7 +254,26 @@ INSERT IGNORE INTO `ingredients` (`id`, `name`, `categoryId`, `defaultUnit`, `ca
   (60, 'Đậu đen',       10, 'gram',  339, 25000,  '/public/ingredients/dau_den.jpg',      0, NOW(), NOW()),
   (61, 'Lạc rang',      10, 'gram',  567, 30000,  '/public/ingredients/lac_rang.jpg',     0, NOW(), NOW()),
   (62, 'Dưa chuột',     12, 'quả',   15,  12000,  '/public/ingredients/dua_chuot.jpg',    1, NOW(), NOW()),
-  (63, 'Dưa leo',       12, 'quả',   15,  12000,  '/public/ingredients/dua_leo.jpg',      1, NOW(), NOW());
+  (63, 'Dưa leo',       12, 'quả',   15,  12000,  '/public/ingredients/dua_leo.jpg',      1, NOW(), NOW()),
+  -- Trái cây (cat 19)
+  --
+  -- ⚠️ KHÔNG thêm các món có từ khóa trùng với món đã có, vì `ai-service`
+  --    fuzzy-match nguyên liệu bằng `name contains keyword`
+  --    (`ai-service/src/ai-core/agents/fridge-scan/normalizer.agent.ts:113`):
+  --      - "Dứa"/"Dưa hấu" -> chứa "dưa" -> khớp nhầm "Dưa chuột" (id 62)
+  --      - "Bơ"           -> chứa "bơ" -> khớp nhầm "Bột ngọt" (id 50)
+  --      - "Ổi"           -> BE `resolveIngredient` -> "Tỏi" (do "tỏi" chứa "ổi")
+  --    => Chỉ giữ các món có từ khóa RIÊNG, không trùng món hiện có.
+  (64, 'Táo đỏ',       19, 'quả',   52,  12000,  '/public/ingredients/tao_do.jpg',       1, NOW(), NOW()),
+  (65, 'Chuối',        19, 'quả',   89,   8000,  '/public/ingredients/chuoi.jpg',       1, NOW(), NOW()),
+  (66, 'Cam',          19, 'quả',   47,  15000,  '/public/ingredients/cam.jpg',         1, NOW(), NOW()),
+  (67, 'Xoài',         19, 'quả',   60,  20000,  '/public/ingredients/xoai.jpg',        1, NOW(), NOW()),
+  (68, 'Bưởi',         19, 'quả',   38,  15000,  '/public/ingredients/buoi.jpg',        1, NOW(), NOW()),
+  (69, 'Chanh',        19, 'quả',   29,   8000,  '/public/ingredients/chanh.jpg',       1, NOW(), NOW()),
+  (70, 'Mít',          19, 'quả',   85,  25000,  '/public/ingredients/mit.jpg',         0, NOW(), NOW()),
+  (71, 'Thanh long',   19, 'quả',   57,  12000,  '/public/ingredients/thanh_long.jpg',  0, NOW(), NOW()),
+  (72, 'Nho',          19, 'bó',    67,  30000,  '/public/ingredients/nho.jpg',         0, NOW(), NOW()),
+  (73, 'Quả mơ',       19, 'quả',   46,   8000,  '/public/ingredients/qua_mo.jpg',      0, NOW(), NOW());
 
 -- ============================================================
 -- [5] TAGS (22 tags phân loại công thức)
@@ -307,7 +327,434 @@ INSERT IGNORE INTO `recipes` (`id`, `title`, `description`, `thumbnailPath`, `me
   ('ffb979b0-b054-11f1-8f91-4a1fa1f06f0c', 'Cá kho tộ',           'Cá lóc kho nước màu, gừng sả đặm đà',                         NULL, 'dinner',    40, 3, 'medium', 80000,  0, NULL, 'published', NOW(), NOW()),
   ('ffb97a3a-b054-11f1-8f91-4a1fa1f06f0c', 'Thịt kho trứng',      'Thịt ba chỉ kho với trứng luộc nước dừa',                     NULL, 'dinner',    50, 4, 'easy',   90000,  0, NULL, 'published', NOW(), NOW()),
   ('ffb97a84-b054-11f1-8f91-4a1fa1f06f0c', 'Canh chua cá',        'Canh chua me với cá, cà chua và giá đỗ',                       NULL, 'dinner',    25, 4, 'easy',   60000,  0, NULL, 'published', NOW(), NOW()),
-  ('ffb97acc-b054-11f1-8f91-4a1fa1f06f0c', 'Gà nướng muối ớt',   'Gà nướng với gia vị muối ớt đặc trưng miền Trung',             NULL, 'dinner',    60, 4, 'medium', 120000, 0, NULL, 'published', NOW(), NOW());
+  ('ffb97acc-b054-11f1-8f91-4a1fa1f06f0c', 'Gà nướng muối ớt',   'Gà nướng với gia vị muối ớt đặc trưng miền Trung',             NULL, 'dinner',    60, 4, 'medium', 120000, 0, NULL, 'published', NOW(), NOW()),
+  -- 10 món "healthy" (isAiGenerated) — bổ sung để tủ lạnh luôn có món đề xuất
+  ('4b7c108b-58d8-42b0-b30a-b1fac8caf8a6', 'Bánh mì trứng ốp la xúc xích', 'Bữa sáng nhanh gọn ngày Chủ Nhật', NULL, 'breakfast', 15, 2, 'medium', 25000, 1, NULL, 'published', NOW(), NOW()),
+  ('27829e0c-f603-4b29-a239-999ad0b295f0', 'Bò lúc lắc khoai tây',           'Bò lúc lắc mềm ngọt đậm vị',           NULL, 'lunch',     25, 2, 'medium', 35000, 1, NULL, 'published', NOW(), NOW()),
+  ('88fe6a0a-5901-43ed-8fde-1ac4db730c60', 'Gà kho sả ớt',                   'Thịt gà kho sả đậm đà đưa cơm',         NULL, 'lunch',     30, 2, 'medium', 33000, 1, NULL, 'published', NOW(), NOW()),
+  ('356a0733-e06e-477d-847f-bfe1a8d36226', 'Cá hồi áp chảo măng tây',        'Bữa tối cao cấp giàu Omega-3',          NULL, 'dinner',    20, 2, 'medium', 35000, 1, NULL, 'published', NOW(), NOW()),
+  ('d78222e1-1b1f-4bb9-90e9-bcf079283c5e', 'Canh chua cá chanh dây',       'Canh chua me với cá, cà chua và giá đỗ',  NULL, 'dinner',    30, 2, 'medium', 60000, 1, NULL, 'published', NOW(), NOW()),
+  ('db40ec85-2224-41b6-9491-751573b2324b', 'Canh rau cải thịt băm',           'Canh rau cải ngọt nước với thịt băm',    NULL, 'dinner',    15, 2, 'easy',   25000, 1, NULL, 'published', NOW(), NOW()),
+  ('ec73d307-5c48-4ff1-b80d-cf4e3c4529c7', 'Canh tôm nấu bầu',                'Canh tôm nấu bầu thanh ngọt',            NULL, 'dinner',    20, 2, 'easy',   35000, 1, NULL, 'published', NOW(), NOW()),
+  ('7a41f2c2-733c-4246-9340-e5e9b63b178d', 'Đậu hũ sốt cà chua healthy',     'Món chay thanh đạm, tốt cho sức khỏe',   NULL, 'dinner',    20, 2, 'medium', 25000, 1, NULL, 'published', NOW(), NOW()),
+  ('c220f339-af22-4105-96fb-88136cd19b3a', 'Thịt ba chỉ rim cà chua húng quế','Thịt ba chỉ rim cà chua thơm húng quế',  NULL, 'dinner',    20, 2, 'medium', 40000, 1, NULL, 'published', NOW(), NOW()),
+  ('a8e2f54b-7d1b-4361-9f10-8b7400eddea9', 'Ức gà áp chảo sốt tiêu',         'Món healthy giàu protein hỗ trợ mục tiêu dinh dưỡng', NULL, 'dinner', 25, 2, 'easy', 30000, 1, NULL, 'published', NOW(), NOW());
+
+-- ⚠️ `INSERT IGNORE` chỉ bỎ QUA record đã tồn tại, KHÔNG cập nhật.
+--    => Đổi tên/thay đổi thuộc tính recipe cũ sẽ KHÔNG được áp dụng.
+--    Phải UPDATE thủ công cho các record đã tồn tại từ lần seed trước.
+UPDATE `recipes` SET `title` = 'Canh chua cá chanh dây' WHERE `id` = 'd78222e1-1b1f-4bb9-90e9-bcf079283c5e' AND `title` = 'Canh chua cá';
+
+-- ============================================================
+-- [6b] RECIPE INGREDIENTS — nguyên liệu cho từng công thức
+-- ⚠️ BẮT BUỘC: thiếu bản ghi ở đây -> công thức hiển thị rỗng ở app,
+--    và `GET /recipes/suggestions` trả matchScore = 0 cho mọi món.
+-- `quantity` = số lượng cho `servings` người (xem `recipes.servings`).
+-- `unit` = đơn vị gốc; BE tự quy đổi về đơn vị cơ sở khi so với tủ lạnh.
+--
+-- ⚠️ `recipe_ingredients` / `recipe_steps` KHÔNG có unique key -> `INSERT IGNORE`
+--    KHÔNG chống trùng. Phải DELETE trước khi INSERT để seed chạy lại nhiều
+--    lần vẫn sạch (và để xoá các bản ghi cũ chỉ có 1-3 nguyên liệu).
+-- ============================================================
+DELETE FROM `recipe_ingredients`;
+DELETE FROM `recipe_steps`;
+
+INSERT INTO `recipe_ingredients` (`recipeId`, `ingredientId`, `quantity`, `unit`, `isOptional`, `note`) VALUES
+  -- Phở bò
+  ('ffb34583-b054-11f1-8f91-4a1fa1f06f0c', 28, 500, 'gram', 0, 'xương ống'),
+  ('ffb34583-b054-11f1-8f91-4a1fa1f06f0c', 30, 200, 'gram', 0, 'bắp bò'),
+  ('ffb34583-b054-11f1-8f91-4a1fa1f06f0c', 55, 150, 'gram', 0, 'gạo'),
+  ('ffb34583-b054-11f1-8f91-4a1fa1f06f0c',  9, 100, 'gram', 0, NULL),
+  ('ffb34583-b054-11f1-8f91-4a1fa1f06f0c',  7, 30,  'gram', 0, NULL),
+  ('ffb34583-b054-11f1-8f91-4a1fa1f06f0c', 14, 20,  'gram', 0, NULL),
+  ('ffb34583-b054-11f1-8f91-4a1fa1f06f0c', 46, 5,   'gram', 0, NULL),
+  -- Bánh mì trứng
+  ('ffb4b01b-b054-11f1-8f91-4a1fa1f06f0c', 43, 2,  'quả',  0, NULL),
+  ('ffb4b01b-b054-11f1-8f91-4a1fa1f06f0c', 58, 120,'gram', 0, 'bột mì'),
+  ('ffb4b01b-b054-11f1-8f91-4a1fa1f06f0c', 49, 15, 'ml',   0, NULL),
+  ('ffb4b01b-b054-11f1-8f91-4a1fa1f06f0c',  7, 20, 'gram', 1, 'rau thơm trang trí'),
+  -- Xôi xéo
+  ('ffb4b272-b054-11f1-8f91-4a1fa1f06f0c', 55, 200, 'gram', 0, 'gạo nếp'),
+  ('ffb4b272-b054-11f1-8f91-4a1fa1f06f0c', 60, 100, 'gram', 0, 'đậu xanh'),
+  ('ffb4b272-b054-11f1-8f91-4a1fa1f06f0c', 26, 150, 'gram', 0, 'thịt ba chỉ'),
+  ('ffb4b272-b054-11f1-8f91-4a1fa1f06f0c', 13, 20,  'gram', 0, NULL),
+  ('ffb4b272-b054-11f1-8f91-4a1fa1f06f0c', 50, 3,   'gram', 0, NULL),
+  -- Cháo lòng
+  ('ffb4b2ea-b054-11f1-8f91-4a1fa1f06f0c', 55, 100, 'gram', 0, 'gạo'),
+  ('ffb4b2ea-b054-11f1-8f91-4a1fa1f06f0c', 27, 200, 'gram', 0, 'chân giò heo'),
+  ('ffb4b2ea-b054-11f1-8f91-4a1fa1f06f0c', 29, 100, 'gram', 0, 'thịt bò xào'),
+  ('ffb4b2ea-b054-11f1-8f91-4a1fa1f06f0c', 14, 15,  'gram', 0, NULL),
+  ('ffb4b2ea-b054-11f1-8f91-4a1fa1f06f0c', 51, 15,  'ml',   0, NULL),
+  -- Bún bò Huế
+  ('ffb4b33d-b054-11f1-8f91-4a1fa1f06f0c', 56, 400, 'gram', 0, 'bún tươi'),
+  ('ffb4b33d-b054-11f1-8f91-4a1fa1f06f0c', 29, 200, 'gram', 0, 'thịt bò xào'),
+  ('ffb4b33d-b054-11f1-8f91-4a1fa1f06f0c', 25, 150, 'gram', 0, 'thịt nạc vai'),
+  ('ffb4b33d-b054-11f1-8f91-4a1fa1f06f0c', 51, 30,  'ml',   0, NULL),
+  ('ffb4b33d-b054-11f1-8f91-4a1fa1f06f0c', 53, 20,  'ml',   0, NULL),
+  ('ffb4b33d-b054-11f1-8f91-4a1fa1f06f0c', 15, 2,   'quả', 0, NULL),
+  ('ffb4b33d-b054-11f1-8f91-4a1fa1f06f0c', 13, 20,  'gram', 0, NULL),
+  -- Cơm tấm sườn bì chả
+  ('ffb76aee-b054-11f1-8f91-4a1fa1f06f0c', 55, 200, 'gram', 0, 'gạo'),
+  ('ffb76aee-b054-11f1-8f91-4a1fa1f06f0c', 26, 250, 'gram', 0, 'sườn heo'),
+  ('ffb76aee-b054-11f1-8f91-4a1fa1f06f0c', 25, 100, 'gram', 0, 'thịt nạc vai (bì)'),
+  ('ffb76aee-b054-11f1-8f91-4a1fa1f06f0c', 43, 2,   'quả', 0, NULL),
+  ('ffb76aee-b054-11f1-8f91-4a1fa1f06f0c', 51, 20,  'ml',   0, NULL),
+  -- Bún thịt nướng
+  ('ffb76ea2-b054-11f1-8f91-4a1fa1f06f0c', 56, 300, 'gram', 0, 'bún tươi'),
+  ('ffb76ea2-b054-11f1-8f91-4a1fa1f06f0c', 24, 250, 'gram', 0, 'thịt ba chỉ'),
+  ('ffb76ea2-b054-11f1-8f91-4a1fa1f06f0c', 62, 1,   'quả', 0, 'dưa chuột'),
+  ('ffb76ea2-b054-11f1-8f91-4a1fa1f06f0c', 63, 1,   'quả', 0, 'dưa leo'),
+  ('ffb76ea2-b054-11f1-8f91-4a1fa1f06f0c',  7, 30,  'gram', 0, NULL),
+  ('ffb76ea2-b054-11f1-8f91-4a1fa1f06f0c', 51, 20,  'ml',   0, NULL),
+  -- Cơm rang dưa bò
+  ('ffb76f20-b054-11f1-8f91-4a1fa1f06f0c', 55, 250, 'gram', 0, 'gạo'),
+  ('ffb76f20-b054-11f1-8f91-4a1fa1f06f0c', 29, 200, 'gram', 0, 'thịt bò xào'),
+  ('ffb76f20-b054-11f1-8f91-4a1fa1f06f0c',  3, 100, 'gram', 0, 'cải thảo'),
+  ('ffb76f20-b054-11f1-8f91-4a1fa1f06f0c', 13, 15,  'gram', 0, NULL),
+  ('ffb76f20-b054-11f1-8f91-4a1fa1f06f0c', 50, 3,   'gram', 0, NULL),
+  -- Bún đậu mắm tôm
+  ('ffb76f74-b054-11f1-8f91-4a1fa1f06f0c', 56, 300, 'gram', 0, 'bún tươi'),
+  ('ffb76f74-b054-11f1-8f91-4a1fa1f06f0c', 59, 3,   'miếng',0, 'đậu phụ'),
+  ('ffb76f74-b054-11f1-8f91-4a1fa1f06f0c', 40, 150, 'gram', 0, 'tôm sú'),
+  ('ffb76f74-b054-11f1-8f91-4a1fa1f06f0c', 49, 20, 'ml',   0, NULL),
+  ('ffb76f74-b054-11f1-8f91-4a1fa1f06f0c',  7, 25, 'gram', 0, NULL),
+  ('ffb76f74-b054-11f1-8f91-4a1fa1f06f0c', 51, 15, 'ml',   0, NULL),
+  -- Mì quảng
+  ('ffb76fb9-b054-11f1-8f91-4a1fa1f06f0c', 58, 250, 'gram', 0, 'mì sợi'),
+  ('ffb76fb9-b054-11f1-8f91-4a1fa1f06f0c', 40, 150, 'gram', 0, 'tôm sú'),
+  ('ffb76fb9-b054-11f1-8f91-4a1fa1f06f0c', 24, 200, 'gram', 0, 'thịt ba chỉ'),
+  ('ffb76fb9-b054-11f1-8f91-4a1fa1f06f0c',  3, 80,  'gram', 0, 'cải thảo'),
+  ('ffb76fb9-b054-11f1-8f91-4a1fa1f06f0c', 13, 15,  'gram', 0, NULL),
+  ('ffb76fb9-b054-11f1-8f91-4a1fa1f06f0c', 50, 3,   'gram', 0, NULL),
+  -- Lẩu thái hải sản
+  ('ffb975d6-b054-11f1-8f91-4a1fa1f06f0c', 40, 300, 'gram', 0, 'tôm sú'),
+  ('ffb975d6-b054-11f1-8f91-4a1fa1f06f0c', 42, 200, 'gram', 0, 'mực'),
+  ('ffb975d6-b054-11f1-8f91-4a1fa1f06f0c', 38, 300, 'gram', 0, 'cá lóc'),
+  ('ffb975d6-b054-11f1-8f91-4a1fa1f06f0c',  3, 300, 'gram', 0, 'cải thảo'),
+  ('ffb975d6-b054-11f1-8f91-4a1fa1f06f0c',  9, 150, 'gram', 0, 'cà chua'),
+  ('ffb975d6-b054-11f1-8f91-4a1fa1f06f0c', 13, 20,  'gram', 0, NULL),
+  ('ffb975d6-b054-11f1-8f91-4a1fa1f06f0c', 14, 20,  'gram', 0, NULL),
+  ('ffb975d6-b054-11f1-8f91-4a1fa1f06f0c', 53, 20,  'ml',   0, NULL),
+  -- Cá kho tộ
+  ('ffb979b0-b054-11f1-8f91-4a1fa1f06f0c', 38, 500, 'gram', 0, 'cá lóc'),
+  ('ffb979b0-b054-11f1-8f91-4a1fa1f06f0c', 49, 30,  'ml',   0, NULL),
+  ('ffb979b0-b054-11f1-8f91-4a1fa1f06f0c', 13, 20,  'gram', 0, NULL),
+  ('ffb979b0-b054-11f1-8f91-4a1fa1f06f0c', 14, 20,  'gram', 0, NULL),
+  ('ffb979b0-b054-11f1-8f91-4a1fa1f06f0c', 47, 15,  'gram', 0, NULL),
+  ('ffb979b0-b054-11f1-8f91-4a1fa1f06f0c', 51, 25,  'ml',   0, NULL),
+  -- Thịt kho trứng
+  ('ffb97a3a-b054-11f1-8f91-4a1fa1f06f0c', 24, 500, 'gram', 0, 'thịt ba chỉ'),
+  ('ffb97a3a-b054-11f1-8f91-4a1fa1f06f0c', 43, 6,   'quả', 0, 'trứng gà'),
+  ('ffb97a3a-b054-11f1-8f91-4a1fa1f06f0c', 49, 30,  'ml',   0, NULL),
+  ('ffb97a3a-b054-11f1-8f91-4a1fa1f06f0c', 47, 20,  'gram', 0, NULL),
+  ('ffb97a3a-b054-11f1-8f91-4a1fa1f06f0c', 13, 20,  'gram', 0, NULL),
+  ('ffb97a3a-b054-11f1-8f91-4a1fa1f06f0c', 51, 30,  'ml',   0, NULL),
+  -- Canh chua cá (bản gốc, 4 suất)
+  ('ffb97a84-b054-11f1-8f91-4a1fa1f06f0c', 38, 400, 'gram', 0, 'cá lóc'),
+  ('ffb97a84-b054-11f1-8f91-4a1fa1f06f0c',  9, 200, 'gram', 0, 'cà chua'),
+  ('ffb97a84-b054-11f1-8f91-4a1fa1f06f0c', 62, 2,   'quả', 0, 'dưa chuột'),
+  ('ffb97a84-b054-11f1-8f91-4a1fa1f06f0c', 17, 150, 'gram', 0, 'đậu bắp'),
+  ('ffb97a84-b054-11f1-8f91-4a1fa1f06f0c', 13, 20,  'gram', 0, NULL),
+  ('ffb97a84-b054-11f1-8f91-4a1fa1f06f0c', 14, 20,  'gram', 0, NULL),
+  ('ffb97a84-b054-11f1-8f91-4a1fa1f06f0c', 69, 1,   'quả', 0, 'chanh'),
+  -- Gà nướng muối ớt
+  ('ffb97acc-b054-11f1-8f91-4a1fa1f06f0c', 34, 1,   'con',  0, 'gà nguyên con'),
+  ('ffb97acc-b054-11f1-8f91-4a1fa1f06f0c', 13, 20,  'gram', 0, NULL),
+  ('ffb97acc-b054-11f1-8f91-4a1fa1f06f0c', 14, 20,  'gram', 0, NULL),
+  ('ffb97acc-b054-11f1-8f91-4a1fa1f06f0c', 15, 3,   'quả', 0, NULL),
+  ('ffb97acc-b054-11f1-8f91-4a1fa1f06f0c', 46, 15,  'gram', 0, NULL),
+  ('ffb97acc-b054-11f1-8f91-4a1fa1f06f0c', 50, 3,   'gram', 0, NULL),
+  -- Bánh mì trứng ốp la xúc xích
+  ('4b7c108b-58d8-42b0-b30a-b1fac8caf8a6', 43, 4,   'quả', 0, 'trứng gà'),
+  ('4b7c108b-58d8-42b0-b30a-b1fac8caf8a6', 58, 200, 'gram', 0, 'bột mì'),
+  ('4b7c108b-58d8-42b0-b30a-b1fac8caf8a6', 35, 150, 'gram', 0, 'cánh gà (xúc xích)'),
+  ('4b7c108b-58d8-42b0-b30a-b1fac8caf8a6', 49, 15,  'ml',   0, NULL),
+  ('4b7c108b-58d8-42b0-b30a-b1fac8caf8a6',  7, 20,  'gram', 1, 'rau thơm'),
+  -- Bò lúc lắc khoai tây
+  ('27829e0c-f603-4b29-a239-999ad0b295f0', 29, 300, 'gram', 0, 'thịt bò xào'),
+  ('27829e0c-f603-4b29-a239-999ad0b295f0', 10, 400, 'gram', 0, 'khoai tây'),
+  ('27829e0c-f603-4b29-a239-999ad0b295f0',  9, 150, 'gram', 0, 'cà chua'),
+  ('27829e0c-f603-4b29-a239-999ad0b295f0', 13, 15,  'gram', 0, NULL),
+  ('27829e0c-f603-4b29-a239-999ad0b295f0', 49, 20,  'ml',   0, NULL),
+  ('27829e0c-f603-4b29-a239-999ad0b295f0', 48, 5,   'gram', 0, NULL),
+  -- Gà kho sả ớt
+  ('88fe6a0a-5901-43ed-8fde-1ac4db730c60', 33, 400, 'gram', 0, 'ức gà'),
+  ('88fe6a0a-5901-43ed-8fde-1ac4db730c60', 14, 20,  'gram', 0, 'gừng'),
+  ('88fe6a0a-5901-43ed-8fde-1ac4db730c60', 13, 20,  'gram', 0, 'tỏi'),
+  ('88fe6a0a-5901-43ed-8fde-1ac4db730c60', 15, 2,   'quả', 0, 'ớt đỏ'),
+  ('88fe6a0a-5901-43ed-8fde-1ac4db730c60', 49, 20,  'ml',   0, NULL),
+  ('88fe6a0a-5901-43ed-8fde-1ac4db730c60', 51, 20,  'ml',   0, NULL),
+  ('88fe6a0a-5901-43ed-8fde-1ac4db730c60', 47, 10,  'gram', 0, NULL),
+  -- Cá hồi áp chảo măng tây
+  ('356a0733-e06e-477d-847f-bfe1a8d36226', 39, 300, 'gram', 0, 'cá hồi'),
+  ('356a0733-e06e-477d-847f-bfe1a8d36226', 22, 150, 'gram', 0, 'nấm hương'),
+  ('356a0733-e06e-477d-847f-bfe1a8d36226', 49, 20,  'ml',   0, NULL),
+  ('356a0733-e06e-477d-847f-bfe1a8d36226', 48, 5,   'gram', 0, NULL),
+  ('356a0733-e06e-477d-847f-bfe1a8d36226', 13, 15,  'gram', 0, NULL),
+  -- Canh chua cá (bản healthy)
+  ('d78222e1-1b1f-4bb9-90e9-bcf079283c5e', 38, 300, 'gram', 0, 'cá lóc'),
+  ('d78222e1-1b1f-4bb9-90e9-bcf079283c5e',  9, 150, 'gram', 0, 'cà chua'),
+  ('d78222e1-1b1f-4bb9-90e9-bcf079283c5e', 62, 1,   'quả', 0, 'dưa chuột'),
+  ('d78222e1-1b1f-4bb9-90e9-bcf079283c5e', 69, 1,   'quả', 0, 'chanh'),
+  ('d78222e1-1b1f-4bb9-90e9-bcf079283c5e', 13, 15,  'gram', 0, NULL),
+  ('d78222e1-1b1f-4bb9-90e9-bcf079283c5e', 49, 15,  'ml',   0, NULL),
+  -- Canh rau cải thịt băm
+  ('db40ec85-2224-41b6-9491-751573b2324b',  3, 300, 'gram', 0, 'cải thảo'),
+  ('db40ec85-2224-41b6-9491-751573b2324b', 29, 150, 'gram', 0, 'thịt bò xào'),
+  ('db40ec85-2224-41b6-9491-751573b2324b', 13, 15,  'gram', 0, NULL),
+  ('db40ec85-2224-41b6-9491-751573b2324b', 49, 15,  'ml',   0, NULL),
+  ('db40ec85-2224-41b6-9491-751573b2324b', 50, 3,   'gram', 0, NULL),
+  -- Canh tôm nấu bầu
+  ('ec73d307-5c48-4ff1-b80d-cf4e3c4529c7', 40, 250, 'gram', 0, 'tôm sú'),
+  ('ec73d307-5c48-4ff1-b80d-cf4e3c4529c7', 18, 200, 'gram', 0, 'bí đỏ'),
+  ('ec73d307-5c48-4ff1-b80d-cf4e3c4529c7', 13, 15,  'gram', 0, NULL),
+  ('ec73d307-5c48-4ff1-b80d-cf4e3c4529c7', 49, 15,  'ml',   0, NULL),
+  ('ec73d307-5c48-4ff1-b80d-cf4e3c4529c7', 50, 3,   'gram', 0, NULL),
+  -- Đậu hũ sốt cà chua healthy
+  ('7a41f2c2-733c-4246-9340-e5e9b63b178d', 59, 2,   'miếng',0, 'đậu phụ'),
+  ('7a41f2c2-733c-4246-9340-e5e9b63b178d',  9, 150, 'gram', 0, 'cà chua'),
+  ('7a41f2c2-733c-4246-9340-e5e9b63b178d', 13, 15,  'gram', 0, NULL),
+  ('7a41f2c2-733c-4246-9340-e5e9b63b178d', 49, 15,  'ml',   0, NULL),
+  ('7a41f2c2-733c-4246-9340-e5e9b63b178d', 50, 3,   'gram', 0, NULL),
+  -- Thịt ba chỉ rim cà chua húng quế
+  ('c220f339-af22-4105-96fb-88136cd19b3a', 24, 300, 'gram', 0, 'thịt ba chỉ'),
+  ('c220f339-af22-4105-96fb-88136cd19b3a',  9, 150, 'gram', 0, 'cà chua'),
+  ('c220f339-af22-4105-96fb-88136cd19b3a',  5, 50,  'gram', 0, 'rau húng quế'),
+  ('c220f339-af22-4105-96fb-88136cd19b3a', 13, 15,  'gram', 0, NULL),
+  ('c220f339-af22-4105-96fb-88136cd19b3a', 49, 15,  'ml',   0, NULL),
+  ('c220f339-af22-4105-96fb-88136cd19b3a', 47, 8,   'gram', 0, NULL),
+  -- Ức gà áp chảo sốt tiêu
+  ('a8e2f54b-7d1b-4361-9f10-8b7400eddea9', 33, 300, 'gram', 0, 'ức gà'),
+  ('a8e2f54b-7d1b-4361-9f10-8b7400eddea9', 48, 8,   'gram', 0, 'tiêu đen'),
+  ('a8e2f54b-7d1b-4361-9f10-8b7400eddea9', 13, 15,  'gram', 0, NULL),
+  ('a8e2f54b-7d1b-4361-9f10-8b7400eddea9', 49, 15,  'ml',   0, NULL),
+  ('a8e2f54b-7d1b-4361-9f10-8b7400eddea9', 50, 3,   'gram', 0, NULL);
+
+-- ============================================================
+-- [6c] RECIPE STEPS — các bước nấu cho từng công thức
+-- ============================================================
+INSERT INTO `recipe_steps` (`recipeId`, `stepNumber`, `instruction`, `durationMinutes`) VALUES
+  ('ffb34583-b054-11f1-8f91-4a1fa1f06f0c', 1, 'Rửa sạch xương ống và bắp bò, cho vào nồi nước lạnh ninh 3-4 tiếng với gừng.', 180),
+  ('ffb34583-b054-11f1-8f91-4a1fa1f06f0c', 2, 'Hò tan bột nếp với nước, đổ vào nồi ninh, ninh thêm 30 phút cho nước trong và ngọt.', 40),
+  ('ffb34583-b054-11f1-8f91-4a1fa1f06f0c', 3, 'Nêm nếm gia vị: muối, nước mắm, tiêu. Thêm hành lá, hành tây thái nhỏ.', 10),
+  ('ffb34583-b054-11f1-8f91-4a1fa1f06f0c', 4, 'Nấu gạo thành cơm, xếp bắp bò, thịt bò, mắm tôm lên trên, chan nước dùng nóng.', 45),
+  ('ffb4b01b-b054-11f1-8f91-4a1fa1f06f0c', 1, 'Trộn bột mì với nước và muối, để bột nghỉ 15 phút cho mềm.', 15),
+  ('ffb4b01b-b054-11f1-8f91-4a1fa1f06f0c', 2, 'Cán bột thành 2 miếng bánh mì, rán vàng hai mặt trên chảo dầu nóng.', 8),
+  ('ffb4b01b-b054-11f1-8f91-4a1fa1f06f0c', 3, 'Đánh tan trứng với chút muối, chiên thành trứng ốp la chín vừa.', 5),
+  ('ffb4b01b-b054-11f1-8f91-4a1fa1f06f0c', 4, 'Xếp trứng lên bánh mì, rắc hành lá và thêm tương ớt.', 2),
+  ('ffb4b272-b054-11f1-8f91-4a1fa1f06f0c', 1, 'Ngâm đậu xanh qua đêm, xay nhuyễn thành nước đậu.', 20),
+  ('ffb4b272-b054-11f1-8f91-4a1fa1f06f0c', 2, 'Trộn nước đậu với gạo nếp, để nghỉ 2 tiếng rồi hấp chín.', 30),
+  ('ffb4b272-b054-11f1-8f91-4a1fa1f06f0c', 3, 'Thịt ba chỉ thái mỏng, ướp nước mắm, tỏi băm và tiêu.', 10),
+  ('ffb4b272-b054-11f1-8f91-4a1fa1f06f0c', 4, 'Rán thịt vàng giòn, cho đậu xanh đã xay vào xào cùng, nêm bột ngọt.', 12),
+  ('ffb4b2ea-b054-11f1-8f91-4a1fa1f06f0c', 1, 'Rửa sạch chân giò, thịt bò xào, băm nhỏ.', 10),
+  ('ffb4b2ea-b054-11f1-8f91-4a1fa1f06f0c', 2, 'Hầm thịt với 2 lít nước trong 1 tiếng cho nước dùng trong vị.', 60),
+  ('ffb4b2ea-b054-11f1-8f91-4a1fa1f06f0c', 3, 'Cho gạo vào nồi nước dùng, nấu cháo nhừ khuấy thường xuyên.', 30),
+  ('ffb4b2ea-b054-11f1-8f91-4a1fa1f06f0c', 4, 'Nêm nếm với nước mắm, gừng băm, rắc hành lá và tiêu đen.', 5),
+  ('ffb4b33d-b054-11f1-8f91-4a1fa1f06f0c', 1, 'Ninh xương heo với gừng để lấy nước dùng trong vị.', 60),
+  ('ffb4b33d-b054-11f1-8f91-4a1fa1f06f0c', 2, 'Thịt bò xào và thịt nạc vai thái mỏng, ướp nước mắm tương ớt.', 15),
+  ('ffb4b33d-b054-11f1-8f91-4a1fa1f06f0c', 3, 'Đun nước sôi, cho bún vào chần, xếp thịt lên trên.', 10),
+  ('ffb4b33d-b054-11f1-8f91-4a1fa1f06f0c', 4, 'Chan nước dùng nóng, rắc hành lá, tỏi, ớt và mắm ruốc.', 5),
+  ('ffb76aee-b054-11f1-8f91-4a1fa1f06f0c', 1, 'Ướp sườn với nước mắm, tỏi, tiêu trong 30 phút.', 30),
+  ('ffb76aee-b054-11f1-8f91-4a1fa1f06f0c', 2, 'Nướng sườn trên lò than hoặc chảo nướng đến khi chín vàng.', 25),
+  ('ffb76aee-b054-11f1-8f91-4a1fa1f06f0c', 3, 'Hấp chả trứng với bì heo đã luộc mềm.', 20),
+  ('ffb76aee-b054-11f1-8f91-4a1fa1f06f0c', 4, 'Nấu cơm tấm, xếp sườn, bì, chả lên trên, chan nước mắm pha.', 30),
+  ('ffb76ea2-b054-11f1-8f91-4a1fa1f06f0c', 1, 'Thịt ba chỉ thái mỏng, ướp nước mắm, tỏi và tiêu.', 15),
+  ('ffb76ea2-b054-11f1-8f91-4a1fa1f06f0c', 2, 'Nướng hoặc áp chảo thịt đến khi chín vàng, có vỏ.', 20),
+  ('ffb76ea2-b054-11f1-8f91-4a1fa1f06f0c', 3, 'Dưa chuột, dưa leo thái sợi, bóp với chút nước mắm cho giòn.', 5),
+  ('ffb76ea2-b054-11f1-8f91-4a1fa1f06f0c', 4, 'Bún tươi xếp bát, cho thịt lên, rưới nước mắm pha và hành lá.', 5),
+  ('ffb76f20-b054-11f1-8f91-4a1fa1f06f0c', 1, 'Cơm nguội được vo thành từng viên nhỏ.', 10),
+  ('ffb76f20-b054-11f1-8f91-4a1fa1f06f0c', 2, 'Xào thịt bò với tỏi, thêm nước mắm và tiêu.', 10),
+  ('ffb76f20-b054-11f1-8f91-4a1fa1f06f0c', 3, 'Cho cơm vào xào cùng dưa cải thái nhỏ, xào lửa lớn cho khét.', 12),
+  ('ffb76f20-b054-11f1-8f91-4a1fa1f06f0c', 4, 'Nêm bột ngọt, rắc hành lá, ăn nóng.', 3),
+  ('ffb76f74-b054-11f1-8f91-4a1fa1f06f0c', 1, 'Đậu phụ cắt miếng, rán vàng giòn rồi vớt ra.', 10),
+  ('ffb76f74-b054-11f1-8f91-4a1fa1f06f0c', 2, 'Tôm sú bóc vỏ, ướp nước mắm và tiêu.', 8),
+  ('ffb76f74-b054-11f1-8f91-4a1fa1f06f0c', 3, 'Pha nước mắm chấm: nước mắm, dầu ăn, tỏi băm, ớt, đường phèn.', 5),
+  ('ffb76f74-b054-11f1-8f91-4a1fa1f06f0c', 4, 'Bún tươi xếp bát, cho đậu phụ, tôm, hành lá, chấm nước mắm.', 5),
+  ('ffb76fb9-b054-11f1-8f91-4a1fa1f06f0c', 1, 'Luộc mì sợi, vớt ra rửa lạnh để không dính.', 5),
+  ('ffb76fb9-b054-11f1-8f91-4a1fa1f06f0c', 2, 'Tôm sú bóc chân, xào với tỏi cho thơm.', 8),
+  ('ffb76fb9-b054-11f1-8f91-4a1fa1f06f0c', 3, 'Thịt ba chỉ thái sợi, xào chín, thêm nước mắm và bột ngọt.', 10),
+  ('ffb76fb9-b054-11f1-8f91-4a1fa1f06f0c', 4, 'Trả mì vào tô, xếp tôm thịt, rau sống, ăn kèm nước chấm.', 5),
+  ('ffb975d6-b054-11f1-8f91-4a1fa1f06f0c', 1, 'Nấu nồi lẩu chua cay với cà chua, dấm, ớt, tỏi, gừng.', 20),
+  ('ffb975d6-b054-11f1-8f91-4a1fa1f06f0c', 2, 'Làm sạch tôm, mực, cá lóc, cắt miếng vừa ăn.', 15),
+  ('ffb975d6-b054-11f1-8f91-4a1fa1f06f0c', 3, 'Cho hải sản vào lẩu, ninh 5 phút, không nấu quá lâu để mất tươi.', 10),
+  ('ffb975d6-b054-11f1-8f91-4a1fa1f06f0c', 4, 'Thêm cải thảo và rau ăn kèm, bày bàn và ăn nóng.', 5),
+  ('ffb979b0-b054-11f1-8f91-4a1fa1f06f0c', 1, 'Cá lóc làm sạch, cắt khúc, lau khô.', 10),
+  ('ffb979b0-b054-11f1-8f91-4a1fa1f06f0c', 2, 'Ướp cá với nước mắm, tỏi, tiêu, đường phèn trong 20 phút.', 20),
+  ('ffb979b0-b054-11f1-8f91-4a1fa1f06f0c', 3, 'Rán cá vàng sềm, sau đó kho nhẹ với nước màu để thấm vị.', 25),
+  ('ffb979b0-b054-11f1-8f91-4a1fa1f06f0c', 4, 'Nêm lại vị, rắc hành lá và ăn kèm cơm nóng.', 5),
+  ('ffb97a3a-b054-11f1-8f91-4a1fa1f06f0c', 1, 'Thịt ba chỉ cắt miếng vừa ăn, rửa sạch.', 10),
+  ('ffb97a3a-b054-11f1-8f91-4a1fa1f06f0c', 2, 'Trứng luộc bóc vỏ, xắt miếng.', 12),
+  ('ffb97a3a-b054-11f1-8f91-4a1fa1f06f0c', 3, 'Thịt kho với nước mắm, dầu ăn, đường, tỏi, nêm vừa ăn.', 25),
+  ('ffb97a3a-b054-11f1-8f91-4a1fa1f06f0c', 4, 'Cho trứng vào kho cùng, vặn lửa nhỏ ninh thêm 15 phút.', 15),
+  ('ffb97a84-b054-11f1-8f91-4a1fa1f06f0c', 1, 'Cá lóc làm sạch, cắt miếng, ướp nước mắm và tiêu.', 12),
+  ('ffb97a84-b054-11f1-8f91-4a1fa1f06f0c', 2, 'Cà chua bổ múi, dưa chuột thái miếng.', 8),
+  ('ffb97a84-b054-11f1-8f91-4a1fa1f06f0c', 3, 'Nấu nước dùng chua với cà chua, đậu bắp, gừng, tỏi.', 12),
+  ('ffb97a84-b054-11f1-8f91-4a1fa1f06f0c', 4, 'Cho cá vào nấu chín, nêm chanh, nước mắm, ăn nóng.', 8),
+  ('ffb97acc-b054-11f1-8f91-4a1fa1f06f0c', 1, 'Gà làm sạch, xát muối với ớt khô, tỏi, gừng, để ướp 30 phút.', 30),
+  ('ffb97acc-b054-11f1-8f91-4a1fa1f06f0c', 2, 'Rửa sạch gà sau khi ướp, để ráo.', 5),
+  ('ffb97acc-b054-11f1-8f91-4a1fa1f06f0c', 3, 'Nướng gà trên lò than hoặc nồi nướng khoảng 50 phút, mỡ chảy vàng.', 50),
+  ('ffb97acc-b054-11f1-8f91-4a1fa1f06f0c', 4, 'Chặn gà ra thành miếng, rắc hành lá và ăn nóng.', 5),
+  ('4b7c108b-58d8-42b0-b30a-b1fac8caf8a6', 1, 'Trộn bột mì, nước, muối để làm bánh mì.', 10),
+  ('4b7c108b-58d8-42b0-b30a-b1fac8caf8a6', 2, 'Cán và rán bánh mì vàng giòn.', 8),
+  ('4b7c108b-58d8-42b0-b30a-b1fac8caf8a6', 3, 'Chiên xúc xích vàng, đánh trứng ốp la chín vừa.', 8),
+  ('4b7c108b-58d8-42b0-b30a-b1fac8caf8a6', 4, 'Xếp trứng và xúc xích lên bánh mì, rắc hành lá, ăn nóng.', 3),
+  ('27829e0c-f603-4b29-a239-999ad0b295f0', 1, 'Thịt bò thái miếng, ướp nước mắm, tiêu, tỏi.', 12),
+  ('27829e0c-f603-4b29-a239-999ad0b295f0', 2, 'Khoai tây cắt miếng, luộc chín rồi chiên vàng giòn.', 15),
+  ('27829e0c-f603-4b29-a239-999ad0b295f0', 3, 'Lúc lắc thịt bò trên chảo thật nóng cho mềm và thơm.', 8),
+  ('27829e0c-f603-4b29-a239-999ad0b295f0', 4, 'Trộn khoai tây, cà chua sốt vào, nêm vừa ăn.', 5),
+  ('88fe6a0a-5901-43ed-8fde-1ac4db730c60', 1, 'Ức gà cắt miếng, ướp nước mắm, tiêu, ớt.', 15),
+  ('88fe6a0a-5901-43ed-8fde-1ac4db730c60', 2, 'Gừng tỏi băm thơm, rang vàng với dầu ăn.', 5),
+  ('88fe6a0a-5901-43ed-8fde-1ac4db730c60', 3, 'Cho thịt gà vào xào, áp chảo cho vàng mặt.', 15),
+  ('88fe6a0a-5901-43ed-8fde-1ac4db730c60', 4, 'Rưới nước mắm, đường phèn, nấu rút cạn cho món kho đậm đà.', 12),
+  ('356a0733-e06e-477d-847f-bfe1a8d36226', 1, 'Cá hồi rửa sạch, lau khô, cắt miếng vừa ăn.', 8),
+  ('356a0733-e06e-477d-847f-bfe1a8d36226', 2, 'Nấm hương thái lát, xào nhanh với tỏi.', 5),
+  ('356a0733-e06e-477d-847f-bfe1a8d36226', 3, 'Áp chảo cá hồi mỗi mặt 3 phút, không ép quá mạnh tay.', 8),
+  ('356a0733-e06e-477d-847f-bfe1a8d36226', 4, 'Sốt tiêu đen và dầu ăn, chan lên cá, ăn ngay.', 4),
+  ('d78222e1-1b1f-4bb9-90e9-bcf079283c5e', 1, 'Cá lóc làm sạch, cắt miếng, ướp nước mắm và tiêu.', 10),
+  ('d78222e1-1b1f-4bb9-90e9-bcf079283c5e', 2, 'Cà chua bổ múi, dưa chuột thái miếng, băm tỏi.', 8),
+  ('d78222e1-1b1f-4bb9-90e9-bcf079283c5e', 3, 'Nấu nước dùng chua với cà chua, nêm chanh và nước mắm.', 12),
+  ('d78222e1-1b1f-4bb9-90e9-bcf079283c5e', 4, 'Cho cá vào nấu chín, rắc hành lá, ăn nóng.', 6),
+  ('db40ec85-2224-41b6-9491-751573b2324b', 1, 'Thịt bò băm nhỏ, ướp nước mắm và tiêu.', 8),
+  ('db40ec85-2224-41b6-9491-751573b2324b', 2, 'Cải thảo rửa sạch, cắt khúc.', 5),
+  ('db40ec85-2224-41b6-9491-751573b2324b', 3, 'Phi thơm tỏi, cho thịt băm vào xào.', 6),
+  ('db40ec85-2224-41b6-9491-751573b2324b', 4, 'Cho cải thảo vào, nêm bột ngọt, nấu đến khi rau chín mềm.', 8),
+  ('ec73d307-5c48-4ff1-b80d-cf4e3c4529c7', 1, 'Tôm sú bóc vỏ, bỏ ruột, rửa sạch.', 10),
+  ('ec73d307-5c48-4ff1-b80d-cf4e3c4529c7', 2, 'Bí đỏ gọt vỏ, cắt miếng nhỏ.', 8),
+  ('ec73d307-5c48-4ff1-b80d-cf4e3c4529c7', 3, 'Xào tỏi thơm, cho bí đỏ vào nấu mềm.', 10),
+  ('ec73d307-5c48-4ff1-b80d-cf4e3c4529c7', 4, 'Cho tôm vào nấu chín vừa, nêm nếm, rắc hành lá.', 6),
+  ('7a41f2c2-733c-4246-9340-e5e9b63b178d', 1, 'Đậu phụ cắt miếng, luộc qua nước cho bớt tanh.', 8),
+  ('7a41f2c2-733c-4246-9340-e5e9b63b178d', 2, 'Cà chua bổ múi, xào nhuyễn thành sốt.', 10),
+  ('7a41f2c2-733c-4246-9340-e5e9b63b178d', 3, 'Cho đậu phụ vào sốt, nêm bột ngọt và tiêu.', 6),
+  ('7a41f2c2-733c-4246-9340-e5e9b63b178d', 4, 'Rắc hành lá, ăn nóng với cơm.', 3),
+  ('c220f339-af22-4105-96fb-88136cd19b3a', 1, 'Thịt ba chỉ thái mỏng, ướp nước mắm, tỏi, tiêu, đường phèn.', 15),
+  ('c220f339-af22-4105-96fb-88136cd19b3a', 2, 'Rau húng quế rửa sạch, để ráo.', 5),
+  ('c220f339-af22-4105-96fb-88136cd19b3a', 3, 'Cà chua xay nhuyễn thành sốt, sốt với thịt cho ngọt.', 12),
+  ('c220f339-af22-4105-96fb-88136cd19b3a', 4, 'Thêm húng quế vào sau cùng, nếm vừa ăn và bày ra.', 5),
+  ('a8e2f54b-7d1b-4361-9f10-8b7400eddea9', 1, 'Ức gà thái miếng, ướp tiêu đen và chút muối.', 10),
+  ('a8e2f54b-7d1b-4361-9f10-8b7400eddea9', 2, 'Làm nóng chảo, áp ức gà vàng mỗi mặt.', 10),
+  ('a8e2f54b-7d1b-4361-9f10-8b7400eddea9', 3, 'Pha sốt tiêu: dầu ăn, tiêu xay, nước, bột ngọt.', 3),
+  ('a8e2f54b-7d1b-4361-9f10-8b7400eddea9', 4, 'Rưới sốt tiêu lên thịt, ăn ngay khi còn nóng.', 3);
+
+-- ============================================================
+-- [6c] RECIPE TAGS — gắn tag phân loại cho từng công thức
+-- ============================================================
+-- ⚠️ `recipe_tags` có composite PK (`recipeId`, `tagId`) -> `INSERT IGNORE`
+--    chống trùng, chạy lại nhiều lần vẫn sạch.
+--
+-- Tag id (xem block [5] TAGS):
+--   Cuisine:   1 Món Bắc, 2 Món Nam, 3 Món Trung, 4 Món Hàn, 5 Món Nhật, 6 Món Tây
+--   Dietary:   7 Chay thuần, 8 Ít calo, 9 Giàu đạm, 10 Không gluten, 11 Giảm cân
+--   Technique: 12 Xào nhanh, 13 Hấp, 14 Luộc, 15 Chiên, 16 Kho, 17 Nướng, 18 Nấu canh
+--   Occasion:  19 Bữa sáng nhanh, 20 Cơm gia đình, 21 Tiệc cuối tuần, 22 Dã ngoại
+DELETE FROM `recipe_tags`;
+INSERT IGNORE INTO `recipe_tags` (`recipeId`, `tagId`) VALUES
+  -- Phở bò: Món Bắc, Luộc, Giàu đạm, Bữa sáng nhanh
+  ('ffb34583-b054-11f1-8f91-4a1fa1f06f0c', 1),
+  ('ffb34583-b054-11f1-8f91-4a1fa1f06f0c', 14),
+  ('ffb34583-b054-11f1-8f91-4a1fa1f06f0c', 9),
+  ('ffb34583-b054-11f1-8f91-4a1fa1f06f0c', 19),
+  -- Bánh mì trứng: Món Bắc, Xào nhanh, Bữa sáng nhanh
+  ('ffb4b01b-b054-11f1-8f91-4a1fa1f06f0c', 1),
+  ('ffb4b01b-b054-11f1-8f91-4a1fa1f06f0c', 12),
+  ('ffb4b01b-b054-11f1-8f91-4a1fa1f06f0c', 19),
+  -- Xôi xéo: Món Bắc, Hấp, Cơm gia đình
+  ('ffb4b272-b054-11f1-8f91-4a1fa1f06f0c', 1),
+  ('ffb4b272-b054-11f1-8f91-4a1fa1f06f0c', 13),
+  ('ffb4b272-b054-11f1-8f91-4a1fa1f06f0c', 20),
+  -- Cháo lòng: Món Bắc, Luộc, Bữa sáng nhanh
+  ('ffb4b2ea-b054-11f1-8f91-4a1fa1f06f0c', 1),
+  ('ffb4b2ea-b054-11f1-8f91-4a1fa1f06f0c', 14),
+  ('ffb4b2ea-b054-11f1-8f91-4a1fa1f06f0c', 19),
+  -- Bún bò Huế: Món Bắc, Nấu canh, Giàu đạm, Tiệc cuối tuần
+  ('ffb4b33d-b054-11f1-8f91-4a1fa1f06f0c', 1),
+  ('ffb4b33d-b054-11f1-8f91-4a1fa1f06f0c', 18),
+  ('ffb4b33d-b054-11f1-8f91-4a1fa1f06f0c', 9),
+  ('ffb4b33d-b054-11f1-8f91-4a1fa1f06f0c', 21),
+  -- Cơm tấm sườn bì chả: Món Nam, Hấp, Cơm gia đình
+  ('ffb76aee-b054-11f1-8f91-4a1fa1f06f0c', 2),
+  ('ffb76aee-b054-11f1-8f91-4a1fa1f06f0c', 13),
+  ('ffb76aee-b054-11f1-8f91-4a1fa1f06f0c', 20),
+  -- Bún thịt nướng: Món Nam, Xào nhanh, Cơm gia đình
+  ('ffb76ea2-b054-11f1-8f91-4a1fa1f06f0c', 2),
+  ('ffb76ea2-b054-11f1-8f91-4a1fa1f06f0c', 12),
+  ('ffb76ea2-b054-11f1-8f91-4a1fa1f06f0c', 20),
+  -- Cơm rang dưa bò: Món Nam, Xào nhanh, Ít calo
+  ('ffb76f20-b054-11f1-8f91-4a1fa1f06f0c', 2),
+  ('ffb76f20-b054-11f1-8f91-4a1fa1f06f0c', 12),
+  ('ffb76f20-b054-11f1-8f91-4a1fa1f06f0c', 8),
+  -- Bún đậu mắm tôm: Món Nam, Chiên, Chay thuần, Cơm gia đình
+  ('ffb76f74-b054-11f1-8f91-4a1fa1f06f0c', 2),
+  ('ffb76f74-b054-11f1-8f91-4a1fa1f06f0c', 15),
+  ('ffb76f74-b054-11f1-8f91-4a1fa1f06f0c', 7),
+  ('ffb76f74-b054-11f1-8f91-4a1fa1f06f0c', 20),
+  -- Mì quảng: Món Trung, Xào nhanh, Tiệc cuối tuần
+  ('ffb76fb9-b054-11f1-8f91-4a1fa1f06f0c', 3),
+  ('ffb76fb9-b054-11f1-8f91-4a1fa1f06f0c', 12),
+  ('ffb76fb9-b054-11f1-8f91-4a1fa1f06f0c', 21),
+  -- Lẩu thái hải sản: Món Trung, Nấu canh, Tiệc cuối tuần
+  ('ffb975d6-b054-11f1-8f91-4a1fa1f06f0c', 3),
+  ('ffb975d6-b054-11f1-8f91-4a1fa1f06f0c', 18),
+  ('ffb975d6-b054-11f1-8f91-4a1fa1f06f0c', 21),
+  -- Cá kho tộ: Món Nam, Kho, Cơm gia đình
+  ('ffb979b0-b054-11f1-8f91-4a1fa1f06f0c', 2),
+  ('ffb979b0-b054-11f1-8f91-4a1fa1f06f0c', 16),
+  ('ffb979b0-b054-11f1-8f91-4a1fa1f06f0c', 20),
+  -- Thịt kho trứng: Món Nam, Kho, Cơm gia đình
+  ('ffb97a3a-b054-11f1-8f91-4a1fa1f06f0c', 2),
+  ('ffb97a3a-b054-11f1-8f91-4a1fa1f06f0c', 16),
+  ('ffb97a3a-b054-11f1-8f91-4a1fa1f06f0c', 20),
+  -- Canh chua cá (bản gốc): Món Nam, Nấu canh, Giảm cân
+  ('ffb97a84-b054-11f1-8f91-4a1fa1f06f0c', 2),
+  ('ffb97a84-b054-11f1-8f91-4a1fa1f06f0c', 18),
+  ('ffb97a84-b054-11f1-8f91-4a1fa1f06f0c', 11),
+  -- Gà nướng muối ớt: Món Trung, Nướng, Tiệc cuối tuần
+  ('ffb97acc-b054-11f1-8f91-4a1fa1f06f0c', 3),
+  ('ffb97acc-b054-11f1-8f91-4a1fa1f06f0c', 17),
+  ('ffb97acc-b054-11f1-8f91-4a1fa1f06f0c', 21),
+  -- Bánh mì trứng ốp la xúc xích (healthy): Món Tây, Xào nhanh, Bữa sáng nhanh
+  ('4b7c108b-58d8-42b0-b30a-b1fac8caf8a6', 6),
+  ('4b7c108b-58d8-42b0-b30a-b1fac8caf8a6', 12),
+  ('4b7c108b-58d8-42b0-b30a-b1fac8caf8a6', 19),
+  -- Bò lúc lắc khoai tây (healthy): Món Tây, Xào nhanh, Giàu đạm, Giảm cân
+  ('27829e0c-f603-4b29-a239-999ad0b295f0', 6),
+  ('27829e0c-f603-4b29-a239-999ad0b295f0', 12),
+  ('27829e0c-f603-4b29-a239-999ad0b295f0', 9),
+  ('27829e0c-f603-4b29-a239-999ad0b295f0', 11),
+  -- Gà kho sả ớt (healthy): Món Trung, Kho, Cơm gia đình
+  ('88fe6a0a-5901-43ed-8fde-1ac4db730c60', 3),
+  ('88fe6a0a-5901-43ed-8fde-1ac4db730c60', 16),
+  ('88fe6a0a-5901-43ed-8fde-1ac4db730c60', 20),
+  -- Cá hồi áp chảo măng tây (healthy): Món Tây, Xào nhanh, Giảm cân
+  ('356a0733-e06e-477d-847f-bfe1a8d36226', 6),
+  ('356a0733-e06e-477d-847f-bfe1a8d36226', 12),
+  ('356a0733-e06e-477d-847f-bfe1a8d36226', 11),
+  -- Canh chua cá chanh dây (healthy): Món Nam, Nấu canh, Giảm cân
+  ('d78222e1-1b1f-4bb9-90e9-bcf079283c5e', 2),
+  ('d78222e1-1b1f-4bb9-90e9-bcf079283c5e', 18),
+  ('d78222e1-1b1f-4bb9-90e9-bcf079283c5e', 11),
+  -- Canh rau cải thịt băm (healthy): Món Bắc, Nấu canh, Ít calo, Giảm cân
+  ('db40ec85-2224-41b6-9491-751573b2324b', 1),
+  ('db40ec85-2224-41b6-9491-751573b2324b', 18),
+  ('db40ec85-2224-41b6-9491-751573b2324b', 8),
+  ('db40ec85-2224-41b6-9491-751573b2324b', 11),
+  -- Canh tôm nấu bầu (healthy): Món Bắc, Nấu canh, Ít calo
+  ('ec73d307-5c48-4ff1-b80d-cf4e3c4529c7', 1),
+  ('ec73d307-5c48-4ff1-b80d-cf4e3c4529c7', 18),
+  ('ec73d307-5c48-4ff1-b80d-cf4e3c4529c7', 8),
+  -- Đậu hũ sốt cà chua healthy: Món Trung, Xào nhanh, Chay thuần, Giảm cân
+  ('7a41f2c2-733c-4246-9340-e5e9b63b178d', 3),
+  ('7a41f2c2-733c-4246-9340-e5e9b63b178d', 12),
+  ('7a41f2c2-733c-4246-9340-e5e9b63b178d', 7),
+  ('7a41f2c2-733c-4246-9340-e5e9b63b178d', 11),
+  -- Thịt ba chỉ rim cà chua húng quế: Món Bắc, Xào nhanh, Cơm gia đình
+  ('c220f339-af22-4105-96fb-88136cd19b3a', 1),
+  ('c220f339-af22-4105-96fb-88136cd19b3a', 12),
+  ('c220f339-af22-4105-96fb-88136cd19b3a', 20),
+  -- Ức gà áp chảo sốt tiêu: Món Tây, Xào nhanh, Giàu đạm, Giảm cân
+  ('a8e2f54b-7d1b-4361-9f10-8b7400eddea9', 6),
+  ('a8e2f54b-7d1b-4361-9f10-8b7400eddea9', 12),
+  ('a8e2f54b-7d1b-4361-9f10-8b7400eddea9', 9),
+  ('a8e2f54b-7d1b-4361-9f10-8b7400eddea9', 11);
 
 -- ============================================================
 -- [7] AI PROVIDER CONFIG

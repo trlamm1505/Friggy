@@ -25,7 +25,7 @@ import { AppColors } from '../../theme/colors';
 import { sp } from '../../utils/responsive';
 import { FontFamily, FontWeights } from '../../theme/typography';
 import { useTranslation } from 'react-i18next';
-import { Trash2, GripVertical, Minus, Plus, TriangleAlert } from 'lucide-react-native';
+import { Trash2, GripVertical, Minus, Plus, TriangleAlert, Search, Check } from 'lucide-react-native';
 import { COMPARTMENT_LABEL } from '../../../data/services/real/RealFridgeService';
 
 const STORAGE_KEYS = ['fridge', 'freezer', 'pantry'];
@@ -46,6 +46,12 @@ export const DetectionItem = ({
   onStorageChange,
   allergyWarning = false,
   needsConfirm = false,
+  // ── B3: nút tra danh mục (món AI không map được DB) ──
+  // `onPickFromCatalog` chỉ có khi màn cha cung cấp. Khi có, hiện nút
+  // "Chọn trong danh mục" để user gắn món này với một `ingredientId` hợp lệ.
+  // Không có -> món đó chắc chắn sẽ fail ở BE khi confirm.
+  onPickFromCatalog,
+  catalogPicked = false,
 }) => {
   const { isDark } = useTheme();
   const { i18n } = useTranslation();
@@ -169,6 +175,56 @@ export const DetectionItem = ({
         >
           {isEn ? 'Please double-check this item' : 'Vui lòng kiểm tra lại món này'}
         </Text>
+      ) : null}
+
+      {/* ── Nút tra danh mục ──
+          Món AI nhận diện mà KHÔNG có trong bảng `ingredients` sẽ bị BE từ chối
+          khi confirm (`fridge.service.ts:497` -> 400). Nút này cho user chọn
+          đúng món trong danh mục -> BE resolve chắc chắn, không cần sửa BE. */}
+      {editable && onPickFromCatalog ? (
+        <Pressable
+          onPress={onPickFromCatalog}
+          hitSlop={6}
+          style={({ pressed }) => [
+            styles.catalogBtn,
+            {
+              backgroundColor: catalogPicked ? '#E8F5E9' : isDark ? '#233629' : '#F2F5F3',
+              borderColor: catalogPicked
+                ? AppColors.primary
+                : isDark
+                  ? '#2E4D36'
+                  : '#C8E6C9',
+              opacity: pressed ? 0.7 : 1,
+            },
+          ]}
+        >
+          {catalogPicked ? (
+            <Check color={AppColors.primary} size={13} strokeWidth={2.5} />
+          ) : (
+            <Search color={isDark ? AppColors.primaryLight : AppColors.primary} size={13} />
+          )}
+          <Text
+            style={[
+              styles.catalogBtnText,
+              {
+                color: catalogPicked
+                  ? AppColors.primary
+                  : isDark
+                    ? AppColors.primaryLight
+                    : AppColors.primary,
+                fontSize: sp(11),
+              },
+            ]}
+          >
+            {catalogPicked
+              ? isEn
+                ? 'Matched in catalog'
+                : 'Đã khớp danh mục'
+              : isEn
+                ? 'Pick from catalog'
+                : 'Chọn trong danh mục'}
+          </Text>
+        </Pressable>
       ) : null}
 
       {/* ── Dòng 2: số lượng + đơn vị (chỉ khi editable + có callback) ── */}
@@ -337,6 +393,23 @@ const styles = StyleSheet.create({
     fontWeight: FontWeights.medium,
     marginTop: sp(6),
     marginLeft: sp(26),
+  },
+  // Nút "Chọn trong danh mục" cho món AI không map được DB
+  catalogBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: sp(5),
+    marginTop: sp(8),
+    marginLeft: sp(26),
+    paddingHorizontal: sp(10),
+    paddingVertical: sp(5),
+    borderRadius: sp(14),
+    borderWidth: 1,
+  },
+  catalogBtnText: {
+    fontFamily: FontFamily.semibold,
+    fontWeight: FontWeights.semibold,
   },
   qtyRow: {
     flexDirection: 'row',

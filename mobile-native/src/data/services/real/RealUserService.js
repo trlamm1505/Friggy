@@ -347,6 +347,36 @@ export class RealUserService extends IUserService {
   }
 
   // ══════════════════════════════════════════════════════════════
+  // AI USAGE
+  // ══════════════════════════════════════════════════════════════
+
+  /**
+   * GET /users/me/ai-usage - lượt AI đã dùng trong tuần.
+   *
+   * ⚠️ VÌ SAO CẦN METHOD NÀY:
+   *   `UserProfileScreen` trước đây HIỂN THỊ SỐ CỨNG (`aiUsed = 0`,
+   *   `aiTotal = 17`) -> user thấy quota sai dù BE có sẵn endpoint.
+   *
+   * ⚠️ `limit = -1` NGHĨA LÀ KHÔNG GIỚI HẠN (gói cao cấp), KHÔNG phải lỗi:
+   *   BE `AiUsageResponseDto.limit` = -1 khi không giới hạn.
+   *   UI phải hiện "không giới hạn" -> xem `UserProfileScreen`.
+   *   Ở đây giữ nguyên -1 để UI tự diễn giải (không ép về 0).
+   *
+   * @returns {Promise<{used:number,limit:number,remaining:number,plan:string,breakdown:Object,windowDays:number}>}
+   */
+  async getAiUsage() {
+    const res = await ApiClient.get('/users/me/ai-usage');
+    return {
+      used: res?.used ?? 0,
+      limit: res?.limit ?? -1,
+      remaining: res?.remaining ?? -1,
+      plan: res?.plan ?? 'free',
+      breakdown: res?.breakdown ?? {},
+      windowDays: res?.windowDays ?? 7,
+    };
+  }
+
+  // ══════════════════════════════════════════════════════════════
   // SUBSCRIPTION
   // ══════════════════════════════════════════════════════════════
 

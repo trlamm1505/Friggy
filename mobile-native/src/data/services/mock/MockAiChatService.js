@@ -76,14 +76,18 @@ export class MockAiChatService extends IAiChatService {
     return { ...this._createSessionRecord(title) };
   }
 
-  async getSessionDetail(sessionId) {
+  async getSessionDetail(sessionId, params) {
     await sleep(MOCK_DELAY / 2);
     const session = this.sessions.find((s) => s.id === sessionId);
     if (!session) return null;
 
-    const messages = this.messagesBySession.get(sessionId) ?? [];
+    const { page = 1, limit = 50 } = params ?? {};
+    const all = this.messagesBySession.get(sessionId) ?? [];
+    const start = (page - 1) * limit;
+    const messages = all.slice(start, start + limit);
+
     return {
-      session: { ...session, messageCount: messages.length },
+      session: { ...session, messageCount: all.length },
       messages: messages.map((m) => ({ ...m })),
     };
   }

@@ -2,19 +2,19 @@
   "packages": [
     {
       "id": "premium-monthly",
-      "name": "Premium",
-      "price": 49000,
+      "name": "Gói Cá Nhân",
+      "price": 79000,
       "currency": "VND",
       "period": "monthly",
-      "features": ["Gợi ý AI không giới hạn", "Thống kê chi tiết", "Công thức độc quyền"]
+      "features": ["AI không giới hạn", "Lập thực đơn tuần", "Scan ảnh"]
     },
     {
       "id": "family-monthly",
-      "name": "Gia đình",
-      "price": 99000,
+      "name": "Gói Gia Đình",
+      "price": 149000,
       "currency": "VND",
       "period": "monthly",
-      "features": ["Tất cả tính năng Premium", "Quản lý tủ lạnh dùng chung", "Tối đa 6 thành viên"]
+      "features": ["Tất cả tính năng Individual", "Tối đa 5 thành viên"]
     }
   ]
 }

@@ -1,14 +1,17 @@
 /**
  * PaymentQrModal - hiển thị QR thanh toán PayOS + poll trạng thái.
  *
- * Sprint A3 (24/10): TÁCH TỪ `FamilyPlanModal.jsx`.
+ * ⚠️⚠️ CODE CHẾT — KHÔNG CÒN MÀN NÀO DÙNG (đã xác nhận 04/11):
+ *   Component này ĐÃ BỊ THAY THẾ bởi `PayOSPaymentSheet`
+ *   (`src/presentation/components/subscription/PayOSPaymentSheet.jsx`).
+ *   Cả 2 nơi cần hiện QR đều import `PayOSPaymentSheet`:
+ *     - `PackageManagementScreen.jsx` (màn "Thông tin gói dịch vụ")
+ *     - `FamilyPlanModal.jsx` (paywall Gói Gia Đình)
+ *   KHÔNG còn file nào import `PaymentQrModal` (chỉ file test của nó).
  *
- * ⚠️ VÌ SAO PHẢI TÁCH:
- *   `FamilyPlanModal` chỉ phục vụ gói FAMILY (có thêm ô nhập token lời mời).
- *   Nhưng `PackageManagementScreen` cũng cần hiện QR cho gói KHÁC (individual):
- *   trước đó nó chỉ gọi `showInfo('Mã QR đã sẵn sàng')` -> user KHÔNG BAO GIỜ
- *   thấy mã QR, không thể thanh toán. Đó là luồng chết.
- *   => Tách phần "QR + poll" ra component dùng chung, `FamilyPlanModal` dùng lại.
+ *   -> Giữ lại file + test tạm thời để tránh đụng phạm vi diff lớn.
+ *   -> Khi cần dọn: xoá `PaymentQrModal.jsx` + `__tests__/PaymentQrModal.test.js`
+ *      cùng lúc (test đang import `toQrUri` / `POLL_INTERVAL_MS` từ đây).
  *
  * LOGIC POLL (giống Flutter `family_plan_modal.dart:201` + `package_management_screen.dart:321-360`):
  *   Tầng 1: `GET /payment-transactions/me/:paymentRef` -> `status === 'paid'`

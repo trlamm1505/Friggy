@@ -44,6 +44,8 @@ import {
   UpdateMealPlanDto,
   UpdateMealSlotDto,
   CreateShoppingListDto,
+  AddShoppingListItemDto,
+  UpdateShoppingListItemDto,
   RegenerateSlotDto,
   GenerateFromExpiringDto,
 } from './dto/meal-planning.dto';
@@ -278,20 +280,115 @@ export class MealPlanningController {
   }
 
   // ─────────────────────────────────────────────────────────
-  // PATCH /shopping-lists/:listId/items/:itemId — Tick đã mua
+  // PATCH /shopping-lists/:listId/items/:itemId — Tick đã mua / sửa lượng
   // ─────────────────────────────────────────────────────────
-
+  //
+  // ⚠️ CHỈ CÓ MỘT ROUTE PATCH DUY NHẤT cho path này.
+  //    Trước đây có 2 handler cùng path (một để TOGGLE, một để sửa lượng).
+  //    NestJS match theo thứ tự đăng ký -> handler đầu tiên ("toggle") luôn
+  //    thắng, handler "update" KHÔNG BAO GIỜ chạy -> sửa số lượng vô hiệu.
+  //    => Gộp lại 1 handler, dispatch dựa trên body:
+  //      - Body RỖNG            -> TOGGLE (giữ hành vi cũ: tick "đã mua" sẽ
+  //                                 tự thêm món vào tủ lạnh).
+  //      - Body có quantity hoặc isPurchased -> sửa lượng / set trạng thái
+  //                                 (KHÔNG tự thêm vào tủ lạnh).
   @Patch('shopping-lists/:listId/items/:itemId')
-  @ApiOperation({ summary: 'Đánh dấu đã mua / chưa mua mặt hàng' })
+  @ApiOperation({
+    summary: 'Đánh dấu đã mua / chưa mua hoặc sửa số lượng mặt hàng',
+    description:
+      'Gửi body rỗng -> TOGGLE trạng thái (và tự thêm món vào tủ lạnh khi tick "đã mua"). ' +
+      'Gửi { quantity } hoặc { isPurchased } -> sửa lượng / set trạng thái (không tự thêm vào tủ lạnh).',
+  })
   @ApiParam({ name: 'listId', description: 'ID danh sách mua' })
   @ApiParam({ name: 'itemId', description: 'ID mặt hàng (số nguyên)' })
   @ApiResponse({ status: 200, description: 'Đã cập nhật' })
-  async toggleShoppingItem(
+  async updateShoppingItem(
+    @CurrentUser() user: JwtPayload,
+    @Param('listId') listId: string,
+    @Param('itemId', ParseIntPipe) itemId: number,
+    @Body() dto: UpdateShoppingListItemDto,
+  ) {
+    const hasExplicitUpdate =
+      dto?.quantity !== undefined || dto?.isPurchased !== undefined;
+
+    if (!hasExplicitUpdate) {
+      return this.mealPlanningService.toggleShoppingItem(user.sub, listId, itemId);
+    }
+
+    return this.mealPlanningService.updateShoppingListItem(user.sub, listId, itemId, dto);
+  }
+
+  // ─────────────────────────────────────────────────────────
+  // GET /shopping-lists/active — Lấy (hoặc tạo) giỏ mua mặc định
+  // ─────────────────────────────────────────────────────────
+
+  @Get('shopping-lists/active')
+  @ApiOperation({
+    summary: 'Giỏ mua đang dùng (tự tạo nếu chưa có)',
+    description:
+      'Dùng cho nút "+ Thêm vào DS" ở màn công thức: cần 1 list để thêm mặt hàng ' +
+      'vào. Nếu user chưa tạo list nào thì tạo 1 list rỗng làm giỏ mặc định.',
+  })
+  @ApiResponse({ status: 200, type: ShoppingListResponseDto })
+  async getActiveShoppingList(@CurrentUser() user: JwtPayload) {
+    return this.mealPlanningService.getOrCreateActiveShoppingList(user.sub);
+  }
+
+  // ─────────────────────────────────────────────────────────
+  // POST /shopping-lists/:listId/items — Thêm 1 mặt hàng
+  // ─────────────────────────────────────────────────────────
+
+  @Post('shopping-lists/:listId/items')
+  @ApiOperation({
+    summary: 'Thêm 1 mặt hàng vào danh sách mua',
+    description:
+      'Nếu mặt hàng cùng nguyên liệu đã có trong list thì GỘP lượng thay vì tạo dòng mới.',
+  })
+  @ApiParam({ name: 'listId', description: 'ID danh sách mua' })
+  @ApiResponse({ status: 201, description: 'Đã thêm mặt hàng' })
+  async addShoppingListItem(
+    @CurrentUser() user: JwtPayload,
+    @Param('listId') listId: string,
+    @Body() dto: AddShoppingListItemDto,
+  ) {
+    return this.mealPlanningService.addShoppingListItem(user.sub, listId, dto);
+  }
+
+  // ─────────────────────────────────────────────────────────
+  // DELETE /shopping-lists/:listId/items/:itemId — Xoá mặt hàng
+  // ─────────────────────────────────────────────────────────
+
+  @Delete('shopping-lists/:listId/items/:itemId')
+  @ApiOperation({ summary: 'Xoá 1 mặt hàng khỏi danh sách mua (soft delete)' })
+  @ApiParam({ name: 'listId', description: 'ID danh sách mua' })
+  @ApiParam({ name: 'itemId', description: 'ID mặt hàng (số nguyên)' })
+  @ApiResponse({ status: 200, description: 'Đã xoá' })
+  async removeShoppingListItem(
     @CurrentUser() user: JwtPayload,
     @Param('listId') listId: string,
     @Param('itemId', ParseIntPipe) itemId: number,
   ) {
-    return this.mealPlanningService.toggleShoppingItem(user.sub, listId, itemId);
+    return this.mealPlanningService.removeShoppingListItem(user.sub, listId, itemId);
+  }
+
+  // ─────────────────────────────────────────────────────────
+  // POST /slots/:id/missing-to-shopping-list
+  // ─────────────────────────────────────────────────────────
+
+  @Post('slots/:id/missing-to-shopping-list')
+  @ApiOperation({
+    summary: 'Thêm nguyên liệu còn thiếu của 1 slot vào danh sách mua',
+    description:
+      'Dùng cho nút "+ Thêm vào DS" ở màn chi tiết công thức / meal plan: ' +
+      'ghi mọi nguyên liệu mà tủ lạnh đang thiếu vào giỏ mua.',
+  })
+  @ApiParam({ name: 'id', description: 'ID meal slot' })
+  @ApiResponse({ status: 201, description: 'Đã thêm vào danh sách mua' })
+  async addSlotMissingToShoppingList(
+    @CurrentUser() user: JwtPayload,
+    @Param('id') slotId: string,
+  ) {
+    return this.mealPlanningService.addSlotMissingToShoppingList(user.sub, slotId);
   }
 
   // ─────────────────────────────────────────────────────────

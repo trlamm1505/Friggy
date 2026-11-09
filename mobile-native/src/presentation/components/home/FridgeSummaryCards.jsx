@@ -15,9 +15,10 @@
  * nhờ vậy B1 không cần đụng file này.
  */
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useCallback } from 'react';
 import { View, Text, Image, StyleSheet, Pressable, Animated, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useFocusEffect } from '@react-navigation/native';
 import { useTheme } from '../../theme/ThemeContext';
 import { AppColors } from '../../theme/colors';
 import { sp } from '../../utils/responsive';
@@ -29,10 +30,31 @@ import { Skeleton } from '../common/Skeleton';
 import expiredTomato from '../../../../assets/images/expired_tomato.png';
 import availableVeggies from '../../../../assets/images/available_veggies.png';
 
-export const FridgeSummaryCards = ({ onExpiringTap, onAvailableTap }) => {
+export const FridgeSummaryCards = ({ onExpiringTap, onAvailableTap, refreshKey }) => {
   const { isDark } = useTheme();
   const { t } = useTranslation();
-  const { data: summary, loading, error } = useFridgeSummary();
+  const { data: summary, loading, error, refetch } = useFridgeSummary();
+
+  // ⚠️ `useAsyncData` tạo state RIÊNG cho mỗi nơi gọi hook -> refetch ở
+  //    HomeScreen không update được số liệu ở đây. Tự refetch khi focus lại
+  //    (sau khi tick "Bắt đầu nấu" -> tủ lạnh bị trừ nguyên liệu) hoặc khi
+  //    Home báo tín hiệu pull-to-refresh (`refreshKey` tăng).
+  const isFirstFocus = useRef(true);
+  useFocusEffect(
+    useCallback(() => {
+      if (isFirstFocus.current) {
+        isFirstFocus.current = false;
+        return undefined;
+      }
+      refetch();
+      return undefined;
+    }, [refetch])
+  );
+
+  useEffect(() => {
+    if (refreshKey === undefined || refreshKey === 0) return;
+    refetch();
+  }, [refreshKey, refetch]);
 
   // P0.6c: lỗi service KHÔNG được làm crash Home.
   // Trước đây chỉ chặn `loading || !summary`, nên khi service trả lỗi 4xx

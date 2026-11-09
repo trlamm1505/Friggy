@@ -92,9 +92,41 @@ export const UserProfileScreen = () => {
     ]);
   }, [logout, t]);
 
-  // P0.8 (ảnh 12): quota AI tuần này
-  const aiUsed = 0;
-  const aiTotal = 17;
+  // P0.8 (ảnh 12): quota AI tuần này.
+  //
+  // ⚠️ TRƯỚC ĐÂY HARDCODE `aiUsed = 0`, `aiTotal = 17` -> user thấy quota SAI
+  //   dù BE đã có `GET /users/me/ai-usage`.
+  //   Nay gọi service thật (Real khi USE_MOCKS=false, Mock khi bật mock).
+  //
+  // ⚠️ `limit = -1` = KHÔNG GIỚI HẠN (gói cao cấp):
+  //   Hiện "0/-1" là vô nghĩa -> hiện "∞" thay thế.
+  const [aiUsage, setAiUsage] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const usage = await userService.getAiUsage();
+        if (!cancelled) setAiUsage(usage);
+      } catch (_e) {
+        // BE lỗi / offline -> giữ null -> UI hiện dấu "—" (không bịa số).
+        if (!cancelled) setAiUsage(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [userService]);
+
+  const aiUsed = aiUsage?.used ?? null;
+  const aiTotal = aiUsage?.limit ?? null;
+  const aiUnlimited = aiTotal === -1;
+  // Hiển thị "3/∞" khi không giới hạn, "3/17" khi có giới hạn, "—/—" khi lỗi.
+  const aiQuotaText = aiUnlimited
+    ? `${aiUsed ?? 0}/∞`
+    : aiUsed !== null && aiTotal !== null
+      ? `${aiUsed}/${aiTotal}`
+      : '—/—';
 
   return (
     <ScreenBackground>
@@ -143,7 +175,12 @@ export const UserProfileScreen = () => {
                 },
               ]}
             >
-              {t('profile.aiQuota', { used: aiUsed, total: aiTotal })}
+              {aiUnlimited
+                ? t('profile.aiQuotaUnlimited', { used: aiUsed ?? 0 })
+                : t('profile.aiQuota', {
+                    used: aiUsed ?? 0,
+                    total: aiTotal ?? 0,
+                  })}
             </Text>
           </View>
           <View
@@ -163,7 +200,7 @@ export const UserProfileScreen = () => {
                 },
               ]}
             >
-              {aiUsed}/{aiTotal}
+              {aiQuotaText}
             </Text>
           </View>
         </View>

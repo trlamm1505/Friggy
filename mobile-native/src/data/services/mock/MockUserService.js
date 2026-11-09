@@ -43,8 +43,11 @@ let notificationSettings = {
  *
  * Mặc định 'free' -> sau khi user "mua" gói family trong modal, đổi sang
  * 'family' để vòng poll 2 tầng báo thành công (khớp hành vi thật).
+ *
+ * ⚠️ TÊN BIẾN: `mockSubscription` (không phải `currentSubscription`) — đồng bộ
+ * với block implement của Dev B đã được gộp lại (xem `getMySubscription`).
  */
-let currentSubscription = {
+let mockSubscription = {
   id: 'mock-sub-1',
   status: 'active',
   startDate: null,
@@ -63,6 +66,52 @@ let currentSubscription = {
     aiUsagePerWeek: 0,
     isActive: true,
   },
+};
+
+/**
+ * Giao dịch đang CHỜ thanh toán trong mock.
+ *
+ * `null` = chưa có giao dịch nào. Được set khi `subscribe()` / `renew()` chạy,
+ * và `findPendingPayment()` trả về để UI khôi phục QR cũ (khớp hành vi BE
+ * trả 409 khi đã có giao dịch pending).
+ */
+let mockPendingPayment = null;
+
+/**
+ * Tên gói chuẩn hoá theo contract BE (`SubscriptionPlanResponseDto.name`).
+ *
+ * `packages.json` dùng slug (`premium-monthly` / `family-monthly`) + nhãn
+ * tiếng Việt (`Premium` / `Gia đình`), còn BE trả `'individual' | 'family'`.
+ */
+const normalizedPlanName = (pkg) => (pkg?.id === 'family-monthly' ? 'family' : 'individual');
+
+/**
+ * Tìm gói trong `packagesMock` theo:
+ *   1. id của BE (SỐ = index + 1, xem `getAvailablePackages`)
+ *   2. slug gốc trong `packages.json` (`premium-monthly` / `family-monthly`)
+ *   3. tên gói chuẩn hoá (`planName` = 'individual' | 'family')
+ *
+ * @param {number|string} [planId]
+ * @param {string} [planName]
+ * @returns {object|null}
+ */
+const findPackage = (planId, planName) => {
+  const packages = packagesMock.packages;
+
+  if (planId !== undefined && planId !== null && planId !== '') {
+    const byNumericId = packages.find((_, index) => String(index + 1) === String(planId));
+    if (byNumericId) return byNumericId;
+
+    const bySlug = packages.find((p) => String(p.id) === String(planId));
+    if (bySlug) return bySlug;
+  }
+
+  if (planName) {
+    const byName = packages.find((p) => normalizedPlanName(p) === planName);
+    if (byName) return byName;
+  }
+
+  return null;
 };
 
 export class MockUserService extends IUserService {
@@ -171,6 +220,29 @@ export class MockUserService extends IUserService {
     return { ...notificationSettings };
   }
 
+  // ─── Sprint B5: lượt AI đã dùng ───
+
+  /**
+   * Lượt AI đã dùng trong tuần (mock).
+   *
+   * ⚠️ `limit = -1` nghĩa là KHÔNG giới hạn — GIỮ NGUYÊN -1 để UI mock và
+   *   UI BE diễn giải giống nhau. Đổi thành 0 sẽ khiến UI hiện "0/0" thay vì
+   *   "không giới hạn".
+   */
+  async getAiUsage() {
+    await sleep(MOCK_DELAY / 2);
+    const used = 3;
+    const limit = -1;
+    return {
+      used,
+      limit,
+      remaining: limit === -1 ? -1 : Math.max(0, limit - used),
+      plan: 'free',
+      breakdown: { meal_plan: 1, chat: 2, slot_regenerate: 0, expiring_plan: 0 },
+      windowDays: 7,
+    };
+  }
+
   /**
    * `GET /family/me` — mock: trả shape `FamilyRoleDto` đã map (khớp
    * `RealFamilyService.toFamilyInfo()`).
@@ -204,11 +276,10 @@ export class MockUserService extends IUserService {
         invitedAt: null,
         joinedAt: null,
       })),
-      owner: owner
-        ? { id: owner.id, name: owner.name, avatar: owner.avatar ?? null }
-        : null,
+      owner: owner ? { id: owner.id, name: owner.name, avatar: owner.avatar ?? null } : null,
       activeCount: members.length,
-      maxMembers: 6,
+      // BE `family.service.ts` đặt `MAX_MEMBERS = 5` -> mock phải khớp.
+      maxMembers: 5,
       groupId: hasGroup ? 'family-group-mock' : null,
       groupStatus: hasGroup ? 'active' : null,
       inviteCode: hasGroup ? (family.inviteCode ?? null) : null,
@@ -240,19 +311,21 @@ export class MockUserService extends IUserService {
    * ⚠️ PHẢI có `status`: `HomeScreen` kiểm `plan?.status === 'active'` mới biết
    * user đang có Gói Family thật (BE trả `pending` khi chưa thanh toán).
    * Thiếu `status` -> banner hiện sai trạng thái.
+   *
+   * ⚠️ `status` PHẢI đọc từ `mockSubscription` (không hardcode `'active'`):
+   * sau khi `dissolveFamilyGroup()` reset gói về Free, banner "Gia đình đang
+   * hoạt động" phải tắt. Hardcode `'active'` -> banner vẫn sáng.
    */
   async getCurrentPlan() {
     await sleep(MOCK_DELAY / 2);
-    // `status` BẮT BUỘC: `HomeScreen` check `plan.status === 'active'` để quyết
-    // định hiện banner "Gia đình đang hoạt động". Thiếu `status` -> luôn false.
     return {
-      ...subscriptionMock.plan,
-      status: 'active',
-      isActive: true,
-      period: null,
-      features: [],
-      endDate: null,
-      autoRenew: false,
+      ...mockSubscription.plan,
+      status: mockSubscription.status,
+      isActive: mockSubscription.status === 'active',
+      period: mockSubscription.plan.period ?? null,
+      features: mockSubscription.plan.features ?? [],
+      endDate: mockSubscription.endDate ?? null,
+      autoRenew: mockSubscription.autoRenew ?? false,
     };
   }
 
@@ -275,7 +348,7 @@ export class MockUserService extends IUserService {
       // BE dùng id SỐ.
       id: index + 1,
       // BE dùng name chuẩn hoá, `displayName` mới là nhãn hiển thị.
-      name: pkg.id === 'family-monthly' ? 'family' : 'individual',
+      name: normalizedPlanName(pkg),
       displayName: pkg.name,
       price: pkg.price ?? 0,
       currency: pkg.currency ?? 'VND',
@@ -299,6 +372,11 @@ export class MockUserService extends IUserService {
 
   /**
    * Alias của `getFamily()` — tên mà UI mới dùng (khớp `RealUserService`).
+   *
+   * Shape đầy đủ (`role`, `members`, `owner`, `activeCount`, `maxMembers`,
+   * `groupId`, `groupStatus`, `inviteCode`) -> `FamilyManagementScreen` đọc
+   * được mọi field mà real trả.
+   *
    * @returns {Promise<object>}
    */
   async getFamilyInfo() {
@@ -332,244 +410,13 @@ export class MockUserService extends IUserService {
     return { message: 'Đã từ chối lời mời' };
   }
 
-  /** DELETE /family/me → giải thể nhóm gia đình. */
-  async dissolveFamilyGroup() {
-    await sleep(MOCK_DELAY);
-    family = { members: [], inviteCode: null };
-    return { message: 'Đã giải thể nhóm gia đình' };
-  }
-
-  // ─── Sprint A3 — SUBSCRIPTION (khớp `RealUserService`) ───
-
   /**
-   * `GET /subscriptions/me` — mock: shape `toSubscription()` của real.
+   * DELETE /family/me → giải thể nhóm gia đình.
    *
-   * ⚠️ SỬA BUG DEV B: mock trả `{ name, displayName, price, status }` phẳng,
-   * trong khi real trả `{ id, status, plan: {...} }` (plan LỒNG). UI đọc
-   * `sub.plan.name` -> mock ra `undefined` -> so sánh sai gói.
+   * ⚠️ Phải reset `mockSubscription` về gói Free: `HomeScreen` kiểm
+   * `plan?.status === 'active'` để bật banner "Gia đình đang hoạt động".
+   * Không reset -> sau khi giải tán, banner family vẫn hiện.
    */
-  async getMySubscription() {
-    await sleep(MOCK_DELAY / 2);
-    return JSON.parse(JSON.stringify(currentSubscription));
-  }
-
-  /**
-   * `POST /subscriptions/subscribe` → QR PayOS (mock trả paymentRef giả).
-   *
-   * ⚠️ Shape phải khớp `toCheckout()` của real: `{ checkoutUrl, qrCode,
-   * paymentRef, amount, expireAt, status }`.
-   */
-  /**
-   * `POST /subscriptions/subscribe` → QR PayOS (mock trả paymentRef giả).
-   *
-   * ⚠️ Shape phải khớp `toCheckout()` của real: `{ checkoutUrl, qrCode,
-   * paymentRef, amount, expireAt, status }`.
-   *
-   * @param {number|string} planId - id gói (BE: số).
-   * @param {string} [planName] - tên gói chuẩn hoá ('family'|'individual').
-   */
-  async subscribe(planId, planName) {
-    await sleep(MOCK_DELAY);
-    if (!planId) throw new Error('Thiếu gói đăng ký');
-
-    // Nhớ gói vừa mua để `isSubscribedTo` trả true (poll 2 tầng thoát).
-    // `planName` do modal truyền vào; nếu không có, suy ra từ id (2 = family).
-    const resolvedName = planName ?? (Number(planId) === 2 ? 'family' : currentSubscription.plan.name);
-
-    currentSubscription = {
-      ...currentSubscription,
-      status: 'active',
-      paymentRef: `mock-payment-${Date.now()}`,
-      plan: {
-        ...currentSubscription.plan,
-        id: Number(planId) || currentSubscription.plan.id,
-        name: resolvedName,
-      },
-    };
-
-    return {
-      checkoutUrl: null,
-      qrCode: null,
-      paymentRef: currentSubscription.paymentRef,
-      amount: 99000,
-      expireAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
-      status: 'pending',
-    };
-  }
-
-  /** `POST /subscriptions/renew` → gia hạn (mock), shape `toCheckout()`. */
-  async renewSubscription() {
-    await sleep(MOCK_DELAY);
-    return {
-      checkoutUrl: null,
-      qrCode: null,
-      paymentRef: `mock-renew-${Date.now()}`,
-      amount: 99000,
-      expireAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
-      status: 'pending',
-    };
-  }
-
-  /** DELETE /subscriptions/me/auto-renewal → hủy gia hạn (mock). */
-  async cancelAutoRenewal() {
-    await sleep(MOCK_DELAY);
-    return { message: 'Đã hủy gia hạn tự động' };
-  }
-
-  /** GET /payment-transactions/me/:ref → trạng thái giao dịch (poll thanh toán). */
-  async getPaymentStatus(paymentRef) {
-    await sleep(MOCK_DELAY / 2);
-    if (!paymentRef) throw new Error('Thiếu mã giao dịch');
-    // Mock: coi như đã thanh toán -> UI thoát vòng poll.
-    return { status: 'paid', paymentRef };
-  }
-
-  /**
-   * Đã lên đúng gói vừa mua chưa? (chống bug poll báo thành công sớm).
-   *
-   * ⚠️ SỬA BUG DEV B: mock trả `true` cho MỌI gói -> poll 2 tầng trong
-   * `FamilyPlanModal` báo "đã kích hoạt" dù user mua gói 'individual'.
-   * Giờ so sánh đúng với gói đang active trong mock.
-   */
-  async isSubscribedTo(targetPlanName) {
-    await sleep(MOCK_DELAY / 2);
-    if (!targetPlanName) return false;
-    return currentSubscription.status === 'active' && currentSubscription.plan.name === targetPlanName;
-  }
-
-  // ─── Sprint A3: gói dịch vụ (subscriptions) ───
-  //
-  // 12 method dưới đây BẮT BUỘC phải nằm trong prototype chain của mock,
-  // nếu không `SafeService.withFallback` sẽ KHÔNG proxy chúng -> UI gọi
-  // `userService.getMySubscription()` sẽ nhận `undefined` -> crash.
-  // Xem `__tests__/A3ProxyAudit.test.js` (test chốt hành vi này).
-
-  /** Gói hiện tại — shape giống `toSubscription()` của `RealSubscriptionService`. */
-  async getMySubscription() {
-    await sleep(MOCK_DELAY / 2);
-    return JSON.parse(JSON.stringify(mockSubscription));
-  }
-
-  /**
-   * Bắt đầu thanh toán — mock trả shape `toCheckout()`.
-   * Ghi lại vào `mockPendingPayment` để `findPendingPayment()` trả về,
-   * mô phỏng đúng hành vi BE (đã có giao dịch pending thì trả 409).
-   */
-  async subscribe(planId) {
-    await sleep(MOCK_DELAY);
-    const pkg = packagesMock.packages.find((p) => String(p.id) === String(planId));
-    if (!pkg) throw new Error('Gói dịch vụ không tồn tại');
-
-    mockPendingPayment = {
-      checkoutUrl: `https://checkout.mock/${pkg.id}`,
-      qrCode: 'MOCK_QR_CODE',
-      paymentRef: `mock-ref-${Date.now()}`,
-      amount: pkg.price,
-      expireAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
-      status: 'pending',
-    };
-    return { ...mockPendingPayment };
-  }
-
-  /** Gia hạn gói — mock trả shape `toCheckout()`. */
-  async renewSubscription() {
-    await sleep(MOCK_DELAY);
-    mockPendingPayment = {
-      checkoutUrl: 'https://checkout.mock/renew',
-      qrCode: 'MOCK_QR_RENEW',
-      paymentRef: `mock-renew-${Date.now()}`,
-      amount: mockSubscription.plan.price,
-      expireAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
-      status: 'pending',
-    };
-    return { ...mockPendingPayment };
-  }
-
-  /** Hủy gia hạn tự động. */
-  async cancelAutoRenewal() {
-    await sleep(MOCK_DELAY);
-    mockSubscription = { ...mockSubscription, autoRenew: false };
-    return {
-      message: 'Đã hủy gia hạn tự động.',
-      endDate: mockSubscription.endDate ?? null,
-    };
-  }
-
-  /** Trạng thái giao dịch — mock luôn `pending` (không có webhook thật). */
-  async getPaymentStatus(paymentRef) {
-    await sleep(MOCK_DELAY / 2);
-    return {
-      status: mockPendingPayment?.paymentRef === paymentRef ? 'pending' : 'pending',
-      amount: mockPendingPayment?.amount ?? 0,
-      paidAt: null,
-    };
-  }
-
-  /** Đã lên đúng gói chưa — dùng khi poll thanh toán. */
-  async isSubscribedTo(targetPlanName) {
-    await sleep(MOCK_DELAY / 2);
-    return mockSubscription.status === 'active' && mockSubscription.plan.name === targetPlanName;
-  }
-
-  /**
-   * Giao dịch đang chờ thanh toán — dùng khôi phục QR thay vì tạo mới.
-   * BE trả 409 khi đã có pending -> Flutter/RN tra cứu lại thay vì báo lỗi.
-   */
-  async findPendingPayment() {
-    await sleep(MOCK_DELAY / 2);
-    return mockPendingPayment ? { ...mockPendingPayment } : null;
-  }
-
-  // ─── Sprint A3: gia đình (family) ───
-
-  /**
-   * Thông tin gia đình + role — shape giống `toFamilyInfo()`.
-   * Mock RN (`family-members.json`) không có `role` -> tự suy ra:
-   *   - có `inviteCode` -> 'owner'
-   *   - không có        -> 'none' (chưa có gia đình -> empty state)
-   */
-  async getFamilyInfo() {
-    await sleep(MOCK_DELAY / 2);
-    const isOwner = Boolean(family.inviteCode);
-    const owner = isOwner ? family.members.find((m) => m.role === 'owner') : null;
-    const members = family.members
-      .filter((m) => m.role !== 'owner')
-      .map((m) => ({ ...m, status: 'active' }));
-
-    return {
-      role: isOwner ? 'owner' : 'none',
-      members,
-      owner: owner ? { ...owner } : null,
-      activeCount: members.length,
-      maxMembers: 5,
-      groupId: isOwner ? 'mock-family-group' : null,
-      groupStatus: isOwner ? 'active' : null,
-      inviteCode: family.inviteCode ?? null,
-    };
-  }
-
-  /** Mời thành viên qua email — BE trả CHỈ `{ message }`. */
-  async inviteFamilyMember(email) {
-    await sleep(MOCK_DELAY);
-    if (!email || !email.includes('@')) throw new Error('Email không hợp lệ');
-    return { message: `Đã gửi lời mời tới ${email}` };
-  }
-
-  /** Chấp nhận lời mời bằng token. */
-  async acceptFamilyInvite(token) {
-    await sleep(MOCK_DELAY);
-    if (!token) throw new Error('Token không hợp lệ');
-    return { message: 'Đã tham gia gia đình thành công!' };
-  }
-
-  /** Từ chối lời mời bằng token. */
-  async rejectFamilyInvite(token) {
-    await sleep(MOCK_DELAY);
-    if (!token) throw new Error('Token không hợp lệ');
-    return { message: 'Đã từ chối lời mời' };
-  }
-
-  /** Giải tán gia đình (owner only). */
   async dissolveFamilyGroup() {
     await sleep(MOCK_DELAY);
     family = { members: [], inviteCode: null };
@@ -585,6 +432,143 @@ export class MockUserService extends IUserService {
         period: 'forever',
       },
     };
-    return { message: 'Đã giải tán gia đình' };
+    return { message: 'Đã giải thể nhóm gia đình' };
+  }
+
+  // ─── Sprint A3 — SUBSCRIPTION (khớp `RealUserService`) ───
+  //
+  // 12 method dưới đây BẮT BUỘC phải nằm trong prototype chain của mock,
+  // nếu không `SafeService.withFallback` sẽ KHÔNG proxy chúng -> UI gọi
+  // `userService.getMySubscription()` sẽ nhận `undefined` -> crash.
+  // Xem `__tests__/A3ProxyAudit.test.js` (test chốt hành vi này).
+
+  /**
+   * `GET /subscriptions/me` — mock: shape `toSubscription()` của real.
+   *
+   * ⚠️ SỬA BUG DEV B: mock trả `{ name, displayName, price, status }` phẳng,
+   * trong khi real trả `{ id, status, plan: {...} }` (plan LỒNG). UI đọc
+   * `sub.plan.name` -> mock ra `undefined` -> so sánh sai gói.
+   */
+  async getMySubscription() {
+    await sleep(MOCK_DELAY / 2);
+    return JSON.parse(JSON.stringify(mockSubscription));
+  }
+
+  /**
+   * `POST /subscriptions/subscribe` → QR PayOS.
+   *
+   * ⚠️ Shape phải khớp `toCheckout()` của real: `{ checkoutUrl, qrCode,
+   * paymentRef, amount, expireAt, status }`.
+   *
+   * @param {number|string} planId - id gói (BE: số) HOẶC slug (`family-monthly`).
+   * @param {string} [planName] - tên gói chuẩn hoá ('family'|'individual').
+   */
+  async subscribe(planId, planName) {
+    await sleep(MOCK_DELAY);
+    if (!planId && !planName) throw new Error('Thiếu gói đăng ký');
+
+    const pkg = findPackage(planId, planName);
+    if (!pkg) throw new Error('Gói dịch vụ không tồn tại');
+
+    // Tên gói chuẩn hoá: ưu tiên `planName` (UI truyền vào), fallback suy ra
+    // từ `packages.json` -> khớp `SubscriptionPlanResponseDto.name` của BE.
+    const resolvedName = planName ?? normalizedPlanName(pkg);
+    const numericId = Number(planId) || packagesMock.packages.indexOf(pkg) + 1;
+
+    // Ghi lại giao dịch pending -> `findPendingPayment()` trả về (khôi phục QR).
+    mockPendingPayment = {
+      checkoutUrl: `https://checkout.mock/${pkg.id}`,
+      qrCode: 'MOCK_QR_CODE',
+      paymentRef: `mock-ref-${Date.now()}`,
+      amount: pkg.price ?? 0,
+      expireAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
+      status: 'pending',
+    };
+
+    // Nhớ gói vừa mua để `isSubscribedTo` trả true (poll 2 tầng thoát).
+    mockSubscription = {
+      ...mockSubscription,
+      status: 'active',
+      paymentRef: mockPendingPayment.paymentRef,
+      plan: {
+        ...mockSubscription.plan,
+        id: numericId,
+        name: resolvedName,
+        displayName: pkg.name,
+        price: pkg.price ?? 0,
+        period: pkg.period ?? 'monthly',
+        features: Array.isArray(pkg.features) ? pkg.features : [],
+      },
+    };
+
+    return { ...mockPendingPayment };
+  }
+
+  /**
+   * `POST /subscriptions/renew` → gia hạn (mock), shape `toCheckout()`.
+   *
+   * Ghi vào `mockPendingPayment` để `findPendingPayment()` khôi phục được QR.
+   */
+  async renewSubscription() {
+    await sleep(MOCK_DELAY);
+    mockPendingPayment = {
+      checkoutUrl: 'https://checkout.mock/renew',
+      qrCode: 'MOCK_QR_RENEW',
+      paymentRef: `mock-renew-${Date.now()}`,
+      amount: mockSubscription.plan.price ?? 0,
+      expireAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
+      status: 'pending',
+    };
+    return { ...mockPendingPayment };
+  }
+
+  /** DELETE /subscriptions/me/auto-renewal → hủy gia hạn (mock). */
+  async cancelAutoRenewal() {
+    await sleep(MOCK_DELAY);
+    mockSubscription = { ...mockSubscription, autoRenew: false };
+    return {
+      message: 'Đã hủy gia hạn tự động',
+      endDate: mockSubscription.endDate ?? null,
+    };
+  }
+
+  /**
+   * GET /payment-transactions/me/:ref → trạng thái giao dịch (poll thanh toán).
+   *
+   * ⚠️ Phải trả `'paid'` cho giao dịch KHÔNG còn pending: `PayOSPaymentSheet`
+   * poll 2 tầng (`getPaymentStatus` -> `isSubscribedTo`) sẽ quay vô hạn nếu
+   * mock luôn trả `'pending'`.
+   */
+  async getPaymentStatus(paymentRef) {
+    await sleep(MOCK_DELAY / 2);
+    if (!paymentRef) throw new Error('Thiếu mã giao dịch');
+    const isPending = mockPendingPayment?.paymentRef === paymentRef;
+    return {
+      status: isPending ? 'pending' : 'paid',
+      amount: mockPendingPayment?.amount ?? 0,
+      paidAt: isPending ? null : new Date().toISOString(),
+    };
+  }
+
+  /**
+   * Đã lên đúng gói vừa mua chưa? (chống bug poll báo thành công sớm).
+   *
+   * ⚠️ SỬA BUG DEV B: mock trả `true` cho MỌI gói -> poll 2 tầng trong
+   * `FamilyPlanModal` báo "đã kích hoạt" dù user mua gói 'individual'.
+   * Giờ so sánh đúng với gói đang active trong mock.
+   */
+  async isSubscribedTo(targetPlanName) {
+    await sleep(MOCK_DELAY / 2);
+    if (!targetPlanName) return false;
+    return mockSubscription.status === 'active' && mockSubscription.plan.name === targetPlanName;
+  }
+
+  /**
+   * Giao dịch đang chờ thanh toán — dùng khôi phục QR thay vì tạo mới.
+   * BE trả 409 khi đã có pending -> Flutter/RN tra cứu lại thay vì báo lỗi.
+   */
+  async findPendingPayment() {
+    await sleep(MOCK_DELAY / 2);
+    return mockPendingPayment ? { ...mockPendingPayment } : null;
   }
 }

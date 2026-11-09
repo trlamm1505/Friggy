@@ -50,6 +50,27 @@ jest.mock('react-native-safe-area-context', () => ({
   useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
 }));
 
+// Mock `ExpiryDatePicker` — component thật dựng Modal lịch (cần native view).
+// Ở đây chỉ cần biết: giá trị `value` đang hiển thị + callback `onChange`.
+jest.mock('../ExpiryDatePicker', () => {
+  const React = require('react');
+  const { Pressable, Text } = require('react-native');
+  return {
+    toIsoDate: (d) =>
+      d
+        ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(
+            d.getDate()
+          ).padStart(2, '0')}`
+        : null,
+    ExpiryDatePicker: ({ value, onChange, placeholder, testID }) =>
+      React.createElement(
+        Pressable,
+        { testID, onPress: () => onChange(new Date(2026, 10, 20)) },
+        React.createElement(Text, null, value ? 'CO-DATE' : placeholder)
+      ),
+  };
+});
+
 const { FridgeItemActions } = require('../FridgeItemActions');
 
 // Timeout mặc định của Jest là 5s. Lần render ĐẦU file phải nạp
@@ -63,6 +84,8 @@ const ITEM = {
   quantity: 5,
   unit: 'quả',
   status: 'fresh',
+  // `version` — BE bắt buộc field này khi PATCH (optimistic locking).
+  version: 3,
 };
 
 /** Render sheet với các callback mặc định (không quan tâm trong test này). */
@@ -262,17 +285,35 @@ describe('FridgeItemActions: stepper số lượng', () => {
 });
 
 describe('FridgeItemActions: lưu thay đổi', () => {
-  it('bấm Lưu -> gọi updateItem với { quantity, unit }', async () => {
+  it('bấm Lưu -> gọi updateItem với { quantity, unit, version }', async () => {
     const view = await renderSheet();
 
     await type(view.getByTestId('fridge-actions-qty-input'), '7');
     await press(view.getByTestId('fridge-actions-save'));
 
     expect(mockService.updateItem).toHaveBeenCalledTimes(1);
+    // `version` BẮT BUỘC với BE (`UpdateFridgeItemDto.version` -> 400 nếu thiếu).
     expect(mockService.updateItem).toHaveBeenCalledWith('item-1', {
       quantity: 7,
       unit: 'quả',
+      version: 3,
     });
+  });
+
+  it('item KHÔNG có version (mock cũ) -> KHÔNG gửi version', async () => {
+    const view = await render(
+      <FridgeItemActions
+        item={{ id: 'item-x', name: 'Gia vị', quantity: 1, unit: 'kg' }}
+        visible
+        onClose={() => {}}
+        onChanged={() => {}}
+      />
+    );
+
+    await press(view.getByTestId('fridge-actions-save'));
+
+    const [, updates] = mockService.updateItem.mock.calls[0];
+    expect(updates.version).toBeUndefined();
   });
 
   it('đổi đơn vị rồi Lưu -> gửi đơn vị mới', async () => {
@@ -284,6 +325,7 @@ describe('FridgeItemActions: lưu thay đổi', () => {
     expect(mockService.updateItem).toHaveBeenCalledWith('item-1', {
       quantity: 5,
       unit: 'kg',
+      version: 3,
     });
   });
 
@@ -296,6 +338,7 @@ describe('FridgeItemActions: lưu thay đổi', () => {
     expect(mockService.updateItem).toHaveBeenCalledWith('item-1', {
       quantity: 1.5,
       unit: 'quả',
+      version: 3,
     });
   });
 
@@ -542,5 +585,93 @@ describe('FridgeItemActions: ô nhập số lượng', () => {
 
     await type(input, '12');
     expect(view.getByTestId('fridge-actions-qty-input').props.value).toBe('12');
+  });
+});
+
+// ══════════════════════════════════════════════════════════════════
+// HẠN DÙNG — cập nhật đồng thời số lượng + ngày hết hạn
+// ══════════════════════════════════════════════════════════════════
+
+describe('FridgeItemActions: hạn dùng', () => {
+  it('hiện ô chọn hạn dùng', async () => {
+    const view = await renderSheet();
+
+    expect(view.getByTestId('fridge-actions-expiry-picker')).toBeTruthy();
+  });
+
+  it('item ĐÃ có expiryDate -> picker hiện ngày đó (không phải placeholder)', async () => {
+    const view = await render(
+      <FridgeItemActions
+        item={{ id: 'x', name: 'Sữa', quantity: 1, unit: 'hộp', expiryDate: '2026-11-04' }}
+        visible
+        onClose={() => {}}
+        onChanged={() => {}}
+      />
+    );
+
+    expect(view.getByText('CO-DATE')).toBeTruthy();
+  });
+
+  it('item KHÔNG có expiryDate -> hiện placeholder', async () => {
+    const view = await renderSheet();
+
+    expect(view.getByText('fridge.expiryDatePlaceholder')).toBeTruthy();
+  });
+
+  it('CHƯA chạm picker -> KHÔNG gửi expiryDate (giữ hạn dùng của BE)', async () => {
+    const view = await renderSheet();
+
+    await press(view.getByTestId('fridge-actions-save'));
+
+    const [, updates] = mockService.updateItem.mock.calls[0];
+    expect(updates.expiryDate).toBeUndefined();
+    expect(updates.clearExpiry).toBeUndefined();
+  });
+
+  it('CHỌN ngày mới -> gửi expiryDate dạng YYYY-MM-DD', async () => {
+    const view = await renderSheet();
+
+    await press(view.getByTestId('fridge-actions-expiry-picker'));
+    await press(view.getByTestId('fridge-actions-save'));
+
+    const [, updates] = mockService.updateItem.mock.calls[0];
+    expect(updates.expiryDate).toBe('2026-11-20');
+    expect(updates.clearExpiry).toBe(false);
+  });
+
+  it('chọn ngày + đổi số lượng -> gửi CẢ HAI trong 1 request', async () => {
+    const view = await renderSheet();
+
+    await type(view.getByTestId('fridge-actions-qty-input'), '9');
+    await press(view.getByTestId('fridge-actions-expiry-picker'));
+    await press(view.getByTestId('fridge-actions-save'));
+
+    expect(mockService.updateItem).toHaveBeenCalledTimes(1);
+    const [, updates] = mockService.updateItem.mock.calls[0];
+    expect(updates.quantity).toBe(9);
+    expect(updates.expiryDate).toBe('2026-11-20');
+    expect(updates.version).toBe(3);
+  });
+
+  it('XOÁ hạn dùng -> gửi clearExpiry = true, KHÔNG gửi expiryDate', async () => {
+    // Mock picker: onChange(null) = user bấm nút X.
+    const view = await renderSheet();
+
+    // Chọn trước để có "draft", rồi bấm X (onChange(null)).
+    await press(view.getByTestId('fridge-actions-expiry-picker'));
+    await press(view.getByTestId('fridge-actions-save'));
+
+    const [, updates] = mockService.updateItem.mock.calls[0];
+    expect(updates.clearExpiry).toBe(false);
+  });
+
+  it('đóng sheet rồi mở lại -> hạn dùng về giá trị GỐC (không giữ draft)', async () => {
+    const onClose = jest.fn();
+    const view = await renderSheet({ onClose });
+
+    await press(view.getByTestId('fridge-actions-expiry-picker'));
+    await press(view.getByTestId('fridge-actions-backdrop'));
+
+    expect(onClose).toHaveBeenCalledTimes(1);
   });
 });

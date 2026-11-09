@@ -21,14 +21,17 @@
  * `RealRecipeService.getSuggestions()`.
  */
 
-import React from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { useTheme } from '../../theme/ThemeContext';
 import { AppColors } from '../../theme/colors';
 import { sp } from '../../utils/responsive';
 import { FontFamily, FontWeights } from '../../theme/typography';
-import { Users, Clock, Sparkles, ChevronRight } from 'lucide-react-native';
+import { Users, Clock, Sparkles, ChevronRight, ChefHat } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
+import { useServices } from '../../../data/ServiceProvider';
+import { showSuccess, showError } from '../../utils/helpers';
 import { useRecipeSuggestions } from '../../hooks/useServiceHooks';
 import { Skeleton } from '../common/Skeleton';
 import { EmptyState } from '../common/EmptyState';
@@ -47,10 +50,92 @@ const MEAL_TYPE_BY_KEY = {
   drink: { labelKey: 'home.mealSnack', accent: AppColors.textSecondary },
 };
 
-export const CookingSuggestionsSection = ({ onRecipeTap, onSwapTap }) => {
+export const CookingSuggestionsSection = ({
+  onRecipeTap,
+  onSwapTap,
+  onCookTap,
+  onUncookTap,
+  refreshKey,
+  onCooked,
+}) => {
   const { isDark } = useTheme();
   const { t } = useTranslation();
+  const services = useServices();
   const { data: suggestions, loading, error, refetch } = useRecipeSuggestions();
+
+  // Set các slot đang trong lúc gọi API -> disable nút trong khi chờ.
+  const [cookingSlotIds, setCookingSlotIds] = useState([]);
+
+  /**
+   * "Bắt đầu nấu" — đánh dấu đã nấu + trừ nguyên liệu khỏi tủ lạnh.
+   *
+   * ⚠️ BUG ĐÃ SỬA: trước đây chip trạng thái là TEXT TĨNH ("Chưa nấu"),
+   *    không có nút -> user không thể đánh dấu đã nấu từ Home, thống kê
+   *    "Bữa đã nấu" không bao giờ tăng.
+   *
+   * GIỜ: `PATCH /meal-planning/slots/{slotId}` với `{ completed: true }`
+   *   -> BE set `completedAt` + trừ nguyên liệu FIFO trong tủ lạnh
+   *      (idempotent) + trả `consumedIngredients`.
+   *   -> refetch lại danh sách để chip chuyển sang "Đã nấu".
+   *
+   * ⚠️ Phải gọi `refetch` của CHÍNH hook trong component này — `refetch` ở
+   *    HomeScreen là instance khác nên không update được state ở đây.
+   */
+  const handleCook = useCallback(
+    async (slot) => {
+      const slotId = slot?.id;
+      if (!slotId) return;
+      if (cookingSlotIds.includes(slotId)) return;
+
+      setCookingSlotIds((prev) => [...prev, slotId]);
+
+      try {
+        const result = await services.recipeService.updateSlot(slotId, { completed: true });
+        const consumed = result?.consumedIngredients ?? [];
+
+        showSuccess(
+          consumed.length > 0
+            ? t('home.startCookingDone', { count: consumed.length })
+            : t('home.startCookingNoIngredient')
+        );
+
+        // Cập nhật chip "Đã nấu" ngay trên Home.
+        await refetch();
+
+        // Báo cho Home biết đã nấu xong -> Home refetch thống kê + tủ lạnh
+        // (những component con có state hook RIÊNG nên không tự update được).
+        if (onCooked) onCooked();
+      } catch (e) {
+        showError(e?.message ?? t('home.startCookingFailed'));
+      } finally {
+        setCookingSlotIds((prev) => prev.filter((id) => id !== slotId));
+      }
+    },
+    [cookingSlotIds, services, t, refetch, onCooked]
+  );
+
+  // Cho phép Home override hành xử (ví dụ: giữ logic riêng của app).
+  const handleCookTap = onCookTap ?? handleCook;
+
+  // Tự refresh danh sách bữa khi quay lại Home (sau khi tick "Bắt đầu nấu"
+  // ở màn chi tiết công thức) -> chip "Đã nấu" cập nhật ngay.
+  const isFirstFocus = useRef(true);
+  useFocusEffect(
+    useCallback(() => {
+      if (isFirstFocus.current) {
+        isFirstFocus.current = false;
+        return undefined;
+      }
+      refetch();
+      return undefined;
+    }, [refetch])
+  );
+
+  // Tín hiệu pull-to-refresh từ Home -> refetch lại danh sách bữa hôm nay.
+  useEffect(() => {
+    if (refreshKey === undefined || refreshKey === 0) return;
+    refetch();
+  }, [refreshKey, refetch]);
 
   const surfaceColor = isDark ? '#19271E' : '#FFFFFF';
   const borderColor = isDark ? '#2E4D36' : '#A5E69C';
@@ -141,6 +226,9 @@ export const CookingSuggestionsSection = ({ onRecipeTap, onSwapTap }) => {
             slot={MEAL_TYPE_BY_KEY[recipe.mealType]}
             onRecipeTap={onRecipeTap}
             onSwapTap={onSwapTap}
+            onCookTap={handleCookTap}
+            onUncookTap={onUncookTap}
+            busy={cookingSlotIds.includes(recipe.id)}
           />
         ))}
       </View>
@@ -148,7 +236,18 @@ export const CookingSuggestionsSection = ({ onRecipeTap, onSwapTap }) => {
   );
 };
 
-const MealCard = ({ isDark, t, recipe, slot, index, onRecipeTap, onSwapTap }) => {
+const MealCard = ({
+  isDark,
+  t,
+  recipe,
+  slot,
+  index,
+  onRecipeTap,
+  onSwapTap,
+  onCookTap,
+  onUncookTap,
+  busy,
+}) => {
   const accent = slot?.accent || AppColors.primary;
   const borderColor = isDark ? '#2E4D36' : '#A5E69C';
   const surfaceColor = isDark ? '#19271E' : '#FFFFFF';
@@ -173,11 +272,24 @@ const MealCard = ({ isDark, t, recipe, slot, index, onRecipeTap, onSwapTap }) =>
             </Text>
           </View>
         ) : (
-          <View style={[styles.statusChip, { backgroundColor: isDark ? '#3A2A1E' : '#FFF3E0' }]}>
-            <Text style={[styles.statusText, { color: AppColors.accentOrange }]}>
-              {t('home.toCook')}
-            </Text>
-          </View>
+          <Pressable
+            onPress={() => onCookTap && onCookTap(recipe)}
+            disabled={!onCookTap || busy}
+            hitSlop={8}
+            style={({ pressed }) => [
+              styles.cookBtn,
+              {
+                backgroundColor: isDark ? '#233629' : '#E8F5E9',
+                borderColor: accent,
+                opacity: pressed || busy ? 0.7 : 1,
+              },
+            ]}
+            testID={`home-meal-cook-${recipe.id}`}
+            accessibilityLabel={t('home.cookFromHome')}
+          >
+            <ChefHat color={fg} size={13} strokeWidth={2.5} />
+            <Text style={[styles.cookBtnText, { color: fg }]}>{t('home.cookFromHome')}</Text>
+          </Pressable>
         )}
       </View>
 
@@ -294,6 +406,21 @@ const styles = StyleSheet.create({
     borderRadius: sp(9),
   },
   statusText: {
+    fontSize: sp(10),
+    fontFamily: FontFamily.bold,
+    fontWeight: FontWeights.bold,
+  },
+  // Nút "Bắt đầu nấu" (thay chip "Chưa nấu") — gọi API tick slot.
+  cookBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: sp(4),
+    paddingHorizontal: sp(8),
+    paddingVertical: sp(3),
+    borderRadius: sp(9),
+    borderWidth: 1,
+  },
+  cookBtnText: {
     fontSize: sp(10),
     fontFamily: FontFamily.bold,
     fontWeight: FontWeights.bold,

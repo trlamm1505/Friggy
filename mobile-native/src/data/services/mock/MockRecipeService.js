@@ -31,6 +31,16 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 let shoppingList = JSON.parse(JSON.stringify(shoppingMock.items));
 
 /**
+ * Sinh id cho mặt hàng mới trong mock (BE dùng auto-increment số).
+ * Bắt đầu từ max(id hiện có) + 1 để không trùng.
+ */
+let shoppingItemSeq = shoppingList.reduce((max, i) => Math.max(max, Number(i.id) || 0), 0);
+const nextShoppingItemId = () => {
+  shoppingItemSeq += 1;
+  return shoppingItemSeq;
+};
+
+/**
  * Mock weekly plan — shape MỚI của B4: `{ id, weekStart, status, totalBudget, days[] }`.
  *
  * Mỗi ngày có `slots[]` (mỗi slot có `mealType`) -> UI KHÔNG đoán bữa theo index.
@@ -448,18 +458,26 @@ export class MockRecipeService extends IRecipeService {
    *
    * @param {string} slotId
    * @param {{completed?:boolean, recipeId?:string|null, servings?:number, note?:string}} payload
-   * @returns {Promise<void>}
+   * @returns {Promise<{id:string,completedAt:string|null,consumedIngredients:Array}>}
    */
   async updateSlot(slotId, payload = {}) {
     await sleep(MOCK_DELAY / 2);
-    if (!slotId) return;
+    if (!slotId) return { id: slotId, completedAt: null, consumedIngredients: [] };
+
+    // ⚠️ Mock phải trả cùng shape với Real (BE) để UI không phải rẽ nhánh:
+    //    `{ id, completedAt, consumedIngredients }`.
+    //    `consumedIngredients` chỉ có lần tick đầu (idempotent) — giống BE.
+    const result = { id: slotId, completedAt: null, consumedIngredients: [] };
 
     for (const day of mockNextWeekPlan.days) {
       const found = day.slots.find((s) => s.id === slotId);
       if (!found) continue;
 
+      const wasCooked = Boolean(found.cooked);
+
       if (payload.completed !== undefined) {
         found.cooked = Boolean(payload.completed);
+        result.completedAt = found.cooked ? new Date().toISOString() : null;
       }
       if (payload.recipeId !== undefined) {
         const recipe = recipesMock.recipes.find((r) => r.id === payload.recipeId);
@@ -477,8 +495,21 @@ export class MockRecipeService extends IRecipeService {
       if (payload.note !== undefined) {
         found.note = payload.note;
       }
-      return;
+
+      // Lần tick đầu -> giả lập đã trừ nguyên liệu (FIFO) cho UI.
+      if (payload.completed === true && !wasCooked) {
+        const recipe = recipesMock.recipes.find((r) => r.id === found.recipeId);
+        result.consumedIngredients = (recipe?.ingredients ?? []).map((ing) => ({
+          name: typeof ing === 'string' ? ing : ing?.name,
+          quantity: typeof ing === 'string' ? 1 : ing?.amount ?? 1,
+          unit: typeof ing === 'string' ? '' : ing?.unit ?? '',
+        }));
+      }
+
+      return result;
     }
+
+    return result;
   }
 
   /**
@@ -586,5 +617,102 @@ export class MockRecipeService extends IRecipeService {
     if (idx === -1) throw new Error('Item không tồn tại');
     shoppingList[idx] = { ...shoppingList[idx], done: !shoppingList[idx].done };
     return { ...shoppingList[idx] };
+  }
+
+  /**
+   * `GET /meal-planning/shopping-lists/active` — mock: luôn trả về list mock.
+   */
+  async getActiveShoppingList() {
+    await sleep(MOCK_DELAY / 2);
+    return {
+      id: 'shopping-list-mock',
+      title: 'Danh sách mua tuần này',
+      status: 'active',
+      totalEstimatedCost: shoppingList.reduce((sum, i) => sum + (i.estimatedPrice ?? 0), 0),
+      weeklyPlanId: mockNextWeekPlan.id,
+      createdAt: mockNextWeekPlan.weekStart,
+      items: shoppingList.map((i) => ({ ...i })),
+    };
+  }
+
+  /**
+   * `POST /meal-planning/shopping-lists/{listId}/items` — mock: thêm món lẻ.
+   *
+   * ⚠️ BE tự GỘP lượng nếu list đã có cùng nguyên liệu -> mock cũng vậy.
+   */
+  async addShoppingListItem(listId, item) {
+    await sleep(MOCK_DELAY);
+    if (!listId || !item?.ingredientId) return null;
+
+    const existingIdx = shoppingList.findIndex(
+      (i) => String(i.ingredientId ?? '') === String(item.ingredientId)
+    );
+
+    if (existingIdx !== -1) {
+      const current = shoppingList[existingIdx];
+      shoppingList[existingIdx] = {
+        ...current,
+        quantity: (current.quantity ?? 0) + (item.quantity ?? 1),
+        unit: item.unit ?? current.unit,
+      };
+      return { ...shoppingList[existingIdx] };
+    }
+
+    const created = {
+      id: nextShoppingItemId(),
+      ingredientId: item.ingredientId,
+      name: item.name ?? `Nguyên liệu #${item.ingredientId}`,
+      quantity: item.quantity ?? 1,
+      unit: item.unit ?? '',
+      done: false,
+      estimatedPrice: 0,
+    };
+    shoppingList.push(created);
+    return { ...created };
+  }
+
+  /**
+   * `POST /meal-planning/slots/{slotId}/missing-to-shopping-list` — mock.
+   *
+   * Mock không có dữ liệu tủ lạnh chi tiết theo slot -> trả 0 món, đúng
+   * với hành vi "không xác định được nguyên liệu thiếu".
+   */
+  async addSlotMissingToShoppingList(slotId) {
+    await sleep(MOCK_DELAY);
+    if (!slotId) return { listId: null, addedCount: 0, addedItems: [] };
+    return { listId: 'shopping-list-mock', addedCount: 0, addedItems: [] };
+  }
+
+  /**
+   * `PATCH /meal-planning/shopping-lists/{listId}/items/{itemId}` — mock: sửa lượng.
+   */
+  async updateShoppingListItem(listId, itemId, payload = {}) {
+    await sleep(MOCK_DELAY / 2);
+    if (!listId || itemId === null || itemId === undefined) return null;
+
+    const idx = shoppingList.findIndex((i) => String(i.id) === String(itemId));
+    if (idx === -1) throw new Error('Item không tồn tại');
+
+    const next = { ...shoppingList[idx] };
+    if (payload.quantity !== undefined && payload.quantity !== null) {
+      next.quantity = payload.quantity;
+    }
+    if (payload.isPurchased !== undefined) {
+      next.done = payload.isPurchased;
+    }
+    shoppingList[idx] = next;
+    return { ...next };
+  }
+
+  /**
+   * `DELETE /meal-planning/shopping-lists/{listId}/items/{itemId}` — mock: xoá món.
+   */
+  async removeShoppingListItem(listId, itemId) {
+    await sleep(MOCK_DELAY / 2);
+    if (!listId || itemId === null || itemId === undefined) return;
+
+    const idx = shoppingList.findIndex((i) => String(i.id) === String(itemId));
+    if (idx === -1) throw new Error('Item không tồn tại');
+    shoppingList.splice(idx, 1);
   }
 }

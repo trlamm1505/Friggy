@@ -31,6 +31,7 @@ import type {
   SendMessageResponseDto,
 } from './dto/ai-chat-response.dto';
 import { throwIfInjection } from 'src/common/utils/prompt-injection.util';
+import { buildSessionTitle } from 'src/common/utils/chat-session-title.util';
 
 const AI_CHAT_MAX_LENGTH = 2000;
 const AI_CHAT_HISTORY_LIMIT = 10;
@@ -49,7 +50,10 @@ export class AiChatService {
   // GET /sessions — Danh sách phiên chat
   // ─────────────────────────────────────────────────────────
 
-  async getSessions(userId: string, query: ListSessionsQueryDto): Promise<SessionDto[]> {
+  async getSessions(
+    userId: string,
+    query: ListSessionsQueryDto,
+  ): Promise<SessionDto[]> {
     const { page = 1, limit = 20 } = query;
     const sessions = await this.prisma.chatSession.findMany({
       where: { userId, deletedAt: null },
@@ -73,7 +77,10 @@ export class AiChatService {
   // POST /sessions — Tạo phiên chat mới
   // ─────────────────────────────────────────────────────────
 
-  async createSession(userId: string, dto: CreateSessionDto): Promise<SessionDto> {
+  async createSession(
+    userId: string,
+    dto: CreateSessionDto,
+  ): Promise<SessionDto> {
     const session = await this.prisma.chatSession.create({
       data: {
         userId,
@@ -162,7 +169,8 @@ export class AiChatService {
     const session = await this.prisma.chatSession.findFirst({
       where: { id: sessionId, userId, deletedAt: null, status: 'active' },
     });
-    if (!session) throw new NotFoundException('Phiên chat không tồn tại hoặc đã đóng');
+    if (!session)
+      throw new NotFoundException('Phiên chat không tồn tại hoặc đã đóng');
 
     // ── Layer 1: Prompt Injection Guard ──
     throwIfInjection(dto.content);
@@ -186,6 +194,19 @@ export class AiChatService {
       },
     });
 
+    // ⚠️ Set title từ tin nhắn ĐẦU TIÊN của phiên (chỉ khi chưa có title).
+    // Phiên được tạo lúc mở app với `title = null`, nên tin nhắn đầu tiên là
+    // nguồn tự nhiên nhất để đặt tên -> danh sách lịch sử chat đọc được.
+    if (!session.title) {
+      const title = buildSessionTitle(sanitized);
+      if (title) {
+        await this.prisma.chatSession.update({
+          where: { id: sessionId },
+          data: { title },
+        });
+      }
+    }
+
     // Publish job sang ai-service
     await this.rabbitMq.publish(AI_CHAT_ROUTING_KEY, {
       sessionId,
@@ -194,10 +215,15 @@ export class AiChatService {
       userMessage: sanitized,
       history: history
         .reverse() // oldest → newest
-        .map((m) => ({ role: m.role as 'user' | 'assistant', content: m.content })),
+        .map((m) => ({
+          role: m.role as 'user' | 'assistant',
+          content: m.content,
+        })),
     });
 
-    this.logger.log(`[AiChat] Published: sessionId=${sessionId} | msgId=${userMessage.id}`);
+    this.logger.log(
+      `[AiChat] Published: sessionId=${sessionId} | msgId=${userMessage.id}`,
+    );
 
     return {
       messageId: userMessage.id,
@@ -214,7 +240,9 @@ export class AiChatService {
     const channel = `chat:${sessionId}:stream`;
 
     return new Observable((observer) => {
-      this.logger.log(`[AiChat] SSE open: sessionId=${sessionId} userId=${userId}`);
+      this.logger.log(
+        `[AiChat] SSE open: sessionId=${sessionId} userId=${userId}`,
+      );
 
       // Tạo subscriber riêng (Redis không dùng chung client pub/sub)
       const subscriber = this.redis.createSubscriber();
@@ -229,7 +257,9 @@ export class AiChatService {
             subscriber.disconnect();
             observer.complete();
           }
-        } catch { /* ignore parse errors */ }
+        } catch {
+          /* ignore parse errors */
+        }
       });
 
       // Cleanup khi FE disconnect

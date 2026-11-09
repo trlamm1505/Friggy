@@ -30,7 +30,7 @@
 import { Platform } from 'react-native';
 import { TokenStorage } from '../storage/TokenStorage';
 import { ApiException } from './ApiException';
-import { appConfig } from '../../shared/config/appConfig';
+import { appConfig, EXTRA_HEADERS } from '../../shared/config/appConfig';
 
 /**
  * Đọc `response.body` (ReadableStream) và yield từng chunk `Uint8Array`.
@@ -351,6 +351,8 @@ export async function* streamSse(path, options = {}) {
   const requestHeaders = {
     Accept: 'text/event-stream',
     'Cache-Control': 'no-cache',
+    // Bỏ qua trang cảnh báo của ngrok (nếu API chạy qua ngrok).
+    ...EXTRA_HEADERS,
     ...headers,
   };
 

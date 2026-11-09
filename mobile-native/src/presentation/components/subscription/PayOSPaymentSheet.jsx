@@ -5,10 +5,10 @@
  * của Flutter, `_showQrPaymentModal()` `:309-615`).
  *
  * ⚠️ QUAN HỆ VỚI `PaymentQrModal`:
- *   `PaymentQrModal` (giữ nguyên) là modal QR dùng cho paywall Gói Gia Đình
- *   (`FamilyPlanModal`). Sheet này là biến thể BOTTOM SHEET dùng cho màn
- *   "Thông tin gói dịch vụ" — khác layout (kéo handle, bo góc trên, nút
- *   "Tôi đã thanh toán") theo ảnh tham chiếu.
+ *   `PayOSPaymentSheet` là component DUY NHẤT hiển thị QR thanh toán —
+ *   dùng chung cho cả paywall Gói Gia Đình (`FamilyPlanModal`) và màn
+ *   "Thông tin gói dịch vụ" (`PackageManagementScreen`).
+ *   (`PaymentQrModal` là bản cũ đã bị thay thế — không còn màn nào import.)
  *
  * LOGIC POLL (giống Flutter `:321-360`):
  *   Tầng 1: `GET /payment-transactions/me/:paymentRef` -> `status === 'paid'`
@@ -24,8 +24,9 @@
  *   - Số tiền lấy từ `checkout.amount` (BE `SubscribeResponseDto.amount`).
  *   - Mã tham chiếu lấy từ `checkout.paymentRef` (BE `FRIGGY-<orderCode>`).
  *   - Nội dung chuyển khoản: BE dùng `description = "Friggy <tên gói>"` khi
- *     tạo payment link PayOS (`subscriptions.service.ts:128`) — hiển thị đúng
- *     giá trị này, KHÔNG tự chế.
+ *     MUA MỚI và `"Gia hạn Friggy <tên gói>"` khi GIA HẠN
+ *     (`subscriptions.service.ts:125` và `:335`) — hiển thị đúng giá trị này
+ *     (qua `buildTransferDescription(..., isRenew)`), KHÔNG tự chế.
  *
  * ⚠️ VỀ ESLINT `react-hooks/set-state-in-effect`:
  *   Component này KHÔNG reset state trong effect. Component CHA render kèm
@@ -97,19 +98,54 @@ export const toQrUri = (qr) => {
 };
 
 /**
+ * PayOS giới hạn `description` tối đa 25 ký tự.
+ *
+ * ⚠️ PHẢI KHỚP HỆT với BE (`be/src/modules-system/payos/payos.service.ts`
+ *   -> `truncatePayosDescription`): BE cắt ở RANH GIỚI TỪ, RN cũng phải
+ *   cắt như vậy, nếu không nội dung chuyển khoản hiển thị cho user sẽ
+ *   lệch với chuỗi PayOS nhận -> đối soát fail.
+ */
+export const PAYOS_MAX_DESCRIPTION_LENGTH = 25;
+
+/**
+ * Rút gọn chuỗi nội dung chuyển khoản về đúng giới hạn của PayOS.
+ *
+ * Cắt ở RANH GIỚI TỪ (không cắt cụt) — mirror BE
+ * `truncatePayosDescription()`.
+ *
+ * @param {string} text
+ * @returns {string}
+ */
+export const truncateTransferDescription = (text) => {
+  const value = String(text ?? '').trim();
+  if (value.length <= PAYOS_MAX_DESCRIPTION_LENGTH) return value;
+
+  const cut = value.slice(0, PAYOS_MAX_DESCRIPTION_LENGTH);
+  const lastSpace = cut.lastIndexOf(' ');
+  return (lastSpace > 0 ? cut.slice(0, lastSpace) : cut).trim();
+};
+
+/**
  * Nội dung chuyển khoản.
  *
- * BE tạo payment link với `description = "Friggy <displayName gói>"`
- * (`be/src/modules-api/subscriptions/subscriptions.service.ts:128`). Ta dựng
- * lại từ tên gói để khớp đúng chuỗi BE gửi cho PayOS — KHÔNG bịa số tiền.
+ * BE tạo payment link với:
+ *   - subscribe: `description = "Friggy <displayName gói>"`
+ *     (`be/src/modules-api/subscriptions/subscriptions.service.ts:125`)
+ *   - renew:    `description = "Gia hạn Friggy <displayName gói>"`
+ *     (`be/src/modules-api/subscriptions/subscriptions.service.ts:335`)
+ *
+ * Ta dựng lại từ tên gói để khớp đúng chuỗi BE gửi cho PayOS — KHÔNG bịa
+ * số tiền. Cả hai vế đều được rút gọn theo cùng quy tắc 25 ký tự của PayOS.
  *
  * @param {string} planName - tên gói (vd 'individual')
  * @param {string} planDisplayName - tên hiển thị (vd 'Gói Cá Nhân')
+ * @param {boolean} [isRenew] - true khi gia hạn (prefix "Gia hạn")
  * @returns {string}
  */
-export const buildTransferDescription = (planName, planDisplayName) => {
+export const buildTransferDescription = (planName, planDisplayName, isRenew = false) => {
   const label = planDisplayName || planName || '';
-  return label ? `Friggy ${label}` : 'Friggy';
+  const prefix = isRenew ? 'Gia hạn Friggy' : 'Friggy';
+  return truncateTransferDescription(label ? `${prefix} ${label}` : prefix);
 };
 
 export const PayOSPaymentSheet = ({
@@ -117,6 +153,7 @@ export const PayOSPaymentSheet = ({
   checkout,
   targetPlanName,
   targetPlanDisplayName,
+  isRenew = false,
   onClose,
   onSuccess,
 }) => {
@@ -265,7 +302,11 @@ export const PayOSPaymentSheet = ({
   const cardBg = isDark ? AppColors.darkIconBg : '#F1F8E9';
   const cardBorder = isDark ? AppColors.darkCardBorder : AppColors.lightCardBorder;
 
-  const transferDescription = buildTransferDescription(targetPlanName, targetPlanDisplayName);
+  const transferDescription = buildTransferDescription(
+    targetPlanName,
+    targetPlanDisplayName,
+    isRenew
+  );
 
   return (
     <Modal
@@ -348,10 +389,7 @@ export const PayOSPaymentSheet = ({
 
             {/* Payment summary */}
             <View
-              style={[
-                styles.summaryCard,
-                { backgroundColor: cardBg, borderColor: cardBorder },
-              ]}
+              style={[styles.summaryCard, { backgroundColor: cardBg, borderColor: cardBorder }]}
             >
               <View style={styles.summaryRow}>
                 <Text style={[styles.summaryLabel, { color: subTextColor, fontSize: sp(13) }]}>

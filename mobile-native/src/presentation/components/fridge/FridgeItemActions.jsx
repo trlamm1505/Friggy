@@ -59,16 +59,48 @@ import { Minus, Plus, Check, Trash2 } from 'lucide-react-native';
 import { useServices } from '../../../data/ServiceProvider';
 import { showSuccess, showError } from '../../utils/helpers';
 import { UNITS, stepForUnit, parseQuantity } from '../../utils/fridgeItems';
+import { ExpiryDatePicker, toIsoDate } from './ExpiryDatePicker';
+
+/**
+ * Parse chuỗi ngày của BE (`YYYY-MM-DD`) thành `Date` ở giờ địa phương.
+ *
+ * ⚠️ VÌ SAO KHÔNG DÙNG `new Date('2026-11-04')`:
+ *   Chuỗi `YYYY-MM-DD` được JS parse theo chuẩn ISO-8601 -> luôn là **UTC**
+ *   (00:00:00Z). Ở Việt Nam (UTC+7) thành 07:00 cùng ngày — vẫn đúng ngày,
+ *   NHƯNG nếu user ở UTC-5 thì thành 19:00 hôm TRƯỚC -> lệch 1 ngày.
+ *   Parse thủ công -> luôn đúng ngày theo múi giờ thiết bị.
+ *
+ * @param {string|null|undefined} value
+ * @returns {Date|null}
+ */
+const parseIsoDate = (value) => {
+  if (!value) return null;
+  const m = String(value).match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!m) {
+    const d = new Date(value);
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
+  return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+};
 
 export const FridgeItemActions = ({ item, visible, onClose, onChanged }) => {
   const { isDark } = useTheme();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const insets = useSafeAreaInsets();
   const { fridgeService } = useServices();
 
   // `draft` = chỉ số 2 người dùng đang sửa (số lượng + đơn vị).
   // `null` = chưa sửa gì -> dùng giá trị của `item`.
   const [draft, setDraft] = useState(null);
+  // Ngày hết hạn đang chọn (Date|null). `null` = không đổi (giữ giá trị BE).
+  //
+  // ⚠️ TÁCH RIÊNG khỏi `draft`:
+  //   `draft` được XOÁ khi đóng sheet (để không giữ sửa đổi chưa lưu).
+  //   Nhưng ngày hết hạn cần khởi tạo từ `item.expiryDate` MỖI LẦN MỞ sheet.
+  //   Dùng `useState` init 1 lần -> chỉ đúng lần đầu; parent dùng `key={item.id}`
+  //   nên mỗi item là instance mới -> OK. Nhưng để không phụ thuộc vào `key`,
+  //   ta tính `expiryDate` từ `item` khi chưa có draft (xem `effectiveExpiryDate`).
+  const [expiryDraft, setExpiryDraft] = useState(null);
   const [saving, setSaving] = useState(false);
   const [busy, setBusy] = useState(null); // 'consume' | 'delete' | null
 
@@ -103,6 +135,24 @@ export const FridgeItemActions = ({ item, visible, onClose, onChanged }) => {
   );
 
   /**
+   * Ngày hết hạn đang hiển thị trong picker.
+   *
+   * - Chưa chọn gì trong phiên này -> lấy từ `item.expiryDate` (giá trị BE).
+   * - Đã chọn -> lấy từ `expiryDraft` (kể cả `null` = user muốn BỎ hạn dùng).
+   *
+   * ⚠️ VÌ SAO CẦN `expiryTouched`:
+   *   `null` vừa có thể là "chưa chọn" vừa có thể là "user đã xoá hạn dùng".
+   *   Không có cờ phân biệt thì không biết `null` nào là ý định của user.
+   */
+  const [expiryTouched, setExpiryTouched] = useState(false);
+  const effectiveExpiryDate = expiryTouched ? expiryDraft : parseIsoDate(item?.expiryDate);
+
+  const handleExpiryChange = useCallback((next) => {
+    setExpiryTouched(true);
+    setExpiryDraft(next);
+  }, []);
+
+  /**
    * Đóng sheet + xoá draft.
    *
    * ⚠️ VÌ SAO phải xoá draft:
@@ -114,6 +164,8 @@ export const FridgeItemActions = ({ item, visible, onClose, onChanged }) => {
    */
   const closeSheet = useCallback(() => {
     setDraft(null);
+    setExpiryDraft(null);
+    setExpiryTouched(false);
     onClose?.();
   }, [onClose]);
 
@@ -159,7 +211,27 @@ export const FridgeItemActions = ({ item, visible, onClose, onChanged }) => {
     savingRef.current = true;
     setSaving(true);
     try {
-      await fridgeService.updateItem(item.id, { quantity, unit });
+      // ⚠️ `version` BẮT BUỘC với BE thật (optimistic locking):
+      //   BE `UpdateFridgeItemDto.version` có `@IsInt() @Min(0)` -> thiếu -> 400.
+      //   Gửi version của item đang sửa; BE tự trả 409 nếu đã bị người khác sửa.
+      //   `item.version` là `null` ở mock mode -> không gửi (giữ hành vi cũ).
+      //
+      // ⚠️ `expiryDate` chỉ gửi khi user ĐÃ chạm vào picker:
+      //   - Chưa chạm -> không gửi -> BE giữ nguyên `expiresAt` hiện tại.
+      //   - Đã chạm + chọn ngày -> gửi `YYYY-MM-DD` -> BE set `expiresAt`.
+      //   - Đã chạm + bấm X (xoá) -> gửi `null` -> BE set `expiresAt = null`.
+      //     (`RealFridgeService.updateItem` chỉ gửi `expiresAt` khi có truthy value
+      //      — nên "xoá hạn dùng" cần xử lý riêng, xem bên dưới.)
+      const payload = { quantity, unit, version: item?.version ?? undefined };
+
+      if (expiryTouched) {
+        payload.expiryDate = toIsoDate(expiryDraft);
+        // `null` = user muốn BỎ hạn dùng -> phải gửi `null` tới BE.
+        // `RealFridgeService.updateItem` hiện bỏ qua null -> cần cờ `clearExpiry`.
+        payload.clearExpiry = expiryDraft === null;
+      }
+
+      await fridgeService.updateItem(item.id, payload);
       showSuccess(t('fridge.updated'));
       onChanged?.();
       closeSheet();
@@ -170,7 +242,17 @@ export const FridgeItemActions = ({ item, visible, onClose, onChanged }) => {
       savingRef.current = false;
       setSaving(false);
     }
-  }, [fridgeService, item, quantityText, unit, t, onChanged, closeSheet]);
+  }, [
+    fridgeService,
+    item,
+    quantityText,
+    unit,
+    expiryTouched,
+    expiryDraft,
+    t,
+    onChanged,
+    closeSheet,
+  ]);
 
   const handleConsume = useCallback(() => {
     if (busyRef.current) return;
@@ -396,6 +478,21 @@ export const FridgeItemActions = ({ item, visible, onClose, onChanged }) => {
                 );
               })}
             </ScrollView>
+
+            {/* ── Ngày hết hạn (tuỳ chọn) ──
+                Đặt SAU khối đơn vị, TRƯỚC nút "Lưu" -> giữ được nhịp đọc:
+                số lượng -> đơn vị -> hạn dùng -> lưu.
+                `ExpiryDatePicker` tự dựng modal lịch (không phụ thuộc native lib). */}
+            <Text style={[styles.label, { color: isDark ? '#FFFFFF' : AppColors.textPrimary }]}>
+              {t('fridge.expiryDate')}
+            </Text>
+            <ExpiryDatePicker
+              testID="fridge-actions-expiry-picker"
+              value={effectiveExpiryDate}
+              onChange={handleExpiryChange}
+              placeholder={t('fridge.expiryDatePlaceholder')}
+              locale={i18n.language === 'en' ? 'en' : 'vi'}
+            />
 
             {/* ── Lưu ── */}
             <Pressable

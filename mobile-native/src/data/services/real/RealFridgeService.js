@@ -118,6 +118,11 @@ export class RealFridgeService {
       purchasedAt: dto.purchasedAt ?? null,
       consumedAt: dto.consumedAt ?? null,
       addedBy: dto.addedBy ?? null,
+      // ⚠️ `version` — Optimistic locking của BE (bắt buộc cho PATCH).
+      // BE `UpdateFridgeItemDto.version` là `@IsInt() @Min(0)` -> thiếu field
+      // này thì ValidationPipe (forbidNonWhitelisted) trả 400.
+      // `null` khi BE không trả (mock mode) -> `updateItem` sẽ KHÔNG gửi version.
+      version: dto.version ?? null,
     };
   }
 
@@ -292,6 +297,20 @@ export class RealFridgeService {
    * Cập nhật item. `UpdateFridgeItemDto` chỉ nhận quantity/unit/expiresAt/storageLocation.
    * UI gửi thêm field khác (name, status...) sẽ bị BE bỏ qua — lọc bên dưới.
    *
+   * ⚠️ `version` là BẮT BUỘC (Optimistic locking):
+   *   BE `UpdateFridgeItemDto.version` có `@IsInt() @Min(0)` — thiếu -> 400.
+   *   BE trả `version` trong MỌI response (`FridgeItemResponseDto.version`),
+   *   và mỗi lần PATCH sẽ `version: { increment: 1 }`.
+   *   => Client PHẢI gửi lại version của item đang sửa, nếu không:
+   *      - thiếu version -> 400 Validation Error
+   *      - sai version  -> 409 Conflict ("Dữ liệu đã bị thay đổi bởi thành viên khác")
+   *
+   *   Vì sao vẫn cho phép KHÔNG gửi version:
+   *     - Mock mode không có khái niệm version -> `version === null` -> bỏ qua,
+   *       giữ hành vi cũ (test cũ vẫn xanh).
+   *     - Nếu BE đổi contract về sau, RN không gửi field lạ cũng an toàn hơn.
+   *   Khi có version -> luôn gửi, để BE tự phát hiện xung đột.
+   *
    * @param {string} id
    * @param {object} updates
    */
@@ -301,6 +320,33 @@ export class RealFridgeService {
     if (updates.unit !== undefined) payload.unit = updates.unit;
     if (updates.expiryDate) payload.expiresAt = updates.expiryDate;
     if (updates.compartment) payload.storageLocation = updates.compartment;
+
+    // `clearExpiry` — XOÁ hạn dùng (user bấm X trong picker).
+    // BE `UpdateFridgeItemDto.expiresAt` là `@IsISO8601()` OPTIONAL:
+    //   - không gửi  -> BE giữ nguyên `expiresAt` hiện tại
+    //   - gửi null  -> hợp lệ (`expiresAt?: string` + `@IsOptional()`),
+    //     service: `dto.expiresAt !== undefined ? new Date(dto.expiresAt) : null`
+    //     -> `new Date(null)` = epoch 0 -> KHÔNG phải null!
+    //
+    // ⚠️ VÌ SAO CẦN CỜ RIÊNG:
+    //   `if (updates.expiryDate)` ở trên bỏ qua `null` -> không gửi được.
+    //   Nếu gửi `expiresAt: null` thì BE set `new Date(null)` = 1970-01-01
+    //   -> item bị coi là đã hết hạn từ 56 năm trước.
+    //   => Với BE hiện tại, KHÔNG THỂ xoá hạn dùng qua PATCH.
+    //      Ta gửi `expiresAt: null` và hy vọng BE đã sửa (xem `fridge.service.ts:255`:
+    //      `dto.expiresAt ? new Date(dto.expiresAt) : null` — đúng, BE ĐÃ xử lý null
+    //      đúng cách: `dto.expiresAt` là null -> falsy -> `null`).
+    //      => An toàn gửi `null`.
+    if (updates.clearExpiry === true) {
+      payload.expiresAt = null;
+    }
+
+    // `updates.version` do UI truyền vào (item.version lấy từ GET /fridge).
+    // Fallback: `updates.version` -> không có -> bỏ qua (mock / BE cũ).
+    const version = updates.version;
+    if (version !== undefined && version !== null) {
+      payload.version = Number(version);
+    }
 
     const dto = await this.client.patch(`/fridge/items/${id}`, payload);
     return this._toFridgeItem(dto);

@@ -54,5 +54,18 @@
   { "id": 17, "name": "Gạo", "defaultUnit": "kg", "image": null, "categoryName": "Thực phẩm khô" },
   { "id": 18, "name": "Dầu ăn", "defaultUnit": "chai", "image": null, "categoryName": "Gia vị" },
   { "id": 19, "name": "Nước mắm", "defaultUnit": "chai", "image": null, "categoryName": "Gia vị" },
-  { "id": 20, "name": "Bột ngọt", "defaultUnit": "gói", "image": null, "categoryName": "Gia vị" }
+  { "id": 20, "name": "Bột ngọt", "defaultUnit": "gói", "image": null, "categoryName": "Gia vị" },
+  { "id": 21, "name": "Xoài", "defaultUnit": "quả", "image": null, "categoryName": "Trái cây" },
+  { "id": 22, "name": "Bưởi", "defaultUnit": "quả", "image": null, "categoryName": "Trái cây" },
+  { "id": 23, "name": "Chanh", "defaultUnit": "quả", "image": null, "categoryName": "Trái cây" },
+  { "id": 24, "name": "Mít", "defaultUnit": "quả", "image": null, "categoryName": "Trái cây" },
+  {
+    "id": 25,
+    "name": "Thanh long",
+    "defaultUnit": "quả",
+    "image": null,
+    "categoryName": "Trái cây"
+  },
+  { "id": 26, "name": "Nho", "defaultUnit": "bó", "image": null, "categoryName": "Trái cây" },
+  { "id": 27, "name": "Quả mơ", "defaultUnit": "quả", "image": null, "categoryName": "Trái cây" }
 ]

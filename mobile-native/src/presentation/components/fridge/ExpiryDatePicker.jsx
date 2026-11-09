@@ -13,14 +13,7 @@
  */
 
 import React, { useMemo, useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Modal,
-  Pressable,
-  TouchableWithoutFeedback,
-} from 'react-native';
+import { View, Text, StyleSheet, Modal, Pressable, TouchableWithoutFeedback } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../theme/ThemeContext';
 import { AppColors } from '../../theme/colors';
@@ -74,8 +67,10 @@ const startOfDay = (d) => {
  * @param {Date|null} value - ngày đang chọn
  * @param {(date: Date|null) => void} onChange - nhận `null` khi xoá
  * @param {string} [placeholder]
+ * @param {string} [testID] - testID cho ô bấm được (dùng trong test RN)
+ * @param {'vi'|'en'} [locale='vi'] - ngôn ngữ hiển thị lịch
  */
-export const ExpiryDatePicker = ({ value, onChange, placeholder }) => {
+export const ExpiryDatePicker = ({ value, onChange, placeholder, testID, locale = 'vi' }) => {
   const { isDark } = useTheme();
   const insets = useSafeAreaInsets();
 
@@ -83,7 +78,17 @@ export const ExpiryDatePicker = ({ value, onChange, placeholder }) => {
   const [visible, setVisible] = useState(false);
   const [viewMonth, setViewMonth] = useState(() => value || new Date());
 
-  const isEn = !placeholder || /tap|set date|bấm/i.test(placeholder);
+  // Ngôn ngữ của lịch.
+  //
+  // ⚠️ VÌ SAO KHÔNG ĐOAN QUA PLACEHOLDER:
+  //   Bản cũ dùng `/tap|set date|bấm/i` -> placeholder tiếng Việt ("Bấm để chọn
+  //   ngày hết hạn") cũng khớp "bấm" -> `isEn = true` -> LỊCH hiện tiếng Anh
+  //   (Mon/Tue/Wed, "January") trong khi app đang ở tiếng Việt.
+  //   Bản cũ cũng cho `!placeholder` -> `isEn = true`, tức mất tiếng Việt khi
+  //   không truyền placeholder.
+  //
+  //   Nay nhận `locale` TỪ ĐỘNG (mặc định 'vi') -> không đoán.
+  const isEn = locale === 'en';
   const weekdays = isEn ? WEEKDAYS_EN : WEEKDAYS_VI;
 
   const open = () => {
@@ -126,6 +131,7 @@ export const ExpiryDatePicker = ({ value, onChange, placeholder }) => {
     <>
       <Pressable
         onPress={open}
+        testID={testID}
         style={({ pressed }) => [
           styles.field,
           {
@@ -144,8 +150,8 @@ export const ExpiryDatePicker = ({ value, onChange, placeholder }) => {
                   ? '#FFFFFF'
                   : AppColors.textPrimary
                 : isDark
-                ? '#9DA8A0'
-                : '#A5D6A7',
+                  ? '#9DA8A0'
+                  : '#A5D6A7',
               fontSize: sp(14.5),
             },
           ]}
@@ -154,11 +160,7 @@ export const ExpiryDatePicker = ({ value, onChange, placeholder }) => {
           {selected ? formatDisplayDate(selected) : placeholder}
         </Text>
         {selected ? (
-          <Pressable
-            onPress={() => onChange(null)}
-            hitSlop={10}
-            style={styles.clearBtn}
-          >
+          <Pressable onPress={() => onChange(null)} hitSlop={10} style={styles.clearBtn}>
             <X color={isDark ? '#FFFFFF54' : '#B0B8B2'} size={18} />
           </Pressable>
         ) : null}
@@ -253,12 +255,12 @@ export const ExpiryDatePicker = ({ value, onChange, placeholder }) => {
                                   ? '#0E1611'
                                   : '#FFFFFF'
                                 : isToday
-                                ? isDark
-                                  ? AppColors.primaryLight
-                                  : AppColors.primaryDark
-                                : isDark
-                                ? '#FFFFFF'
-                                : AppColors.textPrimary,
+                                  ? isDark
+                                    ? AppColors.primaryLight
+                                    : AppColors.primaryDark
+                                  : isDark
+                                    ? '#FFFFFF'
+                                    : AppColors.textPrimary,
                             },
                           ]}
                         >

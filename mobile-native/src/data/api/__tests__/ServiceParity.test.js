@@ -24,6 +24,8 @@ import { RealUserService } from '../../services/real/RealUserService';
 import { MockUserService } from '../../services/mock/MockUserService';
 import { RealAuthService } from '../../services/real/RealAuthService';
 import { MockAuthService } from '../../services/mock/MockAuthService';
+import { RealNotificationService } from '../../services/real/RealNotificationService';
+import { MockNotificationService } from '../../services/mock/MockNotificationService';
 
 /** Gom tất cả method trong prototype chain (bỏ qua helper private `_`-prefixed). */
 const methodNames = (Cls) => {
@@ -45,6 +47,9 @@ const DOMAINS = [
   ['recipe', RealRecipeService, MockRecipeService],
   ['user', RealUserService, MockUserService],
   ['auth', RealAuthService, MockAuthService],
+  // B5 — Notifications. Domain này trước đó CHỈ có Mock (màn thông báo luôn
+  // hiện dữ liệu giả). Real đã có đủ 7 endpoint BE -> parity bắt buộc.
+  ['notification', RealNotificationService, MockNotificationService],
 ];
 
 describe('PARITY — proxy sau withFallback phải expose đủ method', () => {
@@ -57,23 +62,29 @@ describe('PARITY — proxy sau withFallback phải expose đủ method', () => {
     expect(missing).toEqual([]);
   });
 
-  it.each(DOMAINS)('%s: proxy có đủ method public của Mock (fallback gọi được)', (_label, Real, Mock) => {
-    const proxy = withFallback(new Real(), new Mock(), { label: _label });
+  it.each(DOMAINS)(
+    '%s: proxy có đủ method public của Mock (fallback gọi được)',
+    (_label, Real, Mock) => {
+      const proxy = withFallback(new Real(), new Mock(), { label: _label });
 
-    const missing = methodNames(Mock).filter((m) => typeof proxy[m] !== 'function');
+      const missing = methodNames(Mock).filter((m) => typeof proxy[m] !== 'function');
 
-    expect(missing).toEqual([]);
-  });
+      expect(missing).toEqual([]);
+    }
+  );
 
-  it.each(DOMAINS)('%s: method public của Mock đều được Real implement hoặc cố ý bỏ', (_label, Real, Mock) => {
-    const realMethods = methodNames(Real);
-    const mockMethods = methodNames(Mock);
+  it.each(DOMAINS)(
+    '%s: method public của Mock đều được Real implement hoặc cố ý bỏ',
+    (_label, Real, Mock) => {
+      const realMethods = methodNames(Real);
+      const mockMethods = methodNames(Mock);
 
-    const extraInMock = mockMethods.filter((m) => !realMethods.includes(m));
+      const extraInMock = mockMethods.filter((m) => !realMethods.includes(m));
 
-    // Mock thừa -> withFallback gọi thẳng mock -> lệch shape với Real.
-    expect(extraInMock).toEqual([]);
-  });
+      // Mock thừa -> withFallback gọi thẳng mock -> lệch shape với Real.
+      expect(extraInMock).toEqual([]);
+    }
+  );
 });
 
 describe('PARITY — method B4 bắt buộc phải tồn tại ở CẢ Real và Mock', () => {
@@ -104,8 +115,10 @@ describe('PARITY — method B4 bắt buộc phải tồn tại ở CẢ Real và
 
   it('RealRecipeService có đủ method B1 (fridge/ingredient) dùng bởi UI', () => {
     const methods = methodNames(RealRecipeService);
-    ['getRecipes', 'getRecipeById', 'getSuggestions', 'addBookmark', 'getBookmarked'].forEach((m) => {
-      expect(methods).toContain(m);
-    });
+    ['getRecipes', 'getRecipeById', 'getSuggestions', 'addBookmark', 'getBookmarked'].forEach(
+      (m) => {
+        expect(methods).toContain(m);
+      }
+    );
   });
 });

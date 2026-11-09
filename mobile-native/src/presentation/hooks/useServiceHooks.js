@@ -149,11 +149,14 @@ export const useUserProfile = () => {
 
 /**
  * Hook lấy current subscription plan
+ *
+ * ⚠️ `displayName` mặc định khớp BE seed (`be/prisma/seed.sql`):
+ *   `('free', 'Gói Miễn Phí', 0, 'forever', ...)`.
  */
 export const useCurrentPlan = () => {
   return useAsyncData((s) => s.userService.getCurrentPlan(), {
     name: 'free',
-    displayName: 'Miễn phí',
+    displayName: 'Gói Miễn Phí',
     price: 0,
     currency: 'VND',
   });

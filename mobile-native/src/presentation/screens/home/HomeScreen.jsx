@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { View, ScrollView, Animated, Easing, Platform, RefreshControl } from 'react-native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useTheme } from '../../theme/ThemeContext';
 import { AppColors } from '../../theme/colors';
 import { sp } from '../../utils/responsive';
-import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { showInfo } from '../../utils/helpers';
 import { ScreenBackground } from '../../components/common/ScreenBackground';
 import { HomeHeader } from '../../components/home/HomeHeader';
 import { GreetingBanner } from '../../components/home/GreetingBanner';
@@ -14,8 +15,8 @@ import { PremiumBanner } from '../../components/home/PremiumBanner';
 import { FamilyPlanModal } from '../../components/home/FamilyPlanModal';
 import { WeeklyStatisticsSection } from '../../components/home/WeeklyStatisticsSection';
 import { CookingSuggestionsSection } from '../../components/home/CookingSuggestionsSection';
+import { ShoppingListShortcut } from '../../components/home/ShoppingListShortcut';
 import { Routes } from '../../../shared/constants/routes';
-import { showInfo } from '../../utils/helpers';
 import {
   useCurrentPlan,
   useFridgeSummary,
@@ -40,6 +41,17 @@ export const HomeScreen = () => {
   const [searchValue, setSearchValue] = useState('');
   const [refreshing, setRefreshing] = useState(false);
   const [planModalOpen, setPlanModalOpen] = useState(false);
+
+  /**
+   * ⚠️ `useAsyncData` tạo state RIÊNG cho MỖI nơi gọi hook -> `refetch()` ở
+   * HomeScreen KHÔNG update được component con (WeeklyStatisticsSection,
+   * CookingSuggestionsSection, FridgeSummaryCards đều gọi hook riêng).
+   *
+   * => Dùng `refreshKey` (counter) làm tín hiệu: component con tự refetch
+   *    khi `refreshKey` đổi. Nhờ vậy pull-to-refresh ở Home thực sự làm mới
+   *    mọi số liệu hiển thị trên Home.
+   */
+  const [refreshKey, setRefreshKey] = useState(0);
 
   // Gói Family ĐANG HOẠT ĐỘNG = plan tên 'family' + status 'active'.
   //
@@ -66,10 +78,40 @@ export const HomeScreen = () => {
     } catch (e) {
       if (__DEV__) console.warn('[Home] Refresh error:', e);
     } finally {
+      // Báo tín hiệu cho các component con tự refetch hook của chúng.
+      setRefreshKey((k) => k + 1);
       // Giữ refresh indicator tối thiểu 500ms để UX tốt hơn
       setTimeout(() => setRefreshing(false), 500);
     }
   }, [refetchPlan, refetchSummary, refetchStats, refetchSuggestions, refetchNotifications]);
+
+  /**
+   * Được gọi sau khi user bấm "Bắt đầu nấu" ngay tại Home.
+   *
+   * ⚠️ Bắt buộc báo qua `refreshKey` (counter) vì `useAsyncData` tạo state
+   * RIÊNG cho mỗi nơi gọi hook -> `refetchStats()` của HomeScreen KHÔNG
+   * update được `WeeklyStatisticsSection` / `FridgeSummaryCards`.
+   */
+  const handleCooked = useCallback(() => {
+    setRefreshKey((k) => k + 1);
+  }, []);
+
+  // Tự refresh khi quay lại Home (sau khi tick "Bắt đầu nấu" ở màn công thức
+  // hoặc màn thực đơn tuần) -> thống kê "Bữa đã nấu" + tủ lạnh cập nhật ngay.
+  // Bỏ qua lần focus đầu tiên vì hook đã tự fetch khi mount.
+  const isFirstFocus = useRef(true);
+  useFocusEffect(
+    useCallback(() => {
+      if (isFirstFocus.current) {
+        isFirstFocus.current = false;
+        return undefined;
+      }
+      refetchStats();
+      refetchSuggestions();
+      refetchSummary();
+      return undefined;
+    }, [refetchStats, refetchSuggestions, refetchSummary])
+  );
 
   // Animation values
   const animController = useRef(new Animated.Value(0)).current;
@@ -137,6 +179,15 @@ export const HomeScreen = () => {
             <FridgeSummaryCards
               onExpiringTap={() => navigation.navigate(Routes.AllExpiredItems)}
               onAvailableTap={() => navigation.navigate(Routes.AllAvailableItems)}
+              refreshKey={refreshKey}
+            />
+          </View>
+
+          {/* Nút tắt "Danh sách mua" — điểm truy cập duy nhất từ Home để
+              user mở được giỏ sau khi bấm "+ Thêm vào DS" ở màn công thức. */}
+          <View style={{ marginTop: sp(16) }}>
+            <ShoppingListShortcut
+              onPress={() => navigation.navigate(Routes.ShoppingReminder)}
             />
           </View>
 
@@ -157,12 +208,29 @@ export const HomeScreen = () => {
           <View style={{ marginTop: sp(20) }}>
             <WeeklyStatisticsSection
               onDetailTap={() => navigation.navigate(Routes.IngredientStatistics)}
+              refreshKey={refreshKey}
             />
           </View>
 
           <CookingSuggestionsSection
-            onRecipeTap={(recipe) => navigation.navigate(Routes.RecipeDetail, { recipe })}
-            onSwapTap={() => showInfo(t('home.filterTapped'))}
+            refreshKey={refreshKey}
+            onRecipeTap={(recipe) =>
+              navigation.navigate(Routes.RecipeDetail, {
+                recipe,
+                // ⚠️ `recipe.id` là id của MEAL SLOT (bản ghi meal plan), KHÔNG
+                // phải id công thức. Màn chi tiết dùng `recipeId` để fetch
+                // công thức -> phải truyền `recipe.recipeId` cho đúng.
+                recipeId: recipe.recipeId ?? recipe.id,
+                // Truyền `slotId` để màn chi tiết có thể tick "Bắt đầu nấu"
+                // (BE cần slot id mới trừ nguyên liệu + đánh dấu đã nấu).
+                slotId: recipe.id,
+                cooked: recipe.cooked,
+              })
+            }
+            onSwapTap={() => showInfo(t('home.swapNotReady'))}
+            // Nấu xong -> báo Home để refresh thống kê "Bữa đã nấu" + tủ lạnh
+            // ngay tại chỗ (component con có state hook riêng, không tự update).
+            onCooked={handleCooked}
           />
         </ScrollView>
       </Animated.View>

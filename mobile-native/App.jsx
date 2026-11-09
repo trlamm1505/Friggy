@@ -87,6 +87,19 @@ import './src/data/services/real/RealUserService';
 import './src/data/services/real/RealRecipeService';
 
 // ──────────────────────────────────────────────────────────────────
+// B5 — Notifications (đăng ký key 'notificationService')
+//
+// ⚠️ Key `notificationService` CÓ trong `ServiceProvider.defaultServices`
+// (file immutable từ P0.5) -> `resolveServices()` sẽ tự bọc `withFallback`.
+// Vì `appConfig.SAFE_FALLBACK=false` khi test với BE local, lỗi 5xx sẽ ném
+// lên UI (đúng R3) thay vì im lặng trả dữ liệu giả.
+//
+// Trước domain này chỉ có `MockNotificationService` -> màn thông báo luôn
+// hiện dữ liệu giả, dù BE đã có đủ 7 endpoint.
+// ──────────────────────────────────────────────────────────────────
+import './src/data/services/real/RealNotificationService';
+
+// ──────────────────────────────────────────────────────────────────
 // B4 — AI Chat streaming (đăng ký key 'aiChatService')
 //
 // ⚠️ Key `aiChatService` KHÔNG có trong `ServiceProvider.defaultServices`

@@ -52,6 +52,9 @@ const beItem = (over = {}) => ({
   consumedAt: null,
   daysUntilExpiry: -2,
   createdAt: '2026-10-20T00:00:00.000Z',
+  // `version` — BE luôn trả (optimistic locking). `Prisma @default(1)` cho item
+  // mới -> item đầu tiên có version = 1.
+  version: 1,
   ...over,
 });
 
@@ -314,6 +317,89 @@ describe('5. CRUD — endpoint & payload đúng BE', () => {
       expiresAt: '2026-11-01',
       storageLocation: 'pantry',
     });
+  });
+
+  // ═══════════════ OPTIMISTIC LOCKING (`version`) ═══════════════
+  //
+  // ⚠️ ĐÂY LÀ TEST CHỐNG HỒI QUY "PATCH LUÔN TRẢ 400":
+  //   BE `UpdateFridgeItemDto.version` là BẮT BUỘC (`@IsInt() @Min(0)`) và
+  //   `ValidationPipe` bật `forbidNonWhitelisted: true` -> thiếu `version`
+  //   -> 400 Validation Error -> tính năng sửa số lượng KHÔNG hoạt động.
+  //   BE tăng version mỗi lần PATCH -> client phải gửi lại version hiện tại.
+
+  it('updateItem gửi `version` khi có (BẮT BUỘC với BE)', async () => {
+    api.patch.mockResolvedValue(beItem({ version: 3 }));
+
+    await svc.updateItem('uuid-1', { quantity: 3, unit: 'kg', version: 3 });
+
+    const [, payload] = api.patch.mock.calls[0];
+    expect(payload.version).toBe(3);
+  });
+
+  it('updateItem KHÔNG có version -> KHÔNG gửi (mock mode / BE cũ)', async () => {
+    api.patch.mockResolvedValue(beItem());
+
+    await svc.updateItem('uuid-1', { quantity: 3, unit: 'kg' });
+
+    const [, payload] = api.patch.mock.calls[0];
+    expect(payload.version).toBeUndefined();
+  });
+
+  it('updateItem version = null -> KHÔNG gửi (không gửi null cho BE)', async () => {
+    api.patch.mockResolvedValue(beItem());
+
+    await svc.updateItem('uuid-1', { quantity: 3, unit: 'kg', version: null });
+
+    const [, payload] = api.patch.mock.calls[0];
+    expect(payload.version).toBeUndefined();
+  });
+
+  it('updateItem version dạng string -> ép về number', async () => {
+    api.patch.mockResolvedValue(beItem({ version: 2 }));
+
+    // UI có thể lưu version từ JSON -> string. BE `@IsInt()` -> gửi string là 400.
+    await svc.updateItem('uuid-1', { quantity: 1, unit: 'kg', version: '2' });
+
+    const [, payload] = api.patch.mock.calls[0];
+    expect(payload.version).toBe(2);
+    expect(typeof payload.version).toBe('number');
+  });
+
+  it('mapper giữ `version` từ response BE (UI cần để gửi lại)', async () => {
+    api.get.mockResolvedValue([beItem({ version: 7 })]);
+
+    const items = await svc.getItems();
+
+    expect(items[0].version).toBe(7);
+  });
+
+  it('BE không trả version -> mapper trả null (không phải undefined)', async () => {
+    const item = beItem();
+    delete item.version;
+    api.get.mockResolvedValue([item]);
+
+    const items = await svc.getItems();
+
+    expect(items[0].version).toBeNull();
+  });
+
+  it('clearExpiry -> gửi expiresAt = null để BE xoá hạn dùng', async () => {
+    api.patch.mockResolvedValue(beItem({ expiresAt: null }));
+
+    await svc.updateItem('uuid-1', { quantity: 1, unit: 'kg', clearExpiry: true });
+
+    const [, payload] = api.patch.mock.calls[0];
+    // BE: `dto.expiresAt ? new Date(dto.expiresAt) : null` -> null -> expiresAt = null.
+    expect(payload.expiresAt).toBeNull();
+  });
+
+  it('KHÔNG clearExpiry -> KHÔNG gửi expiresAt (giữ hạn dùng của BE)', async () => {
+    api.patch.mockResolvedValue(beItem());
+
+    await svc.updateItem('uuid-1', { quantity: 1, unit: 'kg' });
+
+    const [, payload] = api.patch.mock.calls[0];
+    expect(payload.expiresAt).toBeUndefined();
   });
 
   it('deleteItem gọi DELETE đúng URL', async () => {

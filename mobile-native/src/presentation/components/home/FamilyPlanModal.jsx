@@ -9,8 +9,9 @@
  *   - Flutter hiện **ảnh QR**, BỎ QUA `checkoutUrl` (không có `url_launcher`/
  *     `webview` trong `pubspec.yaml`) => RN làm y hệt: hien QR, KHONG mo browser.
  *   - Poll 2 tầng, mỗi 3 giây (`family_plan_modal.dart:201`) — đã tách sang
- *     `PaymentQrModal` dùng chung (24/10) vì `PackageManagementScreen` cũng
+ *     `PayOSPaymentSheet` dùng chung (24/10) vì `PackageManagementScreen` cũng
  *     cần hiện QR cho gói non-family.
+ *     (`PaymentQrModal` là bản cũ đã bị thay thế — không còn màn nào dùng.)
  *   - `expireAt` (15 phút): Flutter parse xong bỏ qua, poll vô hạn. RN DỪNG poll
  *     khi hết hạn và báo user (tránh poll 3s vô tận).
  *
@@ -64,7 +65,7 @@ export const FamilyPlanModal = ({ visible, onClose, onSuccess }) => {
   // mặc định, và cleanup effect bên dưới đã clear poll timer khi unmount.
   // => Không cần effect reset.
 
-  /** Mua gói Family: subscribe -> hiện QR -> poll (trong PaymentQrModal). */
+  /** Mua gói Family: subscribe -> hiện QR -> poll (trong PayOSPaymentSheet). */
   const handleSubscribe = useCallback(async () => {
     setLoading(true);
     try {
@@ -74,8 +75,16 @@ export const FamilyPlanModal = ({ visible, onClose, onSuccess }) => {
       // (mock cũ dùng nhãn tiếng Việt).
       const familyPlan =
         packages.find((p) => p.name === 'family') ??
-        packages.find((p) => String(p.displayName ?? p.name).toLowerCase().includes('gia đình')) ??
-        packages.find((p) => String(p.displayName ?? p.name).toLowerCase().includes('family'));
+        packages.find((p) =>
+          String(p.displayName ?? p.name)
+            .toLowerCase()
+            .includes('gia đình')
+        ) ??
+        packages.find((p) =>
+          String(p.displayName ?? p.name)
+            .toLowerCase()
+            .includes('family')
+        );
       if (!familyPlan) {
         showError(t('familyPlan.planNotFound'));
         return;

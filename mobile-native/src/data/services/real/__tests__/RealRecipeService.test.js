@@ -757,6 +757,115 @@ describe('11. B4 — Shopping list', () => {
     await expect(svc.toggleShoppingItem('list-1')).rejects.toThrow(/listId hoặc itemId/i);
     expect(api.patch).not.toHaveBeenCalled();
   });
+
+  // ─────────────────────────────────────────────────────────
+  // Shopping list CRUD mới — dùng cho nút "+ Thêm vào DS"
+  // ─────────────────────────────────────────────────────────
+
+  it('getActiveShoppingList -> GET /shopping-lists/active, map items', async () => {
+    api.get.mockResolvedValue(beList());
+
+    const list = await svc.getActiveShoppingList();
+
+    expect(api.get).toHaveBeenCalledWith('/meal-planning/shopping-lists/active');
+    expect(list.id).toBe('list-1');
+    expect(list.items[0].name).toBe('Thịt bò');
+  });
+
+  it('addShoppingListItem -> POST đúng URL + body, trả item đã map', async () => {
+    api.post.mockResolvedValue({
+      id: 5,
+      ingredientId: 9,
+      ingredientName: 'Cà chua',
+      quantity: 2,
+      unit: 'kg',
+      isPurchased: false,
+    });
+
+    const item = await svc.addShoppingListItem('list-1', {
+      ingredientId: 9,
+      quantity: 2,
+      unit: 'kg',
+    });
+
+    expect(api.post).toHaveBeenCalledWith('/meal-planning/shopping-lists/list-1/items', {
+      ingredientId: 9,
+      quantity: 2,
+      unit: 'kg',
+    });
+    expect(item.id).toBe(5);
+    expect(item.name).toBe('Cà chua');
+    expect(item.done).toBe(false);
+  });
+
+  it('addShoppingListItem thiếu ingredientId -> KHÔNG gọi API', async () => {
+    const result = await svc.addShoppingListItem('list-1', {});
+
+    expect(result).toBeNull();
+    expect(api.post).not.toHaveBeenCalled();
+  });
+
+  it('addSlotMissingToShoppingList -> POST /slots/:id/missing-to-shopping-list', async () => {
+    api.post.mockResolvedValue({
+      listId: 'list-1',
+      addedCount: 2,
+      addedItems: [{ id: 1, name: 'Thịt bò' }],
+    });
+
+    const result = await svc.addSlotMissingToShoppingList('slot-1');
+
+    expect(api.post).toHaveBeenCalledWith(
+      '/meal-planning/slots/slot-1/missing-to-shopping-list'
+    );
+    expect(result.addedCount).toBe(2);
+    expect(result.listId).toBe('list-1');
+  });
+
+  it('addSlotMissingToShoppingList thiếu slotId -> trả về 0 món, KHÔNG gọi API', async () => {
+    const result = await svc.addSlotMissingToShoppingList(null);
+
+    expect(result).toEqual({ listId: null, addedCount: 0, addedItems: [] });
+    expect(api.post).not.toHaveBeenCalled();
+  });
+
+  it('updateShoppingListItem -> PATCH kèm quantity', async () => {
+    api.patch.mockResolvedValue({
+      id: 1,
+      ingredientId: 9,
+      ingredientName: 'Thịt bò',
+      quantity: 3,
+      unit: 'g',
+      isPurchased: false,
+    });
+
+    const item = await svc.updateShoppingListItem('list-1', 1, { quantity: 3 });
+
+    expect(api.patch).toHaveBeenCalledWith('/meal-planning/shopping-lists/list-1/items/1', {
+      quantity: 3,
+    });
+    expect(item.quantity).toBe(3);
+  });
+
+  it('updateShoppingListItem không có gì để sửa -> KHÔNG gọi API', async () => {
+    const result = await svc.updateShoppingListItem('list-1', 1, {});
+
+    expect(result).toBeNull();
+    expect(api.patch).not.toHaveBeenCalled();
+  });
+
+  it('removeShoppingListItem -> DELETE đúng URL', async () => {
+    api.delete.mockResolvedValue(null);
+
+    await svc.removeShoppingListItem('list-1', 1);
+
+    expect(api.delete).toHaveBeenCalledWith('/meal-planning/shopping-lists/list-1/items/1');
+  });
+
+  it('removeShoppingListItem thiếu id -> KHÔNG gọi API', async () => {
+    await svc.removeShoppingListItem('list-1', null);
+
+    expect(api.delete).not.toHaveBeenCalled();
+  });
 });
 
 // ═══════════════ 12. B4 — R1: Mock và Real cùng shape ═══════════════

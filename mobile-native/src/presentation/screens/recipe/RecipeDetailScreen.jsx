@@ -39,6 +39,7 @@ import { ErrorState } from '../../components/common/ErrorState';
 import { Skeleton } from '../../components/common/Skeleton';
 import { useRecipeById, useFridgeItems } from '../../hooks/useServiceHooks';
 import { useServices } from '../../../data/ServiceProvider';
+import { Routes } from '../../../shared/constants/routes';
 import { showSuccess, showError } from '../../utils/helpers';
 
 const FALLBACK_RECIPE = {
@@ -244,9 +245,133 @@ export const RecipeDetailScreen = () => {
     }
   }, [recipeId, recipe, isBookmarked, bookmarkBusy, services, t]);
 
+  /**
+   * "Thêm nguyên liệu thiếu vào danh sách mua".
+   *
+   * ⚠️ TRƯỚC ĐÂY hàm này CHỈ hiện toast giả:
+   *    `showSuccess(t('home.addedToShoppingList'))` — không gọi API, không
+   *    điều hướng tới danh sách -> user bấm xong không thấy gì cả.
+   *
+   * GIỜ ĐÃ NỐI BE THẬT:
+   *   1. `POST /meal-planning/slots/{slotId}/missing-to-shopping-list`
+   *      -> BE tính nguyên liệu thiếu (so với tủ lạnh thật) rồi ghi vào giỏ mua.
+   *   2. Điều hướng tới màn Danh sách mua để user thấy & chỉnh sửa ngay.
+   *
+   * Nếu mở từ Home (không có slotId) -> dùng danh sách mặc định và gọi
+   * `addShoppingListItem` cho từng nguyên liệu thiếu tính được ở client.
+   */
+  const [addingToList, setAddingToList] = useState(false);
+
   const addMissingToShoppingList = useCallback(async () => {
-    showSuccess(t('home.addedToShoppingList'));
-  }, [t]);
+    if (addingToList) return;
+    setAddingToList(true);
+
+    try {
+      const missing = matchInfo.missingItems ?? [];
+
+      // Ưu tiên đường đi qua slot (BE tính chính xác phần thiếu theo tủ lạnh).
+      // ⚠️ CHỈ dùng `params.slotId` — `params.id` là RECIPE id, PATCH/POST
+      //    theo nó sẽ trả 404 vì endpoint cần MEAL SLOT id.
+      const slotId = route.params?.slotId ?? null;
+
+      let addedCount = 0;
+      if (slotId) {
+        const result = await services.recipeService.addSlotMissingToShoppingList(slotId);
+        addedCount = result?.addedCount ?? 0;
+      } else if (missing.length > 0) {
+        // Không có slot -> thêm từng món vào giỏ mua mặc định.
+        const list = await services.recipeService.getActiveShoppingList();
+        if (!list) throw new Error(t('home.error'));
+
+        const missingIngredients = (recipe.ingredients ?? []).filter((ing) => {
+          const name = typeof ing === 'string' ? ing : ing?.name;
+          return missing.includes(name);
+        });
+
+        for (const ing of missingIngredients) {
+          const ingredientId = ing?.id ?? ing?.ingredientId;
+          if (!ingredientId) continue;
+          await services.recipeService.addShoppingListItem(list.id, {
+            ingredientId,
+            quantity: ing.amount ?? 1,
+            unit: ing.unit ?? undefined,
+          });
+          addedCount += 1;
+        }
+      }
+
+      showSuccess(
+        addedCount > 0
+          ? t('home.addedToShoppingList')
+          : t('home.shoppingNothingMissing')
+      );
+
+      // Điều hướng tới danh sách mua để user thấy kết quả + chỉnh sửa.
+      navigation.navigate(Routes.ShoppingReminder);
+    } catch (e) {
+      showError(e?.message ?? t('home.error'));
+    } finally {
+      setAddingToList(false);
+    }
+  }, [addingToList, matchInfo.missingItems, recipe, route.params, services, navigation, t]);
+
+  /**
+   * "Bắt đầu nấu" — ĐÁNH DẤU ĐÃ NẤU + TRỪ NGUYÊN LIỆU khỏi tủ lạnh.
+   *
+   * ⚠️ BUG ĐÃ SỬA: trước đây nút này CHỈ hiện toast rỗng
+   *    `showSuccess(t('home.startCooking'))` — không gọi API, không trừ gì,
+   *    không đánh dấu -> user bấm xong "không thấy có gì xảy ra cả".
+   *
+   * GIỜ ĐÃ NỐI BE THẬT:
+   *   1. `PATCH /meal-planning/slots/{slotId}` với `{ completed: true }`
+   *      -> BE set `completedAt` + trừ nguyên liệu FIFO trong tủ lạnh
+   *         (idempotent: chỉ trừ lần đầu) + trả về `consumedIngredients`.
+   *   2. Hiện toast cho user biết đã trừ bao nhiêu nguyên liệu.
+   *   3. Quay lại màn trước để thấy chip "Đã nấu" + số liệu thống kê.
+   *
+   * ⚠️ Cần `slotId` trong route params. Mở từ Home (chỉ có `recipe`) thì
+   *    KHÔNG có slot -> không thể tick -> báo user mở từ "Thực đơn tuần tới".
+   */
+  const [cooking, setCooking] = useState(false);
+
+  // Slot id của bữa ăn này (nếu mở từ màn thực đơn tuần / từ Home).
+  //
+  // ⚠️ CHỈ dùng `route.params.slotId` — KHÔNG fallback sang `params.id`,
+  //    vì `id` ở màn danh sách công thức là RECIPE id, không phải meal
+  //    slot id -> PATCH sai endpoint sẽ lỗi 404.
+  const slotId = route.params?.slotId ?? null;
+
+  // Trạng thái đã nấu của slot (nếu có).
+  const slotCooked = Boolean(route.params?.cooked ?? routeRecipe?.cooked);
+
+  const startCooking = useCallback(async () => {
+    if (cooking) return;
+
+    if (!slotId) {
+      // Không có slot -> không thể đánh dấu/trừ nguyên liệu.
+      showError(t('home.startCookingNoSlot'));
+      return;
+    }
+
+    setCooking(true);
+    try {
+      const result = await services.recipeService.updateSlot(slotId, { completed: true });
+      const consumed = result?.consumedIngredients ?? [];
+
+      showSuccess(
+        consumed.length > 0
+          ? t('home.startCookingDone', { count: consumed.length })
+          : t('home.startCookingNoIngredient')
+      );
+
+      // Quay lại màn trước để user thấy chip "Đã nấu" đã cập nhật.
+      if (navigation.canGoBack()) navigation.goBack();
+    } catch (e) {
+      showError(e?.message ?? t('home.startCookingFailed'));
+    } finally {
+      setCooking(false);
+    }
+  }, [cooking, slotId, services, navigation, t]);
 
   const imageMap = {
     recipe_tomato_egg: require('../../../../assets/images/recipe_tomato_egg.png'),
@@ -441,13 +566,16 @@ export const RecipeDetailScreen = () => {
               {matchInfo.needCount > 0 ? (
                 <Pressable
                   onPress={addMissingToShoppingList}
+                  disabled={addingToList}
                   style={({ pressed }) => [
                     styles.addListBtn,
                     {
                       backgroundColor: isDark ? '#5E4A35' : '#FFCC80',
-                      opacity: pressed ? 0.7 : 1,
+                      opacity: addingToList ? 0.6 : pressed ? 0.7 : 1,
                     },
                   ]}
+                  testID="recipe-detail-add-to-list"
+                  accessibilityLabel={t('home.addedToShoppingList')}
                 >
                   <Text
                     style={[
@@ -455,7 +583,7 @@ export const RecipeDetailScreen = () => {
                       { color: isDark ? '#FFB74D' : '#E65100', fontSize: sp(11) },
                     ]}
                   >
-                    + Thêm vào DS
+                    {addingToList ? t('common.loading') : '+ Thêm vào DS'}
                   </Text>
                 </Pressable>
               ) : null}
@@ -762,8 +890,10 @@ export const RecipeDetailScreen = () => {
         </Pressable>
         <View style={{ flex: 1, marginLeft: sp(12) }}>
           <CustomButton
-            title={t('home.startCooking')}
-            onPress={() => showSuccess(t('home.startCooking'))}
+            title={slotCooked ? t('home.alreadyCooked') : t('home.startCooking')}
+            onPress={startCooking}
+            loading={cooking}
+            disabled={slotCooked}
           />
         </View>
       </View>

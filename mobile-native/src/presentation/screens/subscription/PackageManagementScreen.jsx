@@ -104,7 +104,7 @@ export const PackageManagementScreen = () => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
   const { userService } = useServices();
-  
+
   const [subscribingPlanId, setSubscribingPlanId] = useState(null);
   const [plansSheetOpen, setPlansSheetOpen] = useState(false);
 
@@ -112,6 +112,11 @@ export const PackageManagementScreen = () => {
   const [qrCheckout, setQrCheckout] = useState(null);
   const [qrPlanName, setQrPlanName] = useState(null);
   const [qrPlanDisplayName, setQrPlanDisplayName] = useState(null);
+  // Gia hạn hay mua mới -> nội dung chuyển khoản khác nhau:
+  //   mua mới  -> "Friggy Gói Cá Nhân"
+  //   gia hạn  -> "Gia hạn Friggy Gói Cá Nhân"
+  // (khớp `description` BE gửi PayOS — xem `PayOSPaymentSheet.buildTransferDescription`).
+  const [qrIsRenew, setQrIsRenew] = useState(false);
 
   const {
     data: packages,
@@ -147,6 +152,8 @@ export const PackageManagementScreen = () => {
     async (pkg) => {
       if (!pkg?.id) return;
       setSubscribingPlanId(pkg.id);
+      // Mua MỚI -> nội dung chuyển khoản "Friggy <gói>".
+      setQrIsRenew(false);
       try {
         const pending = await userService.findPendingPayment();
         if (pending?.qrCode) {
@@ -189,6 +196,9 @@ export const PackageManagementScreen = () => {
    */
   const handleRenew = useCallback(async () => {
     setSubscribingPlanId('renew');
+    // GIA HẠN -> nội dung chuyển khoản "Gia hạn Friggy <gói>"
+    // (khớp `description` BE gửi PayOS cho `POST /subscriptions/renew`).
+    setQrIsRenew(true);
     try {
       const pending = await userService.findPendingPayment();
       if (pending?.qrCode) {
@@ -269,9 +279,18 @@ export const PackageManagementScreen = () => {
             },
           ]}
         >
-          <ChevronLeft color={isDark ? '#FFFFFF' : AppColors.headerTextLight} size={sp(22)} strokeWidth={2.4} />
+          <ChevronLeft
+            color={isDark ? '#FFFFFF' : AppColors.headerTextLight}
+            size={sp(22)}
+            strokeWidth={2.4}
+          />
         </Pressable>
-        <Text style={[styles.headerTitle, { color: isDark ? '#FFFFFF' : AppColors.headerTextLight, fontSize: sp(23) }]}>
+        <Text
+          style={[
+            styles.headerTitle,
+            { color: isDark ? '#FFFFFF' : AppColors.headerTextLight, fontSize: sp(23) },
+          ]}
+        >
           {t('subscription.infoTitle')}
         </Text>
       </View>
@@ -342,12 +361,7 @@ export const PackageManagementScreen = () => {
           </View>
 
           {/* ── 2. Card thông tin gói ── */}
-          <View
-            style={[
-              styles.detailsCard,
-              { backgroundColor: cardBg, borderColor: cardBorder },
-            ]}
-          >
+          <View style={[styles.detailsCard, { backgroundColor: cardBg, borderColor: cardBorder }]}>
             <View style={styles.timelineRow}>
               <View style={styles.timelineItem}>
                 <CalendarCheck
@@ -403,7 +417,12 @@ export const PackageManagementScreen = () => {
                   {statusLabel(currentStatus, t)}
                 </Text>
               </View>
-              <Text style={[styles.price, { color: isDark ? AppColors.primaryLight : AppColors.primary, fontSize: sp(14) }]}>
+              <Text
+                style={[
+                  styles.price,
+                  { color: isDark ? AppColors.primaryLight : AppColors.primary, fontSize: sp(14) },
+                ]}
+              >
                 {formatVnd(currentPlan?.price)} VNĐ
               </Text>
             </View>
@@ -437,7 +456,10 @@ export const PackageManagementScreen = () => {
                         variant="outline"
                         height={42}
                         borderRadius={21}
-                        textStyle={{ fontSize: sp(12), color: isDark ? '#FF8A80' : AppColors.error }}
+                        textStyle={{
+                          fontSize: sp(12),
+                          color: isDark ? '#FF8A80' : AppColors.error,
+                        }}
                         style={{
                           borderColor: isDark ? '#FF8A80' : AppColors.error,
                           borderWidth: 1.4,
@@ -459,10 +481,7 @@ export const PackageManagementScreen = () => {
             currentPlan.features.map((feat, i) => (
               <View
                 key={`${currentPlanName}-${i}`}
-                style={[
-                  styles.benefitCard,
-                  { backgroundColor: cardBg, borderColor: cardBorder },
-                ]}
+                style={[styles.benefitCard, { backgroundColor: cardBg, borderColor: cardBorder }]}
               >
                 <View
                   style={[
@@ -479,10 +498,7 @@ export const PackageManagementScreen = () => {
             ))
           ) : (
             <View
-              style={[
-                styles.benefitCard,
-                { backgroundColor: cardBg, borderColor: cardBorder },
-              ]}
+              style={[styles.benefitCard, { backgroundColor: cardBg, borderColor: cardBorder }]}
             >
               <View
                 style={[
@@ -543,6 +559,7 @@ export const PackageManagementScreen = () => {
         checkout={qrCheckout}
         targetPlanName={qrPlanName}
         targetPlanDisplayName={qrPlanDisplayName}
+        isRenew={qrIsRenew}
         onClose={() => setQrCheckout(null)}
         onSuccess={refreshAll}
       />

@@ -140,10 +140,23 @@ describe('2. Endpoint đúng', () => {
 
     const detail = await svc.getSessionDetail('sess-1');
 
-    expect(api.get).toHaveBeenCalledWith('/ai-chat/sessions/sess-1');
+    // Không truyền params -> `params: undefined` (giống pattern của getSessions).
+    expect(api.get).toHaveBeenCalledWith('/ai-chat/sessions/sess-1', {
+      params: undefined,
+    });
     expect(detail.session.id).toBe('sess-1');
     expect(detail.messages).toHaveLength(1);
     expect(detail.messages[0].role).toBe('assistant');
+  });
+
+  it('getSessionDetail truyền page/limit khi có params', async () => {
+    api.get.mockResolvedValue({ ...beSession(), messages: [beMessage()] });
+
+    await svc.getSessionDetail('sess-1', { page: 1, limit: 100 });
+
+    expect(api.get).toHaveBeenCalledWith('/ai-chat/sessions/sess-1', {
+      params: { page: 1, limit: 100 },
+    });
   });
 
   it('sendMessage gửi content đã trim, trả messageId + streamUrl', async () => {

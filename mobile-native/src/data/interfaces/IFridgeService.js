@@ -28,6 +28,7 @@
  * @property {string} [compartmentLabel] - nhãn tiếng Việt của `compartment`
  * @property {number|null} [daysUntilExpiry] - BE đã tính sẵn
  * @property {number|null} [ingredientId]
+ * @property {number|null} [version] - Optimistic locking của BE (bắt buộc khi PATCH)
  */
 
 /**
@@ -99,6 +100,12 @@ export class IFridgeService {
 
   /**
    * Cập nhật item (quantity, expiry, ...)
+   *
+   * ⚠️ `updates.version` PHẢI được truyền khi làm việc với BE thật:
+   *   BE `UpdateFridgeItemDto.version` là bắt buộc (`@IsInt() @Min(0)`).
+   *   Thiếu -> 400; sai -> 409 Conflict.
+   *   Nguồn: `item.version` (đã map trong `RealFridgeService._toFridgeItem`).
+   *
    * @param {string} id
    * @param {Partial<FridgeItemInput>} updates
    * @returns {Promise<FridgeItem>}
