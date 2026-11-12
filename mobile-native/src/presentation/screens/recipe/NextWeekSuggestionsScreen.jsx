@@ -42,7 +42,7 @@ import { EmptyState } from '../../components/common/EmptyState';
 import { ErrorState } from '../../components/common/ErrorState';
 import { Sparkles, Info, Wand2, ShoppingCart, X } from 'lucide-react-native';
 import { Routes } from '../../../shared/constants/routes';
-import { showSuccess, showError, showInfo } from '../../utils/helpers';
+import { showSuccess, showError, showInfo, showMutationError } from '../../utils/helpers';
 import { useServices } from '../../../data/ServiceProvider';
 import {
   parseAiDishSuggestions,
@@ -178,18 +178,25 @@ export const NextWeekSuggestionsScreen = () => {
       try {
         await services.recipeService.updateSlot(slot.id, { completed: nextCooked });
       } catch (e) {
-        // Rollback.
-        setPlan((prev) => {
-          if (!prev) return prev;
-          return {
-            ...prev,
-            days: prev.days.map((day) => ({
-              ...day,
-              slots: day.slots.map((s) => (s.id === slot.id ? { ...s, cooked: !nextCooked } : s)),
-            })),
-          };
+        // P2 (offline): đã lưu vào hàng đợi -> GIỮ optimistic update,
+        // chỉ hiện thông báo "đã lưu, sẽ đồng bộ".
+        const queued = e?.isOfflineQueued === true;
+        if (!queued) {
+          // Rollback.
+          setPlan((prev) => {
+            if (!prev) return prev;
+            return {
+              ...prev,
+              days: prev.days.map((day) => ({
+                ...day,
+                slots: day.slots.map((s) => (s.id === slot.id ? { ...s, cooked: !nextCooked } : s)),
+              })),
+            };
+          });
+        }
+        showMutationError(e, t('home.error'), {
+          offlineMessage: t('offline.savedQueued'),
         });
-        showError(e?.message ?? t('home.error'));
       }
     },
     [services, t]
@@ -624,6 +631,9 @@ export const NextWeekSuggestionsScreen = () => {
             emoji="🗓️"
             title={t('home.weekPlanEmpty')}
             hint={t('home.weekPlanEmptyHint')}
+            actionText={t('home.weekPlanEmptyAction')}
+            // Quay lại Home -> mở modal "Tạo meal plan theo tuần".
+            onAction={() => navigation.goBack()}
           />
         ) : (
           days.map((day) => (

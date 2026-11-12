@@ -57,6 +57,7 @@ export const Routes = {
   FamilyManagement: 'FamilyManagement',
   ChangePassword: 'ChangePassword',
   AppSettings: 'AppSettings',
+  PaymentHistory: 'PaymentHistory',
 
   // Subscription
   PackageManagement: 'PackageManagement',

@@ -21,7 +21,7 @@
  */
 
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, Pressable, Alert, Modal, TextInput } from 'react-native';
+import { View, Text, StyleSheet, FlatList, Pressable, Alert, Modal, TextInput, Image } from 'react-native';
 import { useTheme } from '../../theme/ThemeContext';
 import { AppColors } from '../../theme/colors';
 import { sp } from '../../utils/responsive';
@@ -35,8 +35,8 @@ import { EmptyState } from '../../components/common/EmptyState';
 import { ErrorState } from '../../components/common/ErrorState';
 import { Skeleton } from '../../components/common/Skeleton';
 import { CatalogPickerModal } from '../../components/scan/CatalogPickerModal';
-import { Check, Plus, Trash2, X, Minus } from 'lucide-react-native';
-import { showError, showSuccess } from '../../utils/helpers';
+import { Check, Plus, Trash2, X, Minus, Store } from 'lucide-react-native';
+import { showError, showSuccess, showMutationError } from '../../utils/helpers';
 import { useServices } from '../../../data/ServiceProvider';
 
 const FILTER_KEYS = {
@@ -44,6 +44,9 @@ const FILTER_KEYS = {
   PENDING: 'pending',
   COMPLETED: 'completed',
 };
+
+/** Định dạng giá VND (giống `formatVnd` ở SubscriptionPlansSheet). */
+const formatVnd = (n) => new Intl.NumberFormat('vi-VN').format(Number(n) || 0);
 
 export const ShoppingReminderScreen = () => {
   const { isDark } = useTheme();
@@ -142,9 +145,16 @@ export const ShoppingReminderScreen = () => {
       try {
         await services.recipeService.toggleShoppingItemInList(item.listId, item.id);
       } catch (e) {
-        // Rollback.
-        setItems((prev) => prev.map((it) => (it.id === item.id ? { ...it, done: !nextDone } : it)));
-        showError(e?.message ?? t('home.error'));
+        // P2 (offline): đã lưu vào hàng đợi -> GIỮ optimistic update
+        // (thao tác đã ghi nhớ), chỉ hiện thông báo "đã lưu, sẽ đồng bộ".
+        const queued = e?.isOfflineQueued === true;
+        if (!queued) {
+          // Rollback.
+          setItems((prev) => prev.map((it) => (it.id === item.id ? { ...it, done: !nextDone } : it)));
+        }
+        showMutationError(e, t('home.error'), {
+          offlineMessage: t('offline.savedQueued'),
+        });
       } finally {
         setBusyId(null);
       }
@@ -552,6 +562,11 @@ const QuantityModal = ({ visible, item, value, saving, onChange, onSave, onClose
 const ShoppingItem = ({ item, busy, onToggle, onRemove, onEditQuantity }) => {
   const { isDark } = useTheme();
   const { t } = useTranslation();
+
+  // ⚠️ Chỉ hiện khối "nơi cung cấp" khi BE trả về ít nhất 1 nhà cung cấp đã
+  //   đăng ký cho nguyên liệu này. Không có -> KHÔNG hiển thị gì (đúng yêu cầu).
+  const suppliers = Array.isArray(item.supplierSuggestions) ? item.supplierSuggestions : [];
+
   return (
     <View
       style={[
@@ -579,36 +594,129 @@ const ShoppingItem = ({ item, busy, onToggle, onRemove, onEditQuantity }) => {
       >
         {item.done ? <Check color="#FFFFFF" size={14} strokeWidth={3} /> : null}
       </Pressable>
-      <Pressable
-        onPress={onEditQuantity}
-        disabled={busy}
-        style={{ flex: 1, marginLeft: sp(10) }}
-        testID={`shopping-item-${item.id}`}
-      >
-        <Text
-          style={[
-            styles.itemName,
-            {
-              color: isDark ? '#FFFFFF' : AppColors.textPrimary,
-              fontSize: sp(15),
-              textDecorationLine: item.done ? 'line-through' : 'none',
-            },
-          ]}
+      <View style={{ flex: 1, marginLeft: sp(10) }}>
+        <Pressable
+          onPress={onEditQuantity}
+          disabled={busy}
+          testID={`shopping-item-${item.id}`}
         >
-          {item.name}
-        </Text>
-        <Text
-          style={[
-            styles.itemQty,
-            {
-              color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
-              fontSize: sp(12),
-            },
-          ]}
-        >
-          {item.quantity} {item.unit}
-        </Text>
-      </Pressable>
+          <Text
+            style={[
+              styles.itemName,
+              {
+                color: isDark ? '#FFFFFF' : AppColors.textPrimary,
+                fontSize: sp(15),
+                textDecorationLine: item.done ? 'line-through' : 'none',
+              },
+            ]}
+          >
+            {item.name}
+          </Text>
+          <Text
+            style={[
+              styles.itemQty,
+              {
+                color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                fontSize: sp(12),
+              },
+            ]}
+          >
+            {item.quantity} {item.unit}
+          </Text>
+        </Pressable>
+
+        {/* ── Nơi cung cấp (chỉ hiện khi có supplier đã đăng ký) ── */}
+        {suppliers.length > 0 ? (
+          <View
+            style={[
+              styles.supplierBox,
+              {
+                backgroundColor: isDark ? '#0E1611' : '#FFFFFF',
+                borderColor: isDark ? '#2E4D36' : '#E3E8E4',
+              },
+            ]}
+            testID={`shopping-suppliers-${item.id}`}
+          >
+            <View style={styles.supplierHeader}>
+              <Store
+                color={isDark ? AppColors.primaryLight : AppColors.forestAccent}
+                size={13}
+                strokeWidth={2.5}
+              />
+              <Text
+                style={[
+                  styles.supplierHeaderText,
+                  {
+                    color: isDark ? AppColors.primaryLight : AppColors.forestAccent,
+                    fontSize: sp(11),
+                  },
+                ]}
+              >
+                {t('home.shoppingSupplierAvailable', { count: suppliers.length })}
+              </Text>
+            </View>
+
+            {suppliers.map((s, idx) => (
+              <View
+                key={s.supplierIngredientId ?? `${s.companyName}-${idx}`}
+                style={[styles.supplierRow, idx > 0 && styles.supplierRowDivider]}
+              >
+                {s.image ? (
+                  <Image source={{ uri: s.image }} style={styles.supplierAvatar} />
+                ) : (
+                  <View
+                    style={[
+                      styles.supplierAvatarFallback,
+                      {
+                        backgroundColor: isDark ? '#233629' : AppColors.primary,
+                      },
+                    ]}
+                  >
+                    <Text style={styles.supplierAvatarInitial}>
+                      {(s.companyName || s.name || '?').trim().charAt(0).toUpperCase()}
+                    </Text>
+                  </View>
+                )}
+                <View style={{ flex: 1, marginLeft: sp(8) }}>
+                  <Text
+                    style={[
+                      styles.supplierName,
+                      { color: isDark ? '#FFFFFF' : AppColors.textPrimary, fontSize: sp(12) },
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {s.companyName || s.name}
+                  </Text>
+                  {s.name && s.companyName ? (
+                    <Text
+                      style={[
+                        styles.supplierProduct,
+                        {
+                          color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                          fontSize: sp(11),
+                        },
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {s.name}
+                    </Text>
+                  ) : null}
+                </View>
+                {typeof s.price === 'number' ? (
+                  <Text
+                    style={[
+                      styles.supplierPrice,
+                      { color: isDark ? AppColors.primaryLight : AppColors.forestAccent, fontSize: sp(12) },
+                    ]}
+                  >
+                    {t('home.shoppingSupplierPrice', { price: formatVnd(s.price) })}
+                  </Text>
+                ) : null}
+              </View>
+            ))}
+          </View>
+        ) : null}
+      </View>
       <Pressable
         onPress={onRemove}
         hitSlop={6}
@@ -679,6 +787,64 @@ const styles = StyleSheet.create({
   itemQty: {
     fontFamily: FontFamily.regular,
     marginTop: sp(2),
+  },
+  supplierBox: {
+    marginTop: sp(10),
+    paddingVertical: sp(8),
+    paddingHorizontal: sp(10),
+    borderRadius: sp(10),
+    borderWidth: 1,
+  },
+  supplierHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: sp(6),
+    marginBottom: sp(6),
+  },
+  supplierHeaderText: {
+    fontFamily: FontFamily.semibold,
+    fontWeight: FontWeights.semibold,
+  },
+  supplierRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: sp(6),
+  },
+  supplierRowDivider: {
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(128,128,128,0.2)',
+  },
+  supplierAvatar: {
+    width: sp(28),
+    height: sp(28),
+    borderRadius: sp(14),
+    backgroundColor: '#F4F7F4',
+  },
+  supplierAvatarFallback: {
+    width: sp(28),
+    height: sp(28),
+    borderRadius: sp(14),
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  supplierAvatarInitial: {
+    color: '#FFFFFF',
+    fontFamily: FontFamily.bold,
+    fontWeight: FontWeights.bold,
+    fontSize: sp(12),
+  },
+  supplierName: {
+    fontFamily: FontFamily.semibold,
+    fontWeight: FontWeights.semibold,
+  },
+  supplierProduct: {
+    fontFamily: FontFamily.regular,
+    marginTop: sp(1),
+  },
+  supplierPrice: {
+    fontFamily: FontFamily.semibold,
+    fontWeight: FontWeights.semibold,
+    marginLeft: sp(8),
   },
   removeBtn: {
     width: sp(32),

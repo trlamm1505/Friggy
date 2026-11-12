@@ -38,6 +38,7 @@ import { ListSection } from '../../components/common/ListSection';
 import { ErrorState } from '../../components/common/ErrorState';
 import { Skeleton } from '../../components/common/Skeleton';
 import { useRecipeById, useFridgeItems } from '../../hooks/useServiceHooks';
+import { useCookSlot } from '../../hooks/useCookSlot';
 import { useServices } from '../../../data/ServiceProvider';
 import { Routes } from '../../../shared/constants/routes';
 import { showSuccess, showError } from '../../utils/helpers';
@@ -318,21 +319,25 @@ export const RecipeDetailScreen = () => {
   /**
    * "Bắt đầu nấu" — ĐÁNH DẤU ĐÃ NẤU + TRỪ NGUYÊN LIỆU khỏi tủ lạnh.
    *
-   * ⚠️ BUG ĐÃ SỬA: trước đây nút này CHỈ hiện toast rỗng
+   * ⚠️ BUG ĐÃ SỬA (P0): trước đây nút này CHỈ hiện toast rỗng
    *    `showSuccess(t('home.startCooking'))` — không gọi API, không trừ gì,
    *    không đánh dấu -> user bấm xong "không thấy có gì xảy ra cả".
    *
-   * GIỜ ĐÃ NỐI BE THẬT:
-   *   1. `PATCH /meal-planning/slots/{slotId}` với `{ completed: true }`
+   * GIỜ ĐÃ NỐI BE THẬT (qua hook `useCookSlot`):
+   *   1. `PATCH /meal-planning/slots/{slotId}` với `{ completed: true, servings }`
    *      -> BE set `completedAt` + trừ nguyên liệu FIFO trong tủ lạnh
-   *         (idempotent: chỉ trừ lần đầu) + trả về `consumedIngredients`.
-   *   2. Hiện toast cho user biết đã trừ bao nhiêu nguyên liệu.
+   *         (idempotent: chỉ trừ lần đầu) + trả về `consumedIngredients`
+   *         và `missingIngredients`.
+   *   2. Hiện toast cho user biết đã trừ bao nhiêu / còn thiếu gì.
    *   3. Quay lại màn trước để thấy chip "Đã nấu" + số liệu thống kê.
+   *
+   * ⚠️ PHẢI gửi `servings` (khẩu phần user vừa chỉnh ở Stepper):
+   *    BE scale nguyên liệu theo `servings / recipe.servings`. Nếu không
+   *    gửi, BE dùng `slot.servings` (lúc sinh kế hoạch) -> TRỪ SAI LƯỢNG.
    *
    * ⚠️ Cần `slotId` trong route params. Mở từ Home (chỉ có `recipe`) thì
    *    KHÔNG có slot -> không thể tick -> báo user mở từ "Thực đơn tuần tới".
    */
-  const [cooking, setCooking] = useState(false);
 
   // Slot id của bữa ăn này (nếu mở từ màn thực đơn tuần / từ Home).
   //
@@ -344,6 +349,13 @@ export const RecipeDetailScreen = () => {
   // Trạng thái đã nấu của slot (nếu có).
   const slotCooked = Boolean(route.params?.cooked ?? routeRecipe?.cooked);
 
+  const handleCooked = useCallback(() => {
+    // Quay lại màn trước để user thấy chip "Đã nấu" đã cập nhật.
+    if (navigation.canGoBack()) navigation.goBack();
+  }, [navigation]);
+
+  const { cook, cooking } = useCookSlot({ onSuccess: handleCooked });
+
   const startCooking = useCallback(async () => {
     if (cooking) return;
 
@@ -353,25 +365,9 @@ export const RecipeDetailScreen = () => {
       return;
     }
 
-    setCooking(true);
-    try {
-      const result = await services.recipeService.updateSlot(slotId, { completed: true });
-      const consumed = result?.consumedIngredients ?? [];
-
-      showSuccess(
-        consumed.length > 0
-          ? t('home.startCookingDone', { count: consumed.length })
-          : t('home.startCookingNoIngredient')
-      );
-
-      // Quay lại màn trước để user thấy chip "Đã nấu" đã cập nhật.
-      if (navigation.canGoBack()) navigation.goBack();
-    } catch (e) {
-      showError(e?.message ?? t('home.startCookingFailed'));
-    } finally {
-      setCooking(false);
-    }
-  }, [cooking, slotId, services, navigation, t]);
+    // ⚠️ Gửi `servings` -> BE trừ đúng lượng theo khẩu phần user chọn.
+    await cook({ slotId, servings });
+  }, [cooking, slotId, servings, cook, t]);
 
   const imageMap = {
     recipe_tomato_egg: require('../../../../assets/images/recipe_tomato_egg.png'),

@@ -68,6 +68,7 @@ import { ApiClient } from '../../api/ApiClient';
 import { registerService } from '../../api/ServiceRegistry';
 import { streamSse } from '../../api/SseClient';
 import { appConfig } from '../../../shared/config/appConfig';
+import { offlineCache } from '../../offline/OfflineCache';
 
 /**
  * Thứ tự bữa ăn — giống Flutter (`cooking_suggestions_section.dart:194`).
@@ -211,19 +212,31 @@ export class RealRecipeService {
    *
    * Slot KHÔNG có `cookTime` -> lấy theo bữa (giống Flutter).
    * `cooked` lấy từ `completedAt` (BE dùng soft-delete + completedAt).
+   *
+   * ⚠️ TÊN MÓN: đọc theo thứ tự `recipeName` -> `recipe.title` -> `dishName`.
+   *    Lý do: bảng `meal_slots` của BE KHÔNG có cột `recipeName` (chỉ có
+   *    `recipeId`), nên `recipeName` chỉ tồn tại sau khi BE join `recipe`.
+   *    Nếu BE chưa được deploy bản vá, `recipe.title` vẫn cứu được UI khỏi
+   *    hiển thị "Chưa có món" cho MỌI slot (bug đã gặp ở B4).
    */
   _toMealSlot(slot) {
     if (!slot) return null;
 
     const mealType = normalizeMealType(slot.mealType);
 
+    const recipeTitle =
+      slot.recipeName ?? slot.recipe?.title ?? slot.dishName ?? slot.recipeNameLegacy ?? '';
+
     return {
       // `id` của slot là định danh bản ghi meal plan, KHÔNG phải id recipe.
       id: slot.id,
       recipeId: slot.recipeId,
-      name: slot.recipeName ?? '',
-      image: null,
-      cookTime: DEFAULT_COOK_TIME_BY_MEAL[mealType] ?? 20,
+      name: recipeTitle ?? '',
+      image: slot.recipe?.thumbnailPath
+        ? appConfig.getImageUrl(slot.recipe.thumbnailPath)
+        : null,
+      // Ưu tiên thời gian nấu thật của công thức, không có thì lấy theo bữa.
+      cookTime: slot.recipe?.cookTimeMinutes ?? DEFAULT_COOK_TIME_BY_MEAL[mealType] ?? 20,
       difficulty: 'easy',
       servings: slot.servings ?? 1,
       mealType,
@@ -306,7 +319,14 @@ export class RealRecipeService {
   async getRecipeById(id) {
     if (!id) return null;
     const dto = await this.client.get(`/recipes/${id}`);
-    return this._toRecipeDetail(dto);
+    const detail = this._toRecipeDetail(dto);
+
+    // P1 (offline) — cache chi tiết công thức để đọc được khi offline.
+    if (detail) {
+      offlineCache.saveRecipeDetail(id, 'recipe', detail).catch(() => {});
+    }
+
+    return detail;
   }
 
   /**
@@ -498,10 +518,23 @@ export class RealRecipeService {
     if (!payload) return null;
 
     const dailyPlans = Array.isArray(payload.dailyPlans) ? payload.dailyPlans : [];
-    return {
+    const days = dailyPlans.map((dto) => this._toPlanDay(dto)).filter(Boolean);
+
+    const result = {
       ...this._toPlanSummary(payload),
-      days: dailyPlans.map((dto) => this._toPlanDay(dto)).filter(Boolean),
+      days,
     };
+
+    // P1 (offline) — cache kế hoạch tuần để đọc được khi offline.
+    offlineCache
+      .saveWeeklyPlan({
+        id: result.id,
+        weekStart: result.weekStart,
+        days,
+      })
+      .catch(() => {});
+
+    return result;
   }
 
   /**
@@ -542,7 +575,14 @@ export class RealRecipeService {
   async getSlotDetail(slotId) {
     if (!slotId) return null;
     const payload = await this.client.get(`/meal-planning/slots/${slotId}`);
-    return this._toSlotDetail(payload);
+    const detail = this._toSlotDetail(payload);
+
+    // P1 (offline) — pre-cache chi tiết slot để mở được khi offline.
+    if (detail) {
+      offlineCache.saveRecipeDetail(slotId, 'slot', detail).catch(() => {});
+    }
+
+    return detail;
   }
 
   /**
@@ -574,12 +614,27 @@ export class RealRecipeService {
    *    tủ lạnh (chỉ có lần tick đầu tiên) -> FE hiển thị cho user biết đã
    *    dùng bao nhiêu nguyên liệu. Trả về object để UI dùng.
    *
+   * ⚠️ `servings` — PHẢI gửi khi user đã chỉnh khẩu phần ở màn chi tiết.
+   *    BE scale nguyên liệu theo `servings / recipe.servings`; nếu không gửi,
+   *    BE dùng `slot.servings` (lúc sinh kế hoạch) -> TRỪ SAI LƯỢNG.
+   *    Xem `useCookSlot` / `RecipeDetailScreen.startCooking`.
+   *
+   * ⚠️ `missingIngredients` = nguyên liệu CÒN THIẾU trong tủ lạnh (đã quy
+   *    về base unit) -> FE cảnh báo user trước/sau khi nấu.
+   *
    * @param {string} slotId
    * @param {{completed?:boolean, recipeId?:string|null, servings?:number, note?:string}} payload
-   * @returns {Promise<{id:string,completedAt:string|null,consumedIngredients:Array}>}
+   * @returns {Promise<{id:string,completedAt:string|null,consumedIngredients:Array,missingIngredients:Array}>}
    */
   async updateSlot(slotId, payload = {}) {
-    if (!slotId) return { id: slotId, completedAt: null, consumedIngredients: [] };
+    if (!slotId) {
+      return {
+        id: slotId,
+        completedAt: null,
+        consumedIngredients: [],
+        missingIngredients: [],
+      };
+    }
     const body = {};
     if (payload.completed !== undefined) body.completed = Boolean(payload.completed);
     if (payload.recipeId !== undefined) body.recipeId = payload.recipeId;
@@ -593,6 +648,10 @@ export class RealRecipeService {
       completedAt: result?.completedAt ?? null,
       consumedIngredients: Array.isArray(result?.consumedIngredients)
         ? result.consumedIngredients
+        : [],
+      // ⚠️ BE cũ (chưa deploy) không trả field này -> default [] để không vỡ.
+      missingIngredients: Array.isArray(result?.missingIngredients)
+        ? result.missingIngredients
         : [],
     };
   }
@@ -736,7 +795,36 @@ export class RealRecipeService {
       done: dto.isPurchased ?? false,
       estimatedPrice: dto.estimatedPrice ?? null,
       purchasedAt: dto.purchasedAt ?? null,
+      // Nhà cung cấp đã đăng ký bán nguyên liệu này (BE tự enrich).
+      // ⚠️ Rỗng / undefined -> mảng rỗng => UI KHÔNG hiển thị gì (đúng yêu cầu).
+      supplierSuggestions: this._toSupplierSuggestions(dto.supplierSuggestions),
     };
+  }
+
+  /**
+   * BE `supplierSuggestions[]` -> shape UI dùng để hiển thị.
+   *
+   * ⚠️ BE CHƯA khai báo field này trong `ShoppingListItemResponseDto` nhưng
+   *   `meal-planning.service.ts` đã trả kèm (đọc file BE). Vì vậy mapper phải
+   *   phòng thủ: thiếu field, null, hay sai kiểu -> trả `[]` (UI bỏ qua).
+   *
+   * Ảnh (`imagePath`) là đường dẫn tương đối -> phải qua `appConfig.getImageUrl()`
+   *   (R2) nếu không sẽ KHÔNG hiển thị mà không có lỗi nào.
+   *
+   * @param {Array<object>|null|undefined} raw
+   * @returns {Array<{supplierIngredientId:string,name:string,companyName:string,price:number|null,image:string|null}>}
+   */
+  _toSupplierSuggestions(raw) {
+    if (!Array.isArray(raw)) return [];
+    return raw
+      .filter((s) => s && (s.name || s.companyName))
+      .map((s) => ({
+        supplierIngredientId: s.supplierIngredientId ?? s.id ?? null,
+        name: s.name ?? '',
+        companyName: s.companyName ?? '',
+        price: typeof s.price === 'number' ? s.price : null,
+        image: s.imagePath ? appConfig.getImageUrl(s.imagePath) : null,
+      }));
   }
 
   /**
@@ -748,7 +836,7 @@ export class RealRecipeService {
     const payload = await this.client.get('/meal-planning/shopping-lists');
     const list = Array.isArray(payload) ? payload : (payload?.data ?? []);
 
-    return list.filter(Boolean).map((dto) => ({
+    const mapped = list.filter(Boolean).map((dto) => ({
       id: dto.id,
       title: dto.title ?? '',
       status: dto.status ?? 'active',
@@ -757,6 +845,14 @@ export class RealRecipeService {
       createdAt: dto.createdAt ?? null,
       items: (dto.items ?? []).map((item) => this._toShoppingItem(item)).filter(Boolean),
     }));
+
+    // P1 (offline) — cache danh sách mua (gộp phẳng) để đọc được khi offline.
+    const flat = mapped.flatMap((l) => l.items.map((item) => ({ ...item, listId: l.id })));
+    if (flat.length > 0) {
+      offlineCache.saveShoppingItems(flat).catch(() => {});
+    }
+
+    return mapped;
   }
 
   /**
@@ -954,6 +1050,9 @@ export class RealRecipeService {
    */
   async getWeeklyStats() {
     const dto = await this.client.get('/fridge/stats');
+    // P1 (offline) — cache thống kê tuần để đọc được khi offline.
+    offlineCache.saveFridgeStats(dto).catch(() => {});
+
     return {
       mealsCooked: dto?.mealsCooked ?? 0,
       expiringSoonCount: dto?.expiringSoonCount ?? 0,

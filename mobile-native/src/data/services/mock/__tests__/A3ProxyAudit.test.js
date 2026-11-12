@@ -35,6 +35,7 @@ const A3_METHODS = [
   'getPaymentStatus',
   'isSubscribedTo',
   'findPendingPayment',
+  'getPaymentHistory',
   'getFamilyInfo',
   'inviteFamilyMember',
   'acceptFamilyInvite',

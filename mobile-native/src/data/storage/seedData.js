@@ -5,7 +5,7 @@
  * từ mock JSON. Sau này sẽ thay bằng sync từ API.
  */
 
-import databaseService from './DatabaseService';
+import { databaseService } from './DatabaseService';
 import userMock from '../../shared/mocks/user.json';
 import inventoryMock from '../../shared/mocks/inventory.json';
 import summaryMock from '../../shared/mocks/fridge-summary.json';

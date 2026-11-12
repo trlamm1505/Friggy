@@ -285,3 +285,69 @@ describe('RealSubscriptionService - findPendingPayment', () => {
     await expect(service.findPendingPayment()).resolves.toBeNull();
   });
 });
+
+// ═══════════════ Lịch sử thanh toán ═══════════════
+
+describe('RealSubscriptionService - getPaymentHistory', () => {
+  /**
+   * BE `PaymentTransactionListResponseDto`: `{ data: PaymentTransactionDto[], total, page, limit }`.
+   * ⚠️ Bản LIST KHÔNG có field `qrCode` (chỉ `PaymentTransactionDetailDto` mới có).
+   */
+  const beHistory = (overrides = {}) => ({
+    data: [
+      {
+        id: 'tx-1',
+        paymentRef: 'FRIGGY-001',
+        type: 'subscribe',
+        planName: 'Gói Gia Đình',
+        amount: 149000,
+        status: 'paid',
+        checkoutUrl: 'https://pay.payos.vn/web/abc',
+        expiredAt: '2026-09-24T02:30:00.000Z',
+        paidAt: '2026-09-24T02:12:00.000Z',
+        createdAt: '2026-09-24T02:00:00.000Z',
+      },
+    ],
+    total: 1,
+    page: 1,
+    limit: 20,
+    ...overrides,
+  });
+
+  it('gọi đúng endpoint + params, trả shape `{ items, total, page, limit }`', async () => {
+    ApiClient.get.mockResolvedValue(beHistory());
+
+    const res = await service.getPaymentHistory(1, 20);
+
+    expect(ApiClient.get).toHaveBeenCalledWith('/payment-transactions/me', {
+      params: { page: 1, limit: 20 },
+    });
+    expect(Array.isArray(res.items)).toBe(true);
+    expect(res.items).toHaveLength(1);
+    expect(res.items[0].paymentRef).toBe('FRIGGY-001');
+    expect(res.items[0].status).toBe('paid');
+    expect(res.total).toBe(1);
+    expect(res.page).toBe(1);
+    expect(res.limit).toBe(20);
+  });
+
+  it('BE trả mảng thô (không bọc `data`) -> vẫn map đúng', async () => {
+    ApiClient.get.mockResolvedValue(beHistory().data);
+
+    const res = await service.getPaymentHistory();
+
+    expect(res.items).toHaveLength(1);
+    expect(res.total).toBe(1);
+    expect(res.page).toBe(1);
+    expect(res.limit).toBe(20);
+  });
+
+  it('không có giao dịch -> items rỗng, total 0', async () => {
+    ApiClient.get.mockResolvedValue(beHistory({ data: [], total: 0 }));
+
+    const res = await service.getPaymentHistory();
+
+    expect(res.items).toEqual([]);
+    expect(res.total).toBe(0);
+  });
+});

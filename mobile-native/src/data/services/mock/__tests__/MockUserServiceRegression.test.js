@@ -167,4 +167,32 @@ describe('MockUserService - hồi quy sau gộp khối trùng lặp', () => {
     expect(pending).not.toBeNull();
     expect(pending.paymentRef).toBe(checkout.paymentRef);
   });
+
+  // ─── getPaymentHistory (màn "Lịch sử thanh toán" trong Profile) ───
+  it('getPaymentHistory trả shape `{ items, total, page, limit }` khớp real', async () => {
+    const res = await service.getPaymentHistory(1, 20);
+
+    expect(Array.isArray(res.items)).toBe(true);
+    expect(typeof res.total).toBe('number');
+    expect(res.page).toBe(1);
+    expect(res.limit).toBe(20);
+    expect(res.items.length).toBeGreaterThan(0);
+    // Mỗi item phải có đủ field mà UI đọc.
+    expect(res.items[0]).toHaveProperty('paymentRef');
+    expect(res.items[0]).toHaveProperty('type');
+    expect(res.items[0]).toHaveProperty('planName');
+    expect(res.items[0]).toHaveProperty('amount');
+    expect(res.items[0]).toHaveProperty('status');
+    expect(res.items[0]).toHaveProperty('createdAt');
+  });
+
+  it('getPaymentHistory phân trang đúng (page 2 -> item khác trang 1)', async () => {
+    const page1 = await service.getPaymentHistory(1, 1);
+    const page2 = await service.getPaymentHistory(2, 1);
+
+    expect(page1.items).toHaveLength(1);
+    expect(page2.items).toHaveLength(1);
+    expect(page1.items[0].id).not.toBe(page2.items[0].id);
+    expect(page2.page).toBe(2);
+  });
 });

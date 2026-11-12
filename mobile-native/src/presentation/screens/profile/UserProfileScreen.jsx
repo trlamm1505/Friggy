@@ -40,10 +40,12 @@ import {
   Lock,
   AlertTriangle,
   Sparkles,
+  CreditCard,
 } from 'lucide-react-native';
 import { ProfileHeader } from '../../components/profile/ProfileHeader';
 import { SettingsSection } from '../../components/common/SettingsSection';
 import { SettingsMenuItem } from '../../components/common/SettingsMenuItem';
+import { SyncStatusBadge } from '../../components/common/SyncStatusBadge';
 
 export const UserProfileScreen = () => {
   const { isDark } = useTheme();
@@ -143,6 +145,11 @@ export const UserProfileScreen = () => {
           />
         </View>
 
+        {/* OFFLINE — badge thao tác đang chờ đồng bộ. */}
+        <View style={{ marginTop: sp(12), alignItems: 'flex-start' }}>
+          <SyncStatusBadge />
+        </View>
+
         {/* P0.8 (ảnh 12): card lượt AI tuần này */}
         <View
           style={[
@@ -211,6 +218,12 @@ export const UserProfileScreen = () => {
             icon={User}
             label={t('profile.personalInfo')}
             onPress={() => navigation.navigate(Routes.PersonalInfo)}
+          />
+          <SettingsMenuItem
+            icon={CreditCard}
+            label={t('profile.paymentHistory')}
+            onPress={() => navigation.navigate(Routes.PaymentHistory)}
+            isLast
           />
         </SettingsSection>
 

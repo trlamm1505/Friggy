@@ -40,6 +40,7 @@ import { ApiClient } from '../../api/ApiClient';
 import { ApiException } from '../../api/ApiException';
 import { registerService } from '../../api/ServiceRegistry';
 import { appConfig } from '../../../shared/config/appConfig';
+import { offlineCache } from '../../offline/OfflineCache';
 
 /**
  * Nhãn tiếng Việt cho `storageLocation` của BE.
@@ -218,11 +219,29 @@ export class RealFridgeService {
 
     const mapped = list.map((dto) => this._toFridgeItem(dto)).filter(Boolean);
 
+    // P1 (offline) — write-through cache: lưu bản server xuống SQLite để
+    // khi offline app vẫn hiện TỦ LẠNH THẬT (không phải mock ảo).
+    // Lỗi cache không được làm hỏng luồng chính -> nuốt + log.
+    this._writeCache(mapped);
+
     let result = mapped;
     result = this._applySearch(result, filters.search);
     result = this._applyStatus(result, filters.status);
     result = this._applySort(result, filters.sortBy, filters.sortDir);
     return result;
+  }
+
+  /**
+   * Ghi cache tủ lạnh (best-effort).
+   * @private
+   */
+  _writeCache(items) {
+    if (!Array.isArray(items) || items.length === 0) return;
+    offlineCache.saveFridgeItems(items).catch((e) => {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[RealFridgeService] Không ghi được cache tủ lạnh:', e?.message);
+      }
+    });
   }
 
   /**
@@ -261,6 +280,12 @@ export class RealFridgeService {
 
     const [list, stats] = await Promise.all([listPromise, statsPromise]);
     const items = Array.isArray(list) ? list.map((dto) => this._toFridgeItem(dto)) : null;
+
+    // P1 (offline) — cache thống kê tủ lạnh.
+    if (stats) {
+      offlineCache.saveFridgeStats(stats).catch(() => {});
+    }
+
     return this._toSummary(stats, items);
   }
 
@@ -375,7 +400,10 @@ export class RealFridgeService {
    * service khác, hoặc bổ sung vào mock trước khi dùng qua `useServices()`.
    */
   async getFridgeStats() {
-    return this.client.get('/fridge/stats');
+    const stats = await this.client.get('/fridge/stats');
+    // P1 (offline) — cache thống kê để đọc được khi mất mạng.
+    offlineCache.saveFridgeStats(stats).catch(() => {});
+    return stats;
   }
 
   /** `GET /fridge/expiring?days=N` — nguyên bản, dùng cho màn "sắp hết hạn". */

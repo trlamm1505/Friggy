@@ -9,6 +9,7 @@ import allergiesMock from '../../../shared/mocks/allergies.json';
 import familyMock from '../../../shared/mocks/family-members.json';
 import subscriptionMock from '../../../shared/mocks/subscription.json';
 import packagesMock from '../../../shared/mocks/packages.json';
+import paymentTransactionsMock from '../../../shared/mocks/payment-transactions.json';
 
 const MOCK_DELAY = 200;
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -570,5 +571,50 @@ export class MockUserService extends IUserService {
   async findPendingPayment() {
     await sleep(MOCK_DELAY / 2);
     return mockPendingPayment ? { ...mockPendingPayment } : null;
+  }
+
+  /**
+   * `GET /payment-transactions/me` — lịch sử giao dịch thanh toán (phân trang).
+   *
+   * ⚠️ Shape PHẢI khớp `RealSubscriptionService.getPaymentHistory()`:
+   *   `{ items, total, page, limit }` (không phải mảng thô) -> UI đọc thẳng.
+   *
+   * Dữ liệu lấy từ `shared/mocks/payment-transactions.json`, cộng thêm giao
+   * dịch pending đang chờ (nếu có) để khớp hành vi thật.
+   *
+   * @param {number} [page]
+   * @param {number} [limit]
+   */
+  async getPaymentHistory(page = 1, limit = 20) {
+    await sleep(MOCK_DELAY / 2);
+
+    const all = [...paymentTransactionsMock.transactions];
+    // Giao dịch đang chờ (nếu có) luôn nằm đầu danh sách -> khớp BE
+    // (BE sort `createdAt desc`, giao dịch mới nhất trước).
+    if (mockPendingPayment) {
+      all.unshift({
+        id: 'mock-tx-pending',
+        paymentRef: mockPendingPayment.paymentRef,
+        type: 'subscribe',
+        planName: mockSubscription.plan.displayName,
+        amount: mockPendingPayment.amount ?? 0,
+        status: 'pending',
+        checkoutUrl: mockPendingPayment.checkoutUrl ?? null,
+        expiredAt: mockPendingPayment.expireAt ?? null,
+        paidAt: null,
+        createdAt: new Date().toISOString(),
+      });
+    }
+
+    const safePage = Math.max(1, Number(page) || 1);
+    const safeLimit = Math.max(1, Number(limit) || 20);
+    const start = (safePage - 1) * safeLimit;
+
+    return {
+      items: all.slice(start, start + safeLimit),
+      total: all.length,
+      page: safePage,
+      limit: safeLimit,
+    };
   }
 }

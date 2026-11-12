@@ -92,6 +92,28 @@
  * @property {string[]} features
  */
 
+/**
+ * @typedef {Object} PaymentTransactionItem
+ * @property {string} id
+ * @property {string|null} paymentRef - mã tham chiếu nội bộ (vd 'FRIGGY-1727...')
+ * @property {'subscribe'|'renew'} type
+ * @property {string} planName - tên gói đã mua
+ * @property {number} amount - số tiền (VND)
+ * @property {'pending'|'paid'|'failed'|'cancelled'|'expired'} status
+ * @property {string|null} [checkoutUrl]
+ * @property {string|null} [expiredAt]
+ * @property {string|null} [paidAt]
+ * @property {string} createdAt
+ */
+
+/**
+ * @typedef {Object} PaymentHistoryPage
+ * @property {PaymentTransactionItem[]} items
+ * @property {number} total
+ * @property {number} page
+ * @property {number} limit
+ */
+
 export class IUserService {
   /**
    * Lấy thông tin profile hiện tại
@@ -287,5 +309,16 @@ export class IUserService {
    */
   async getAvailablePackages() {
     throw new Error('IUserService.getAvailablePackages() must be implemented');
+  }
+
+  /**
+   * Lịch sử giao dịch thanh toán (GET /payment-transactions/me).
+   *
+   * @param {number} [page]
+   * @param {number} [limit]
+   * @returns {Promise<PaymentHistoryPage>}
+   */
+  async getPaymentHistory(page = 1, limit = 20) {
+    throw new Error('IUserService.getPaymentHistory() must be implemented');
   }
 }

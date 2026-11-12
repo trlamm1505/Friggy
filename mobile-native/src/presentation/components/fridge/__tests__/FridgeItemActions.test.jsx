@@ -40,6 +40,14 @@ jest.mock('../../../../data/ServiceProvider', () => ({
 jest.mock('../../../utils/helpers', () => ({
   showSuccess: (...args) => mockShowSuccess(...args),
   showError: (...args) => mockShowError(...args),
+  // P2 (offline): wrapper phân biệt "đã lưu offline" với lỗi thật.
+  // Mock này giữ NGUYÊN hành vi của helper thật: lỗi thường -> showError,
+  // lỗi đã lưu offline -> showInfo (ở đây bỏ qua, không assert).
+  showMutationError: (e, fallbackMessage, options = {}) => {
+    if (e?.isOfflineQueued === true) return true;
+    mockShowError(e?.message || fallbackMessage);
+    return false;
+  },
 }));
 
 jest.mock('react-i18next', () => ({

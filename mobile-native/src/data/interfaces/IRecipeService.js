@@ -131,6 +131,15 @@
  */
 
 /**
+ * @typedef {Object} SupplierSuggestion
+ * @property {string|null} supplierIngredientId - id bản ghi supplier_ingredient
+ * @property {string} name - tên sản phẩm của nhà cung cấp
+ * @property {string} companyName - tên công ty nhà cung cấp
+ * @property {number|null} price - giá trung bình / đơn vị (VNĐ)
+ * @property {string|null} image - URL ảnh (đã qua `appConfig.getImageUrl()`)
+ */
+
+/**
  * @typedef {Object} ShoppingItem
  * @property {string|number} id - id item của BE (SỐ)
  * @property {string} name
@@ -140,6 +149,8 @@
  * @property {number|null} [estimatedPrice]
  * @property {string|null} [purchasedAt]
  * @property {string} [listId] - id danh sách chứa item (gắn khi gộp phẳng)
+ * @property {SupplierSuggestion[]} [supplierSuggestions] - nhà cung cấp đã đăng ký
+ *   bán nguyên liệu này (rỗng => UI KHÔNG hiển thị khối "nơi cung cấp")
  */
 
 /**

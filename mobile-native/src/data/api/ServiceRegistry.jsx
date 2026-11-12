@@ -19,6 +19,8 @@
 import React, { createContext, useContext, useMemo, useSyncExternalStore } from 'react';
 import { appConfig } from '../../shared/config/appConfig';
 import { withFallback } from './SafeService';
+import { getCacheFallbackFor } from '../offline/CacheFallback';
+import { createMutationHandler } from '../offline/OfflineMutationQueue';
 
 const realServices = new Map();
 
@@ -172,6 +174,16 @@ export const resolveServices = (mockServices = {}) => {
     out[key] = withFallback(real, mock, {
       label: key.replace(/Service$/, ''),
       enabled: appConfig.SAFE_FALLBACK,
+      // P1 (offline): khi lỗi network -> đọc cache local trước khi fallback
+      //   sang mock. Xem `src/data/offline/CacheFallback.js`.
+      cacheFallback: (methodName, args) => {
+        const fn = getCacheFallbackFor(key, methodName);
+        if (!fn) return null;
+        return fn(args);
+      },
+      // P2 (offline): thao tác GHI khi lỗi network -> lưu cache + hàng đợi,
+      //   rồi ném `OfflineQueuedError` để UI hiện "đã lưu, sẽ đồng bộ".
+      mutationHandler: createMutationHandler(key),
     });
   }
   return out;

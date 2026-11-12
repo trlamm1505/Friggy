@@ -48,6 +48,7 @@ const USER_METHODS_USED_BY_UI = [
   'getPaymentStatus',
   'isSubscribedTo',
   'getMySubscription',
+  'getPaymentHistory',
 ];
 
 const FRIDGE_METHODS_USED_BY_UI = [

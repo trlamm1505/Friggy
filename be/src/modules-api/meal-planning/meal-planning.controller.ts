@@ -29,6 +29,7 @@ import {
   ApiResponse,
   ApiBearerAuth,
   ApiParam,
+  ApiOkResponse,
 } from '@nestjs/swagger';
 import type { Response } from 'express';
 import { UseGuards } from '@nestjs/common';
@@ -54,6 +55,7 @@ import {
   WeeklyPlanSummaryResponseDto,
   WeeklyPlanDetailResponseDto,
   ShoppingListResponseDto,
+  UpdateMealSlotResponseDto,
 } from './dto/meal-planning-response.dto';
 
 @ApiTags('Meal Planning')
@@ -246,6 +248,7 @@ export class MealPlanningController {
   @Patch('slots/:id')
   @ApiOperation({ summary: 'Cập nhật meal slot — đổi công thức hoặc tick đã nấu xong' })
   @ApiResponse({ status: 200, description: 'Đã cập nhật slot' })
+  @ApiOkResponse({ type: UpdateMealSlotResponseDto })
   async updateSlot(
     @CurrentUser() user: JwtPayload,
     @Param('id') slotId: string,

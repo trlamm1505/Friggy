@@ -19,6 +19,7 @@ import { appConfig } from '../../../shared/config/appConfig';
 import { registerService } from '../../api/ServiceRegistry';
 import { RealSubscriptionService } from './RealSubscriptionService';
 import { RealFamilyService } from './RealFamilyService';
+import { offlineCache } from '../../offline/OfflineCache';
 
 // ─────────────────────────────────────────────────────────────
 // ENUM — lấy từ `be/src/modules-api/users/dto/users.dto.ts`
@@ -172,7 +173,12 @@ export class RealUserService extends IUserService {
   /** GET /users/me */
   async getProfile() {
     const res = await ApiClient.get('/users/me');
-    return this._toUserProfile(res);
+    const profile = this._toUserProfile(res);
+
+    // P1 (offline) — cache profile để đọc được khi offline.
+    offlineCache.saveUserProfile(profile).catch(() => {});
+
+    return profile;
   }
 
   /**
@@ -215,7 +221,12 @@ export class RealUserService extends IUserService {
    */
   async getPreferences() {
     const res = await ApiClient.get('/users/me/preferences');
-    return this._toPreferences(res);
+    const prefs = this._toPreferences(res);
+
+    // P1 (offline) — cache preferences để đọc được khi offline.
+    offlineCache.saveUserPreferences(prefs).catch(() => {});
+
+    return prefs;
   }
 
   /** PATCH /users/me/preferences */
@@ -231,7 +242,12 @@ export class RealUserService extends IUserService {
   /** GET /users/me/allergies */
   async getAllergies() {
     const res = await ApiClient.get('/users/me/allergies');
-    return Array.isArray(res) ? res.map((d) => this._toAllergy(d)).filter(Boolean) : [];
+    const allergies = Array.isArray(res) ? res.map((d) => this._toAllergy(d)).filter(Boolean) : [];
+
+    // P1 (offline) — cache dị ứng để đọc được khi offline.
+    offlineCache.saveAllergies(allergies).catch(() => {});
+
+    return allergies;
   }
 
   /**
@@ -272,12 +288,20 @@ export class RealUserService extends IUserService {
     });
     const items = Array.isArray(res) ? res : res?.data;
     if (!Array.isArray(items)) return [];
-    return items.map((d) => ({
+
+    const mapped = items.map((d) => ({
       id: Number(d.id),
       name: d.name ?? '',
       // R2: ảnh nguyên liệu là đường dẫn tương đối -> phải qua getImageUrl
       image: appConfig.getImageUrl(d.imagePath),
     }));
+
+    // P1 (offline) — cache danh mục nguyên liệu để picker hoạt động offline.
+    if (mapped.length > 0) {
+      offlineCache.saveIngredientCatalog(mapped).catch(() => {});
+    }
+
+    return mapped;
   }
 
   // ══════════════════════════════════════════════════════════════
@@ -480,6 +504,17 @@ export class RealUserService extends IUserService {
   /** Tìm giao dịch đang chờ thanh toán (khôi phục QR cũ) → shape checkout. */
   async findPendingPayment() {
     return this.subscriptionService.findPendingPayment();
+  }
+
+  /**
+   * GET /payment-transactions/me - lịch sử giao dịch thanh toán của user.
+   *
+   * @param {number} [page]
+   * @param {number} [limit]
+   * @returns {Promise<{items: Array<object>, total: number, page: number, limit: number}>}
+   */
+  async getPaymentHistory(page = 1, limit = 20) {
+    return this.subscriptionService.getPaymentHistory(page, limit);
   }
 
   // ══════════════════════════════════════════════════════════════

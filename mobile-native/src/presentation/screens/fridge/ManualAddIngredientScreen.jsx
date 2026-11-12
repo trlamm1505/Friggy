@@ -60,7 +60,7 @@ import { FriggyAppBar } from '../../components/navigation/FriggyAppBar';
 import { CustomTextField } from '../../components/common/CustomTextField';
 import { CustomButton } from '../../components/common/CustomButton';
 import { ExpiryDatePicker, toIsoDate } from '../../components/fridge/ExpiryDatePicker';
-import { showSuccess, showError } from '../../utils/helpers';
+import { showSuccess, showError, showMutationError } from '../../utils/helpers';
 import { normalizeIngredientName } from '../../utils/ingredientCatalog';
 import { useServices } from '../../../data/ServiceProvider';
 import { COMPARTMENT_LABEL } from '../../../data/services/real/RealFridgeService';
@@ -270,7 +270,13 @@ export const ManualAddIngredientScreen = () => {
       navigation.goBack();
     } catch (e) {
       // 4xx không được fallback -> hiện lỗi thật cho user.
-      showError(e?.message || t('fridge.addFailed'));
+      // P2 (offline): nếu đã lưu offline -> hiện thông báo "đã lưu, sẽ đồng bộ".
+      const queued = showMutationError(e, t('fridge.addFailed'), {
+        offlineMessage: t('offline.savedQueued'),
+      });
+      if (queued) {
+        navigation.goBack();
+      }
     } finally {
       setSaving(false);
     }

@@ -168,10 +168,40 @@ export class RealSubscriptionService {
     return sub.status === 'active' && sub.plan.name === targetPlanName;
   }
 
-  /**
-   * Tìm giao dịch đang CHỜ thanh toán để khôi phục QR.
-   *
-   * Flutter làm việc này (`package_management_screen.dart:252-267`): trước khi
+/**
+ * Lịch sử giao dịch thanh toán của user (màn "Lịch sử thanh toán" trong Profile).
+ *
+ * BE `GET /payment-transactions/me` (`payment-transactions.controller.ts:27`)
+ * trả `PaymentTransactionListResponseDto`: `{ data: PaymentTransactionDto[], total, page, limit }`.
+ *
+ * ⚠️ Bản LIST **KHÔNG có field `qrCode`** (chỉ `PaymentTransactionDetailDto` mới có)
+ *   -> màn lịch sử không hiển thị lại QR cũ (đã hết hạn 15' sau khi tạo).
+ *
+ * ⚠️ `ApiClient` đã unwrap `{ message, statusCode, data }` -> `res` là OBJECT
+ *   `{ data, total, page, limit }`, KHÔNG phải mảng. Vẫn xử lý cả 2 để chắc.
+ *
+ * @param {number} [page] - trang (1-based)
+ * @param {number} [limit] - số bản ghi/trang
+ * @returns {Promise<{items: Array<object>, total: number, page: number, limit: number}>}
+ */
+async getPaymentHistory(page = 1, limit = 20) {
+  const res = await ApiClient.get('/payment-transactions/me', {
+    params: { page, limit },
+  });
+
+  const rows = Array.isArray(res) ? res : (res?.data ?? []);
+  return {
+    items: Array.isArray(rows) ? rows : [],
+    total: typeof res?.total === 'number' ? res.total : (Array.isArray(rows) ? rows.length : 0),
+    page: typeof res?.page === 'number' ? res.page : page,
+    limit: typeof res?.limit === 'number' ? res.limit : limit,
+  };
+}
+
+/**
+ * Tìm giao dịch đang CHỜ thanh toán để khôi phục QR.
+ *
+ * Flutter làm việc này (`package_management_screen.dart:252-267`): trước khi
    * tạo giao dịch mới, kiểm tra có giao dịch pending không -> nếu có thì mở lại
    * QR cũ thay vì bắt user quét lại. BE trả 409 khi đã có giao dịch pending
    * (`subscriptions.controller.ts:75`) -> Flutter bắt lỗi rồi tra cứu lại.

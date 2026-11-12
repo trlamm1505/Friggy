@@ -24,6 +24,7 @@ import { useCallback } from 'react';
 import { TokenStorage } from '../../data/storage/TokenStorage';
 import { onApiEvent } from '../../data/api/ApiClient';
 import { getRegisteredService, isMockMode } from '../../data/api/ServiceRegistry';
+import { syncEngine } from '../../data/offline/SyncEngine';
 import { useServices } from '../../data/ServiceProvider';
 
 // ─────────────────────────── MMKV (chỉ cho cờ onboarding) ───────────────────────────
@@ -159,6 +160,13 @@ export const useAuthStore = create((set, get) => ({
   /**
    * Xoá phiên local. KHÔNG gọi network (offline-safe).
    * Dùng khi: logout chủ động (sau khi đã gọi API), hoặc session-expired.
+   *
+   * ⚠️ P4 (OFFLINE): xoá LUÔN cache local + hàng đợi đồng bộ.
+   *   Quyết định đã chốt: xoá sạch (khớp Flutter `clearAllCache()`).
+   *   Lý do: cache chứa dữ liệu cá nhân của user vừa đăng xuất. Giữ lại
+   *   rò rỉ dữ liệu sang user đăng nhập sau trên CÙNG thiết bị.
+   *   Hệ quả (đã chấp nhận): thao tác offline chưa kịp đồng bộ sẽ MẤT.
+   *   -> `syncEngine.clearAll()` xoá cả cache lẫn hàng đợi.
    */
   logout: () => {
     try {
@@ -168,6 +176,8 @@ export const useAuthStore = create((set, get) => ({
     } catch (_e) {
       // ignore
     }
+    // Xoá cache offline + hàng đợi (không chặn logout nếu lỗi SQLite).
+    syncEngine.clearAll().catch(() => {});
     set({ user: null, isAuthenticated: false, isOnboarded: false });
   },
 

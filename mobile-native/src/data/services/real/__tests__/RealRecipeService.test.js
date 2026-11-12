@@ -519,6 +519,93 @@ describe('10. B4 — Meal planning (plans / slots / tick / regenerate)', () => {
     expect(detail.days[0].slots.map((s) => s.mealType)).toEqual(['breakfast', 'lunch']);
   });
 
+  // ─────────────────────────────────────────────────────────
+  // BUG "Chưa có món" — slot phải có TÊN món, không rỗng
+  //
+  // Bảng `meal_slots` của BE KHÔNG có cột `recipeName` (chỉ có `recipeId`).
+  // Nếu BE chưa join `recipe` -> `recipeName` undefined -> UI hiện
+  // "Chưa có món" cho MỌI ngày trong tuần.
+  // => Service phải đọc được tên từ `recipeName` HOẶC `recipe.title`.
+  // ─────────────────────────────────────────────────────────
+  it('slot có recipeName -> dùng làm tên món', async () => {
+    api.get.mockResolvedValue({
+      ...bePlan(),
+      dailyPlans: [
+        { id: 'd1', dayOfWeek: 1, date: '2026-10-19', mealSlots: [beSlot()] },
+      ],
+    });
+
+    const detail = await svc.getPlanDetail('plan-1');
+    expect(detail.days[0].slots[0].name).toBe('Trứng xào cà chua');
+  });
+
+  it('slot CHỈ có recipe.title (BE chưa map recipeName) -> vẫn ra tên món', async () => {
+    api.get.mockResolvedValue({
+      ...bePlan(),
+      dailyPlans: [
+        {
+          id: 'd1',
+          dayOfWeek: 1,
+          date: '2026-10-19',
+          mealSlots: [
+            {
+              id: 'slot-1',
+              dayOfWeek: 1,
+              mealType: 'breakfast',
+              recipeId: 'r1',
+              recipeName: undefined,
+              recipe: { id: 'r1', title: 'Bún lúc lắc khoai tây' },
+              servings: 2,
+              estimatedCost: 30000,
+              note: null,
+              completedAt: null,
+            },
+          ],
+        },
+      ],
+    });
+
+    const detail = await svc.getPlanDetail('plan-1');
+    // ⚠️ TUYỆT ĐỐI KHÔNG được rỗng -> UI sẽ hiện "Chưa có món".
+    expect(detail.days[0].slots[0].name).toBe('Bún lúc lắc khoai tây');
+  });
+
+  it('slot có recipe.thumbnailPath + cookTimeMinutes -> map vào image/cookTime', async () => {
+    api.get.mockResolvedValue({
+      ...bePlan(),
+      dailyPlans: [
+        {
+          id: 'd1',
+          dayOfWeek: 1,
+          date: '2026-10-19',
+          mealSlots: [
+            {
+              id: 'slot-1',
+              dayOfWeek: 1,
+              mealType: 'lunch',
+              recipeId: 'r1',
+              recipeName: 'Cá hấp chẹo mang tày',
+              recipe: {
+                id: 'r1',
+                title: 'Cá hấp chẹo mang tày',
+                thumbnailPath: '/public/images/ca.jpg',
+                cookTimeMinutes: 45,
+              },
+              servings: 2,
+              estimatedCost: 30000,
+              note: null,
+              completedAt: null,
+            },
+          ],
+        },
+      ],
+    });
+
+    const slot = (await svc.getPlanDetail('plan-1')).days[0].slots[0];
+    expect(slot.cookTime).toBe(45);
+    expect(slot.image).toContain('ca.jpg');
+  });
+
   it('getNextWeekPlan gọi plans -> plans/{id}, trả shape { id, weekStart, days[] }', async () => {
     api.get.mockResolvedValueOnce([bePlan()]).mockResolvedValueOnce({
       ...bePlan(),
@@ -556,6 +643,62 @@ describe('10. B4 — Meal planning (plans / slots / tick / regenerate)', () => {
     expect(api.patch).toHaveBeenCalledWith('/meal-planning/slots/slot-1', {
       recipeId: 'r9',
     });
+  });
+
+  // ─────────────────────────────────────────────────────────
+  // ⚠️ P0 — `servings` phải được gửi kèm.
+  //
+  // BE scale nguyên liệu theo công thức:
+  //     scaledQty = recipeIngredient.quantity * (servings / recipe.servings)
+  // Nếu RN KHÔNG gửi `servings`, BE dùng `slot.servings` (lúc sinh kế hoạch)
+  // -> khi user chỉnh khẩu phần ở màn chi tiết công thức, tủ lạnh bị trừ
+  // SAI LƯỢNG. Đây là bug mất thực phẩm thật.
+  // ─────────────────────────────────────────────────────────
+  it('updateSlot GỬI `servings` (BE scale nguyên liệu theo khẩu phần)', async () => {
+    api.patch.mockResolvedValue(null);
+
+    await svc.updateSlot('slot-1', { completed: true, servings: 4 });
+
+    expect(api.patch).toHaveBeenCalledWith('/meal-planning/slots/slot-1', {
+      completed: true,
+      servings: 4,
+    });
+  });
+
+  it('updateSlot KHÔNG gửi `servings` khi undefined (BE tự dùng slot.servings)', async () => {
+    api.patch.mockResolvedValue(null);
+
+    await svc.updateSlot('slot-1', { completed: true });
+
+    const [, body] = api.patch.mock.calls[0];
+    expect(Object.prototype.hasOwnProperty.call(body, 'servings')).toBe(false);
+  });
+
+  it('updateSlot trả đủ key: id, completedAt, consumedIngredients, missingIngredients', async () => {
+    api.patch.mockResolvedValue({
+      id: 'slot-1',
+      completedAt: '2026-01-01T00:00:00.000Z',
+      consumedIngredients: [],
+      missingIngredients: [],
+    });
+
+    const result = await svc.updateSlot('slot-1', { completed: true });
+
+    ['id', 'completedAt', 'consumedIngredients', 'missingIngredients'].forEach((key) => {
+      expect(Object.prototype.hasOwnProperty.call(result, key)).toBe(true);
+    });
+  });
+
+  it('updateSlot thiếu `missingIngredients` (BE cũ) -> trả mảng rỗng, không crash', async () => {
+    api.patch.mockResolvedValue({
+      id: 'slot-1',
+      completedAt: '2026-01-01T00:00:00.000Z',
+      consumedIngredients: [],
+    });
+
+    const result = await svc.updateSlot('slot-1', { completed: true });
+
+    expect(result.missingIngredients).toEqual([]);
   });
 
   it('markSlotCooked nhận slot id -> gọi đúng endpoint', async () => {
@@ -723,6 +866,56 @@ describe('11. B4 — Shopping list', () => {
     expect(items[0].listId).toBe('list-1');
     expect(items[1].listId).toBe('list-2');
     expect(items[1].done).toBe(true);
+  });
+
+  it('map supplierSuggestions khi BE trả kèm', async () => {
+    api.get.mockResolvedValue([
+      beList({
+        items: [
+          {
+            id: 1,
+            ingredientName: 'Thịt bò',
+            quantity: 500,
+            unit: 'g',
+            isPurchased: false,
+            supplierSuggestions: [
+              {
+                supplierIngredientId: 'si-1',
+                name: 'Thịt bò Wagyu',
+                companyName: 'Công ty ABC',
+                price: 150000,
+                imagePath: '/uploads/beef.jpg',
+              },
+            ],
+          },
+        ],
+      }),
+    ]);
+
+    const items = await svc.getShoppingList();
+
+    expect(items[0].supplierSuggestions).toHaveLength(1);
+    expect(items[0].supplierSuggestions[0].companyName).toBe('Công ty ABC');
+    expect(items[0].supplierSuggestions[0].price).toBe(150000);
+    expect(items[0].supplierSuggestions[0].image).toContain('beef.jpg');
+  });
+
+  it('BE không trả supplierSuggestions -> mảng rỗng (UI không hiển thị gì)', async () => {
+    api.get.mockResolvedValue([beList()]);
+
+    const items = await svc.getShoppingList();
+
+    expect(items[0].supplierSuggestions).toEqual([]);
+  });
+
+  it('supplierSuggestions sai kiểu (null / object) -> mảng rỗng, KHÔNG crash', async () => {
+    api.get.mockResolvedValue([
+      beList({ items: [{ id: 1, ingredientName: 'Thịt bò', supplierSuggestions: null }] }),
+    ]);
+
+    const items = await svc.getShoppingList();
+
+    expect(items[0].supplierSuggestions).toEqual([]);
   });
 
   it('createShoppingList -> POST weeklyPlanId', async () => {
@@ -913,6 +1106,43 @@ describe('12. B4 — R1 — Mock và Real cùng shape', () => {
 
     const after = await mock.getNextWeekPlan();
     expect(after.days[0].slots[0].cooked).toBe(true);
+  });
+
+  // ⚠️ Mock phải trả CÙNG key set với Real — nếu lệch, UI ở mock mode
+  // sẽ hiển thị sai (trong khi dev/demo lại "chạy được") -> sót lỗi prod.
+  it('updateSlot(): Mock trả CÙNG key set với Real (id/completedAt/consumed/missing)', async () => {
+    const mock = new MockRecipeService();
+    const plan = await mock.getNextWeekPlan();
+    const slotId = plan.days[0].slots[0].id;
+
+    const result = await mock.updateSlot(slotId, { completed: true });
+
+    ['id', 'completedAt', 'consumedIngredients', 'missingIngredients'].forEach((key) => {
+      expect(Object.prototype.hasOwnProperty.call(result, key)).toBe(true);
+    });
+  });
+
+  it('updateSlot(): Mock scale `consumedIngredients` theo servings (khớp BE)', async () => {
+    const mock = new MockRecipeService();
+    const plan = await mock.getNextWeekPlan();
+    const slot = plan.days[0].slots[0];
+
+    // ⚠️ State mock là module-level (dùng chung giữa các test trong file)
+    //    -> phải BỎ TICK trước mỗi lần tick để `wasCooked === false`
+    //    (BE cũng vậy: chỉ trừ lần đầu).
+    const cookWith = async (servings) => {
+      await mock.updateSlot(slot.id, { completed: false });
+      return mock.updateSlot(slot.id, { completed: true, servings });
+    };
+
+    const base = await cookWith(slot.servings ?? 2);
+    const doubled = await cookWith((slot.servings ?? 2) * 2);
+
+    expect(base.consumedIngredients.length).toBeGreaterThan(0);
+    expect(doubled.consumedIngredients.length).toBe(base.consumedIngredients.length);
+    doubled.consumedIngredients.forEach((it, i) => {
+      expect(it.requiredQuantity).toBeCloseTo(base.consumedIngredients[i].requiredQuantity * 2, 2);
+    });
   });
 
   it('createShoppingList(): Mock trả shape ShoppingList giống Real', async () => {

@@ -25,6 +25,7 @@ import { UserAllergiesScreen } from '../screens/profile/UserAllergiesScreen';
 import { FamilyManagementScreen } from '../screens/profile/FamilyManagementScreen';
 import { ChangePasswordScreen } from '../screens/profile/ChangePasswordScreen';
 import { AppSettingsScreen } from '../screens/profile/AppSettingsScreen';
+import { PaymentHistoryScreen } from '../screens/profile/PaymentHistoryScreen';
 
 const MainStack = createNativeStackNavigator();
 
@@ -58,5 +59,6 @@ export const MainScreens = () => (
     <MainStack.Screen name={Routes.FamilyManagement} component={FamilyManagementScreen} />
     <MainStack.Screen name={Routes.ChangePassword} component={ChangePasswordScreen} />
     <MainStack.Screen name={Routes.AppSettings} component={AppSettingsScreen} />
+    <MainStack.Screen name={Routes.PaymentHistory} component={PaymentHistoryScreen} />
   </MainStack.Navigator>
 );

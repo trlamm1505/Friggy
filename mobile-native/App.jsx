@@ -34,6 +34,8 @@ import { useThemeStore } from './src/shared/stores/useThemeStore';
 import { useLanguageStore } from './src/shared/stores/useLanguageStore';
 import { AppColors } from './src/presentation/theme/colors';
 import { initAppShell } from './src/data/appInit';
+import { networkMonitor } from './src/data/offline/NetworkMonitor';
+import { syncEngine } from './src/data/offline/SyncEngine';
 
 // ══════════════════════════════════════════════════════════════════
 // Sprint import-side-effect
@@ -136,6 +138,42 @@ export default function App() {
       await initAppShell();
       setIsDbReady(true);
     })();
+  }, []);
+
+  // ──────────────────────────────────────────────────────────────────
+  // OFFLINE — khởi động theo dõi mạng + đồng bộ lần đầu
+  //
+  // ⚠️ VÌ SAO Ở APP ROOT MÀ KHÔNG Ở TỪNG MÀN:
+  //   Đồng bộ phải chạy NGAY khi app mở (không chỉ khi user vào Home),
+  //   vì lần mở đầu tiên sau khi offline là lúc user mong đợi dữ liệu
+  //   được cập nhật. Flutter cũng sync ở `home_screen.dart` + khi app mở.
+  //
+  // ⚠️ `networkMonitor.init()` bắt đầu listener -> khi mạng vừa khôi phục
+  //   sẽ báo event 'online' -> `syncEngine` tự đồng bộ (xem useSyncEngine).
+  // ──────────────────────────────────────────────────────────────────
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      try {
+        await networkMonitor.init();
+        if (cancelled) return;
+
+        const isOnline = networkMonitor.isOnline;
+        if (isOnline) {
+          // Sync lần đầu (không force - nếu đang sync thì bỏ qua).
+          await syncEngine.syncAll({ force: false });
+        }
+      } catch (e) {
+        if (typeof __DEV__ !== 'undefined' && __DEV__) {
+          console.warn('[App] Không khởi tạo được offline module:', e?.message);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   if (!fontsLoaded || !isDbReady) {

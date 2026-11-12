@@ -14,6 +14,8 @@ import { FridgeSummaryCards } from '../../components/home/FridgeSummaryCards';
 import { PremiumBanner } from '../../components/home/PremiumBanner';
 import { FamilyPlanModal } from '../../components/home/FamilyPlanModal';
 import { WeeklyStatisticsSection } from '../../components/home/WeeklyStatisticsSection';
+import { MealPlanCreateSection } from '../../components/home/MealPlanCreateSection';
+import { WeeklyPlanShortcut } from '../../components/home/WeeklyPlanShortcut';
 import { CookingSuggestionsSection } from '../../components/home/CookingSuggestionsSection';
 import { ShoppingListShortcut } from '../../components/home/ShoppingListShortcut';
 import { Routes } from '../../../shared/constants/routes';
@@ -24,6 +26,10 @@ import {
   useRecipeSuggestions,
   useNotifications,
 } from '../../hooks/useServiceHooks';
+import { useSyncEngine } from '../../hooks/useSyncEngine';
+import { useNetworkStatus } from '../../hooks/useNetworkStatus';
+import { OfflineBanner } from '../../components/common/OfflineBanner';
+import { SyncStatusBadge } from '../../components/common/SyncStatusBadge';
 
 export const HomeScreen = () => {
   const { isDark } = useTheme();
@@ -37,6 +43,11 @@ export const HomeScreen = () => {
   const { refetch: refetchStats } = useWeeklyStats();
   const { refetch: refetchSuggestions } = useRecipeSuggestions();
   const { refetch: refetchNotifications } = useNotifications();
+
+  // ── OFFLINE ──
+  // `useSyncEngine` tự sync khi mount Home + khi mạng khôi phục.
+  const { pendingCount, syncNow } = useSyncEngine({ autoSyncOnMount: true });
+  const { isOffline } = useNetworkStatus();
 
   const [searchValue, setSearchValue] = useState('');
   const [refreshing, setRefreshing] = useState(false);
@@ -68,6 +79,14 @@ export const HomeScreen = () => {
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
+      // OFFLINE: nếu đang offline -> chỉ đồng bộ hàng đợi đã lưu (không có mạng
+      // thì không pull được dữ liệu mới) và báo rõ cho user.
+      if (isOffline) {
+        showInfo(t('offline.refreshOffline'));
+      } else {
+        await syncNow();
+      }
+
       await Promise.allSettled([
         refetchPlan(),
         refetchSummary(),
@@ -83,10 +102,20 @@ export const HomeScreen = () => {
       // Giữ refresh indicator tối thiểu 500ms để UX tốt hơn
       setTimeout(() => setRefreshing(false), 500);
     }
-  }, [refetchPlan, refetchSummary, refetchStats, refetchSuggestions, refetchNotifications]);
+  }, [
+    refetchPlan,
+    refetchSummary,
+    refetchStats,
+    refetchSuggestions,
+    refetchNotifications,
+    isOffline,
+    syncNow,
+    t,
+  ]);
 
   /**
-   * Được gọi sau khi user bấm "Bắt đầu nấu" ngay tại Home.
+   * Được gọi sau khi user bấm "Bắt đầu nấu" ngay tại Home, hoặc sau khi AI
+   * lập xong thực đơn tuần (component `MealPlanCreateSection`).
    *
    * ⚠️ Bắt buộc báo qua `refreshKey` (counter) vì `useAsyncData` tạo state
    * RIÊNG cho mỗi nơi gọi hook -> `refetchStats()` của HomeScreen KHÔNG
@@ -171,9 +200,17 @@ export const HomeScreen = () => {
             />
           }
         >
-          <View style={{ marginTop: sp(18) }}>
-            <GreetingBanner />
+        <View style={{ marginTop: sp(18) }}>
+          <GreetingBanner />
+        </View>
+
+        {/* OFFLINE — banner cảnh báo mất mạng + badge thao tác chờ đồng bộ. */}
+        <OfflineBanner />
+        {pendingCount > 0 && (
+          <View style={{ marginTop: sp(10), alignItems: 'flex-start' }}>
+            <SyncStatusBadge />
           </View>
+        )}
 
           <View style={{ marginTop: sp(16) }}>
             <FridgeSummaryCards
@@ -209,6 +246,27 @@ export const HomeScreen = () => {
             <WeeklyStatisticsSection
               onDetailTap={() => navigation.navigate(Routes.IngredientStatistics)}
               refreshKey={refreshKey}
+            />
+          </View>
+
+          {/* Nút "Tạo meal plan theo tuần" — đặt NGAY DƯỚI phần thống kê tuần
+              (tham chiếu Flutter: `weekly_statistics_section.dart` có banner
+              "Gợi ý thực phẩm cho tuần tới" nằm dưới 2 thẻ thống kê).
+              Bấm -> mở modal chọn ngân sách -> AI lập thực đơn 7 ngày. */}
+          <View style={{ marginTop: sp(14) }}>
+            <MealPlanCreateSection
+              onCreated={handleCooked}
+              onPressPlan={() => navigation.navigate(Routes.NextWeekSuggestions)}
+            />
+          </View>
+
+          {/* Nút "Xem thực đơn tuần" — entry point để MỞ LẠI màn thực đơn tuần.
+              ⚠️ Bắt buộc: trước đây `Routes.NextWeekSuggestions` chỉ được mở
+              từ nhánh "tạo thành công" -> bấm Back là mất đường vào lại, chỉ còn
+              cách tạo thực đơn MỚI. */}
+          <View style={{ marginTop: sp(10) }}>
+            <WeeklyPlanShortcut
+              onPress={() => navigation.navigate(Routes.NextWeekSuggestions)}
             />
           </View>
 

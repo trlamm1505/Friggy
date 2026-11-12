@@ -24,7 +24,26 @@
  *  3. Log bằng console.warn kèm label để debug. TUYỆT ĐỐI KHÔNG log dữ liệu nhạy
  *     (token, password, email) - chỉ log tên method + message.
  *  4. appConfig.SAFE_FALLBACK=false để tắt fallback, dùng khi debug lỗi thật.
+ *
+ * ⚠️ P1 (OFFLINE) - THỨ TỰ ƯU TIÊN 4 TẦNG:
+ *   Trước: real -> (lỗi network/5xx) -> MOCK.
+ *   Nay:   real -> (lỗi network) -> [GHI: lưu hàng đợi offline]
+ *                    -> [ĐỌC: cache local] -> (cache rỗng) -> MOCK.
+ *
+ *   VÌ SAO CẦN CACHE Ở GIỮA:
+ *     MOCK là dữ liệu GIẢ (món ảo, tủ ảo). Khi offline, hiện mock khiến user
+ *     tưởng tủ lạnh của họ chứa món không có thật -> nguy hiểm hơn cả lỗi.
+ *     Cache local chứa dữ liệu THẬT đã tải về trước đó -> đúng như Flutter.
+ *     Mock chỉ là chốt chặn cuối để app không trắng màn.
+ *
+ *   `cacheFallback` là hàm BẤT ĐỒNG BỘ trả về dữ liệu cache cho 1 method.
+ *   Nếu không truyền `cacheFallback` -> hành vi cũ (real -> mock) giữ nguyên.
+ *
+ *   `mutationHandler` là hàm lưu thao tác GHI offline. Nó chỉ chạy với lỗi
+ *   NETWORK (server chưa nhận yêu cầu). Lỗi 4xx/5xx -> không queue.
  */
+
+import { OfflineQueuedError } from '../offline/OfflineQueuedError';
 
 /**
  * Trích status code từ nhiều hình dạng lỗi khác nhau.
@@ -99,10 +118,17 @@ export const shouldFallback = (e) => {
  * @param {object} [options]
  * @param {string} [options.label] - tên để log, vd 'fridge'
  * @param {boolean} [options.enabled] - mặc định appConfig.SAFE_FALLBACK
+ * @param {(methodName:string, args:Array) => Promise<any>} [options.cacheFallback]
+ *        - hàm đọc dữ liệu cache local khi lỗi network. Nếu trả `undefined`
+ *          hoặc `null` -> tiếp tục fallback sang mock.
+ * @param {(methodName:string, args:Array) => Promise<any>} [options.mutationHandler]
+ *        - hàm lưu thao tác ghi offline khi lỗi network (ghi cache + đẩy hàng đợi).
+ *          Nếu handler xử lý được -> ném `OfflineQueuedError` để UI biết đây
+ *          là "đã lưu offline" chứ không phải lỗi.
  * @returns {object} proxy có đúng các method của interface
  */
 export const withFallback = (realService, mockService, options = {}) => {
-  const { label = 'service', enabled } = options;
+  const { label = 'service', enabled, cacheFallback, mutationHandler } = options;
 
   if (!realService) return mockService;
   if (!mockService) return realService;
@@ -151,6 +177,79 @@ export const withFallback = (realService, mockService, options = {}) => {
         `[SafeService:${label}.${name}] fallback mock (status=${status ?? 'network'}):`,
         e?.message
       );
+    }
+  };
+
+  /**
+   * Log khi dùng được dữ liệu cache local.
+   * @param {string} label
+   * @param {string} name
+   */
+  const logCache = (label, name) => {
+    if (typeof __DEV__ !== 'undefined' && __DEV__) {
+      console.warn(`[SafeService:${label}.${name}] dùng dữ liệu cache offline`);
+    }
+  };
+
+  /**
+   * Thử đọc dữ liệu cache local khi lỗi network.
+   *
+   * ⚠️ CHỈ dùng cache khi lỗi là NETWORK, KHÔNG dùng cho lỗi 5xx:
+   *   - Lỗi network -> server không trả lời -> cache là nguồn dữ liệu DUY NHẤT.
+   *   - Lỗi 5xx     -> server CÓ trả lời nhưng lỗi -> cache có thể cũ hơn
+   *                    response lỗi, và người dùng cần biết server đang lỗi.
+   *     => 5xx vẫn fallback sang mock như cũ (giữ nguyên hành vi cũ).
+   *
+   * @param {string} name - tên method
+   * @param {Array} args - arguments của method
+   * @returns {Promise<{hit:boolean, value?:any}>}
+   */
+  const tryCache = async (name, args) => {
+    if (typeof cacheFallback !== 'function') return { hit: false };
+
+    try {
+      const value = await cacheFallback(name, args);
+      // `undefined` / `null` = cache không có dữ liệu -> đi tiếp sang mock.
+      if (value === undefined || value === null) return { hit: false };
+
+      // Mảng rỗng = server thật cũng trả rỗng -> coi như cache KHÔNG có dữ liệu
+      // (không nên hiện "0 món" giả khi cache rỗng).
+      if (Array.isArray(value) && value.length === 0) return { hit: false };
+
+      return { hit: true, value };
+    } catch (e) {
+      // Lỗi cache KHÔNG được làm hỏng fallback -> bỏ qua, đi tới mock.
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn(`[SafeService:${label}.${name}] lỗi khi đọc cache:`, e?.message);
+      }
+      return { hit: false };
+    }
+  };
+
+  /**
+   * Thử lưu thao tác ghi offline khi lỗi network.
+   *
+   * ⚠️ CHỈ áp dụng cho lỗi NETWORK:
+   *   - Lỗi network  -> server không nhận yêu cầu -> thao tác chưa xảy ra
+   *                     -> an toàn để lưu lại và upload sau.
+   *   - Lỗi 4xx/5xx  -> server ĐÃ xử lý (hoặc từ chối) -> không biết trạng thái
+   *                     -> không queue (tránh tạo bản ghi trùng).
+   *
+   * @param {string} name - tên method
+   * @param {Array} args - arguments của method
+   * @returns {Promise<boolean>} true nếu đã lưu offline thành công
+   */
+  const tryQueueMutation = async (name, args) => {
+    if (typeof mutationHandler !== 'function') return false;
+
+    try {
+      const handled = await mutationHandler(name, args);
+      return handled === true;
+    } catch (e) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn(`[SafeService:${label}.${name}] lỗi khi lưu offline:`, e?.message);
+      }
+      return false;
     }
   };
 
@@ -218,8 +317,26 @@ export const withFallback = (realService, mockService, options = {}) => {
       }
 
       // ── Kết quả là Promise -> bọc fallback ──
-      return Promise.resolve(realResult).catch((e) => {
+      return Promise.resolve(realResult).catch(async (e) => {
         if (!shouldFallback(e)) throw e;
+
+        // Tầng 0: thao tác GHI -> lưu offline để upload sau (chỉ lỗi network).
+        if (isNetworkError(e)) {
+          const queued = await tryQueueMutation(name, args);
+          if (queued) {
+            // Đã lưu offline -> ném lỗi riêng để UI hiện "đã lưu, sẽ đồng bộ".
+            throw new OfflineQueuedError(name);
+          }
+        }
+        // Tầng 1: dữ liệu CACHE LOCAL (chỉ khi lỗi network).
+        if (isNetworkError(e)) {
+          const cached = await tryCache(name, args);
+          if (cached.hit) {
+            logCache(label, name);
+            return cached.value;
+          }
+        }
+
         if (typeof mockFn !== 'function') throw e;
 
         logFallback(label, name, e);

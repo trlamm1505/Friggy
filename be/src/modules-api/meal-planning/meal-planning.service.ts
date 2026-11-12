@@ -38,6 +38,51 @@ import type {
   GenerateFromExpiringDto,
 } from './dto/meal-planning.dto';
 
+// ─────────────────────────────────────────────────────────
+// Types nội bộ — kết quả trừ nguyên liệu
+//
+// ⚠️ `ConsumedIngredientResult` GIỮ NGUYÊN 3 field cũ (`name`, `quantity`,
+//    `unit`) để backward compatible với client cũ (Flutter `Mobile/`) —
+//    socket event `meal:slot_completed` cũng dùng shape này.
+//    Field mới (`deductedQuantity`, `shortage`, ...) chỉ là bổ sung.
+// ─────────────────────────────────────────────────────────
+
+/** Nguyên liệu đã được trừ khỏi tủ lạnh. */
+export interface ConsumedIngredientResult {
+  ingredientId: number;
+  name: string;
+  /** Lượng công thức yêu cầu (đơn vị gốc của công thức) — semantics cũ. */
+  quantity: number;
+  /** Đơn vị gốc của công thức. */
+  unit: string;
+  /** Lượng công thức yêu cầu (đơn vị gốc của công thức). */
+  requiredQuantity: number;
+  /** Đơn vị gốc của công thức. */
+  requiredUnit: string;
+  /** Lượng THỰC SỰ bị trừ (base unit). */
+  deductedQuantity: number;
+  /** Base unit: 'g' | 'ml' | unit đếm gốc. */
+  deductedUnit: string;
+  /** Lượng còn thiếu = required - deducted (base unit). */
+  shortage: number;
+  isOptional: boolean;
+}
+
+/** Nguyên liệu còn thiếu trong tủ lạnh. */
+export interface MissingIngredientResult {
+  ingredientId: number;
+  name: string;
+  /** Lượng còn thiếu (base unit). */
+  quantity: number;
+  /** Base unit: 'g' | 'ml' | unit đếm gốc. */
+  unit: string;
+  /** Lượng công thức yêu cầu (đơn vị gốc của công thức). */
+  requiredQuantity: number;
+  /** Đơn vị gốc của công thức. */
+  requiredUnit: string;
+  isOptional: boolean;
+}
+
 @Injectable()
 export class MealPlanningService {
   private readonly logger = new Logger(MealPlanningService.name);
@@ -169,6 +214,15 @@ export class MealPlanningService {
 
   // ─────────────────────────────────────────────────────────
   // GET /plans/:id - Chi tiet ke hoach
+  //
+  // ⚠️ PHẢI map sang DTO (không trả raw Prisma) vì `MealSlotResponseDto`
+  //    khai báo `recipeName` — nhưng bảng `meal_slots` KHÔNG có cột này
+  //    (chỉ có `recipeId`). Nếu trả raw Prisma, FE đọc `slot.recipeName`
+  //    -> undefined -> UI hiện "Chưa có món" cho MỌI slot.
+  //    => Phải join `recipe.title` rồi đặt vào field `recipeName`.
+  //
+  // ⚠️ `dayOfWeek` của slot lấy từ `dailyPlan` (bảng `meal_slots` không có
+  //    cột này) — BE quy ước 1=T2 ... 7=CN.
   async getPlanDetail(userId: string, planId: string) {
     const familyGroupId = await this.resolveFamilyGroupId(userId);
     const where: any = familyGroupId
@@ -183,6 +237,12 @@ export class MealPlanningService {
           include: {
             mealSlots: {
               orderBy: { mealType: 'asc' },
+              // Join tên công thức — nguồn duy nhất của `recipeName`.
+              include: {
+                recipe: {
+                  select: { id: true, title: true, thumbnailPath: true, cookTimeMinutes: true },
+                },
+              },
             },
           },
         },
@@ -190,7 +250,45 @@ export class MealPlanningService {
     });
 
     if (!plan) throw new NotFoundException('Khong tim thay ke hoach');
-    return plan;
+
+    return {
+      id: plan.id,
+      userId: plan.userId,
+      familyGroupId: plan.familyGroupId,
+      weekStartDate: plan.weekStartDate.toISOString().split('T')[0],
+      totalBudget: plan.totalBudget,
+      actualCost: plan.actualCost,
+      status: plan.status,
+      generatedByAi: plan.generatedByAi,
+      createdAt: plan.createdAt.toISOString(),
+      dailyPlans: plan.dailyPlans.map((dailyPlan) => ({
+        id: dailyPlan.id,
+        dayOfWeek: dailyPlan.dayOfWeek,
+        date: dailyPlan.date.toISOString().split('T')[0],
+        dailyBudget: dailyPlan.dailyBudget,
+        mealSlots: dailyPlan.mealSlots.map((slot) => ({
+          id: slot.id,
+          dayOfWeek: dailyPlan.dayOfWeek,
+          mealType: slot.mealType,
+          recipeId: slot.recipeId,
+          // ⚠️ Tên món — lấy từ `recipe.title` (bảng meal_slots không có cột này).
+          recipeName: slot.recipe?.title ?? null,
+          servings: slot.servings,
+          estimatedCost: slot.estimatedCost,
+          note: slot.note,
+          completedAt: slot.completedAt?.toISOString() ?? null,
+          // Ảnh + thời gian nấu để FE hiển thị luôn (không cần gọi thêm API).
+          recipe: slot.recipe
+            ? {
+                id: slot.recipe.id,
+                title: slot.recipe.title,
+                thumbnailPath: slot.recipe.thumbnailPath,
+                cookTimeMinutes: slot.recipe.cookTimeMinutes,
+              }
+            : null,
+        })),
+      })),
+    };
   }
 
   // PATCH /plans/:id — Cập nhật trạng thái kế hoạch
@@ -272,18 +370,23 @@ export class MealPlanningService {
     const targetServings = dto.servings !== undefined ? dto.servings : slot.servings;
 
     // Nguyên liệu đã trừ — trả về cho FE để hiển thị "Đã trừ X khỏi tủ lạnh".
-    let consumedIngredients: Array<{ name: string; quantity: number; unit: string }> = [];
+    let consumedIngredients: ConsumedIngredientResult[] = [];
+    // Nguyên liệu THIẾU trong tủ lạnh (đã quy về base unit) -> FE cảnh báo
+    // user + gợi ý thêm vào danh sách mua.
+    let missingIngredients: MissingIngredientResult[] = [];
 
     if (dto.completed === true && !slot.completedAt && targetRecipeId) {
       // Resolve familyGroupId để truy vấn tủ lạnh đúng scope
       const familyGroupId = await this.resolveFamilyGroupId(userId);
-      consumedIngredients = await this.consumeIngredientsForSlot(
+      const result = await this.consumeIngredientsForSlot(
         userId,
         familyGroupId,
         slotId,
         targetRecipeId,
         targetServings,
       );
+      consumedIngredients = result.consumed;
+      missingIngredients = result.missing;
 
       // Broadcast Socket.IO event nếu thuộc gia đình
       if (familyGroupId && this.socketService) {
@@ -301,6 +404,7 @@ export class MealPlanningService {
           recipe?.title ?? 'Bữa ăn',
           consumedIngredients,
           userProfile?.displayName ?? 'Thành viên',
+          missingIngredients,
         );
       }
     }
@@ -308,7 +412,8 @@ export class MealPlanningService {
     // ⚠️ Trả kèm `consumedIngredients` để FE hiển thị cho user biết đã trừ
     //    bao nhiêu nguyên liệu khỏi tủ lạnh (nút "Bắt đầu nấu").
     //    Trước đây BE chỉ trả `updated` -> FE không có gì để báo.
-    return { ...updated, consumedIngredients };
+    // ⚠️ `missingIngredients` = phần còn thiếu -> FE cảnh báo "còn thiếu N món".
+    return { ...updated, consumedIngredients, missingIngredients };
   }
 
   // ─────────────────────────────────────────────────────────
@@ -1119,7 +1224,10 @@ export class MealPlanningService {
     slotId: string,
     recipeId: string,
     servings: number,
-  ): Promise<Array<{ name: string; quantity: number; unit: string }>> {
+  ): Promise<{
+    consumed: ConsumedIngredientResult[];
+    missing: MissingIngredientResult[];
+  }> {
     const recipe = await this.prisma.recipe.findUnique({
       where: { id: recipeId },
       include: {
@@ -1129,13 +1237,14 @@ export class MealPlanningService {
         },
       },
     });
-    if (!recipe) return [];
+    if (!recipe) return { consumed: [], missing: [] };
 
     const baseServings = Math.max(1, recipe.servings || 1);
     const actualServings = Math.max(1, servings || baseServings);
     const scale = actualServings / baseServings;
 
-    const consumed: Array<{ name: string; quantity: number; unit: string }> = [];
+    const consumed: ConsumedIngredientResult[] = [];
+    const missing: MissingIngredientResult[] = [];
 
     // Chạy trong transaction — Pessimistic locking: tránh 2 người cùng nấu lúc cùng trừ âm kho
     await this.prisma.$transaction(async (tx) => {
@@ -1155,6 +1264,9 @@ export class MealPlanningService {
         });
 
         let remaining = neededNorm;
+        // Lượng THỰC SỰ đã trừ (đã quy về base unit) — KHÁC với `scaledQty`
+        // (lượng công thức yêu cầu). Tủ thiếu -> 2 con số này lệch nhau.
+        let deductedNorm = 0;
 
         for (const fridgeItem of fridgeItems) {
           if (remaining <= 0) break;
@@ -1171,6 +1283,7 @@ export class MealPlanningService {
               data: { consumedAt: new Date(), quantity: 0, version: { increment: 1 } },
             });
             remaining -= availNorm;
+            deductedNorm += availNorm;
           } else {
             const leftNorm = availNorm - remaining;
             const { quantity: factor } = normalizeToBaseUnit(1, fridgeItem.unit);
@@ -1188,16 +1301,48 @@ export class MealPlanningService {
                 data: { quantity: roundedLeft, version: { increment: 1 } },
               });
             }
+            deductedNorm += remaining;
             remaining = 0;
           }
         }
 
-        const usedQty = neededNorm - remaining;
-        if (usedQty > 0) {
+        const ingredientName =
+          (ri as any).ingredient?.name ?? `ingredient#${ri.ingredientId}`;
+        const requiredQuantity = Math.round(scaledQty * 100) / 100;
+
+        // ⚠️ `consumedIngredients` chỉ liệt kê món TRỪ THỰC SỰ được
+        //    (deductedNorm > 0) -> tránh báo user "đã trừ 5 món" khi tủ
+        //    lạnh chỉ còn đủ 2 món.
+        if (deductedNorm > 0) {
           consumed.push({
-            name: (ri as any).ingredient?.name ?? `ingredient#${ri.ingredientId}`,
-            quantity: Math.round(scaledQty * 100) / 100,
+            ingredientId: ri.ingredientId,
+            name: ingredientName,
+            // Giữ nguyên semantics cũ: `quantity` = lượng công thức yêu cầu
+            // (đã scale theo servings) -> backward compatible với client cũ.
+            quantity: requiredQuantity,
             unit: ri.unit,
+            // Field MỚI: lượng thực sự bị trừ khỏi tủ lạnh (base unit).
+            requiredQuantity,
+            requiredUnit: ri.unit,
+            deductedQuantity: Math.round(deductedNorm * 100) / 100,
+            deductedUnit: neededUnit,
+            shortage: Math.round((neededNorm - deductedNorm) * 100) / 100,
+            isOptional: Boolean(ri.isOptional),
+          });
+        }
+
+        // Nguyên liệu thiếu -> trả về cho FE để cảnh báo / thêm vào DS mua.
+        if (remaining > 0) {
+          missing.push({
+            ingredientId: ri.ingredientId,
+            name: ingredientName,
+            // Lượng còn thiếu (đã quy về base unit).
+            quantity: Math.round(remaining * 100) / 100,
+            unit: neededUnit,
+            // Lượng công thức yêu cầu (đơn vị gốc của công thức).
+            requiredQuantity,
+            requiredUnit: ri.unit,
+            isOptional: Boolean(ri.isOptional),
           });
         }
 
@@ -1210,6 +1355,6 @@ export class MealPlanningService {
     });
 
     this.logger.log(`[MealPlanning] Đã trừ ng.liệu (FIFO+TX) cho slotId=${slotId} recipeId=${recipeId}`);
-    return consumed;
+    return { consumed, missing };
   }
 }

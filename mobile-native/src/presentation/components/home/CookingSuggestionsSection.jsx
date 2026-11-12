@@ -31,7 +31,7 @@ import { FontFamily, FontWeights } from '../../theme/typography';
 import { Users, Clock, Sparkles, ChevronRight, ChefHat } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { useServices } from '../../../data/ServiceProvider';
-import { showSuccess, showError } from '../../utils/helpers';
+import { showSuccess, showError, showInfo } from '../../utils/helpers';
 import { useRecipeSuggestions } from '../../hooks/useServiceHooks';
 import { Skeleton } from '../common/Skeleton';
 import { EmptyState } from '../common/EmptyState';
@@ -75,8 +75,12 @@ export const CookingSuggestionsSection = ({
    *
    * GIỜ: `PATCH /meal-planning/slots/{slotId}` với `{ completed: true }`
    *   -> BE set `completedAt` + trừ nguyên liệu FIFO trong tủ lạnh
-   *      (idempotent) + trả `consumedIngredients`.
+   *      (idempotent) + trả `consumedIngredients` và `missingIngredients`.
    *   -> refetch lại danh sách để chip chuyển sang "Đã nấu".
+   *
+   * ⚠️ KHÔNG gửi `servings` ở màn này: user KHÔNG chỉnh được khẩu phần
+   *    ở Home -> BE dùng `slot.servings` (giá trị đúng của kế hoạch).
+   *    (Màn chi tiết công thức CÓ Stepper -> gửi `servings` đã chọn.)
    *
    * ⚠️ Phải gọi `refetch` của CHÍNH hook trong component này — `refetch` ở
    *    HomeScreen là instance khác nên không update được state ở đây.
@@ -92,12 +96,25 @@ export const CookingSuggestionsSection = ({
       try {
         const result = await services.recipeService.updateSlot(slotId, { completed: true });
         const consumed = result?.consumedIngredients ?? [];
+        const missing = result?.missingIngredients ?? [];
 
-        showSuccess(
-          consumed.length > 0
-            ? t('home.startCookingDone', { count: consumed.length })
-            : t('home.startCookingNoIngredient')
-        );
+        if (consumed.length === 0 && missing.length === 0) {
+          showSuccess(t('home.startCookingNoIngredient'));
+        } else if (missing.length === 0) {
+          showSuccess(t('home.startCookingDone', { count: consumed.length }));
+        } else {
+          const names = missing
+            .slice(0, 3)
+            .map((m) => `${m.name} (${m.quantity}${m.unit})`)
+            .join(', ');
+          const more = missing.length > 3 ? ` và ${missing.length - 3} món khác` : '';
+          showInfo(
+            t('home.startCookingPartial', {
+              count: consumed.length,
+              missing: `${names}${more}`,
+            })
+          );
+        }
 
         // Cập nhật chip "Đã nấu" ngay trên Home.
         await refetch();

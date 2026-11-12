@@ -456,18 +456,34 @@ export class MockRecipeService extends IRecipeService {
    * Khớp `RealRecipeService.updateSlot()`: cập nhật state in-memory để UI
    * phản ánh ngay (optimistic update của UI vẫn hoạt động đúng).
    *
+   * ⚠️ Shape phải KHỚP Real (BE) để UI không phải rẽ nhánh:
+   *    `{ id, completedAt, consumedIngredients, missingIngredients }`.
+   *    `consumedIngredients` chỉ có lần tick đầu (idempotent) — giống BE.
+   *
    * @param {string} slotId
    * @param {{completed?:boolean, recipeId?:string|null, servings?:number, note?:string}} payload
-   * @returns {Promise<{id:string,completedAt:string|null,consumedIngredients:Array}>}
+   * @returns {Promise<{id:string,completedAt:string|null,consumedIngredients:Array,missingIngredients:Array}>}
    */
   async updateSlot(slotId, payload = {}) {
     await sleep(MOCK_DELAY / 2);
-    if (!slotId) return { id: slotId, completedAt: null, consumedIngredients: [] };
+    if (!slotId) {
+      return {
+        id: slotId,
+        completedAt: null,
+        consumedIngredients: [],
+        missingIngredients: [],
+      };
+    }
 
     // ⚠️ Mock phải trả cùng shape với Real (BE) để UI không phải rẽ nhánh:
-    //    `{ id, completedAt, consumedIngredients }`.
+    //    `{ id, completedAt, consumedIngredients, missingIngredients }`.
     //    `consumedIngredients` chỉ có lần tick đầu (idempotent) — giống BE.
-    const result = { id: slotId, completedAt: null, consumedIngredients: [] };
+    const result = {
+      id: slotId,
+      completedAt: null,
+      consumedIngredients: [],
+      missingIngredients: [],
+    };
 
     for (const day of mockNextWeekPlan.days) {
       const found = day.slots.find((s) => s.id === slotId);
@@ -497,13 +513,39 @@ export class MockRecipeService extends IRecipeService {
       }
 
       // Lần tick đầu -> giả lập đã trừ nguyên liệu (FIFO) cho UI.
+      //
+      // ⚠️ Scale theo khẩu phần giống BE:
+      //    `scaledQty = ing.amount * (servings / recipe.servings)`.
+      //    BE dùng `servings` user gửi nếu có, ngược lại `slot.servings`.
+      //    Ở mock ta dùng `found.servings` (đã cập nhật ở trên nếu có payload).
       if (payload.completed === true && !wasCooked) {
         const recipe = recipesMock.recipes.find((r) => r.id === found.recipeId);
-        result.consumedIngredients = (recipe?.ingredients ?? []).map((ing) => ({
-          name: typeof ing === 'string' ? ing : ing?.name,
-          quantity: typeof ing === 'string' ? 1 : ing?.amount ?? 1,
-          unit: typeof ing === 'string' ? '' : ing?.unit ?? '',
-        }));
+        const baseServings = Math.max(1, recipe?.servings || 1);
+        const actualServings = Math.max(1, found.servings || baseServings);
+        const scale = actualServings / baseServings;
+
+        result.consumedIngredients = (recipe?.ingredients ?? []).map((ing) => {
+          const isString = typeof ing === 'string';
+          const amount = isString ? 1 : ing?.amount ?? 1;
+          const unit = isString ? '' : ing?.unit ?? '';
+          const requiredQuantity = Math.round(amount * scale * 100) / 100;
+
+          return {
+            ingredientId: null,
+            name: isString ? ing : ing?.name,
+            // Field cũ (semantics cũ): lượng công thức đã scale.
+            quantity: requiredQuantity,
+            unit,
+            // Field mới.
+            requiredQuantity,
+            requiredUnit: unit,
+            // Mock giả định tủ lạnh luôn đủ -> trừ hết.
+            deductedQuantity: requiredQuantity,
+            deductedUnit: unit,
+            shortage: 0,
+            isOptional: false,
+          };
+        });
       }
 
       return result;

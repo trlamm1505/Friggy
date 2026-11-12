@@ -271,3 +271,128 @@ export class SlotDetailResponseDto {
   @ApiProperty({ type: IngredientSummaryDto })
   summary: IngredientSummaryDto;
 }
+
+// ─────────────────────────────────────────────────────────
+// PATCH /meal-planning/slots/:id — kết quả trừ nguyên liệu
+//
+// ⚠️ BACKWARD COMPATIBLE:
+//   `ConsumedIngredientDto` GIỮ NGUYÊN 3 field cũ (`name`, `quantity`, `unit`)
+//   và chỉ THÊM field mới -> client cũ (RN cũ, Flutter `Mobile/`) không vỡ.
+// ─────────────────────────────────────────────────────────
+
+export class ConsumedIngredientDto {
+  @ApiProperty({ example: 42 })
+  ingredientId: number;
+
+  @ApiProperty({ example: 'Thịt bò' })
+  name: string;
+
+  @ApiProperty({
+    example: 200,
+    description:
+      'Số lượng theo đơn vị gốc của công thức (đã scale theo servings). ' +
+      'Giữ nguyên semantics cũ để backward compatible.',
+  })
+  quantity: number;
+
+  @ApiProperty({ example: 'g', description: 'Đơn vị gốc trong công thức' })
+  unit: string;
+
+  @ApiProperty({
+    example: 200,
+    description: 'Số lượng công thức yêu cầu (đơn vị gốc của công thức)',
+  })
+  requiredQuantity: number;
+
+  @ApiProperty({ example: 'g', description: 'Đơn vị gốc của công thức' })
+  requiredUnit: string;
+
+  @ApiProperty({
+    example: 150,
+    description: 'Số lượng THỰC SỰ bị trừ khỏi tủ lạnh (đã quy về base unit)',
+  })
+  deductedQuantity: number;
+
+  @ApiProperty({
+    example: 'g',
+    description:
+      "Base unit sau normalize: 'g', 'ml', hoặc unit gốc (đơn vị đếm)",
+  })
+  deductedUnit: string;
+
+  @ApiProperty({
+    example: 50,
+    description: 'Lượng còn thiếu = required - deducted (base unit, >= 0)',
+  })
+  shortage: number;
+
+  @ApiProperty({ example: false, description: 'Nguyên liệu không bắt buộc' })
+  isOptional: boolean;
+}
+
+export class MissingIngredientDto {
+  @ApiProperty({ example: 42 })
+  ingredientId: number;
+
+  @ApiProperty({ example: 'Hành lá' })
+  name: string;
+
+  @ApiProperty({
+    example: 2,
+    description: 'Lượng còn thiếu (đã quy về base unit)',
+  })
+  quantity: number;
+
+  @ApiProperty({
+    example: 'cọng',
+    description:
+      "Base unit sau normalize: 'g', 'ml', hoặc unit gốc (đơn vị đếm)",
+  })
+  unit: string;
+
+  @ApiProperty({
+    example: 3,
+    description: 'Số lượng công thức yêu cầu (đơn vị gốc của công thức)',
+  })
+  requiredQuantity: number;
+
+  @ApiProperty({ example: 'cọng', description: 'Đơn vị gốc của công thức' })
+  requiredUnit: string;
+
+  @ApiProperty({ example: false, description: 'Nguyên liệu không bắt buộc' })
+  isOptional: boolean;
+}
+
+export class UpdateMealSlotResponseDto {
+  @ApiProperty({ example: 'slot-uuid' })
+  id: string;
+
+  @ApiProperty({ enum: ['breakfast', 'lunch', 'dinner', 'snack', 'dessert'] })
+  mealType: string;
+
+  @ApiPropertyOptional({ example: 'recipe-uuid', nullable: true })
+  recipeId: string | null;
+
+  @ApiProperty({ example: 2 })
+  servings: number;
+
+  @ApiPropertyOptional({ example: null })
+  note: string | null;
+
+  @ApiPropertyOptional({ example: null })
+  completedAt: string | null;
+
+  @ApiProperty({
+    type: [ConsumedIngredientDto],
+    description:
+      'Nguyên liệu ĐÃ trừ khỏi tủ lạnh (chỉ có ở lần tick đầu tiên). ' +
+      'Rỗng nếu slot đã được đánh dấu hoàn thành trước đó (idempotent).',
+  })
+  consumedIngredients: ConsumedIngredientDto[];
+
+  @ApiProperty({
+    type: [MissingIngredientDto],
+    description: 'Nguyên liệu còn THIẾU trong tủ lạnh (đã quy về base unit)',
+  })
+  missingIngredients: MissingIngredientDto[];
+}

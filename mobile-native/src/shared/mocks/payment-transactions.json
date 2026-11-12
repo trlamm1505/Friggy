@@ -1,0 +1,40 @@
+{
+  "transactions": [
+    {
+      "id": "mock-tx-1",
+      "paymentRef": "FRIGGY-1727000000000",
+      "type": "subscribe",
+      "planName": "Gói Cá Nhân",
+      "amount": 79000,
+      "status": "paid",
+      "checkoutUrl": "https://checkout.mock/1",
+      "expiredAt": "2026-09-24T02:30:00.000Z",
+      "paidAt": "2026-09-24T02:12:00.000Z",
+      "createdAt": "2026-09-24T02:05:00.000Z"
+    },
+    {
+      "id": "mock-tx-2",
+      "paymentRef": "FRIGGY-1727100000000",
+      "type": "renew",
+      "planName": "Gói Cá Nhân",
+      "amount": 79000,
+      "status": "pending",
+      "checkoutUrl": "https://checkout.mock/2",
+      "expiredAt": "2026-10-01T02:30:00.000Z",
+      "paidAt": null,
+      "createdAt": "2026-10-01T02:05:00.000Z"
+    },
+    {
+      "id": "mock-tx-3",
+      "paymentRef": "FRIGGY-1727200000000",
+      "type": "subscribe",
+      "planName": "Gói Gia Đình",
+      "amount": 149000,
+      "status": "expired",
+      "checkoutUrl": "https://checkout.mock/3",
+      "expiredAt": "2026-10-08T02:30:00.000Z",
+      "paidAt": null,
+      "createdAt": "2026-10-08T02:05:00.000Z"
+    }
+  ]
+}

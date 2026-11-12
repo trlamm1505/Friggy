@@ -57,7 +57,7 @@ import { FontFamily, FontWeights } from '../../theme/typography';
 import { useTranslation } from 'react-i18next';
 import { Minus, Plus, Check, Trash2 } from 'lucide-react-native';
 import { useServices } from '../../../data/ServiceProvider';
-import { showSuccess, showError } from '../../utils/helpers';
+import { showSuccess, showError, showMutationError } from '../../utils/helpers';
 import { UNITS, stepForUnit, parseQuantity } from '../../utils/fridgeItems';
 import { ExpiryDatePicker, toIsoDate } from './ExpiryDatePicker';
 
@@ -237,7 +237,10 @@ export const FridgeItemActions = ({ item, visible, onClose, onChanged }) => {
       closeSheet();
     } catch (e) {
       // 4xx KHÔNG fallback -> hiện lỗi thật cho user.
-      showError(e?.message || t('fridge.updateFailed'));
+      // P2 (offline): đã lưu vào hàng đợi -> hiện "đã lưu, sẽ đồng bộ" (không phải lỗi).
+      showMutationError(e, t('fridge.updateFailed'), {
+        offlineMessage: t('offline.savedQueued'),
+      });
     } finally {
       savingRef.current = false;
       setSaving(false);
@@ -278,7 +281,10 @@ export const FridgeItemActions = ({ item, visible, onClose, onChanged }) => {
             onChanged?.();
             closeSheet();
           } catch (e) {
-            showError(e?.message || t('fridge.consumeFailed'));
+            // P2 (offline): đã lưu -> không phải lỗi.
+            showMutationError(e, t('fridge.consumeFailed'), {
+              offlineMessage: t('offline.savedQueued'),
+            });
             busyRef.current = null;
             setBusy(null);
           }
@@ -310,7 +316,10 @@ export const FridgeItemActions = ({ item, visible, onClose, onChanged }) => {
             onChanged?.();
             closeSheet();
           } catch (e) {
-            showError(e?.message || t('fridge.deleteFailed'));
+            // P2 (offline): đã lưu -> không phải lỗi.
+            showMutationError(e, t('fridge.deleteFailed'), {
+              offlineMessage: t('offline.savedQueued'),
+            });
             busyRef.current = null;
             setBusy(null);
           }
