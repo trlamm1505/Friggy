@@ -57,5 +57,7 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
 /generated/prisma
 
-# Firebase Service Account Key (sensitive — không commit)
+# Firebase Service Account Key (sensitive ï¿½ khï¿½ng commit)
 *firebase-adminsdk*.json
+
+/public

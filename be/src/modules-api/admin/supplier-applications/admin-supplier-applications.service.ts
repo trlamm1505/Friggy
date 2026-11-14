@@ -38,6 +38,7 @@ export class AdminSupplierApplicationsService {
     if (search) {
       where.OR = [
         { companyName: { contains: search } },
+        { taxCode: { contains: search } },
         { email: { contains: search } },
         { contactName: { contains: search } },
       ];
@@ -129,6 +130,7 @@ export class AdminSupplierApplicationsService {
           id: profileId,
           userId: newUserId,
           companyName: app.companyName,
+          taxCode: app.taxCode ?? null,
           contactPhone: app.phone ?? null,
           address: app.address ?? null,
           description: app.description ?? null,
@@ -161,7 +163,7 @@ export class AdminSupplierApplicationsService {
         action: 'approve_supplier_application',
         targetEntity: 'supplier_applications',
         targetId: id,
-        newValue: { email: app.email, companyName: app.companyName, newUserId },
+        newValue: { email: app.email, companyName: app.companyName, taxCode: app.taxCode ?? null, newUserId },
       },
     });
 

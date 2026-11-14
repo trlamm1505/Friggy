@@ -277,7 +277,6 @@ export type IngredientWhereInput = {
   updatedAt?: Prisma.DateTimeFilter<"Ingredient"> | Date | string
   deletedAt?: Prisma.DateTimeNullableFilter<"Ingredient"> | Date | string | null
   fridgeItems?: Prisma.FridgeItemListRelationFilter
-  purchaseLinks?: Prisma.IngredientPurchaseLinkListRelationFilter
   category?: Prisma.XOR<Prisma.IngredientCategoryScalarRelationFilter, Prisma.IngredientCategoryWhereInput>
   recipeIngredients?: Prisma.RecipeIngredientListRelationFilter
   shoppingItems?: Prisma.ShoppingListItemListRelationFilter
@@ -298,7 +297,6 @@ export type IngredientOrderByWithRelationInput = {
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   fridgeItems?: Prisma.FridgeItemOrderByRelationAggregateInput
-  purchaseLinks?: Prisma.IngredientPurchaseLinkOrderByRelationAggregateInput
   category?: Prisma.IngredientCategoryOrderByWithRelationInput
   recipeIngredients?: Prisma.RecipeIngredientOrderByRelationAggregateInput
   shoppingItems?: Prisma.ShoppingListItemOrderByRelationAggregateInput
@@ -323,7 +321,6 @@ export type IngredientWhereUniqueInput = Prisma.AtLeast<{
   updatedAt?: Prisma.DateTimeFilter<"Ingredient"> | Date | string
   deletedAt?: Prisma.DateTimeNullableFilter<"Ingredient"> | Date | string | null
   fridgeItems?: Prisma.FridgeItemListRelationFilter
-  purchaseLinks?: Prisma.IngredientPurchaseLinkListRelationFilter
   category?: Prisma.XOR<Prisma.IngredientCategoryScalarRelationFilter, Prisma.IngredientCategoryWhereInput>
   recipeIngredients?: Prisma.RecipeIngredientListRelationFilter
   shoppingItems?: Prisma.ShoppingListItemListRelationFilter
@@ -378,7 +375,6 @@ export type IngredientCreateInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   fridgeItems?: Prisma.FridgeItemCreateNestedManyWithoutIngredientInput
-  purchaseLinks?: Prisma.IngredientPurchaseLinkCreateNestedManyWithoutIngredientInput
   category: Prisma.IngredientCategoryCreateNestedOneWithoutIngredientsInput
   recipeIngredients?: Prisma.RecipeIngredientCreateNestedManyWithoutIngredientInput
   shoppingItems?: Prisma.ShoppingListItemCreateNestedManyWithoutIngredientInput
@@ -399,7 +395,6 @@ export type IngredientUncheckedCreateInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   fridgeItems?: Prisma.FridgeItemUncheckedCreateNestedManyWithoutIngredientInput
-  purchaseLinks?: Prisma.IngredientPurchaseLinkUncheckedCreateNestedManyWithoutIngredientInput
   recipeIngredients?: Prisma.RecipeIngredientUncheckedCreateNestedManyWithoutIngredientInput
   shoppingItems?: Prisma.ShoppingListItemUncheckedCreateNestedManyWithoutIngredientInput
   allergies?: Prisma.UserAllergyUncheckedCreateNestedManyWithoutIngredientInput
@@ -417,7 +412,6 @@ export type IngredientUpdateInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   fridgeItems?: Prisma.FridgeItemUpdateManyWithoutIngredientNestedInput
-  purchaseLinks?: Prisma.IngredientPurchaseLinkUpdateManyWithoutIngredientNestedInput
   category?: Prisma.IngredientCategoryUpdateOneRequiredWithoutIngredientsNestedInput
   recipeIngredients?: Prisma.RecipeIngredientUpdateManyWithoutIngredientNestedInput
   shoppingItems?: Prisma.ShoppingListItemUpdateManyWithoutIngredientNestedInput
@@ -438,7 +432,6 @@ export type IngredientUncheckedUpdateInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   fridgeItems?: Prisma.FridgeItemUncheckedUpdateManyWithoutIngredientNestedInput
-  purchaseLinks?: Prisma.IngredientPurchaseLinkUncheckedUpdateManyWithoutIngredientNestedInput
   recipeIngredients?: Prisma.RecipeIngredientUncheckedUpdateManyWithoutIngredientNestedInput
   shoppingItems?: Prisma.ShoppingListItemUncheckedUpdateManyWithoutIngredientNestedInput
   allergies?: Prisma.UserAllergyUncheckedUpdateManyWithoutIngredientNestedInput
@@ -673,20 +666,6 @@ export type IngredientUpdateOneRequiredWithoutShoppingItemsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.IngredientUpdateToOneWithWhereWithoutShoppingItemsInput, Prisma.IngredientUpdateWithoutShoppingItemsInput>, Prisma.IngredientUncheckedUpdateWithoutShoppingItemsInput>
 }
 
-export type IngredientCreateNestedOneWithoutPurchaseLinksInput = {
-  create?: Prisma.XOR<Prisma.IngredientCreateWithoutPurchaseLinksInput, Prisma.IngredientUncheckedCreateWithoutPurchaseLinksInput>
-  connectOrCreate?: Prisma.IngredientCreateOrConnectWithoutPurchaseLinksInput
-  connect?: Prisma.IngredientWhereUniqueInput
-}
-
-export type IngredientUpdateOneRequiredWithoutPurchaseLinksNestedInput = {
-  create?: Prisma.XOR<Prisma.IngredientCreateWithoutPurchaseLinksInput, Prisma.IngredientUncheckedCreateWithoutPurchaseLinksInput>
-  connectOrCreate?: Prisma.IngredientCreateOrConnectWithoutPurchaseLinksInput
-  upsert?: Prisma.IngredientUpsertWithoutPurchaseLinksInput
-  connect?: Prisma.IngredientWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.IngredientUpdateToOneWithWhereWithoutPurchaseLinksInput, Prisma.IngredientUpdateWithoutPurchaseLinksInput>, Prisma.IngredientUncheckedUpdateWithoutPurchaseLinksInput>
-}
-
 export type IngredientCreateNestedOneWithoutSupplierLinksInput = {
   create?: Prisma.XOR<Prisma.IngredientCreateWithoutSupplierLinksInput, Prisma.IngredientUncheckedCreateWithoutSupplierLinksInput>
   connectOrCreate?: Prisma.IngredientCreateOrConnectWithoutSupplierLinksInput
@@ -714,7 +693,6 @@ export type IngredientCreateWithoutCategoryInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   fridgeItems?: Prisma.FridgeItemCreateNestedManyWithoutIngredientInput
-  purchaseLinks?: Prisma.IngredientPurchaseLinkCreateNestedManyWithoutIngredientInput
   recipeIngredients?: Prisma.RecipeIngredientCreateNestedManyWithoutIngredientInput
   shoppingItems?: Prisma.ShoppingListItemCreateNestedManyWithoutIngredientInput
   allergies?: Prisma.UserAllergyCreateNestedManyWithoutIngredientInput
@@ -733,7 +711,6 @@ export type IngredientUncheckedCreateWithoutCategoryInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   fridgeItems?: Prisma.FridgeItemUncheckedCreateNestedManyWithoutIngredientInput
-  purchaseLinks?: Prisma.IngredientPurchaseLinkUncheckedCreateNestedManyWithoutIngredientInput
   recipeIngredients?: Prisma.RecipeIngredientUncheckedCreateNestedManyWithoutIngredientInput
   shoppingItems?: Prisma.ShoppingListItemUncheckedCreateNestedManyWithoutIngredientInput
   allergies?: Prisma.UserAllergyUncheckedCreateNestedManyWithoutIngredientInput
@@ -794,7 +771,6 @@ export type IngredientCreateWithoutRecipeIngredientsInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   fridgeItems?: Prisma.FridgeItemCreateNestedManyWithoutIngredientInput
-  purchaseLinks?: Prisma.IngredientPurchaseLinkCreateNestedManyWithoutIngredientInput
   category: Prisma.IngredientCategoryCreateNestedOneWithoutIngredientsInput
   shoppingItems?: Prisma.ShoppingListItemCreateNestedManyWithoutIngredientInput
   allergies?: Prisma.UserAllergyCreateNestedManyWithoutIngredientInput
@@ -814,7 +790,6 @@ export type IngredientUncheckedCreateWithoutRecipeIngredientsInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   fridgeItems?: Prisma.FridgeItemUncheckedCreateNestedManyWithoutIngredientInput
-  purchaseLinks?: Prisma.IngredientPurchaseLinkUncheckedCreateNestedManyWithoutIngredientInput
   shoppingItems?: Prisma.ShoppingListItemUncheckedCreateNestedManyWithoutIngredientInput
   allergies?: Prisma.UserAllergyUncheckedCreateNestedManyWithoutIngredientInput
   supplierLinks?: Prisma.SupplierIngredientUncheckedCreateNestedManyWithoutLinkedIngredientInput
@@ -847,7 +822,6 @@ export type IngredientUpdateWithoutRecipeIngredientsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   fridgeItems?: Prisma.FridgeItemUpdateManyWithoutIngredientNestedInput
-  purchaseLinks?: Prisma.IngredientPurchaseLinkUpdateManyWithoutIngredientNestedInput
   category?: Prisma.IngredientCategoryUpdateOneRequiredWithoutIngredientsNestedInput
   shoppingItems?: Prisma.ShoppingListItemUpdateManyWithoutIngredientNestedInput
   allergies?: Prisma.UserAllergyUpdateManyWithoutIngredientNestedInput
@@ -867,7 +841,6 @@ export type IngredientUncheckedUpdateWithoutRecipeIngredientsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   fridgeItems?: Prisma.FridgeItemUncheckedUpdateManyWithoutIngredientNestedInput
-  purchaseLinks?: Prisma.IngredientPurchaseLinkUncheckedUpdateManyWithoutIngredientNestedInput
   shoppingItems?: Prisma.ShoppingListItemUncheckedUpdateManyWithoutIngredientNestedInput
   allergies?: Prisma.UserAllergyUncheckedUpdateManyWithoutIngredientNestedInput
   supplierLinks?: Prisma.SupplierIngredientUncheckedUpdateManyWithoutLinkedIngredientNestedInput
@@ -883,7 +856,6 @@ export type IngredientCreateWithoutFridgeItemsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
-  purchaseLinks?: Prisma.IngredientPurchaseLinkCreateNestedManyWithoutIngredientInput
   category: Prisma.IngredientCategoryCreateNestedOneWithoutIngredientsInput
   recipeIngredients?: Prisma.RecipeIngredientCreateNestedManyWithoutIngredientInput
   shoppingItems?: Prisma.ShoppingListItemCreateNestedManyWithoutIngredientInput
@@ -903,7 +875,6 @@ export type IngredientUncheckedCreateWithoutFridgeItemsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
-  purchaseLinks?: Prisma.IngredientPurchaseLinkUncheckedCreateNestedManyWithoutIngredientInput
   recipeIngredients?: Prisma.RecipeIngredientUncheckedCreateNestedManyWithoutIngredientInput
   shoppingItems?: Prisma.ShoppingListItemUncheckedCreateNestedManyWithoutIngredientInput
   allergies?: Prisma.UserAllergyUncheckedCreateNestedManyWithoutIngredientInput
@@ -936,7 +907,6 @@ export type IngredientUpdateWithoutFridgeItemsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  purchaseLinks?: Prisma.IngredientPurchaseLinkUpdateManyWithoutIngredientNestedInput
   category?: Prisma.IngredientCategoryUpdateOneRequiredWithoutIngredientsNestedInput
   recipeIngredients?: Prisma.RecipeIngredientUpdateManyWithoutIngredientNestedInput
   shoppingItems?: Prisma.ShoppingListItemUpdateManyWithoutIngredientNestedInput
@@ -956,7 +926,6 @@ export type IngredientUncheckedUpdateWithoutFridgeItemsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  purchaseLinks?: Prisma.IngredientPurchaseLinkUncheckedUpdateManyWithoutIngredientNestedInput
   recipeIngredients?: Prisma.RecipeIngredientUncheckedUpdateManyWithoutIngredientNestedInput
   shoppingItems?: Prisma.ShoppingListItemUncheckedUpdateManyWithoutIngredientNestedInput
   allergies?: Prisma.UserAllergyUncheckedUpdateManyWithoutIngredientNestedInput
@@ -974,7 +943,6 @@ export type IngredientCreateWithoutAllergiesInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   fridgeItems?: Prisma.FridgeItemCreateNestedManyWithoutIngredientInput
-  purchaseLinks?: Prisma.IngredientPurchaseLinkCreateNestedManyWithoutIngredientInput
   category: Prisma.IngredientCategoryCreateNestedOneWithoutIngredientsInput
   recipeIngredients?: Prisma.RecipeIngredientCreateNestedManyWithoutIngredientInput
   shoppingItems?: Prisma.ShoppingListItemCreateNestedManyWithoutIngredientInput
@@ -994,7 +962,6 @@ export type IngredientUncheckedCreateWithoutAllergiesInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   fridgeItems?: Prisma.FridgeItemUncheckedCreateNestedManyWithoutIngredientInput
-  purchaseLinks?: Prisma.IngredientPurchaseLinkUncheckedCreateNestedManyWithoutIngredientInput
   recipeIngredients?: Prisma.RecipeIngredientUncheckedCreateNestedManyWithoutIngredientInput
   shoppingItems?: Prisma.ShoppingListItemUncheckedCreateNestedManyWithoutIngredientInput
   supplierLinks?: Prisma.SupplierIngredientUncheckedCreateNestedManyWithoutLinkedIngredientInput
@@ -1027,7 +994,6 @@ export type IngredientUpdateWithoutAllergiesInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   fridgeItems?: Prisma.FridgeItemUpdateManyWithoutIngredientNestedInput
-  purchaseLinks?: Prisma.IngredientPurchaseLinkUpdateManyWithoutIngredientNestedInput
   category?: Prisma.IngredientCategoryUpdateOneRequiredWithoutIngredientsNestedInput
   recipeIngredients?: Prisma.RecipeIngredientUpdateManyWithoutIngredientNestedInput
   shoppingItems?: Prisma.ShoppingListItemUpdateManyWithoutIngredientNestedInput
@@ -1047,7 +1013,6 @@ export type IngredientUncheckedUpdateWithoutAllergiesInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   fridgeItems?: Prisma.FridgeItemUncheckedUpdateManyWithoutIngredientNestedInput
-  purchaseLinks?: Prisma.IngredientPurchaseLinkUncheckedUpdateManyWithoutIngredientNestedInput
   recipeIngredients?: Prisma.RecipeIngredientUncheckedUpdateManyWithoutIngredientNestedInput
   shoppingItems?: Prisma.ShoppingListItemUncheckedUpdateManyWithoutIngredientNestedInput
   supplierLinks?: Prisma.SupplierIngredientUncheckedUpdateManyWithoutLinkedIngredientNestedInput
@@ -1064,7 +1029,6 @@ export type IngredientCreateWithoutShoppingItemsInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   fridgeItems?: Prisma.FridgeItemCreateNestedManyWithoutIngredientInput
-  purchaseLinks?: Prisma.IngredientPurchaseLinkCreateNestedManyWithoutIngredientInput
   category: Prisma.IngredientCategoryCreateNestedOneWithoutIngredientsInput
   recipeIngredients?: Prisma.RecipeIngredientCreateNestedManyWithoutIngredientInput
   allergies?: Prisma.UserAllergyCreateNestedManyWithoutIngredientInput
@@ -1084,7 +1048,6 @@ export type IngredientUncheckedCreateWithoutShoppingItemsInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   fridgeItems?: Prisma.FridgeItemUncheckedCreateNestedManyWithoutIngredientInput
-  purchaseLinks?: Prisma.IngredientPurchaseLinkUncheckedCreateNestedManyWithoutIngredientInput
   recipeIngredients?: Prisma.RecipeIngredientUncheckedCreateNestedManyWithoutIngredientInput
   allergies?: Prisma.UserAllergyUncheckedCreateNestedManyWithoutIngredientInput
   supplierLinks?: Prisma.SupplierIngredientUncheckedCreateNestedManyWithoutLinkedIngredientInput
@@ -1117,7 +1080,6 @@ export type IngredientUpdateWithoutShoppingItemsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   fridgeItems?: Prisma.FridgeItemUpdateManyWithoutIngredientNestedInput
-  purchaseLinks?: Prisma.IngredientPurchaseLinkUpdateManyWithoutIngredientNestedInput
   category?: Prisma.IngredientCategoryUpdateOneRequiredWithoutIngredientsNestedInput
   recipeIngredients?: Prisma.RecipeIngredientUpdateManyWithoutIngredientNestedInput
   allergies?: Prisma.UserAllergyUpdateManyWithoutIngredientNestedInput
@@ -1137,98 +1099,7 @@ export type IngredientUncheckedUpdateWithoutShoppingItemsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   fridgeItems?: Prisma.FridgeItemUncheckedUpdateManyWithoutIngredientNestedInput
-  purchaseLinks?: Prisma.IngredientPurchaseLinkUncheckedUpdateManyWithoutIngredientNestedInput
   recipeIngredients?: Prisma.RecipeIngredientUncheckedUpdateManyWithoutIngredientNestedInput
-  allergies?: Prisma.UserAllergyUncheckedUpdateManyWithoutIngredientNestedInput
-  supplierLinks?: Prisma.SupplierIngredientUncheckedUpdateManyWithoutLinkedIngredientNestedInput
-}
-
-export type IngredientCreateWithoutPurchaseLinksInput = {
-  name: string
-  defaultUnit: string
-  caloriesPer100g?: number | null
-  averagePricePerUnit?: number | null
-  imagePath?: string | null
-  isCommon?: boolean
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  deletedAt?: Date | string | null
-  fridgeItems?: Prisma.FridgeItemCreateNestedManyWithoutIngredientInput
-  category: Prisma.IngredientCategoryCreateNestedOneWithoutIngredientsInput
-  recipeIngredients?: Prisma.RecipeIngredientCreateNestedManyWithoutIngredientInput
-  shoppingItems?: Prisma.ShoppingListItemCreateNestedManyWithoutIngredientInput
-  allergies?: Prisma.UserAllergyCreateNestedManyWithoutIngredientInput
-  supplierLinks?: Prisma.SupplierIngredientCreateNestedManyWithoutLinkedIngredientInput
-}
-
-export type IngredientUncheckedCreateWithoutPurchaseLinksInput = {
-  id?: number
-  name: string
-  categoryId: number
-  defaultUnit: string
-  caloriesPer100g?: number | null
-  averagePricePerUnit?: number | null
-  imagePath?: string | null
-  isCommon?: boolean
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  deletedAt?: Date | string | null
-  fridgeItems?: Prisma.FridgeItemUncheckedCreateNestedManyWithoutIngredientInput
-  recipeIngredients?: Prisma.RecipeIngredientUncheckedCreateNestedManyWithoutIngredientInput
-  shoppingItems?: Prisma.ShoppingListItemUncheckedCreateNestedManyWithoutIngredientInput
-  allergies?: Prisma.UserAllergyUncheckedCreateNestedManyWithoutIngredientInput
-  supplierLinks?: Prisma.SupplierIngredientUncheckedCreateNestedManyWithoutLinkedIngredientInput
-}
-
-export type IngredientCreateOrConnectWithoutPurchaseLinksInput = {
-  where: Prisma.IngredientWhereUniqueInput
-  create: Prisma.XOR<Prisma.IngredientCreateWithoutPurchaseLinksInput, Prisma.IngredientUncheckedCreateWithoutPurchaseLinksInput>
-}
-
-export type IngredientUpsertWithoutPurchaseLinksInput = {
-  update: Prisma.XOR<Prisma.IngredientUpdateWithoutPurchaseLinksInput, Prisma.IngredientUncheckedUpdateWithoutPurchaseLinksInput>
-  create: Prisma.XOR<Prisma.IngredientCreateWithoutPurchaseLinksInput, Prisma.IngredientUncheckedCreateWithoutPurchaseLinksInput>
-  where?: Prisma.IngredientWhereInput
-}
-
-export type IngredientUpdateToOneWithWhereWithoutPurchaseLinksInput = {
-  where?: Prisma.IngredientWhereInput
-  data: Prisma.XOR<Prisma.IngredientUpdateWithoutPurchaseLinksInput, Prisma.IngredientUncheckedUpdateWithoutPurchaseLinksInput>
-}
-
-export type IngredientUpdateWithoutPurchaseLinksInput = {
-  name?: Prisma.StringFieldUpdateOperationsInput | string
-  defaultUnit?: Prisma.StringFieldUpdateOperationsInput | string
-  caloriesPer100g?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
-  averagePricePerUnit?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  imagePath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  isCommon?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  fridgeItems?: Prisma.FridgeItemUpdateManyWithoutIngredientNestedInput
-  category?: Prisma.IngredientCategoryUpdateOneRequiredWithoutIngredientsNestedInput
-  recipeIngredients?: Prisma.RecipeIngredientUpdateManyWithoutIngredientNestedInput
-  shoppingItems?: Prisma.ShoppingListItemUpdateManyWithoutIngredientNestedInput
-  allergies?: Prisma.UserAllergyUpdateManyWithoutIngredientNestedInput
-  supplierLinks?: Prisma.SupplierIngredientUpdateManyWithoutLinkedIngredientNestedInput
-}
-
-export type IngredientUncheckedUpdateWithoutPurchaseLinksInput = {
-  id?: Prisma.IntFieldUpdateOperationsInput | number
-  name?: Prisma.StringFieldUpdateOperationsInput | string
-  categoryId?: Prisma.IntFieldUpdateOperationsInput | number
-  defaultUnit?: Prisma.StringFieldUpdateOperationsInput | string
-  caloriesPer100g?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
-  averagePricePerUnit?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  imagePath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  isCommon?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  fridgeItems?: Prisma.FridgeItemUncheckedUpdateManyWithoutIngredientNestedInput
-  recipeIngredients?: Prisma.RecipeIngredientUncheckedUpdateManyWithoutIngredientNestedInput
-  shoppingItems?: Prisma.ShoppingListItemUncheckedUpdateManyWithoutIngredientNestedInput
   allergies?: Prisma.UserAllergyUncheckedUpdateManyWithoutIngredientNestedInput
   supplierLinks?: Prisma.SupplierIngredientUncheckedUpdateManyWithoutLinkedIngredientNestedInput
 }
@@ -1244,7 +1115,6 @@ export type IngredientCreateWithoutSupplierLinksInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   fridgeItems?: Prisma.FridgeItemCreateNestedManyWithoutIngredientInput
-  purchaseLinks?: Prisma.IngredientPurchaseLinkCreateNestedManyWithoutIngredientInput
   category: Prisma.IngredientCategoryCreateNestedOneWithoutIngredientsInput
   recipeIngredients?: Prisma.RecipeIngredientCreateNestedManyWithoutIngredientInput
   shoppingItems?: Prisma.ShoppingListItemCreateNestedManyWithoutIngredientInput
@@ -1264,7 +1134,6 @@ export type IngredientUncheckedCreateWithoutSupplierLinksInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   fridgeItems?: Prisma.FridgeItemUncheckedCreateNestedManyWithoutIngredientInput
-  purchaseLinks?: Prisma.IngredientPurchaseLinkUncheckedCreateNestedManyWithoutIngredientInput
   recipeIngredients?: Prisma.RecipeIngredientUncheckedCreateNestedManyWithoutIngredientInput
   shoppingItems?: Prisma.ShoppingListItemUncheckedCreateNestedManyWithoutIngredientInput
   allergies?: Prisma.UserAllergyUncheckedCreateNestedManyWithoutIngredientInput
@@ -1297,7 +1166,6 @@ export type IngredientUpdateWithoutSupplierLinksInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   fridgeItems?: Prisma.FridgeItemUpdateManyWithoutIngredientNestedInput
-  purchaseLinks?: Prisma.IngredientPurchaseLinkUpdateManyWithoutIngredientNestedInput
   category?: Prisma.IngredientCategoryUpdateOneRequiredWithoutIngredientsNestedInput
   recipeIngredients?: Prisma.RecipeIngredientUpdateManyWithoutIngredientNestedInput
   shoppingItems?: Prisma.ShoppingListItemUpdateManyWithoutIngredientNestedInput
@@ -1317,7 +1185,6 @@ export type IngredientUncheckedUpdateWithoutSupplierLinksInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   fridgeItems?: Prisma.FridgeItemUncheckedUpdateManyWithoutIngredientNestedInput
-  purchaseLinks?: Prisma.IngredientPurchaseLinkUncheckedUpdateManyWithoutIngredientNestedInput
   recipeIngredients?: Prisma.RecipeIngredientUncheckedUpdateManyWithoutIngredientNestedInput
   shoppingItems?: Prisma.ShoppingListItemUncheckedUpdateManyWithoutIngredientNestedInput
   allergies?: Prisma.UserAllergyUncheckedUpdateManyWithoutIngredientNestedInput
@@ -1347,7 +1214,6 @@ export type IngredientUpdateWithoutCategoryInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   fridgeItems?: Prisma.FridgeItemUpdateManyWithoutIngredientNestedInput
-  purchaseLinks?: Prisma.IngredientPurchaseLinkUpdateManyWithoutIngredientNestedInput
   recipeIngredients?: Prisma.RecipeIngredientUpdateManyWithoutIngredientNestedInput
   shoppingItems?: Prisma.ShoppingListItemUpdateManyWithoutIngredientNestedInput
   allergies?: Prisma.UserAllergyUpdateManyWithoutIngredientNestedInput
@@ -1366,7 +1232,6 @@ export type IngredientUncheckedUpdateWithoutCategoryInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   fridgeItems?: Prisma.FridgeItemUncheckedUpdateManyWithoutIngredientNestedInput
-  purchaseLinks?: Prisma.IngredientPurchaseLinkUncheckedUpdateManyWithoutIngredientNestedInput
   recipeIngredients?: Prisma.RecipeIngredientUncheckedUpdateManyWithoutIngredientNestedInput
   shoppingItems?: Prisma.ShoppingListItemUncheckedUpdateManyWithoutIngredientNestedInput
   allergies?: Prisma.UserAllergyUncheckedUpdateManyWithoutIngredientNestedInput
@@ -1393,7 +1258,6 @@ export type IngredientUncheckedUpdateManyWithoutCategoryInput = {
 
 export type IngredientCountOutputType = {
   fridgeItems: number
-  purchaseLinks: number
   recipeIngredients: number
   shoppingItems: number
   allergies: number
@@ -1402,7 +1266,6 @@ export type IngredientCountOutputType = {
 
 export type IngredientCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   fridgeItems?: boolean | IngredientCountOutputTypeCountFridgeItemsArgs
-  purchaseLinks?: boolean | IngredientCountOutputTypeCountPurchaseLinksArgs
   recipeIngredients?: boolean | IngredientCountOutputTypeCountRecipeIngredientsArgs
   shoppingItems?: boolean | IngredientCountOutputTypeCountShoppingItemsArgs
   allergies?: boolean | IngredientCountOutputTypeCountAllergiesArgs
@@ -1424,13 +1287,6 @@ export type IngredientCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.E
  */
 export type IngredientCountOutputTypeCountFridgeItemsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.FridgeItemWhereInput
-}
-
-/**
- * IngredientCountOutputType without action
- */
-export type IngredientCountOutputTypeCountPurchaseLinksArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.IngredientPurchaseLinkWhereInput
 }
 
 /**
@@ -1475,7 +1331,6 @@ export type IngredientSelect<ExtArgs extends runtime.Types.Extensions.InternalAr
   updatedAt?: boolean
   deletedAt?: boolean
   fridgeItems?: boolean | Prisma.Ingredient$fridgeItemsArgs<ExtArgs>
-  purchaseLinks?: boolean | Prisma.Ingredient$purchaseLinksArgs<ExtArgs>
   category?: boolean | Prisma.IngredientCategoryDefaultArgs<ExtArgs>
   recipeIngredients?: boolean | Prisma.Ingredient$recipeIngredientsArgs<ExtArgs>
   shoppingItems?: boolean | Prisma.Ingredient$shoppingItemsArgs<ExtArgs>
@@ -1503,7 +1358,6 @@ export type IngredientSelectScalar = {
 export type IngredientOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "categoryId" | "defaultUnit" | "caloriesPer100g" | "averagePricePerUnit" | "imagePath" | "isCommon" | "createdAt" | "updatedAt" | "deletedAt", ExtArgs["result"]["ingredient"]>
 export type IngredientInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   fridgeItems?: boolean | Prisma.Ingredient$fridgeItemsArgs<ExtArgs>
-  purchaseLinks?: boolean | Prisma.Ingredient$purchaseLinksArgs<ExtArgs>
   category?: boolean | Prisma.IngredientCategoryDefaultArgs<ExtArgs>
   recipeIngredients?: boolean | Prisma.Ingredient$recipeIngredientsArgs<ExtArgs>
   shoppingItems?: boolean | Prisma.Ingredient$shoppingItemsArgs<ExtArgs>
@@ -1516,7 +1370,6 @@ export type $IngredientPayload<ExtArgs extends runtime.Types.Extensions.Internal
   name: "Ingredient"
   objects: {
     fridgeItems: Prisma.$FridgeItemPayload<ExtArgs>[]
-    purchaseLinks: Prisma.$IngredientPurchaseLinkPayload<ExtArgs>[]
     category: Prisma.$IngredientCategoryPayload<ExtArgs>
     recipeIngredients: Prisma.$RecipeIngredientPayload<ExtArgs>[]
     shoppingItems: Prisma.$ShoppingListItemPayload<ExtArgs>[]
@@ -1876,7 +1729,6 @@ readonly fields: IngredientFieldRefs;
 export interface Prisma__IngredientClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   fridgeItems<T extends Prisma.Ingredient$fridgeItemsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Ingredient$fridgeItemsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$FridgeItemPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  purchaseLinks<T extends Prisma.Ingredient$purchaseLinksArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Ingredient$purchaseLinksArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$IngredientPurchaseLinkPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   category<T extends Prisma.IngredientCategoryDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.IngredientCategoryDefaultArgs<ExtArgs>>): Prisma.Prisma__IngredientCategoryClient<runtime.Types.Result.GetResult<Prisma.$IngredientCategoryPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   recipeIngredients<T extends Prisma.Ingredient$recipeIngredientsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Ingredient$recipeIngredientsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$RecipeIngredientPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   shoppingItems<T extends Prisma.Ingredient$shoppingItemsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Ingredient$shoppingItemsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ShoppingListItemPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
@@ -2291,30 +2143,6 @@ export type Ingredient$fridgeItemsArgs<ExtArgs extends runtime.Types.Extensions.
   take?: number
   skip?: number
   distinct?: Prisma.FridgeItemScalarFieldEnum | Prisma.FridgeItemScalarFieldEnum[]
-}
-
-/**
- * Ingredient.purchaseLinks
- */
-export type Ingredient$purchaseLinksArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the IngredientPurchaseLink
-   */
-  select?: Prisma.IngredientPurchaseLinkSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the IngredientPurchaseLink
-   */
-  omit?: Prisma.IngredientPurchaseLinkOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.IngredientPurchaseLinkInclude<ExtArgs> | null
-  where?: Prisma.IngredientPurchaseLinkWhereInput
-  orderBy?: Prisma.IngredientPurchaseLinkOrderByWithRelationInput | Prisma.IngredientPurchaseLinkOrderByWithRelationInput[]
-  cursor?: Prisma.IngredientPurchaseLinkWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.IngredientPurchaseLinkScalarFieldEnum | Prisma.IngredientPurchaseLinkScalarFieldEnum[]
 }
 
 /**

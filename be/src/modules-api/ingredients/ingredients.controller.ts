@@ -1,10 +1,4 @@
-import {
-  Controller,
-  Get,
-  Param,
-  Query,
-  ParseIntPipe,
-} from '@nestjs/common';
+import { Controller, Get, Param, Query, ParseIntPipe } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
@@ -18,7 +12,6 @@ import {
   IngredientResponseDto,
   PaginatedIngredientsDto,
   CategoryResponseDto,
-  PurchaseLinkResponseDto,
 } from './dto/ingredients-response.dto';
 
 @ApiTags('Ingredients')
@@ -32,7 +25,10 @@ export class IngredientsController {
   // ─────────────────────────────────────────────────────────
 
   @Get('categories')
-  @ApiOperation({ summary: 'Lấy cây danh mục nguyên liệu (có children + defaultShelfLifeDays)' })
+  @ApiOperation({
+    summary:
+      'Lấy cây danh mục nguyên liệu (có children + defaultShelfLifeDays)',
+  })
   @ApiResponse({ status: 200, type: [CategoryResponseDto] })
   getCategories(): Promise<CategoryResponseDto[]> {
     return this.ingredientsService.getCategories();
@@ -43,23 +39,14 @@ export class IngredientsController {
   // ─────────────────────────────────────────────────────────
 
   @Get()
-  @ApiOperation({ summary: 'Danh sách nguyên liệu (pagination + search + categoryId)' })
+  @ApiOperation({
+    summary: 'Danh sách nguyên liệu (pagination + search + categoryId)',
+  })
   @ApiResponse({ status: 200, type: PaginatedIngredientsDto })
-  findAll(@Query() query: ListIngredientsQueryDto): Promise<PaginatedIngredientsDto> {
+  findAll(
+    @Query() query: ListIngredientsQueryDto,
+  ): Promise<PaginatedIngredientsDto> {
     return this.ingredientsService.findAll(query);
-  }
-
-  // ─────────────────────────────────────────────────────────
-  // GET /:id/purchase-links — Link mua TMDT (phải trước /:id)
-  // ─────────────────────────────────────────────────────────
-
-  @Get(':id/purchase-links')
-  @ApiOperation({ summary: 'Link mua nguyên liệu trên TMDT (Shopee, Lazada...)' })
-  @ApiParam({ name: 'id', description: 'Ingredient ID' })
-  @ApiResponse({ status: 200, type: [PurchaseLinkResponseDto] })
-  @ApiResponse({ status: 404, description: 'Không tìm thấy nguyên liệu' })
-  getPurchaseLinks(@Param('id', ParseIntPipe) id: number): Promise<PurchaseLinkResponseDto[]> {
-    return this.ingredientsService.getPurchaseLinks(id);
   }
 
   // ─────────────────────────────────────────────────────────
@@ -71,7 +58,9 @@ export class IngredientsController {
   @ApiParam({ name: 'id', description: 'Ingredient ID' })
   @ApiResponse({ status: 200, type: IngredientResponseDto })
   @ApiResponse({ status: 404, description: 'Không tìm thấy' })
-  findOne(@Param('id', ParseIntPipe) id: number): Promise<IngredientResponseDto> {
+  findOne(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<IngredientResponseDto> {
     return this.ingredientsService.findOne(id);
   }
 }

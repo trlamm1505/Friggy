@@ -13,7 +13,10 @@ export class AdminSuppliersService {
     const where: any = { deletedAt: null };
     if (typeof isVerified === 'boolean') where.isVerified = isVerified;
     if (search) {
-      where.companyName = { contains: search };
+      where.OR = [
+        { companyName: { contains: search } },
+        { taxCode: { contains: search } },
+      ];
     }
 
     const [items, total] = await Promise.all([

@@ -76,13 +76,8 @@ export const ModelName = {
   AiSystemPrompt: 'AiSystemPrompt',
   ChatSession: 'ChatSession',
   ChatMessage: 'ChatMessage',
-  AiEvaluationLog: 'AiEvaluationLog',
   AiProviderConfig: 'AiProviderConfig',
   AiUsageLog: 'AiUsageLog',
-  Sponsor: 'Sponsor',
-  SponsorCampaign: 'SponsorCampaign',
-  CampaignRecipe: 'CampaignRecipe',
-  IngredientPurchaseLink: 'IngredientPurchaseLink',
   AdminActivityLog: 'AdminActivityLog',
   Notification: 'Notification',
   UserDevice: 'UserDevice',
@@ -506,22 +501,6 @@ export const ChatMessageScalarFieldEnum = {
 export type ChatMessageScalarFieldEnum = (typeof ChatMessageScalarFieldEnum)[keyof typeof ChatMessageScalarFieldEnum]
 
 
-export const AiEvaluationLogScalarFieldEnum = {
-  id: 'id',
-  sessionId: 'sessionId',
-  weeklyPlanId: 'weeklyPlanId',
-  attemptNumber: 'attemptNumber',
-  evaluationResult: 'evaluationResult',
-  failureReasons: 'failureReasons',
-  budgetAllocated: 'budgetAllocated',
-  budgetCalculated: 'budgetCalculated',
-  createdAt: 'createdAt',
-  deletedAt: 'deletedAt'
-} as const
-
-export type AiEvaluationLogScalarFieldEnum = (typeof AiEvaluationLogScalarFieldEnum)[keyof typeof AiEvaluationLogScalarFieldEnum]
-
-
 export const AiProviderConfigScalarFieldEnum = {
   id: 'id',
   provider: 'provider',
@@ -550,67 +529,6 @@ export const AiUsageLogScalarFieldEnum = {
 } as const
 
 export type AiUsageLogScalarFieldEnum = (typeof AiUsageLogScalarFieldEnum)[keyof typeof AiUsageLogScalarFieldEnum]
-
-
-export const SponsorScalarFieldEnum = {
-  id: 'id',
-  name: 'name',
-  logoPath: 'logoPath',
-  websiteUrl: 'websiteUrl',
-  contactEmail: 'contactEmail',
-  status: 'status',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt',
-  deletedAt: 'deletedAt'
-} as const
-
-export type SponsorScalarFieldEnum = (typeof SponsorScalarFieldEnum)[keyof typeof SponsorScalarFieldEnum]
-
-
-export const SponsorCampaignScalarFieldEnum = {
-  id: 'id',
-  sponsorId: 'sponsorId',
-  title: 'title',
-  description: 'description',
-  campaignType: 'campaignType',
-  targetAudience: 'targetAudience',
-  startDate: 'startDate',
-  endDate: 'endDate',
-  status: 'status',
-  createdAt: 'createdAt',
-  deletedAt: 'deletedAt'
-} as const
-
-export type SponsorCampaignScalarFieldEnum = (typeof SponsorCampaignScalarFieldEnum)[keyof typeof SponsorCampaignScalarFieldEnum]
-
-
-export const CampaignRecipeScalarFieldEnum = {
-  campaignId: 'campaignId',
-  recipeId: 'recipeId',
-  priority: 'priority'
-} as const
-
-export type CampaignRecipeScalarFieldEnum = (typeof CampaignRecipeScalarFieldEnum)[keyof typeof CampaignRecipeScalarFieldEnum]
-
-
-export const IngredientPurchaseLinkScalarFieldEnum = {
-  id: 'id',
-  ingredientId: 'ingredientId',
-  sponsorId: 'sponsorId',
-  platform: 'platform',
-  productName: 'productName',
-  purchaseUrl: 'purchaseUrl',
-  priceVnd: 'priceVnd',
-  unitDescription: 'unitDescription',
-  thumbnailPath: 'thumbnailPath',
-  isActive: 'isActive',
-  priority: 'priority',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt',
-  deletedAt: 'deletedAt'
-} as const
-
-export type IngredientPurchaseLinkScalarFieldEnum = (typeof IngredientPurchaseLinkScalarFieldEnum)[keyof typeof IngredientPurchaseLinkScalarFieldEnum]
 
 
 export const AdminActivityLogScalarFieldEnum = {
@@ -774,6 +692,7 @@ export const SupplierProfileScalarFieldEnum = {
   id: 'id',
   userId: 'userId',
   companyName: 'companyName',
+  taxCode: 'taxCode',
   contactPhone: 'contactPhone',
   address: 'address',
   logoPath: 'logoPath',
@@ -872,6 +791,7 @@ export type SupplierPaymentTransactionScalarFieldEnum = (typeof SupplierPaymentT
 export const SupplierApplicationScalarFieldEnum = {
   id: 'id',
   companyName: 'companyName',
+  taxCode: 'taxCode',
   contactName: 'contactName',
   email: 'email',
   phone: 'phone',
@@ -1176,15 +1096,6 @@ export const ChatMessageOrderByRelevanceFieldEnum = {
 export type ChatMessageOrderByRelevanceFieldEnum = (typeof ChatMessageOrderByRelevanceFieldEnum)[keyof typeof ChatMessageOrderByRelevanceFieldEnum]
 
 
-export const AiEvaluationLogOrderByRelevanceFieldEnum = {
-  id: 'id',
-  sessionId: 'sessionId',
-  weeklyPlanId: 'weeklyPlanId'
-} as const
-
-export type AiEvaluationLogOrderByRelevanceFieldEnum = (typeof AiEvaluationLogOrderByRelevanceFieldEnum)[keyof typeof AiEvaluationLogOrderByRelevanceFieldEnum]
-
-
 export const AiProviderConfigOrderByRelevanceFieldEnum = {
   modelName: 'modelName',
   encryptedApiKey: 'encryptedApiKey',
@@ -1202,43 +1113,6 @@ export const AiUsageLogOrderByRelevanceFieldEnum = {
 } as const
 
 export type AiUsageLogOrderByRelevanceFieldEnum = (typeof AiUsageLogOrderByRelevanceFieldEnum)[keyof typeof AiUsageLogOrderByRelevanceFieldEnum]
-
-
-export const SponsorOrderByRelevanceFieldEnum = {
-  name: 'name',
-  logoPath: 'logoPath',
-  websiteUrl: 'websiteUrl',
-  contactEmail: 'contactEmail'
-} as const
-
-export type SponsorOrderByRelevanceFieldEnum = (typeof SponsorOrderByRelevanceFieldEnum)[keyof typeof SponsorOrderByRelevanceFieldEnum]
-
-
-export const SponsorCampaignOrderByRelevanceFieldEnum = {
-  id: 'id',
-  title: 'title',
-  description: 'description'
-} as const
-
-export type SponsorCampaignOrderByRelevanceFieldEnum = (typeof SponsorCampaignOrderByRelevanceFieldEnum)[keyof typeof SponsorCampaignOrderByRelevanceFieldEnum]
-
-
-export const CampaignRecipeOrderByRelevanceFieldEnum = {
-  campaignId: 'campaignId',
-  recipeId: 'recipeId'
-} as const
-
-export type CampaignRecipeOrderByRelevanceFieldEnum = (typeof CampaignRecipeOrderByRelevanceFieldEnum)[keyof typeof CampaignRecipeOrderByRelevanceFieldEnum]
-
-
-export const IngredientPurchaseLinkOrderByRelevanceFieldEnum = {
-  productName: 'productName',
-  purchaseUrl: 'purchaseUrl',
-  unitDescription: 'unitDescription',
-  thumbnailPath: 'thumbnailPath'
-} as const
-
-export type IngredientPurchaseLinkOrderByRelevanceFieldEnum = (typeof IngredientPurchaseLinkOrderByRelevanceFieldEnum)[keyof typeof IngredientPurchaseLinkOrderByRelevanceFieldEnum]
 
 
 export const AdminActivityLogOrderByRelevanceFieldEnum = {
@@ -1354,6 +1228,7 @@ export const SupplierProfileOrderByRelevanceFieldEnum = {
   id: 'id',
   userId: 'userId',
   companyName: 'companyName',
+  taxCode: 'taxCode',
   contactPhone: 'contactPhone',
   address: 'address',
   logoPath: 'logoPath',
@@ -1417,6 +1292,7 @@ export type SupplierPaymentTransactionOrderByRelevanceFieldEnum = (typeof Suppli
 export const SupplierApplicationOrderByRelevanceFieldEnum = {
   id: 'id',
   companyName: 'companyName',
+  taxCode: 'taxCode',
   contactName: 'contactName',
   email: 'email',
   phone: 'phone',
