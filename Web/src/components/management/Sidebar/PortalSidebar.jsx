@@ -16,6 +16,10 @@ import {
   ChefHat,
   CreditCard,
   Briefcase,
+  Store,
+  ShoppingBasket,
+  History,
+  Megaphone,
 } from 'lucide-react';
 import cuteMascotImg from '../../../assets/images/cute_mascot.png';
 
@@ -41,6 +45,8 @@ export const PortalSidebar = ({
     propActiveTab ||
     (() => {
       const p = location.pathname;
+      if (p.includes(`${prefix}/supplier-ingredients`)) return 'supplier-ingredients';
+      if (p.includes(`${prefix}/suppliers`)) return 'suppliers';
       if (p.includes(`${prefix}/ingredients`)) return 'ingredients';
       if (p.includes(`${prefix}/recipes`)) return 'recipes';
       if (p.includes(`${prefix}/users`)) return 'users';
@@ -49,6 +55,8 @@ export const PortalSidebar = ({
       if (p.includes(`${prefix}/cron`)) return 'cron';
       if (p.includes(`${prefix}/sponsors`)) return 'sponsors';
       if (p.includes(`${prefix}/packages`)) return 'packages';
+      if (p.includes(`${prefix}/broadcast`)) return 'broadcast';
+      if (p.includes(`${prefix}/activity-logs`)) return 'activity-logs';
       if (p.includes(`${prefix}/profile`)) return 'profile';
       if (p.includes(`${prefix}/settings`)) return 'settings';
       return 'dashboard';
@@ -57,25 +65,28 @@ export const PortalSidebar = ({
   // Define full menu items for both roles
   const adminMenuItems = [
     { id: 'dashboard', path: '/admin/dashboard', label: 'Trang Chủ Overview', icon: LayoutDashboard },
+    { id: 'suppliers', path: '/admin/suppliers', label: 'Quản Lý Nhà Cung Cấp', icon: Store },
+    { id: 'supplier-ingredients', path: '/admin/supplier-ingredients', label: 'Kiểm Duyệt NL NCC', icon: ShoppingBasket },
     { id: 'ingredients', path: '/admin/ingredients', label: 'Quản Lý Nguyên Liệu', icon: Utensils },
     { id: 'recipes', path: '/admin/recipes', label: 'Quản Lý Công Thức', icon: ChefHat },
     { id: 'users', path: '/admin/users', label: 'Quản Lý Người Dùng', icon: Users },
     { id: 'transactions', path: '/admin/transactions', label: 'Lịch Sử Thanh Toán', icon: CreditCard },
     { id: 'ai', path: '/admin/ai', label: 'Quản Lý AI Engine', icon: Cpu },
     { id: 'cron', path: '/admin/cron', label: 'Tiến Trình Cron Jobs', icon: Clock },
-    { id: 'sponsors', path: '/admin/sponsors', label: 'Nhà Tài Trợ & QC', icon: Building2 },
     { id: 'packages', path: '/admin/packages', label: 'Quản Lý Gói Cước', icon: Package },
+    { id: 'broadcast', path: '/admin/broadcast', label: 'Thông Báo Broadcast', icon: Megaphone },
+    { id: 'activity-logs', path: '/admin/activity-logs', label: 'Nhật Ký Hoạt Động', icon: History },
     { id: 'profile', path: '/admin/profile', label: 'Thông Tin Cá Nhân', icon: User },
     { id: 'settings', path: '/admin/settings', label: 'Cài Đặt Hệ Thống', icon: Settings },
   ];
 
   const managerMenuItems = [
     { id: 'dashboard', path: '/manager/dashboard', label: 'Trang Chủ Overview', icon: LayoutDashboard },
+    { id: 'suppliers', path: '/manager/suppliers', label: 'Quản Lý Nhà Cung Cấp', icon: Store },
     { id: 'ingredients', path: '/manager/ingredients', label: 'Quản Lý Nguyên Liệu', icon: Utensils },
     { id: 'recipes', path: '/manager/recipes', label: 'Quản Lý Công Thức', icon: ChefHat },
     { id: 'users', path: '/manager/users', label: 'Quản Lý Người Dùng', icon: Users },
     { id: 'transactions', path: '/manager/transactions', label: 'Lịch Sử Thanh Toán', icon: CreditCard },
-    { id: 'sponsors', path: '/manager/sponsors', label: 'Nhà Tài Trợ & QC', icon: Building2 },
     { id: 'packages', path: '/manager/packages', label: 'Gói Cước Dịch Vụ', icon: Package },
     { id: 'profile', path: '/manager/profile', label: 'Thông Tin Cá Nhân', icon: User },
   ];

@@ -16,6 +16,7 @@ export const ManagerLayout = () => {
   };
 
   const getActiveTab = () => {
+    if (location.pathname.includes('/manager/suppliers')) return 'suppliers';
     if (location.pathname.includes('/manager/ingredients')) return 'ingredients';
     if (location.pathname.includes('/manager/recipes')) return 'recipes';
     if (location.pathname.includes('/manager/users')) return 'users';

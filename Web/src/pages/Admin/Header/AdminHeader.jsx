@@ -88,6 +88,10 @@ export const AdminHeader = ({ activeTab, setMobileOpen, onExitAdmin }) => {
     switch (activeTab) {
       case 'dashboard':
         return { title: 'Trang Chủ Tổng Quan', sub: 'Thống kê người dùng, gói cước và doanh thu hệ thống' };
+      case 'suppliers':
+        return { title: 'Quản Lý Nhà Cung Cấp', sub: 'Xét duyệt hồ sơ, xác minh và theo dõi các đối tác cung ứng' };
+      case 'supplier-ingredients':
+        return { title: 'Kiểm Duyệt Nguyên Liệu NCC', sub: 'Phê duyệt nguyên liệu đăng ký từ đối tác và tích hợp vào kho thực phẩm' };
       case 'ingredients':
         return { title: 'Quản Lý Kho Nguyên Liệu', sub: 'Quản lý nguyên liệu tủ lạnh, danh mục phân loại & thông tin dinh dưỡng' };
       case 'recipes':
@@ -104,6 +108,10 @@ export const AdminHeader = ({ activeTab, setMobileOpen, onExitAdmin }) => {
         return { title: 'Quản Lý Nhà Tài Trợ & QC', sub: 'Đối tác liên kết và các chiến dịch banner quảng cáo' };
       case 'packages':
         return { title: 'Quản Lý Gói Cước', sub: 'Thiết lập các gói dịch vụ Premium, Family VIP & Chef Pro' };
+      case 'broadcast':
+        return { title: 'Thông Báo Đẩy Broadcast (FCM Push)', sub: 'Gửi thông báo tức thời qua Firebase Cloud Messaging tới các nhóm người dùng ứng dụng' };
+      case 'activity-logs':
+        return { title: 'Nhật Ký Hoạt Động (Activity Logs)', sub: 'Theo dõi, kiểm toán và đối soát toàn bộ thao tác của Admin & Quản lý trên hệ thống' };
       case 'profile':
         return { title: 'Thông Tin Cá Nhân', sub: 'Quản lý thông tin tài khoản admin, cập nhật chi tiết & đổi mật khẩu' };
       case 'settings':

@@ -2,10 +2,14 @@ import axios from 'axios';
 import { API_BASE_URL } from './constants';
 import { showToast } from '../components/common/Toast';
 
+// Bỏ qua trang cảnh báo của ngrok khi bắn request qua ngrok tunnel
+axios.defaults.headers.common['ngrok-skip-browser-warning'] = 'true';
+
 const axiosClient = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
+    'ngrok-skip-browser-warning': 'true',
   },
   timeout: 10000,
 });
@@ -33,6 +37,12 @@ const isAuthEndpoint = (url = '') => AUTH_ENDPOINTS.some((path) => url.includes(
 
 // Chuẩn hoá lỗi: ưu tiên message từ backend thay vì "Request failed with status code xxx"
 const toFriendlyError = (error, fallback = 'Có lỗi xảy ra, vui lòng thử lại!') => {
+  // Bắt lỗi không kết nối được server (Server offline / port chưa chạy / CORS)
+  if (!error?.response && (error?.code === 'ERR_NETWORK' || error?.message === 'Network Error')) {
+    return new Error(
+      `Không thể kết nối đến máy chủ Backend (${API_BASE_URL || 'localhost:6969'}). Vui lòng đảm bảo Backend NestJS và Cơ sở dữ liệu đang chạy.`
+    );
+  }
   const message = error?.response?.data?.message || error?.message || fallback;
   const err = new Error(Array.isArray(message) ? message.join(', ') : message);
   err.status = error?.response?.status;
@@ -79,9 +89,10 @@ const handleSessionExpired = () => {
   }, 1200);
 };
 
-// Request Interceptor: Tự động đính kèm Access Token nếu có
+// Request Interceptor: Tự động đính kèm Access Token nếu có & header ngrok
 axiosClient.interceptors.request.use(
   (config) => {
+    config.headers['ngrok-skip-browser-warning'] = 'true';
     const token =
       localStorage.getItem('friggy_access_token') ||
       localStorage.getItem('accessToken') ||

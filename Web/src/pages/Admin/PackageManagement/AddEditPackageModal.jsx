@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Package, Check, Plus, Trash2, Save } from 'lucide-react';
+import { showToast } from '../../../components/common/Toast';
 
 export const AddEditPackageModal = ({ packageItem, onClose, onSave }) => {
   const [formData, setFormData] = useState({
@@ -50,7 +51,10 @@ export const AddEditPackageModal = ({ packageItem, onClose, onSave }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!formData.displayName.trim()) return alert('Vui lòng nhập tên hiển thị của gói');
+    if (!formData.displayName.trim()) {
+      showToast.warning('Vui lòng nhập tên hiển thị của gói');
+      return;
+    }
 
     onSave({
       id: packageItem ? packageItem.id : null,

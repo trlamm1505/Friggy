@@ -14,10 +14,12 @@ import {
   RefreshCw,
   Clock,
   Users,
+  UserPlus,
 } from 'lucide-react';
 import AnimatedCounter from '../../../components/common/AnimatedCounter';
 import { UserDetailModal } from './UserDetailModal';
 import { UserEditModal } from './UserEditModal';
+import { AddUserModal } from './AddUserModal';
 import {
   getAdminUsersApi,
   suspendUserApi,
@@ -57,6 +59,7 @@ export const UserManagement = () => {
 
   const [selectedUser, setSelectedUser] = useState(null);
   const [editingUser, setEditingUser] = useState(null);
+  const [openAddUserModal, setOpenAddUserModal] = useState(false);
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -212,7 +215,7 @@ export const UserManagement = () => {
 
       {/* Main Users Table */}
       <div className="p-6 rounded-[32px] bg-white border border-slate-100 shadow-md space-y-4">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
           <div>
             <h3 className="text-lg font-black text-slate-900 tracking-tight flex items-center gap-1.5">
               <span>Danh Sách Tài Khoản Người Dùng (</span>
@@ -224,6 +227,14 @@ export const UserManagement = () => {
               Quản lý danh sách người dùng hệ thống Friggy từ cơ sở dữ liệu backend
             </p>
           </div>
+
+          <button
+            onClick={() => setOpenAddUserModal(true)}
+            className="px-4 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs shadow-md shadow-emerald-600/20 flex items-center gap-1.5 transition-all cursor-pointer self-start sm:self-auto"
+          >
+            <UserPlus className="w-4 h-4" />
+            <span>Thêm Người Dùng</span>
+          </button>
         </div>
 
         {loading ? (
@@ -433,6 +444,13 @@ export const UserManagement = () => {
           onSave={handleSaveEditUser}
         />
       )}
+
+      {/* Add User Modal */}
+      <AddUserModal
+        isOpen={openAddUserModal}
+        onClose={() => setOpenAddUserModal(false)}
+        onSuccess={fetchUsers}
+      />
     </div>
   );
 };

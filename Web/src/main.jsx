@@ -2,6 +2,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import 'animate.css';
 import './index.css';
+import './utils/axios';
 import App from './App.jsx';
 import { AppProvider } from './context/AppContext.jsx';
 
