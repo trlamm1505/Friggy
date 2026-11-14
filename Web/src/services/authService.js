@@ -10,6 +10,24 @@ export const emailLoginApi = async (email, password) => {
 };
 
 /**
+ * Đăng ký tài khoản (Bước 1: Gửi OTP về email)
+ * POST /api/v1/auth/email/register
+ * Body: { email: string }
+ */
+export const emailRegisterApi = async (email) => {
+  return await axiosClient.post('/auth/email/register', { email });
+};
+
+/**
+ * Xác nhận OTP đăng ký (Bước 2: Kích hoạt tài khoản và nhận JWT tokens)
+ * POST /api/v1/auth/email/verify-otp
+ * Body: { email: string, otpCode: string, password: string, name?: string }
+ */
+export const verifyEmailOtpApi = async ({ email, otpCode, password, name }) => {
+  return await axiosClient.post('/auth/email/verify-otp', { email, otpCode, password, name });
+};
+
+/**
  * Đăng nhập bằng Google ID Token
  * POST /api/v1/auth/google
  * Body: { idToken: string }
@@ -26,6 +44,11 @@ export const googleAuthApi = async (idToken) => {
 export const refreshApi = async (refreshToken) => {
   return await axiosClient.post('/auth/refresh', { refreshToken });
 };
+
+/**
+ * Đăng ký tài khoản nhà cung cấp thực phẩm (Bên thứ 3)
+ */
+export { registerSupplierAccountApi } from './supplierService';
 
 /**
  * Đăng xuất — thu hồi Refresh Token

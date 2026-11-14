@@ -104,6 +104,8 @@ export const AiManagement = () => {
   const [providers, setProviders] = useState([]);
   const [loadingProviders, setLoadingProviders] = useState(true);
   const [openAddProviderModal, setOpenAddProviderModal] = useState(false);
+  const [providerToDelete, setProviderToDelete] = useState(null);
+  const [promptToDelete, setPromptToDelete] = useState(null);
   const [providerForm, setProviderForm] = useState({
     modelName: '',
   });
@@ -179,12 +181,19 @@ export const AiManagement = () => {
   };
 
   // Handle Delete Provider
-  const handleDeleteProvider = async (id) => {
-    if (!window.confirm('Bạn có chắc chắn muốn xóa AI Provider này?')) return;
+  const handleDeleteProvider = (id) => {
+    const prov = providers.find((p) => p.id === id);
+    setProviderToDelete(prov || { id, modelName: 'Provider này' });
+  };
+
+  const confirmDeleteProvider = async () => {
+    if (!providerToDelete) return;
+    const id = providerToDelete.id;
     setActionLoadingId(`prov-del-${id}`);
     try {
       await deleteAiProviderApi(id);
       showToast.success('Đã xóa AI Provider!');
+      setProviderToDelete(null);
       fetchProviders();
     } catch (err) {
       showToast.error(err.message || 'Xóa provider thất bại');
@@ -344,8 +353,14 @@ export const AiManagement = () => {
   };
 
   // Handle Delete Prompt
-  const handleDeletePrompt = async (id) => {
-    if (!window.confirm('Bạn có chắc chắn muốn xóa System Prompt này không?')) return;
+  const handleDeletePrompt = (id) => {
+    const pmt = prompts.find((p) => p.id === id);
+    setPromptToDelete(pmt || { id, name: 'System Prompt này' });
+  };
+
+  const confirmDeletePrompt = async () => {
+    if (!promptToDelete) return;
+    const id = promptToDelete.id;
     setActionLoadingId(`pmt-del-${id}`);
     try {
       await deleteAiPromptApi(id);
@@ -354,6 +369,7 @@ export const AiManagement = () => {
         setSelectedPrompt(null);
         setPromptDetail(null);
       }
+      setPromptToDelete(null);
       fetchPrompts();
     } catch (err) {
       showToast.error(err.message || 'Không thể xóa prompt (không thể xóa prompt đang active)');
@@ -1036,7 +1052,7 @@ export const AiManagement = () => {
                       setPromptDetail(null);
                       handleOpenEdit(toEdit);
                     }}
-                    className="px-4 py-2 rounded-xl bg-amber-50 text-amber-700 hover:bg-amber-100 font-bold text-xs flex items-center gap-1.5 transition-colors border border-amber-200"
+                    className="px-4 py-2 rounded-xl bg-emerald-50 text-emerald-700 hover:bg-emerald-100 font-bold text-xs flex items-center gap-1.5 transition-colors border border-emerald-200"
                   >
                     <Edit2 className="w-3.5 h-3.5" />
                     Chỉnh Sửa Prompt Này
@@ -1143,6 +1159,84 @@ export const AiManagement = () => {
                 </div>
               </form>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* ── Custom Delete Provider Confirmation Modal ─────────────────── */}
+      {providerToDelete && (
+        <div className="fixed inset-0 bg-emerald-950/40 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-[32px] max-w-md w-full p-6 sm:p-8 space-y-6 shadow-2xl border border-rose-100 animate__animated animate__zoomIn animate__faster text-center">
+            <div className="w-16 h-16 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center mx-auto border border-rose-100 shadow-xs">
+              <Trash2 className="w-8 h-8" />
+            </div>
+
+            <div className="space-y-2">
+              <h4 className="text-xl font-black text-slate-900">Xác Nhận Xóa AI Provider</h4>
+              <p className="text-xs sm:text-sm text-slate-500 font-medium leading-relaxed">
+                Bạn có chắc chắn muốn xóa AI Provider{' '}
+                <strong className="text-rose-600 font-bold">"{providerToDelete.modelName || providerToDelete.providerName || 'này'}"</strong>? Hành động này không thể hoàn tác.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3 pt-2">
+              <button
+                type="button"
+                disabled={Boolean(actionLoadingId)}
+                onClick={() => setProviderToDelete(null)}
+                className="flex-1 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs sm:text-sm transition-all cursor-pointer"
+              >
+                Hủy Bỏ
+              </button>
+              <button
+                type="button"
+                disabled={Boolean(actionLoadingId)}
+                onClick={confirmDeleteProvider}
+                className="flex-1 py-3 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-xs sm:text-sm shadow-md shadow-rose-600/20 transition-all cursor-pointer flex items-center justify-center gap-2"
+              >
+                {actionLoadingId ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                <span>{actionLoadingId ? 'Đang Xóa...' : 'Xóa Provider'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Custom Delete Prompt Confirmation Modal ───────────────────── */}
+      {promptToDelete && (
+        <div className="fixed inset-0 bg-emerald-950/40 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-[32px] max-w-md w-full p-6 sm:p-8 space-y-6 shadow-2xl border border-rose-100 animate__animated animate__zoomIn animate__faster text-center">
+            <div className="w-16 h-16 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center mx-auto border border-rose-100 shadow-xs">
+              <Trash2 className="w-8 h-8" />
+            </div>
+
+            <div className="space-y-2">
+              <h4 className="text-xl font-black text-slate-900">Xác Nhận Xóa System Prompt</h4>
+              <p className="text-xs sm:text-sm text-slate-500 font-medium leading-relaxed">
+                Bạn có chắc chắn muốn xóa System Prompt{' '}
+                <strong className="text-rose-600 font-bold">"{promptToDelete.name || promptToDelete.agentType || 'này'}"</strong> (v{promptToDelete.version || 1})? Hành động này không thể hoàn tác.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3 pt-2">
+              <button
+                type="button"
+                disabled={Boolean(actionLoadingId)}
+                onClick={() => setPromptToDelete(null)}
+                className="flex-1 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs sm:text-sm transition-all cursor-pointer"
+              >
+                Hủy Bỏ
+              </button>
+              <button
+                type="button"
+                disabled={Boolean(actionLoadingId)}
+                onClick={confirmDeletePrompt}
+                className="flex-1 py-3 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-xs sm:text-sm shadow-md shadow-rose-600/20 transition-all cursor-pointer flex items-center justify-center gap-2"
+              >
+                {actionLoadingId ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                <span>{actionLoadingId ? 'Đang Xóa...' : 'Xóa Prompt'}</span>
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -12,6 +12,8 @@ export const CategoryManagementModal = ({ isOpen, onClose, onSuccess }) => {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [categoryToDelete, setCategoryToDelete] = useState(null);
+  const [deletingCat, setDeletingCat] = useState(false);
 
   // Form state
   const [editingCategory, setEditingCategory] = useState(null);
@@ -57,17 +59,24 @@ export const CategoryManagementModal = ({ isOpen, onClose, onSuccess }) => {
     setDefaultShelfLifeDays(cat.defaultShelfLifeDays ? String(cat.defaultShelfLifeDays) : '');
   };
 
-  const handleDeleteClick = async (cat) => {
-    if (window.confirm(`Bạn có chắc chắn muốn xóa danh mục "${cat.name}"?`)) {
-      try {
-        await deleteCategoryApi(cat.id);
-        showToast.success('Xóa danh mục thành công!');
-        fetchCategories();
-        if (onSuccess) onSuccess();
-      } catch (err) {
-        console.error('Lỗi xóa danh mục:', err);
-        showToast.error(err.response?.data?.message || err.message || 'Không thể xóa danh mục (có thể do có chứa nguyên liệu con)');
-      }
+  const handleDeleteClick = (cat) => {
+    setCategoryToDelete(cat);
+  };
+
+  const confirmDeleteCategory = async () => {
+    if (!categoryToDelete) return;
+    setDeletingCat(true);
+    try {
+      await deleteCategoryApi(categoryToDelete.id);
+      showToast.success('Xóa danh mục thành công!');
+      setCategoryToDelete(null);
+      fetchCategories();
+      if (onSuccess) onSuccess();
+    } catch (err) {
+      console.error('Lỗi xóa danh mục:', err);
+      showToast.error(err.response?.data?.message || err.message || 'Không thể xóa danh mục (có thể do có chứa nguyên liệu con)');
+    } finally {
+      setDeletingCat(false);
     }
   };
 
@@ -258,6 +267,45 @@ export const CategoryManagementModal = ({ isOpen, onClose, onSuccess }) => {
             Đóng
           </button>
         </div>
+
+        {/* ── Custom Delete Category Confirmation Modal (Ở giữa màn hình giống Ảnh 1) ── */}
+        {categoryToDelete && (
+          <div className="fixed inset-0 bg-emerald-950/40 backdrop-blur-xs z-60 flex items-center justify-center p-4">
+            <div className="bg-white rounded-[32px] max-w-sm w-full p-6 space-y-5 shadow-2xl border border-rose-100 animate__animated animate__zoomIn animate__faster text-center">
+              <div className="w-14 h-14 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center mx-auto border border-rose-100 shadow-xs">
+                <Trash2 className="w-7 h-7" />
+              </div>
+
+              <div className="space-y-1.5">
+                <h4 className="text-lg font-black text-slate-900">Xác Nhận Xóa Danh Mục</h4>
+                <p className="text-xs text-slate-500 font-medium leading-relaxed">
+                  Bạn có chắc chắn muốn xóa danh mục{' '}
+                  <strong className="text-rose-600 font-bold">"{categoryToDelete.name}"</strong>?
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2.5 pt-1">
+                <button
+                  type="button"
+                  disabled={deletingCat}
+                  onClick={() => setCategoryToDelete(null)}
+                  className="flex-1 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-all cursor-pointer"
+                >
+                  Hủy Bỏ
+                </button>
+                <button
+                  type="button"
+                  disabled={deletingCat}
+                  onClick={confirmDeleteCategory}
+                  className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-xs shadow-md shadow-rose-600/20 transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                >
+                  {deletingCat ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                  <span>{deletingCat ? 'Đang Xóa...' : 'Xóa Danh Mục'}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

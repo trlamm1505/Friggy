@@ -135,7 +135,7 @@ export class MealPlanningService {
    * Trả về Map<ingredientId, SupplierSuggestion[]>
    */
   private async enrichWithSuppliers(ingredientIds: number[]): Promise<
-    Map<number, { supplierIngredientId: string; name: string; companyName: string; price: number | null; imagePath: string | null }[]>
+    Map<number, { supplierIngredientId: string; name: string; companyName: string; price: number | null; unit: string | null; imagePath: string | null }[]>
   > {
     if (!ingredientIds.length) return new Map();
 
@@ -153,17 +153,19 @@ export class MealPlanningService {
           },
         },
       },
+      orderBy: { averagePricePerUnit: 'asc' }, // sắp xếp giá tăng dần ở DB
       select: {
         id: true,
         name: true,
         linkedIngredientId: true,
         averagePricePerUnit: true,
+        defaultUnit: true,
         imagePath: true,
         profile: { select: { companyName: true } },
       },
     });
 
-    const result = new Map<number, { supplierIngredientId: string; name: string; companyName: string; price: number | null; imagePath: string | null }[]>();
+    const result = new Map<number, { supplierIngredientId: string; name: string; companyName: string; price: number | null; unit: string | null; imagePath: string | null }[]>();
     for (const row of rows) {
       if (!row.linkedIngredientId) continue;
       const list = result.get(row.linkedIngredientId) ?? [];
@@ -172,10 +174,23 @@ export class MealPlanningService {
         name: row.name,
         companyName: row.profile.companyName,
         price: row.averagePricePerUnit ?? null,
+        unit: row.defaultUnit ?? null,
         imagePath: row.imagePath ?? null,
       });
       result.set(row.linkedIngredientId, list);
     }
+
+    // Đảm bảo null price luôn ở cuối (Prisma ASC đẩy null lên đầu)
+    for (const [key, list] of result) {
+      list.sort((a, b) => {
+        if (a.price === null && b.price === null) return 0;
+        if (a.price === null) return 1;
+        if (b.price === null) return -1;
+        return a.price - b.price;
+      });
+      result.set(key, list);
+    }
+
     return result;
   }
 

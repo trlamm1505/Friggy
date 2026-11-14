@@ -11,16 +11,6 @@ export class CategoryResponseDto {
   @ApiPropertyOptional({ type: () => [CategoryResponseDto] }) children?: CategoryResponseDto[];
 }
 
-export class PurchaseLinkResponseDto {
-  @ApiProperty() id!: number;
-  @ApiProperty() platform!: string;
-  @ApiProperty() productName!: string;
-  @ApiProperty() purchaseUrl!: string;
-  @ApiPropertyOptional() priceVnd!: number | null;
-  @ApiPropertyOptional() unitDescription!: string | null;
-  @ApiPropertyOptional() thumbnailPath!: string | null;
-  @ApiProperty() priority!: number;
-}
 
 export class IngredientResponseDto {
   @ApiProperty() id!: number;

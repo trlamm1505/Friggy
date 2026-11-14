@@ -300,4 +300,159 @@ export const updateAdminOtpConfigApi = async (data) => {
   return await axiosClient.patch('/admin/system-config/otp', data);
 };
 
+// ─────────────────────────────────────────────────────────────
+// SYSTEM MAINTENANCE & HEALTH CHECK
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Lấy trạng thái chế độ bảo trì hệ thống
+ * GET /api/v1/admin/system-config/maintenance
+ */
+export const getMaintenanceModeApi = async () => {
+  return await axiosClient.get('/admin/system-config/maintenance');
+};
+
+/**
+ * Cập nhật chế độ bảo trì hệ thống
+ * PATCH /api/v1/admin/system-config/maintenance
+ * Body: { isEnabled: boolean, message?: string }
+ */
+export const updateMaintenanceModeApi = async (data) => {
+  return await axiosClient.patch('/admin/system-config/maintenance', data);
+};
+
+/**
+ * Kiểm tra sức khỏe toàn hệ thống (DB, Redis, AI Provider, Uptime)
+ * GET /api/v1/health
+ */
+export const getSystemHealthApi = async () => {
+  return await axiosClient.get('/admin/system-config/health');
+};
+
+// ─────────────────────────────────────────────────────────────
+// USER MANAGEMENT ENHANCEMENTS (CREATE, SESSIONS, AI QUOTA)
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Tạo tài khoản người dùng mới (Role: user, manager, admin, supplier)
+ * POST /api/v1/admin/users
+ * Body: { email, password, fullName, role, phoneNumber? }
+ */
+export const createAdminUserApi = async (data) => {
+  return await axiosClient.post('/admin/users', data);
+};
+
+/**
+ * Xem các phiên đăng nhập đang hoạt động của user
+ * GET /api/v1/admin/users/:userId/sessions
+ */
+export const getUserSessionsApi = async (userId) => {
+  return await axiosClient.get(`/admin/users/${userId}/sessions`);
+};
+
+/**
+ * Đăng xuất user khỏi tất cả các thiết bị
+ * DELETE /api/v1/admin/users/:userId/sessions
+ */
+export const revokeAllUserSessionsApi = async (userId) => {
+  return await axiosClient.delete(`/admin/users/${userId}/sessions`);
+};
+
+/**
+ * Hủy một phiên đăng nhập cụ thể của user
+ * DELETE /api/v1/admin/users/:userId/sessions/:sessionId
+ */
+export const revokeUserSessionApi = async (userId, sessionId) => {
+  return await axiosClient.delete(`/admin/users/${userId}/sessions/${sessionId}`);
+};
+
+/**
+ * Dọn dẹp thủ công các sessions đã hết hạn trong Redis/DB
+ * POST /api/v1/admin/users/sessions/cleanup
+ */
+export const cleanupExpiredSessionsApi = async () => {
+  return await axiosClient.post('/admin/users/sessions/cleanup');
+};
+
+/**
+ * Xem hạn mức và số lượt gọi AI đã dùng trong tuần của user
+ * GET /api/v1/admin/users/:userId/ai-quota
+ */
+export const getUserAiQuotaApi = async (userId) => {
+  return await axiosClient.get(`/admin/users/${userId}/ai-quota`);
+};
+
+/**
+ * Điều chỉnh / override hạn mức AI cho user
+ * PATCH /api/v1/admin/users/:userId/ai-quota
+ * Body: { weeklyLimit: number } (-1 = không giới hạn)
+ */
+export const updateUserAiQuotaApi = async (userId, data) => {
+  return await axiosClient.patch(`/admin/users/${userId}/ai-quota`, data);
+};
+
+/**
+ * Reset số lượt gọi AI đã dùng trong tuần về 0 cho user
+ * POST /api/v1/admin/users/:userId/ai-quota/reset
+ */
+export const resetUserAiQuotaApi = async (userId) => {
+  return await axiosClient.post(`/admin/users/${userId}/ai-quota/reset`);
+};
+
+// ─────────────────────────────────────────────────────────────
+// ROLES MANAGEMENT
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Danh sách vai trò trong hệ thống
+ * GET /api/v1/admin/roles
+ */
+export const getAdminRolesApi = async () => {
+  return await axiosClient.get('/admin/roles');
+};
+
+/**
+ * Cập nhật tên hiển thị / mô tả của vai trò
+ * PATCH /api/v1/admin/roles/:roleName
+ * Body: { name?: string, description?: string }
+ */
+export const updateAdminRoleApi = async (roleName, data) => {
+  return await axiosClient.patch(`/admin/roles/${roleName}`, data);
+};
+
+// ─────────────────────────────────────────────────────────────
+// BROADCAST PUSH NOTIFICATIONS
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Gửi thông báo đẩy broadcast tới users qua FCM
+ * POST /api/v1/admin/notifications/broadcast
+ * Body: { title: string, body: string, targetGroup: 'all' | 'free_users' | 'paid_users', data?: object }
+ */
+export const sendBroadcastNotificationApi = async (data) => {
+  return await axiosClient.post('/admin/notifications/broadcast', data);
+};
+
+// ─────────────────────────────────────────────────────────────
+// ACTIVITY LOGS (AUDIT TRAIL)
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Lấy danh sách audit trail của Admin/Manager
+ * GET /api/v1/admin/activity-logs
+ * Params: { page?, limit?, action?, actorId?, startDate?, endDate? }
+ */
+export const getAdminActivityLogsApi = async (params = {}) => {
+  return await axiosClient.get('/admin/activity-logs', { params });
+};
+
+/**
+ * Lấy chi tiết 1 log kèm oldValue & newValue
+ * GET /api/v1/admin/activity-logs/:id
+ */
+export const getAdminActivityLogDetailApi = async (id) => {
+  return await axiosClient.get(`/admin/activity-logs/${id}`);
+};
+
+
 

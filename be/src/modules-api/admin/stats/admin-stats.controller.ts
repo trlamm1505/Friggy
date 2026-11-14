@@ -3,7 +3,7 @@ import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse, ApiQuery } from '@ne
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { AdminStatsService } from './admin-stats.service';
 import { ListStatsQueryDto } from './dto/admin-stats.dto';
-import { StatsOverviewDto, AiUsageDto, SubscriptionBreakdownItemDto } from './dto/admin-stats-response.dto';
+import { StatsOverviewDto, AiUsageDto, SubscriptionBreakdownDto } from './dto/admin-stats-response.dto';
 
 @ApiTags('Admin / Stats')
 
@@ -29,8 +29,8 @@ export class AdminStatsController {
   }
 
   @Get('subscriptions')
-  @ApiOperation({ summary: '[Admin] Phân bố subscription plans' })
-  @ApiResponse({ status: 200, type: [SubscriptionBreakdownItemDto] })
+  @ApiOperation({ summary: '[Admin] Phân bố subscription plans (user) và gói cước (supplier)' })
+  @ApiResponse({ status: 200, type: SubscriptionBreakdownDto })
   getSubscriptionBreakdown() {
     return this.service.getSubscriptionBreakdown();
   }

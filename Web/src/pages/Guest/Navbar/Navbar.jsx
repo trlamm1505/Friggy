@@ -1,12 +1,35 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Download, LogIn, Menu, X, ShieldCheck } from 'lucide-react';
+import { Download, LogIn, Menu, X, ShieldCheck, Store, LogOut, User } from 'lucide-react';
 import cuteMascotImg from '../../../assets/images/cute_mascot.png';
+import { logoutHelper } from '../../../services/authService';
 
 export const Navbar = ({ onOpenAuthModal, onOpenAdmin }) => {
   const navigate = useNavigate();
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('friggy_user') || localStorage.getItem('user');
+      const token = localStorage.getItem('friggy_access_token') || localStorage.getItem('accessToken');
+      if (raw && token) {
+        setCurrentUser(JSON.parse(raw));
+      } else {
+        setCurrentUser(null);
+      }
+    } catch (e) {
+      setCurrentUser(null);
+    }
+  }, []);
+
+  const handleLogout = async () => {
+    await logoutHelper();
+    setCurrentUser(null);
+    navigate('/', { replace: true });
+    window.location.reload();
+  };
 
   useEffect(() => {
     const handleScroll = () => {
@@ -105,16 +128,69 @@ export const Navbar = ({ onOpenAuthModal, onOpenAdmin }) => {
         </nav>
 
         {/* Actions */}
-        <div className="hidden md:flex items-center gap-4">
-          {(import.meta.env.VITE_ENABLE_ADMIN_LOGIN === 'true' || import.meta.env.VITE_ENABLE_ADMIN_LOGIN === true) && (
-            <button
-              onClick={() => navigate('/login')}
-              className="flex items-center gap-1.5 text-sm font-bold text-emerald-900 hover:text-emerald-600 px-3 py-2 transition-colors cursor-pointer"
-            >
-              <LogIn className="w-4 h-4" />
-              Đăng nhập
-            </button>
+        <div className="hidden md:flex items-center gap-3">
+          {currentUser ? (
+            <>
+              {((currentUser.role || '').toLowerCase() === 'food_supplier' || currentUser.roleId === 4) && (
+                <button
+                  onClick={() => navigate('/supplier/dashboard')}
+                  className="flex items-center gap-1.5 text-xs font-bold text-amber-950 bg-amber-200 hover:bg-amber-300 border border-amber-400 px-4 py-2 rounded-full transition-all cursor-pointer shadow-xs"
+                >
+                  <Store className="w-4 h-4 text-amber-800" />
+                  <span>Vào Cổng Đối Tác ({currentUser.name || 'Đối tác'})</span>
+                </button>
+              )}
+
+              {((currentUser.role || '').toLowerCase() === 'admin' || currentUser.roleId === 1) && (
+                <button
+                  onClick={() => navigate('/admin/dashboard')}
+                  className="flex items-center gap-1.5 text-xs font-bold text-emerald-950 bg-emerald-200 hover:bg-emerald-300 border border-emerald-400 px-4 py-2 rounded-full transition-all cursor-pointer shadow-xs"
+                >
+                  <ShieldCheck className="w-4 h-4 text-emerald-800" />
+                  <span>Vào Cổng Admin</span>
+                </button>
+              )}
+
+              {((currentUser.role || '').toLowerCase() === 'manager' || currentUser.roleId === 3) && (
+                <button
+                  onClick={() => navigate('/manager/dashboard')}
+                  className="flex items-center gap-1.5 text-xs font-bold text-blue-950 bg-blue-200 hover:bg-blue-300 border border-blue-400 px-4 py-2 rounded-full transition-all cursor-pointer shadow-xs"
+                >
+                  <ShieldCheck className="w-4 h-4 text-blue-800" />
+                  <span>Vào Cổng Quản Lý</span>
+                </button>
+              )}
+
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-1.5 text-xs font-bold text-rose-700 hover:text-rose-900 bg-rose-50 hover:bg-rose-100 border border-rose-200 px-3.5 py-2 rounded-full transition-all cursor-pointer"
+                title="Đăng xuất"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span>Đăng xuất</span>
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={() => navigate('/supplier/register')}
+                className="flex items-center gap-1.5 text-xs font-bold text-amber-900 bg-amber-100/90 hover:bg-amber-200 border border-amber-300 px-3.5 py-2 rounded-full transition-all cursor-pointer shadow-xs"
+              >
+                <Store className="w-3.5 h-3.5 text-amber-600" />
+                <span>Đăng ký Đối tác</span>
+              </button>
+              {(import.meta.env.VITE_ENABLE_ADMIN_LOGIN === 'true' || import.meta.env.VITE_ENABLE_ADMIN_LOGIN === true) && (
+                <button
+                  onClick={() => navigate('/login')}
+                  className="flex items-center gap-1.5 text-sm font-bold text-emerald-900 hover:text-emerald-600 px-3 py-2 transition-colors cursor-pointer"
+                >
+                  <LogIn className="w-4 h-4" />
+                  Đăng nhập
+                </button>
+              )}
+            </>
           )}
+
           <a
             href="https://github.com/trlamm1505/Friggy/releases/latest/download/friggy-app.apk"
             download="friggy-app.apk"
@@ -173,6 +249,16 @@ export const Navbar = ({ onOpenAuthModal, onOpenAdmin }) => {
             FAQ
           </a>
           <div className="pt-2 border-t border-emerald-100 flex flex-col gap-2">
+            <button
+              onClick={() => {
+                setMobileMenuOpen(false);
+                navigate('/supplier/register');
+              }}
+              className="w-full flex justify-center items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white font-bold py-2.5 rounded-full cursor-pointer shadow-sm text-sm"
+            >
+              <Store className="w-4 h-4" />
+              Đăng ký Đối tác
+            </button>
             {(import.meta.env.VITE_ENABLE_ADMIN_LOGIN === 'true' || import.meta.env.VITE_ENABLE_ADMIN_LOGIN === true) && (
               <button
                 onClick={() => {

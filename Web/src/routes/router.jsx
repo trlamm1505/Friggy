@@ -14,6 +14,8 @@ import SponsorManagement from '../pages/Admin/SponsorManagement/SponsorManagemen
 import IngredientManagement from '../pages/Admin/IngredientManagement/IngredientManagement';
 import RecipeManagement from '../pages/Admin/RecipeManagement/RecipeManagement';
 import PaymentTransactionsManagement from '../pages/Admin/PaymentTransactions/PaymentTransactionsManagement';
+import ActivityLogsManagement from '../pages/Admin/ActivityLogs/ActivityLogsManagement';
+import BroadcastManagement from '../pages/Admin/Broadcast/BroadcastManagement';
 import FamilyInviteAction from '../pages/Guest/FamilyInviteAction';
 
 // Manager Portal Components
@@ -27,6 +29,21 @@ import ManagerSponsorManagement from '../pages/Manager/SponsorManagement/Sponsor
 import ManagerPackageManagement from '../pages/Manager/PackageManagement/PackageManagement';
 import ManagerProfile from '../pages/Manager/Profile/ManagerProfile';
 
+// Supplier Portal Components
+import SupplierLayout from '../pages/Supplier/SupplierLayout';
+import SupplierDashboard from '../pages/Supplier/Dashboard/SupplierDashboard';
+import SupplierProfile from '../pages/Supplier/Profile/SupplierProfile';
+import SupplierIngredients from '../pages/Supplier/Ingredients/SupplierIngredients';
+import SupplierSubscription from '../pages/Supplier/Subscription/SupplierSubscription';
+import SupplierPaymentHistory from '../pages/Supplier/PaymentHistory/SupplierPaymentHistory';
+import SupplierRegister from '../pages/Guest/SupplierRegister/SupplierRegister';
+import SupplierSetPassword from '../pages/Guest/SupplierSetPassword/SupplierSetPassword';
+
+// Admin & Manager Supplier Components
+import SupplierManagement from '../pages/Admin/SupplierManagement/SupplierManagement';
+import SupplierIngredientReview from '../pages/Admin/SupplierIngredientReview/SupplierIngredientReview';
+import ManagerSupplierManagement from '../pages/Manager/SupplierManagement/SupplierManagement';
+
 const enableAdminLogin =
   import.meta.env.VITE_ENABLE_ADMIN_LOGIN === 'true' ||
   import.meta.env.VITE_ENABLE_ADMIN_LOGIN === true;
@@ -35,6 +52,9 @@ function Router() {
   return (
     <Routes>
       <Route path="/" element={<GuestPage />} />
+      <Route path="supplier/register" element={<SupplierRegister />} />
+      <Route path="supplier/apply" element={<SupplierRegister />} />
+      <Route path="supplier/set-password" element={<SupplierSetPassword />} />
       <Route path="family/accept" element={<FamilyInviteAction />} />
       <Route path="family/reject" element={<FamilyInviteAction />} />
 
@@ -46,13 +66,17 @@ function Router() {
           <Route path="admin" element={<AdminLayout />}>
             <Route path="" element={<AdminDashboard />} />
             <Route path="dashboard" element={<AdminDashboard />} />
+            <Route path="suppliers" element={<SupplierManagement />} />
+            <Route path="supplier-ingredients" element={<SupplierIngredientReview />} />
             <Route path="ingredients" element={<IngredientManagement />} />
             <Route path="recipes" element={<RecipeManagement />} />
             <Route path="users" element={<UserManagement />} />
             <Route path="transactions" element={<PaymentTransactionsManagement />} />
             <Route path="ai" element={<AiManagement />} />
             <Route path="cron" element={<CronManagement />} />
-            <Route path="sponsors" element={<SponsorManagement />} />
+            <Route path="activity-logs" element={<ActivityLogsManagement />} />
+            <Route path="broadcast" element={<BroadcastManagement />} />
+            <Route path="sponsors" element={<Navigate to="/admin/dashboard" replace />} />
             <Route path="packages" element={<PackageManagement />} />
             <Route path="profile" element={<AdminProfile />} />
             <Route path="settings" element={<AdminSettings />} />
@@ -62,13 +86,24 @@ function Router() {
           <Route path="manager" element={<ManagerLayout />}>
             <Route path="" element={<ManagerDashboard />} />
             <Route path="dashboard" element={<ManagerDashboard />} />
+            <Route path="suppliers" element={<ManagerSupplierManagement />} />
             <Route path="ingredients" element={<ManagerIngredientManagement />} />
             <Route path="recipes" element={<ManagerRecipeManagement />} />
             <Route path="users" element={<ManagerUserManagement />} />
             <Route path="transactions" element={<ManagerPaymentTransactionsManagement />} />
-            <Route path="sponsors" element={<ManagerSponsorManagement />} />
+            <Route path="sponsors" element={<Navigate to="/manager/dashboard" replace />} />
             <Route path="packages" element={<ManagerPackageManagement />} />
             <Route path="profile" element={<ManagerProfile />} />
+          </Route>
+
+          {/* Supplier Portal Routes */}
+          <Route path="supplier" element={<SupplierLayout />}>
+            <Route path="" element={<SupplierDashboard />} />
+            <Route path="dashboard" element={<SupplierDashboard />} />
+            <Route path="profile" element={<SupplierProfile />} />
+            <Route path="ingredients" element={<SupplierIngredients />} />
+            <Route path="subscription" element={<SupplierSubscription />} />
+            <Route path="payment-history" element={<SupplierPaymentHistory />} />
           </Route>
         </>
       ) : (
@@ -76,6 +111,7 @@ function Router() {
           <Route path="login" element={<Navigate to="/" replace />} />
           <Route path="admin/*" element={<Navigate to="/" replace />} />
           <Route path="manager/*" element={<Navigate to="/" replace />} />
+          <Route path="supplier/*" element={<Navigate to="/" replace />} />
         </>
       )}
 

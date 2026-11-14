@@ -85,6 +85,8 @@ export const ManagerHeader = ({ activeTab, setMobileOpen, onExitManager }) => {
     switch (activeTab) {
       case 'dashboard':
         return { title: 'Trang Chủ Tổng Quan Vận Hành', sub: 'Thống kê người dùng, kho thực phẩm và tình hình kinh doanh' };
+      case 'suppliers':
+        return { title: 'Quản Lý Nhà Cung Cấp', sub: 'Theo dõi và xét duyệt hồ sơ đối tác cung cấp thực phẩm' };
       case 'ingredients':
         return { title: 'Quản Lý Kho Nguyên Liệu', sub: 'Quản lý nguyên liệu tủ lạnh, hạn sử dụng 3 ngăn & phân loại danh mục' };
       case 'recipes':

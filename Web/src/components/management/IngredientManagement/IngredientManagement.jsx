@@ -47,6 +47,8 @@ export const IngredientManagement = () => {
   const [openDetailModal, setOpenDetailModal] = useState(false);
   const [selectedDetailId, setSelectedDetailId] = useState(null);
   const [openCategoryModal, setOpenCategoryModal] = useState(false);
+  const [ingredientToDelete, setIngredientToDelete] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   // Fetch Category Tree on Mount
   const fetchCategories = async () => {
@@ -101,16 +103,23 @@ export const IngredientManagement = () => {
     fetchIngredients();
   };
 
-  const handleDelete = async (ingredient) => {
-    if (window.confirm(`Bạn có chắc chắn muốn xóa nguyên liệu "${ingredient.name}"?`)) {
-      try {
-        await deleteIngredientApi(ingredient.id);
-        showToast.success('Xóa nguyên liệu thành công!');
-        fetchIngredients();
-      } catch (err) {
-        console.error('Lỗi xóa nguyên liệu:', err);
-        showToast.error(err.message || 'Xóa nguyên liệu thất bại');
-      }
+  const handleDelete = (ingredient) => {
+    setIngredientToDelete(ingredient);
+  };
+
+  const confirmDeleteIngredient = async () => {
+    if (!ingredientToDelete) return;
+    setDeleteLoading(true);
+    try {
+      await deleteIngredientApi(ingredientToDelete.id);
+      showToast.success('Xóa nguyên liệu thành công!');
+      setIngredientToDelete(null);
+      fetchIngredients();
+    } catch (err) {
+      console.error('Lỗi xóa nguyên liệu:', err);
+      showToast.error(err.message || 'Xóa nguyên liệu thất bại');
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -392,6 +401,45 @@ export const IngredientManagement = () => {
         onClose={() => setOpenCategoryModal(false)}
         onSuccess={fetchCategories}
       />
+
+      {/* Custom Delete Confirmation Modal */}
+      {ingredientToDelete && (
+        <div className="fixed inset-0 bg-emerald-950/40 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-[32px] max-w-md w-full p-6 sm:p-8 space-y-6 shadow-2xl border border-rose-100 animate__animated animate__zoomIn animate__faster text-center">
+            <div className="w-16 h-16 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center mx-auto border border-rose-100 shadow-xs">
+              <Trash2 className="w-8 h-8" />
+            </div>
+
+            <div className="space-y-2">
+              <h4 className="text-xl font-black text-slate-900">Xác Nhận Xóa Nguyên Liệu</h4>
+              <p className="text-xs sm:text-sm text-slate-500 font-medium leading-relaxed">
+                Bạn có chắc chắn muốn xóa nguyên liệu{' '}
+                <strong className="text-rose-600 font-bold">"{ingredientToDelete.name}"</strong>? Hành động này không thể hoàn tác.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3 pt-2">
+              <button
+                type="button"
+                disabled={deleteLoading}
+                onClick={() => setIngredientToDelete(null)}
+                className="flex-1 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs sm:text-sm transition-all cursor-pointer"
+              >
+                Hủy Bỏ
+              </button>
+              <button
+                type="button"
+                disabled={deleteLoading}
+                onClick={confirmDeleteIngredient}
+                className="flex-1 py-3 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-xs sm:text-sm shadow-md shadow-rose-600/20 transition-all cursor-pointer flex items-center justify-center gap-2"
+              >
+                {deleteLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                <span>{deleteLoading ? 'Đang Xóa...' : 'Xóa Nguyên Liệu'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -400,11 +448,31 @@ export const IngredientManagement = () => {
 const IngredientSquareImage = ({ imagePath, name }) => {
   const [error, setError] = useState(false);
 
+  const resolveMediaUrl = (path) => {
+    if (!path) return '';
+    let url = String(path).trim();
+    if (url.startsWith('blob:') || url.startsWith('data:')) {
+      return url;
+    }
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      const apiBase = import.meta.env.VITE_API_BASE_URL || 'https://api.friggy.io.vn/api/v1';
+      const base = apiBase.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
+      url = `${base}${url.startsWith('/') ? '' : '/'}${url}`;
+    }
+    if (url.includes('ngrok') && !url.includes('ngrok-skip-browser-warning')) {
+      const sep = url.includes('?') ? '&' : '?';
+      url = `${url}${sep}ngrok-skip-browser-warning=true`;
+    }
+    return url;
+  };
+
+  const resolvedSrc = resolveMediaUrl(imagePath);
+
   return (
     <div className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center overflow-hidden shrink-0 shadow-2xs">
-      {imagePath && !error ? (
+      {resolvedSrc && !error ? (
         <img
-          src={imagePath}
+          src={resolvedSrc}
           alt={name}
           className="w-full h-full object-cover"
           onError={() => setError(true)}

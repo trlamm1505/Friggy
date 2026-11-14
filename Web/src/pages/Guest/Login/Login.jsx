@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { User, Lock, Eye, EyeOff, ArrowLeft, Sparkles, ShieldCheck, CheckCircle2 } from 'lucide-react';
 import cuteMascotImg from '../../../assets/images/cute_mascot.png';
 import qrMascotImg from '../../../assets/images/QR.png';
@@ -10,6 +10,10 @@ import { showToast } from '../../../components/common/Toast';
 
 export const Login = ({ onBack, onLoginSuccess }) => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const redirectPath = searchParams.get('redirect');
+
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     username: '',
@@ -74,14 +78,21 @@ export const Login = ({ onBack, onLoginSuccess }) => {
       const userRole = String(
         authData.user?.role?.name || authData.user?.role || ''
       ).toLowerCase();
-      const isAdmin = userRole === 'admin' || userRole.includes('admin');
-      const isManager = userRole === 'manager' || userRole.includes('manager');
+      const isAdmin = userRole === 'admin' || userRole.includes('admin') || authData.user?.roleId === 1;
+      const isManager = userRole === 'manager' || userRole.includes('manager') || authData.user?.roleId === 3;
+      const isSupplier = userRole === 'food_supplier' || userRole.includes('supplier') || authData.user?.roleId === 4;
 
       if (isAdmin) {
         navigate('/admin/dashboard', { replace: true });
         if (onLoginSuccess) onLoginSuccess(authData.user);
       } else if (isManager) {
         navigate('/manager/dashboard', { replace: true });
+        if (onLoginSuccess) onLoginSuccess(authData.user);
+      } else if (isSupplier) {
+        navigate('/supplier/dashboard', { replace: true });
+        if (onLoginSuccess) onLoginSuccess(authData.user);
+      } else if (redirectPath) {
+        navigate(redirectPath, { replace: true });
         if (onLoginSuccess) onLoginSuccess(authData.user);
       } else {
         navigate('/', { replace: true });
@@ -148,14 +159,21 @@ export const Login = ({ onBack, onLoginSuccess }) => {
             const userRole = String(
               authData.user?.role?.name || authData.user?.role || ''
             ).toLowerCase();
-            const isAdmin = userRole === 'admin' || userRole.includes('admin');
-            const isManager = userRole === 'manager' || userRole.includes('manager');
+            const isAdmin = userRole === 'admin' || userRole.includes('admin') || authData.user?.roleId === 1;
+            const isManager = userRole === 'manager' || userRole.includes('manager') || authData.user?.roleId === 3;
+            const isSupplier = userRole === 'food_supplier' || userRole.includes('supplier') || authData.user?.roleId === 4;
 
             if (isAdmin) {
               navigate('/admin/dashboard', { replace: true });
               if (onLoginSuccess) onLoginSuccess(authData.user);
             } else if (isManager) {
               navigate('/manager/dashboard', { replace: true });
+              if (onLoginSuccess) onLoginSuccess(authData.user);
+            } else if (isSupplier) {
+              navigate('/supplier/dashboard', { replace: true });
+              if (onLoginSuccess) onLoginSuccess(authData.user);
+            } else if (redirectPath) {
+              navigate(redirectPath, { replace: true });
               if (onLoginSuccess) onLoginSuccess(authData.user);
             } else {
               navigate('/', { replace: true });

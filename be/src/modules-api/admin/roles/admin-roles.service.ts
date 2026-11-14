@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { PrismaService } from 'src/modules-system/prisma/prisma.service';
-import { CreateRoleDto, UpdateRoleDescriptionDto } from './dto/admin-roles.dto';
+import { UpdateRoleDto } from './dto/admin-roles.dto';
 import { RoleItemDto } from './dto/admin-roles-response.dto';
 
 @Injectable()
@@ -29,53 +29,41 @@ export class AdminRolesService {
     }));
   }
 
-  // ─── Thêm role mới ────────────────────────────────────────────────────────
+  // ─── Cập nhật name / description role ─────────────────────────────────────
 
-  async createRole(dto: CreateRoleDto): Promise<RoleItemDto> {
-    const normalizedName = dto.name.trim().toLowerCase();
-
-    const existing = await this.prisma.role.findFirst({
-      where: { name: normalizedName, deletedAt: null },
-    });
-
-    if (existing) {
-      throw new ConflictException(`Role "${normalizedName}" đã tồn tại trong hệ thống`);
-    }
-
-    const newRole = await this.prisma.role.create({
-      data: {
-        name: normalizedName,
-        description: dto.description?.trim() || null,
-      },
-    });
-
-    return {
-      id:          newRole.id,
-      name:        newRole.name,
-      description: newRole.description,
-      userCount:   0,
-      createdAt:   newRole.createdAt,
-    };
-  }
-
-  // ─── Cập nhật mô tả role ───────────────────────────────────────────────────
-
-  async updateRoleDescription(
-    name: string,
-    dto: UpdateRoleDescriptionDto,
+  async updateRole(
+    currentName: string,
+    dto: UpdateRoleDto,
   ): Promise<RoleItemDto> {
-    const normalizedName = name.trim().toLowerCase();
+    const normalizedCurrent = currentName.trim().toLowerCase();
     const role = await this.prisma.role.findFirst({
-      where: { name: normalizedName, deletedAt: null },
+      where: { name: normalizedCurrent, deletedAt: null },
     });
 
     if (!role) {
-      throw new NotFoundException(`Không tìm thấy role "${name}"`);
+      throw new NotFoundException(`Không tìm thấy role "${currentName}"`);
     }
+
+    // Nếu đổi name → kiểm tra trùng
+    if (dto.name) {
+      const newName = dto.name.trim().toLowerCase();
+      if (newName !== normalizedCurrent) {
+        const conflict = await this.prisma.role.findFirst({
+          where: { name: newName, deletedAt: null },
+        });
+        if (conflict) {
+          throw new ConflictException(`Tên role "${newName}" đã tồn tại trong hệ thống`);
+        }
+      }
+    }
+
+    const updateData: { name?: string; description?: string } = {};
+    if (dto.name !== undefined) updateData.name = dto.name.trim().toLowerCase();
+    if (dto.description !== undefined) updateData.description = dto.description;
 
     const updated = await this.prisma.role.update({
       where: { id: role.id },
-      data:  { description: dto.description },
+      data: updateData,
       include: {
         _count: {
           select: { users: { where: { deletedAt: null } } },

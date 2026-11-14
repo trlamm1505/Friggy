@@ -142,14 +142,24 @@ export const ManagerDashboard = (props) => {
 
   const greeting = getGreetingData();
 
-  // Đọc chính xác các trường trả về từ API backend /admin/stats/overview
-  const totalUsers = overviewData?.totalUsers ?? overviewData?.users?.total ?? 0;
-  const activeUsers = overviewData?.activeUsers ?? overviewData?.users?.active ?? 0;
-  const suspendedUsers = overviewData?.suspendedUsers ?? 0;
+  // Đọc chính xác các trường trả về từ API backend /admin/stats/overview ({ users, suppliers, combined })
+  const usersStats = overviewData?.users || {};
+  const suppliersStats = overviewData?.suppliers || {};
+  const combinedStats = overviewData?.combined || {};
+
+  const totalUsers = usersStats.total ?? overviewData?.totalUsers ?? 0;
+  const activeUsers = usersStats.active ?? overviewData?.activeUsers ?? 0;
+  const suspendedUsers = usersStats.suspended ?? overviewData?.suspendedUsers ?? 0;
   const revenueThisMonthVnd =
-    overviewData?.revenueThisMonthVnd ?? overviewData?.revenue?.thisMonthVnd ?? 0;
+    combinedStats.revenueThisMonthVnd ??
+    usersStats.revenueThisMonthVnd ??
+    overviewData?.revenueThisMonthVnd ??
+    0;
   const totalRevenueVnd =
-    overviewData?.totalRevenueVnd ?? overviewData?.revenue?.totalVnd ?? 0;
+    combinedStats.totalRevenueVnd ??
+    usersStats.totalRevenueVnd ??
+    overviewData?.totalRevenueVnd ??
+    0;
 
   const statCards = [
     {

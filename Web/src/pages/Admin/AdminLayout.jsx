@@ -21,6 +21,8 @@ export const AdminLayout = () => {
   };
 
   const getActiveTab = () => {
+    if (location.pathname.includes('/admin/supplier-ingredients')) return 'supplier-ingredients';
+    if (location.pathname.includes('/admin/suppliers')) return 'suppliers';
     if (location.pathname.includes('/admin/ingredients')) return 'ingredients';
     if (location.pathname.includes('/admin/recipes')) return 'recipes';
     if (location.pathname.includes('/admin/users')) return 'users';
@@ -29,6 +31,8 @@ export const AdminLayout = () => {
     if (location.pathname.includes('/admin/cron')) return 'cron';
     if (location.pathname.includes('/admin/sponsors')) return 'sponsors';
     if (location.pathname.includes('/admin/packages')) return 'packages';
+    if (location.pathname.includes('/admin/broadcast')) return 'broadcast';
+    if (location.pathname.includes('/admin/activity-logs')) return 'activity-logs';
     if (location.pathname.includes('/admin/profile')) return 'profile';
     if (location.pathname.includes('/admin/settings')) return 'settings';
     return 'dashboard';
@@ -56,7 +60,7 @@ export const AdminLayout = () => {
         />
 
         {/* Tab Content Container with Pure Animate.css */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 w-full max-w-[1680px] mx-auto">
           <div key={location.pathname} className="animate__animated animate__fadeIn animate__faster">
             <Outlet
               context={{

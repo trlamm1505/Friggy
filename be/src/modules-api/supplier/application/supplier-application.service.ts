@@ -47,10 +47,20 @@ export class SupplierApplicationService {
       throw new ConflictException('Đã có đơn đăng ký đang chờ duyệt với email này. Vui lòng chờ phản hồi từ chúng tôi.');
     }
 
+    // Check no pending/approved application for this taxCode
+    const taxCode = dto.taxCode.trim();
+    const existingTaxApp = await this.prisma.supplierApplication.findFirst({
+      where: { taxCode, status: { in: ['pending', 'approved'] }, deletedAt: null },
+    });
+    if (existingTaxApp) {
+      throw new ConflictException('Mã số thuế này đã được đăng ký hoặc đang chờ xét duyệt.');
+    }
+
     const application = await this.prisma.supplierApplication.create({
       data: {
         id: uuid(),
         companyName: dto.companyName.trim(),
+        taxCode,
         contactName: dto.contactName.trim(),
         email,
         phone: dto.phone?.trim() ?? null,
@@ -117,6 +127,7 @@ export class SupplierApplicationService {
     return {
       id: a.id,
       companyName: a.companyName,
+      taxCode: a.taxCode ?? null,
       contactName: a.contactName,
       email: a.email,
       phone: a.phone ?? null,
