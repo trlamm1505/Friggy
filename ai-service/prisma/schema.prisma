@@ -159,7 +159,6 @@ model Ingredient {
   updatedAt           DateTime                 @updatedAt
   deletedAt           DateTime?
   fridgeItems         FridgeItem[]
-  purchaseLinks       IngredientPurchaseLink[]
   category            IngredientCategory       @relation(fields: [categoryId], references: [id])
   recipeIngredients   RecipeIngredient[]
   shoppingItems       ShoppingListItem[]
@@ -196,7 +195,6 @@ model Recipe {
   createdAt       DateTime           @default(now())
   updatedAt       DateTime           @updatedAt
   deletedAt       DateTime?
-  campaigns       CampaignRecipe[]
   mealSlots       MealSlot[]
   ingredients     RecipeIngredient[]
   steps           RecipeStep[]
@@ -336,7 +334,6 @@ model WeeklyPlan {
   createdAt      DateTime          @default(now())
   updatedAt      DateTime          @updatedAt
   deletedAt      DateTime?
-  evaluationLogs AiEvaluationLog[]
   dailyPlans     DailyPlan[]
   shoppingLists  ShoppingList[]
   aiSession      ChatSession?      @relation(fields: [aiSessionId], references: [id])
@@ -447,7 +444,6 @@ model ChatSession {
   updatedAt       DateTime          @updatedAt
   closedAt        DateTime?
   deletedAt       DateTime?
-  evaluationLogs  AiEvaluationLog[]
   messages        ChatMessage[]
   user            User              @relation(fields: [userId], references: [id])
   weeklyPlans     WeeklyPlan[]
@@ -474,24 +470,6 @@ model ChatMessage {
   @@map("chat_messages")
 }
 
-model AiEvaluationLog {
-  id               String           @id @default(uuid()) @db.Char(36)
-  sessionId        String           @db.Char(36)
-  weeklyPlanId     String?          @db.Char(36)
-  attemptNumber    Int              @db.TinyInt
-  evaluationResult EvaluationResult
-  failureReasons   Json?
-  budgetAllocated  Int
-  budgetCalculated Int?
-  createdAt        DateTime         @default(now())
-  deletedAt        DateTime?
-  session          ChatSession      @relation(fields: [sessionId], references: [id])
-  weeklyPlan       WeeklyPlan?      @relation(fields: [weeklyPlanId], references: [id])
-
-  @@index([sessionId], map: "ai_evaluation_logs_sessionId_fkey")
-  @@index([weeklyPlanId], map: "ai_evaluation_logs_weeklyPlanId_fkey")
-  @@map("ai_evaluation_logs")
-}
 
 model AiProviderConfig {
   id              Int        @id @default(autoincrement())
@@ -527,75 +505,9 @@ model AiUsageLog {
   @@map("ai_usage_logs")
 }
 
-model Sponsor {
-  id            Int                      @id @default(autoincrement())
-  name          String                   @db.VarChar(150)
-  logoPath      String?                  @db.VarChar(512)
-  websiteUrl    String?                  @db.VarChar(512)
-  contactEmail  String?                  @db.VarChar(255)
-  status        SponsorStatus
-  createdAt     DateTime                 @default(now())
-  updatedAt     DateTime                 @updatedAt
-  deletedAt     DateTime?
-  purchaseLinks IngredientPurchaseLink[]
-  campaigns     SponsorCampaign[]
 
-  @@map("sponsors")
-}
 
-model SponsorCampaign {
-  id             String           @id @default(uuid()) @db.Char(36)
-  sponsorId      Int
-  title          String           @db.VarChar(255)
-  description    String?          @db.Text
-  campaignType   CampaignType
-  targetAudience Json?
-  startDate      DateTime         @db.Date
-  endDate        DateTime?        @db.Date
-  status         CampaignStatus
-  createdAt      DateTime         @default(now())
-  deletedAt      DateTime?
-  recipes        CampaignRecipe[]
-  sponsor        Sponsor          @relation(fields: [sponsorId], references: [id])
 
-  @@index([sponsorId], map: "sponsor_campaigns_sponsorId_fkey")
-  @@map("sponsor_campaigns")
-}
-
-model CampaignRecipe {
-  campaignId String          @db.Char(36)
-  recipeId   String          @db.Char(36)
-  priority   Int             @default(0) @db.TinyInt
-  campaign   SponsorCampaign @relation(fields: [campaignId], references: [id])
-  recipe     Recipe          @relation(fields: [recipeId], references: [id])
-
-  @@id([campaignId, recipeId])
-  @@index([recipeId], map: "campaign_recipes_recipeId_fkey")
-  @@map("campaign_recipes")
-}
-
-model IngredientPurchaseLink {
-  id              Int               @id @default(autoincrement())
-  ingredientId    Int
-  sponsorId       Int?
-  platform        EcommercePlatform
-  productName     String            @db.VarChar(255)
-  purchaseUrl     String            @db.VarChar(1024)
-  priceVnd        Int?
-  unitDescription String?           @db.VarChar(100)
-  thumbnailPath   String?           @db.VarChar(512)
-  isActive        Boolean           @default(true)
-  priority        Int               @default(0) @db.TinyInt
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
-  deletedAt       DateTime?
-  ingredient      Ingredient        @relation(fields: [ingredientId], references: [id])
-  sponsor         Sponsor?          @relation(fields: [sponsorId], references: [id])
-
-  @@index([ingredientId, isActive, priority])
-  @@index([sponsorId], map: "ingredient_purchase_links_sponsorId_fkey")
-  @@map("ingredient_purchase_links")
-}
 
 model AdminActivityLog {
   id           String   @id @default(uuid()) @db.Char(36)
@@ -861,11 +773,6 @@ enum ContentType {
   function_result
 }
 
-enum EvaluationResult {
-  pass
-  fail
-  max_retries_exceeded
-}
 
 enum AiProvider {
   gemini
@@ -873,32 +780,9 @@ enum AiProvider {
   anthropic
 }
 
-enum SponsorStatus {
-  active
-  paused
-  terminated
-}
 
-enum CampaignType {
-  banner
-  recipe_highlight
-  ingredient_promo
-}
 
-enum CampaignStatus {
-  scheduled
-  active
-  ended
-}
 
-enum EcommercePlatform {
-  shopee
-  lazada
-  tiki
-  sendo
-  bachhoaxanh
-  other
-}
 
 enum NotificationType {
   expiry_warning

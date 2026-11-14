@@ -17,6 +17,7 @@ export class SupplierProfileResponseDto {
   @ApiProperty() id: string;
   @ApiProperty() userId: string;
   @ApiProperty() companyName: string;
+  @ApiPropertyOptional() taxCode: string | null;
   @ApiPropertyOptional() contactPhone: string | null;
   @ApiPropertyOptional() address: string | null;
   @ApiPropertyOptional() logoPath: string | null;

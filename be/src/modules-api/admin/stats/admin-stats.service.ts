@@ -61,11 +61,11 @@ export class AdminStatsService {
       }),
       this.prisma.supplierApplication.count({ where: { status: 'pending' } }),
       this.prisma.supplierPaymentTransaction.aggregate({
-        where: { status: 'paid', createdAt: { gte: monthStart } },
+        where: { status: { in: ['completed', 'paid'] }, createdAt: { gte: monthStart } },
         _sum: { amount: true },
       }),
       this.prisma.supplierPaymentTransaction.aggregate({
-        where: { status: 'paid' },
+        where: { status: { in: ['completed', 'paid'] } },
         _sum: { amount: true },
       }),
       this.prisma.supplierIngredient.count({ where: { status: 'pending', deletedAt: null } }),

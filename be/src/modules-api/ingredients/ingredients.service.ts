@@ -8,7 +8,6 @@ import type {
   IngredientResponseDto,
   PaginatedIngredientsDto,
   CategoryResponseDto,
-  PurchaseLinkResponseDto,
 } from './dto/ingredients-response.dto';
 
 @Injectable()
@@ -88,33 +87,6 @@ export class IngredientsService {
     });
     if (!ingredient) throw new NotFoundException('Không tìm thấy nguyên liệu');
     return this.mapIngredient(ingredient);
-  }
-
-  // ─────────────────────────────────────────────────────────
-  // GET /:id/purchase-links — Link mua TMDT
-  // ─────────────────────────────────────────────────────────
-
-  async getPurchaseLinks(id: number): Promise<PurchaseLinkResponseDto[]> {
-    const ingredient = await this.prisma.ingredient.findFirst({
-      where: { id, deletedAt: null },
-    });
-    if (!ingredient) throw new NotFoundException('Không tìm thấy nguyên liệu');
-
-    const links = await this.prisma.ingredientPurchaseLink.findMany({
-      where: { ingredientId: id, isActive: true, deletedAt: null },
-      orderBy: [{ priority: 'desc' }, { priceVnd: 'asc' }],
-    });
-
-    return links.map((l) => ({
-      id: l.id,
-      platform: l.platform,
-      productName: l.productName,
-      purchaseUrl: l.purchaseUrl,
-      priceVnd: l.priceVnd ?? null,
-      unitDescription: l.unitDescription ?? null,
-      thumbnailPath: l.thumbnailPath ?? null,
-      priority: l.priority,
-    }));
   }
 
   // ─────────────────────────────────────────────────────────
