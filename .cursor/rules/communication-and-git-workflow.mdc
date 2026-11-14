@@ -1,0 +1,39 @@
+---
+description: Language and Git workflow preferences for this project
+alwaysApply: true
+---
+
+# Communication & Git Workflow
+
+## Language
+
+- **Chat replies**: use the **same language the user writes in** (Vietnamese for this user). Do not switch to English.
+- **Commit messages, branch names, PR titles, and PR descriptions**: always in **English**.
+- Code identifiers, comments, and i18n key values follow the existing conventions of the file being edited.
+
+## Git Bash for all Git operations
+
+- Run every `git` command through **Git Bash**, not PowerShell:
+  ```
+  & "C:\Program Files\Git\bin\bash.exe" -lc "<git command>"
+  ```
+- This applies to `git status`, `git diff`, `git add`, `git commit`, `git log`, `git stash`, `git branch`, etc.
+- Rationale: consistent line-ending handling and POSIX-style paths/quoting across Windows and CI.
+- Keep commands to a single `bash -lc` invocation where practical; chain with `&&` so failures stop the chain.
+- Quote paths containing spaces.
+- For multi-line commands, write a temporary `.sh` script and run it with `bash <script>`, then delete the script.
+
+## Push is manual
+
+- **Never run `git push`.** The user pushes manually after reviewing the commit.
+- Commit locally, then hand the user the commit hash and the exact commit message so they can review and push.
+- Do not create PRs unless the user explicitly asks.
+
+## Commit hygiene
+
+- Stage only files relevant to the change — never blanket `git add .` or `git add -A`.
+- Exclude build artifacts, caches, and dependency folders (for example `node_modules/`, `.expo/`, `.expo-test-export/`).
+- Run the relevant test suite before committing; a failing test blocks the commit.
+- Use the Conventional Commit format already used in this repo:
+  `type(scope): short imperative summary` — for example `feat(B1): fridge CRUD + ingredient picker`.
+- Keep the subject line under 72 characters; add a body only when the change needs context.

@@ -1,0 +1,20 @@
+{
+  "packages": [
+    {
+      "id": "premium-monthly",
+      "name": "Gói Cá Nhân",
+      "price": 79000,
+      "currency": "VND",
+      "period": "monthly",
+      "features": ["AI không giới hạn", "Lập thực đơn tuần", "Scan ảnh"]
+    },
+    {
+      "id": "family-monthly",
+      "name": "Gói Gia Đình",
+      "price": 149000,
+      "currency": "VND",
+      "period": "monthly",
+      "features": ["Tất cả tính năng Individual", "Tối đa 5 thành viên"]
+    }
+  ]
+}

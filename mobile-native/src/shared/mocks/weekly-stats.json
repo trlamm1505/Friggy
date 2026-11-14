@@ -1,0 +1,14 @@
+{
+  "week": ["T2", "T3", "T4", "T5", "T6", "T7", "CN"],
+  "data": [
+    { "day": "T2", "count": 3 },
+    { "day": "T3", "count": 5 },
+    { "day": "T4", "count": 2 },
+    { "day": "T5", "count": 7 },
+    { "day": "T6", "count": 4 },
+    { "day": "T7", "count": 6 },
+    { "day": "CN", "count": 8 }
+  ],
+  "total": 35,
+  "previousWeek": 28
+}

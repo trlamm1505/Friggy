@@ -1,0 +1,503 @@
+/**
+ * CookingSuggestionsSection
+ *
+ * Redesign (flat card, không gradient/shadow — đồng bộ GreetingBanner +
+ * PremiumBanner + WeeklyStatisticsSection):
+ * - Bọc ngoài là 1 card lớn có header "Các bữa ăn trong ngày hôm nay"
+ * - Bên trong: danh sách dọc, mỗi món 1 card ngang
+ *   • Hàng 1: tag bữa (sáng/trưa/tối) + trạng thái liên quan đến nấu
+ *   • Hàng 2: tên món (lớn) + chú thích nhỏ (số người, thời gian nấu)
+ *   • Hàng 3: 2 button "Xem công thức" + "Đổi món bằng AI"
+ * - Ảnh để trống (null) — layout đã sẵn sàng, chờ thay ảnh
+ *
+ * ⚠️ B3 — NGUỒN DỮ LIỆU ĐÃ ĐỔI:
+ * Trước đây map bữa ăn theo INDEX của mảng (`MEAL_SLOTS[i]`). Điều này SAI
+ * khi nối BE thật: BE trả slot theo `dayOfWeek`, thứ tự KHÔNG đảm bảo là
+ * bữa nào (plan chỉ có lunch + dinner thì index 0 là trưa chứ không phải sáng).
+ * Giờ đọc `recipe.mealType` trực tiếp từ response.
+ *
+ * Nguồn dữ liệu cũng đổi: KHÔNG dùng `GET /recipes/suggestions` (gợi ý theo
+ * tủ lạnh) mà dùng MEAL-PLANNING SLOTS hôm nay — xem
+ * `RealRecipeService.getSuggestions()`.
+ */
+
+import React, { useState, useRef, useCallback, useEffect } from 'react';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
+import { useTheme } from '../../theme/ThemeContext';
+import { AppColors } from '../../theme/colors';
+import { sp } from '../../utils/responsive';
+import { FontFamily, FontWeights } from '../../theme/typography';
+import { Users, Clock, Sparkles, ChevronRight, ChefHat } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
+import { useServices } from '../../../data/ServiceProvider';
+import { showSuccess, showError, showInfo } from '../../utils/helpers';
+import { useRecipeSuggestions } from '../../hooks/useServiceHooks';
+import { Skeleton } from '../common/Skeleton';
+import { EmptyState } from '../common/EmptyState';
+import { ErrorState } from '../common/ErrorState';
+
+/**
+ * Map `mealType` của BE -> nhãn i18n + màu nhấn.
+ * ⚠️ KHÔNG lấy nhãn theo index — phải theo `mealType` (xét giải thích đầu file).
+ */
+const MEAL_TYPE_BY_KEY = {
+  breakfast: { labelKey: 'home.mealBreakfast', accent: AppColors.accentOrange },
+  lunch: { labelKey: 'home.mealLunch', accent: AppColors.primary },
+  dinner: { labelKey: 'home.mealDinner', accent: AppColors.forestAccent },
+  snack: { labelKey: 'home.mealSnack', accent: AppColors.textSecondary },
+  dessert: { labelKey: 'home.mealSnack', accent: AppColors.textSecondary },
+  drink: { labelKey: 'home.mealSnack', accent: AppColors.textSecondary },
+};
+
+export const CookingSuggestionsSection = ({
+  onRecipeTap,
+  onSwapTap,
+  onCookTap,
+  onUncookTap,
+  refreshKey,
+  onCooked,
+}) => {
+  const { isDark } = useTheme();
+  const { t } = useTranslation();
+  const services = useServices();
+  const { data: suggestions, loading, error, refetch } = useRecipeSuggestions();
+
+  // Set các slot đang trong lúc gọi API -> disable nút trong khi chờ.
+  const [cookingSlotIds, setCookingSlotIds] = useState([]);
+
+  /**
+   * "Bắt đầu nấu" — đánh dấu đã nấu + trừ nguyên liệu khỏi tủ lạnh.
+   *
+   * ⚠️ BUG ĐÃ SỬA: trước đây chip trạng thái là TEXT TĨNH ("Chưa nấu"),
+   *    không có nút -> user không thể đánh dấu đã nấu từ Home, thống kê
+   *    "Bữa đã nấu" không bao giờ tăng.
+   *
+   * GIỜ: `PATCH /meal-planning/slots/{slotId}` với `{ completed: true }`
+   *   -> BE set `completedAt` + trừ nguyên liệu FIFO trong tủ lạnh
+   *      (idempotent) + trả `consumedIngredients` và `missingIngredients`.
+   *   -> refetch lại danh sách để chip chuyển sang "Đã nấu".
+   *
+   * ⚠️ KHÔNG gửi `servings` ở màn này: user KHÔNG chỉnh được khẩu phần
+   *    ở Home -> BE dùng `slot.servings` (giá trị đúng của kế hoạch).
+   *    (Màn chi tiết công thức CÓ Stepper -> gửi `servings` đã chọn.)
+   *
+   * ⚠️ Phải gọi `refetch` của CHÍNH hook trong component này — `refetch` ở
+   *    HomeScreen là instance khác nên không update được state ở đây.
+   */
+  const handleCook = useCallback(
+    async (slot) => {
+      const slotId = slot?.id;
+      if (!slotId) return;
+      if (cookingSlotIds.includes(slotId)) return;
+
+      setCookingSlotIds((prev) => [...prev, slotId]);
+
+      try {
+        const result = await services.recipeService.updateSlot(slotId, { completed: true });
+        const consumed = result?.consumedIngredients ?? [];
+        const missing = result?.missingIngredients ?? [];
+
+        if (consumed.length === 0 && missing.length === 0) {
+          showSuccess(t('home.startCookingNoIngredient'));
+        } else if (missing.length === 0) {
+          showSuccess(t('home.startCookingDone', { count: consumed.length }));
+        } else {
+          const names = missing
+            .slice(0, 3)
+            .map((m) => `${m.name} (${m.quantity}${m.unit})`)
+            .join(', ');
+          const more = missing.length > 3 ? ` và ${missing.length - 3} món khác` : '';
+          showInfo(
+            t('home.startCookingPartial', {
+              count: consumed.length,
+              missing: `${names}${more}`,
+            })
+          );
+        }
+
+        // Cập nhật chip "Đã nấu" ngay trên Home.
+        await refetch();
+
+        // Báo cho Home biết đã nấu xong -> Home refetch thống kê + tủ lạnh
+        // (những component con có state hook RIÊNG nên không tự update được).
+        if (onCooked) onCooked();
+      } catch (e) {
+        showError(e?.message ?? t('home.startCookingFailed'));
+      } finally {
+        setCookingSlotIds((prev) => prev.filter((id) => id !== slotId));
+      }
+    },
+    [cookingSlotIds, services, t, refetch, onCooked]
+  );
+
+  // Cho phép Home override hành xử (ví dụ: giữ logic riêng của app).
+  const handleCookTap = onCookTap ?? handleCook;
+
+  // Tự refresh danh sách bữa khi quay lại Home (sau khi tick "Bắt đầu nấu"
+  // ở màn chi tiết công thức) -> chip "Đã nấu" cập nhật ngay.
+  const isFirstFocus = useRef(true);
+  useFocusEffect(
+    useCallback(() => {
+      if (isFirstFocus.current) {
+        isFirstFocus.current = false;
+        return undefined;
+      }
+      refetch();
+      return undefined;
+    }, [refetch])
+  );
+
+  // Tín hiệu pull-to-refresh từ Home -> refetch lại danh sách bữa hôm nay.
+  useEffect(() => {
+    if (refreshKey === undefined || refreshKey === 0) return;
+    refetch();
+  }, [refreshKey, refetch]);
+
+  const surfaceColor = isDark ? '#19271E' : '#FFFFFF';
+  const borderColor = isDark ? '#2E4D36' : '#A5E69C';
+  const textPrimary = isDark ? '#FFFFFF' : AppColors.textPrimary;
+
+  const header = (
+    <View style={styles.headerRow}>
+      <View
+        style={[styles.headerIcon, { backgroundColor: isDark ? '#233629' : AppColors.accentGreen }]}
+      >
+        <Sparkles color={isDark ? AppColors.primaryLight : AppColors.forestAccent} size={16} />
+      </View>
+      <Text style={[styles.title, { color: textPrimary }]} numberOfLines={1}>
+        {t('home.mealsToday')}
+      </Text>
+    </View>
+  );
+
+  // Loading state
+  if (loading) {
+    return (
+      <View style={styles.wrap}>
+        <View style={[styles.surface, { backgroundColor: surfaceColor, borderColor }]}>
+          {header}
+          {[0, 1, 2].map((i) => (
+            <View
+              key={i}
+              style={[
+                styles.mealCard,
+                { backgroundColor: surfaceColor, borderColor, marginTop: sp(10) },
+              ]}
+            >
+              <Skeleton width={sp(70)} height={sp(18)} borderRadius={sp(9)} />
+              <View style={styles.mealMainRow}>
+                <Skeleton width={sp(64)} height={sp(64)} borderRadius={sp(12)} />
+                <View style={styles.mealInfo}>
+                  <Skeleton width="85%" height={sp(14)} />
+                  <Skeleton width="60%" height={sp(10)} style={{ marginTop: sp(6) }} />
+                </View>
+              </View>
+              <View style={styles.mealBtnRow}>
+                <Skeleton width="48%" height={sp(34)} borderRadius={sp(17)} />
+                <Skeleton width="48%" height={sp(34)} borderRadius={sp(17)} />
+              </View>
+            </View>
+          ))}
+        </View>
+      </View>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <View style={styles.wrap}>
+        <View style={[styles.surface, { backgroundColor: surfaceColor, borderColor }]}>
+          {header}
+          <ErrorState onRetry={refetch} />
+        </View>
+      </View>
+    );
+  }
+
+  // Empty state
+  if (!suggestions || suggestions.length === 0) {
+    return (
+      <View style={styles.wrap}>
+        <View style={[styles.surface, { backgroundColor: surfaceColor, borderColor }]}>
+          {header}
+          <EmptyState emoji="🍳" title={t('home.noData')} hint={t('home.tipMoreRecipes')} />
+        </View>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.wrap}>
+      <View style={[styles.surface, { backgroundColor: surfaceColor, borderColor }]}>
+        {header}
+
+        {suggestions.map((recipe, i) => (
+          <MealCard
+            key={recipe.id}
+            isDark={isDark}
+            t={t}
+            recipe={recipe}
+            index={i}
+            slot={MEAL_TYPE_BY_KEY[recipe.mealType]}
+            onRecipeTap={onRecipeTap}
+            onSwapTap={onSwapTap}
+            onCookTap={handleCookTap}
+            onUncookTap={onUncookTap}
+            busy={cookingSlotIds.includes(recipe.id)}
+          />
+        ))}
+      </View>
+    </View>
+  );
+};
+
+const MealCard = ({
+  isDark,
+  t,
+  recipe,
+  slot,
+  index,
+  onRecipeTap,
+  onSwapTap,
+  onCookTap,
+  onUncookTap,
+  busy,
+}) => {
+  const accent = slot?.accent || AppColors.primary;
+  const borderColor = isDark ? '#2E4D36' : '#A5E69C';
+  const surfaceColor = isDark ? '#19271E' : '#FFFFFF';
+  const textPrimary = isDark ? '#FFFFFF' : AppColors.textPrimary;
+  const textSecondary = isDark ? AppColors.darkTextSecondary : AppColors.textSecondary;
+  const tint = isDark ? '#233629' : AppColors.accentGreen;
+  const fg = isDark ? AppColors.primaryLight : AppColors.primaryLight;
+
+  return (
+    <View style={[styles.mealCard, { backgroundColor: surfaceColor, borderColor }]}>
+      {/* Hàng 1: tag bữa + trạng thái nấu */}
+      <View style={styles.mealTopRow}>
+        <View style={[styles.mealTag, { backgroundColor: tint, borderColor: accent }]}>
+          <Text style={[styles.mealTagText, { color: fg }]}>
+            {slot ? t(slot.labelKey) : t('meal.mealType')}
+          </Text>
+        </View>
+        {recipe.cooked ? (
+          <View style={[styles.statusChip, { backgroundColor: isDark ? '#1E3A25' : '#E8F5E9' }]}>
+            <Text style={[styles.statusText, { color: AppColors.primary }]}>
+              {t('home.alreadyCooked')}
+            </Text>
+          </View>
+        ) : (
+          <Pressable
+            onPress={() => onCookTap && onCookTap(recipe)}
+            disabled={!onCookTap || busy}
+            hitSlop={8}
+            style={({ pressed }) => [
+              styles.cookBtn,
+              {
+                backgroundColor: isDark ? '#233629' : '#E8F5E9',
+                borderColor: accent,
+                opacity: pressed || busy ? 0.7 : 1,
+              },
+            ]}
+            testID={`home-meal-cook-${recipe.id}`}
+            accessibilityLabel={t('home.cookFromHome')}
+          >
+            <ChefHat color={fg} size={13} strokeWidth={2.5} />
+            <Text style={[styles.cookBtnText, { color: fg }]}>{t('home.cookFromHome')}</Text>
+          </Pressable>
+        )}
+      </View>
+
+      <View style={styles.mealMainRow}>
+        <View style={styles.mealInfo}>
+          <Text style={[styles.mealName, { color: textPrimary }]} numberOfLines={2}>
+            {recipe.name}
+          </Text>
+          <View style={styles.mealMetaRow}>
+            <Users color={textSecondary} size={12} />
+            <Text style={[styles.mealMetaText, { color: textSecondary }]}>
+              {recipe.servings || 2} {t('home.people')}
+            </Text>
+            <Clock color={textSecondary} size={12} style={styles.mealMetaIcon} />
+            <Text style={[styles.mealMetaText, { color: textSecondary }]}>
+              {recipe.cookTime} {t('home.minutes')}
+            </Text>
+          </View>
+        </View>
+      </View>
+
+      <View style={styles.mealBtnRow}>
+        <Pressable
+          onPress={() => onRecipeTap && onRecipeTap(recipe, index)}
+          style={({ pressed }) => [
+            styles.mealBtn,
+            styles.mealBtnGhost,
+            { borderColor, opacity: pressed ? 0.7 : 1 },
+          ]}
+        >
+          <Text style={[styles.mealBtnGhostText, { color: fg }]} numberOfLines={1}>
+            {t('home.viewRecipe')}
+          </Text>
+          <ChevronRight color={isDark ? '#ffff' : '#4CAF50'} size={14} strokeWidth={2.5} />
+        </Pressable>
+
+        <Pressable
+          onPress={() => onSwapTap && onSwapTap(recipe, index)}
+          style={({ pressed }) => [
+            styles.mealBtn,
+            {
+              backgroundColor: isDark ? AppColors.primaryLight : AppColors.primary,
+              opacity: pressed ? 0.8 : 1,
+            },
+          ]}
+        >
+          <Sparkles color={fg} size={13} strokeWidth={2.5} />
+          <Text style={[styles.mealBtnText, { color: isDark ? '#0E1611' : '#FFFFFF' }]}>
+            {t('home.swapWithAI')}
+          </Text>
+        </Pressable>
+      </View>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  wrap: {
+    marginTop: sp(20),
+    marginHorizontal: sp(20),
+  },
+  // Card lớn bọc ngoài: nền + viền tĩnh, KHÔNG shadow.
+  surface: {
+    borderRadius: sp(20),
+    borderWidth: sp(1.5),
+    padding: sp(14),
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: sp(12),
+  },
+  headerIcon: {
+    width: sp(30),
+    height: sp(30),
+    borderRadius: sp(10),
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: sp(8),
+  },
+  title: {
+    flex: 1,
+    fontFamily: FontFamily.bold,
+    fontWeight: FontWeights.bold,
+    fontSize: sp(15),
+  },
+  mealCard: {
+    borderRadius: sp(16),
+    borderWidth: 1,
+    padding: sp(12),
+    marginTop: sp(10),
+  },
+  // Hàng 1: tag bữa + trạng thái nấu
+  mealTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: sp(10),
+  },
+  mealTag: {
+    paddingHorizontal: sp(8),
+    paddingVertical: sp(3),
+    borderRadius: sp(9),
+    borderWidth: 1,
+  },
+  mealTagText: {
+    fontSize: sp(10),
+    fontFamily: FontFamily.bold,
+    fontWeight: FontWeights.bold,
+  },
+  statusChip: {
+    paddingHorizontal: sp(8),
+    paddingVertical: sp(3),
+    borderRadius: sp(9),
+  },
+  statusText: {
+    fontSize: sp(10),
+    fontFamily: FontFamily.bold,
+    fontWeight: FontWeights.bold,
+  },
+  // Nút "Bắt đầu nấu" (thay chip "Chưa nấu") — gọi API tick slot.
+  cookBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: sp(4),
+    paddingHorizontal: sp(8),
+    paddingVertical: sp(3),
+    borderRadius: sp(9),
+    borderWidth: 1,
+  },
+  cookBtnText: {
+    fontSize: sp(10),
+    fontFamily: FontFamily.bold,
+    fontWeight: FontWeights.bold,
+  },
+  // Hàng 2: ảnh + thông tin
+  mealMainRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  mealInfo: {
+    flex: 1,
+    marginLeft: sp(12),
+  },
+  mealName: {
+    fontFamily: FontFamily.bold,
+    fontWeight: FontWeights.bold,
+    fontSize: sp(15),
+    lineHeight: sp(20),
+  },
+  mealMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: sp(5),
+  },
+  mealMetaIcon: {
+    marginLeft: sp(10),
+  },
+  mealMetaText: {
+    fontSize: sp(11),
+    fontFamily: FontFamily.medium,
+    fontWeight: FontWeights.medium,
+    marginLeft: sp(4),
+  },
+  // Hàng 3: 2 button
+  mealBtnRow: {
+    flexDirection: 'row',
+    gap: sp(8),
+    marginTop: sp(12),
+  },
+  mealBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: sp(4),
+    height: sp(34),
+    borderRadius: sp(17),
+  },
+  mealBtnPrimary: {},
+  mealBtnGhost: {
+    borderWidth: 1,
+  },
+  mealBtnText: {
+    fontSize: sp(12),
+    fontFamily: FontFamily.semibold,
+    fontWeight: FontWeights.semibold,
+  },
+  mealBtnGhostText: {
+    fontSize: sp(12),
+    fontFamily: FontFamily.semibold,
+    fontWeight: FontWeights.semibold,
+  },
+});

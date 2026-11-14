@@ -160,11 +160,38 @@ export class SocketService
     familyGroupId: string,
     slotId: string,
     recipeTitle: string,
-    consumedIngredients: Array<{ name: string; quantity: number; unit: string }>,
+    consumedIngredients: Array<{
+      // Giữ 3 field cũ -> backward compatible với client đang chạy.
+      name: string;
+      quantity: number;
+      unit: string;
+      // Field mới (optional) -> client cũ bỏ qua, client mới dùng được.
+      ingredientId?: number;
+      requiredQuantity?: number;
+      requiredUnit?: string;
+      deductedQuantity?: number;
+      deductedUnit?: string;
+      shortage?: number;
+      isOptional?: boolean;
+    }>,
     completedByName: string,
+    missingIngredients?: Array<{
+      ingredientId: number;
+      name: string;
+      quantity: number;
+      unit: string;
+      requiredQuantity?: number;
+      requiredUnit?: string;
+      isOptional?: boolean;
+    }>,
   ) {
     this.emitToFamily(familyGroupId, 'meal:slot_completed', {
-      slotId, recipeTitle, consumedIngredients, completedByName, ts: Date.now(),
+      slotId,
+      recipeTitle,
+      consumedIngredients,
+      missingIngredients: missingIngredients ?? [],
+      completedByName,
+      ts: Date.now(),
     });
   }
 

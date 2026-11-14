@@ -91,12 +91,13 @@ export class MealPlanTools {
     familyGroupId?: string | null;
     weekStartDate: string;
     totalBudget?: number;
-    slots: Array<{
-      dayOfWeek: number; // 1 = Thứ 2, 2 = Thứ 3, ..., 7 = Chủ nhật
-      mealType: string;  // breakfast | lunch | dinner | snack
-      recipeId: string;
-      servings?: number;
-    }>;
+      slots: Array<{
+        dayOfWeek: number; // 1 = Thứ 2, 2 = Thứ 3, ..., 7 = Chủ nhật
+        mealType: string;  // breakfast | lunch | dinner | snack
+        recipeId: string;
+        servings?: number;
+        estimatedCost?: number;
+      }>;
   }): Promise<{ weeklyPlanId: string }> {
     const weekStart = new Date(params.weekStartDate);
 
@@ -162,6 +163,10 @@ export class MealPlanTools {
           dailyPlanId: dailyPlan!.id,
           mealType: slot.mealType as any,
           recipeId: slot.recipeId,
+          // ⚠️ PHẢI lưu `servings` — bảng `meal_slots` mặc định là 1, bỏ trống
+          //    thì mọi bữa hiện "1 người" dù AI đã tính theo số thành viên.
+          servings: slot.servings ?? 1,
+          estimatedCost: slot.estimatedCost ?? null,
           // completedAt: null — chưa nấu (trường dùng thay cho isCooked)
         })),
       });

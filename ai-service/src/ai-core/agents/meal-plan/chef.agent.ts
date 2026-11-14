@@ -309,6 +309,9 @@ Khi recipeId=null (tự nghĩ): BẮT BUỘC điền ingredients và steps đầ
             mealType: s.mealType,
             recipeId: s.recipeId as string,
             servings: s.servings ?? householdSize,
+            // ⚠️ Phải truyền `estimatedCost` — tool lưu xuống `meal_slots.estimatedCost`
+            //    để BE tính tổng chi phí thực tế của kế hoạch.
+            estimatedCost: s.estimatedCost ?? undefined,
           })),
       });
       weeklyPlanId = saveResult.weeklyPlanId;

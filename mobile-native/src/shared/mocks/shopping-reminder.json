@@ -1,0 +1,45 @@
+{
+  "items": [
+    {
+      "id": "1",
+      "name": "Sữa tươi",
+      "quantity": 2,
+      "unit": "hộp",
+      "done": false,
+      "supplierSuggestions": [
+        {
+          "supplierIngredientId": "mock-si-1",
+          "name": "Sữa tươi nguyên",
+          "companyName": "Công ty Sữa Việt",
+          "price": 32000,
+          "image": null
+        },
+        {
+          "supplierIngredientId": "mock-si-2",
+          "name": "Sữa tươi hộp 1L",
+          "companyName": "Trang Food",
+          "price": 29500,
+          "image": null
+        }
+      ]
+    },
+    {
+      "id": "2",
+      "name": "Trứng gà",
+      "quantity": 1,
+      "unit": "vỉ",
+      "done": false,
+      "supplierSuggestions": [
+        {
+          "supplierIngredientId": "mock-si-3",
+          "name": "Trứng gà ta 30 quả",
+          "companyName": "Nông Trại Đồng Xanh",
+          "price": 54000,
+          "image": null
+        }
+      ]
+    },
+    { "id": "3", "name": "Cà chua", "quantity": 1, "unit": "kg", "done": true, "supplierSuggestions": [] },
+    { "id": "4", "name": "Hành tây", "quantity": 3, "unit": "củ", "done": false, "supplierSuggestions": [] }
+  ]
+}

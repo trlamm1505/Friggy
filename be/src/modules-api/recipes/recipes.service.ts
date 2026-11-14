@@ -99,17 +99,34 @@ export class RecipesService {
     });
 
     // Tính matchScore và sắp xếp
-    const scored = recipes.map((r) => {
-      const total = r.ingredients.length;
-      if (total === 0) return { recipe: r, score: 0 };
-      const matched = r.ingredients.filter((i) =>
-        fridgeIngredientIds.has(i.ingredientId),
-      ).length;
-      return { recipe: r, score: Math.round((matched / total) * 100) };
-    });
+    //
+    // ⚠️ `matchScore` = % nguyên liệu của món ĐANG CÓ trong tủ lạnh.
+    //   Món không có nguyên liệu nào (`total === 0`) -> không thể đề xuất
+    //   (dữ liệu seed thiếu) -> loại khỏi danh sách thay vì trả về 0%.
+    // ⚠️ Món có nguyên liệu nhưng KHÔNG có nguyên liệu nào trong tủ -> 0%
+    //   -> cũng loại, vì user không thể nấu được món đó (không liên quan).
+    const scored = recipes
+      .map((r) => {
+        const total = r.ingredients.length;
+        if (total === 0) return { recipe: r, score: 0, matched: 0, missing: 0 };
+        const matched = r.ingredients.filter((i) =>
+          fridgeIngredientIds.has(i.ingredientId),
+        ).length;
+        return {
+          recipe: r,
+          score: Math.round((matched / total) * 100),
+          matched,
+          missing: total - matched,
+        };
+      })
+      // Bỏ món không có nguyên liệu, và món không khớp nguyên liệu nào.
+      .filter((s) => s.score > 0);
 
-    scored.sort((a, b) => b.score - a.score);
+    // Ưu tiên món "gần đủ" tủ lạnh: cùng điểm -> món thiếu ítu hơn đứng trước.
+    scored.sort((a, b) => b.score - a.score || a.missing - b.missing);
 
+    // Nếu tủ lạnh rỗng / không khớp món nào -> trả về danh sách rỗng kèm
+    // thông báo. Trả về món 0% khiến user tưởng app bị lỗi.
     return scored.slice(0, 20).map(({ recipe, score }) => ({
       ...this.mapSummary(recipe),
       matchScore: score,

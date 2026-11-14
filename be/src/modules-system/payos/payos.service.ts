@@ -9,7 +9,11 @@
  * Biến môi trường cần thiết:
  *   PAYOS_CLIENT_ID, PAYOS_API_KEY, PAYOS_CHECKSUM_KEY
  */
-import { Injectable, Logger, InternalServerErrorException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { PayOS } from '@payos/node';
 import type {
   CreatePaymentLinkRequest,
@@ -21,6 +25,37 @@ import { InvalidSignatureError } from '@payos/node';
 
 // Placeholder URL — PayOS bắt buộc truyền nhưng app mobile không cần redirect
 const PAYOS_PLACEHOLDER_URL = 'https://friggy.vn/payment/result';
+
+/**
+ * PayOS giới hạn `description` tối đa 25 ký tự.
+ */
+const PAYOS_MAX_DESCRIPTION_LENGTH = 25;
+
+/**
+ * Rút gọn chuỗi nội dung chuyển khoản về đúng giới hạn của PayOS.
+ *
+ * ⚠️ KHÔNG cắt cụt (`slice(0, 25)`) vì sẽ tạo chuỗi khác với chuỗi RN
+ * hiển thị cho user:
+ *   - "Gia hạn Friggy Gói Gia Đình" (29 ký tự) -> cắt cụt thành
+ *     "Gia hạn Friggy Gói Gia Đ" -> user nhập sai so với nội dung RN gửi.
+ *   - Cắt ở RANH GIỚI TỪ -> "Gia hạn Friggy Gói Gia" (24 ký tự).
+ *
+ * RN dựng lại chuỗi bằng `buildTransferDescription(...)` và cũng phải áp
+ * dụng CÙNG quy tắc này -> hai bên luôn khớp.
+ *
+ * @param description - chuỗi nội dung chuyển khoản đầy đủ
+ * @returns {string} chuỗi <= 25 ký tự, cắt ở ranh giới từ
+ */
+export const truncatePayosDescription = (description) => {
+  const text = String(description ?? '').trim();
+  if (text.length <= PAYOS_MAX_DESCRIPTION_LENGTH) return text;
+
+  const cut = text.slice(0, PAYOS_MAX_DESCRIPTION_LENGTH);
+  const lastSpace = cut.lastIndexOf(' ');
+  // Có khoảng trắng -> cắt ở ranh giới từ, bỏ khoảng trắng cuối.
+  // Không có (1 từ dài quá 25 ký tự) -> cắt cụt là phương án duy nhất.
+  return (lastSpace > 0 ? cut.slice(0, lastSpace) : cut).trim();
+};
 
 @Injectable()
 export class PayOsService {
@@ -65,7 +100,7 @@ export class PayOsService {
     const payload: CreatePaymentLinkRequest = {
       orderCode,
       amount,
-      description: description.slice(0, 25), // PayOS giới hạn 25 ký tự
+      description: truncatePayosDescription(description), // PayOS giới hạn 25 ký tự
       items: [
         {
           name: planName.slice(0, 50),
@@ -86,8 +121,12 @@ export class PayOsService {
       );
       return response;
     } catch (err) {
-      this.logger.error(`[PayOS] Lỗi tạo payment link | orderCode=${orderCode}: ${err}`);
-      throw new InternalServerErrorException('Không thể tạo link thanh toán, thử lại sau');
+      this.logger.error(
+        `[PayOS] Lỗi tạo payment link | orderCode=${orderCode}: ${err}`,
+      );
+      throw new InternalServerErrorException(
+        'Không thể tạo link thanh toán, thử lại sau',
+      );
     }
   }
 
@@ -104,7 +143,9 @@ export class PayOsService {
       return await this.payos.paymentRequests.get(orderCode);
     } catch (err) {
       this.logger.error(`[PayOS] Lỗi lấy thông tin đơn ${orderCode}: ${err}`);
-      throw new InternalServerErrorException('Không thể lấy thông tin thanh toán');
+      throw new InternalServerErrorException(
+        'Không thể lấy thông tin thanh toán',
+      );
     }
   }
 
@@ -123,7 +164,9 @@ export class PayOsService {
       return await this.payos.webhooks.verify(body);
     } catch (err) {
       if (err instanceof InvalidSignatureError) {
-        this.logger.warn(`[PayOS] Webhook signature không hợp lệ — có thể bị giả mạo`);
+        this.logger.warn(
+          `[PayOS] Webhook signature không hợp lệ — có thể bị giả mạo`,
+        );
         throw err;
       }
       this.logger.error(`[PayOS] Lỗi verify webhook: ${err}`);

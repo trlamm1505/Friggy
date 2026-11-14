@@ -1,0 +1,9 @@
+{
+  "id": "mock-user-1",
+  "name": "Trần Quốc Lâm",
+  "email": "lam@example.com",
+  "phone": "0901234567",
+  "avatar": null,
+  "isFamilyPlan": false,
+  "joinDate": "2024-01-15"
+}

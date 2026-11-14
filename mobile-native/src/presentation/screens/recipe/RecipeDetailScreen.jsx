@@ -1,0 +1,1174 @@
+/**
+ * RecipeDetailScreen
+ *
+ * Redesigned (Sprint 9):
+ * - Segmented tabs: Nguyên liệu / Cách nấu / Mẹo / Dinh dưỡng
+ * - Servings adjuster (Stepper component)
+ * - Nutrition facts section
+ * - Tips & variants
+ * - Action bar: Favorite + Cook Now + Share
+ */
+
+import React, { useState, useMemo, useCallback } from 'react';
+import { View, Text, StyleSheet, Image, ScrollView, Pressable } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useTheme } from '../../theme/ThemeContext';
+import { AppColors } from '../../theme/colors';
+import { sp } from '../../utils/responsive';
+import { FontFamily, FontWeights } from '../../theme/typography';
+import { useTranslation } from 'react-i18next';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import {
+  ChevronLeft,
+  Clock,
+  Users,
+  ChefHat,
+  Heart,
+  Share2,
+  Star,
+  Flame,
+  Beef,
+  Wheat,
+  Droplet,
+} from 'lucide-react-native';
+import { CustomButton } from '../../components/common/CustomButton';
+import { SegmentedControl } from '../../components/common/SegmentedControl';
+import { Stepper } from '../../components/common/Stepper';
+import { ListSection } from '../../components/common/ListSection';
+import { ErrorState } from '../../components/common/ErrorState';
+import { Skeleton } from '../../components/common/Skeleton';
+import { useRecipeById, useFridgeItems } from '../../hooks/useServiceHooks';
+import { useCookSlot } from '../../hooks/useCookSlot';
+import { useServices } from '../../../data/ServiceProvider';
+import { Routes } from '../../../shared/constants/routes';
+import { showSuccess, showError } from '../../utils/helpers';
+
+const FALLBACK_RECIPE = {
+  id: 'r1',
+  name: 'Trứng xào cà chua',
+  image: 'recipe_tomato_egg',
+  cookTime: 15,
+  difficulty: 'easy',
+  servings: 2,
+  rating: 4.7,
+  reviews: 128,
+  ingredients: [
+    { name: 'Cà chua', amount: 2, unit: 'quả' },
+    { name: 'Trứng gà', amount: 3, unit: 'quả' },
+    { name: 'Hành lá', amount: 2, unit: 'cọng' },
+    { name: 'Gia vị', amount: 1, unit: 'thìa' },
+  ],
+  steps: [
+    'Rửa sạch cà chua, cắt múi.',
+    'Đánh trứng với chút muối.',
+    'Phi thơm hành, xào trứng chín tới.',
+    'Cho cà chua vào xào chung, nêm nếm vừa ăn.',
+  ],
+  nutrition: {
+    calories: 220,
+    protein: 14,
+    carbs: 12,
+    fat: 13,
+  },
+  tips: [
+    'Chọn cà chua chín đỏ sẽ ngọt hơn.',
+    'Không xào trứng quá lâu, trứng sẽ bị khô.',
+    'Có thể thêm chút đường để cà chua bớt chua.',
+  ],
+  variants: [
+    { name: 'Trứng bác cà chua', description: 'Phiên bản miền Bắc, có nước dùng' },
+    { name: 'Cà chua nhồi thịt', description: 'Cà chua nhồi thịt băm hấp' },
+  ],
+};
+
+const TABS = [
+  { key: 'ingredients', label: 'Nguyên liệu' },
+  { key: 'steps', label: 'Cách nấu' },
+  { key: 'nutrition', label: 'Dinh dưỡng' },
+  { key: 'tips', label: 'Mẹo' },
+];
+
+export const RecipeDetailScreen = () => {
+  const { isDark } = useTheme();
+  const { t } = useTranslation();
+  const navigation = useNavigation();
+  const route = useRoute();
+  const services = useServices();
+
+  const routeRecipe = route.params?.recipe;
+  // ⚠️ B4: màn "Thực đơn tuần tới" chỉ có `recipeId` của slot -> hỗ trợ cả 2
+  // dạng route param: `{ recipeId }` hoặc `{ recipe: {...} }`.
+  const recipeId =
+    route.params?.recipeId ?? routeRecipe?.recipeId ?? routeRecipe?.id;
+
+  const { data: fetchedRecipe, loading, error, refetch } = useRecipeById(recipeId);
+  const { data: fridgeItems } = useFridgeItems();
+
+  const [activeTab, setActiveTab] = useState('ingredients');
+  const [expandedStep, setExpandedStep] = useState(null);
+  const [isBookmarked, setIsBookmarked] = useState(false);
+  const [bookmarkBusy, setBookmarkBusy] = useState(false);
+  const [servings, setServings] = useState(2);
+
+  // Mock suggestions chỉ có id/name/cookTime/matchPercent, KHÔNG có
+  // ingredients/steps. Khi bấm "Xem công thức" từ Home, route params truyền
+  // nguyên suggestion đó — ta phải dùng id để fetch full recipe từ service.
+  // Ưu tiên: fetchedRecipe (đầy đủ) > routeRecipe (chỉ khi có ingredients) > FALLBACK.
+  const recipe =
+    fetchedRecipe || (routeRecipe?.ingredients ? routeRecipe : null) || FALLBACK_RECIPE;
+
+  // servings là "derived state" từ recipe.servings, nhưng người dùng có thể
+  // chỉnh bằng Stepper -> cần giữ state cục bộ.
+  // Theo pattern "adjust state during render" của React: khi recipe.servings
+  // đổi (đổi món / fetch xong) thì đồng bộ lại giá trị đang hiển thị.
+  // Trước đây dùng useEffect -> setState trong effect (react-hooks/set-state-in-effect).
+  const [syncedServings, setSyncedServings] = useState(recipe?.servings);
+  if (recipe?.servings && recipe.servings !== syncedServings) {
+    setSyncedServings(recipe.servings);
+    setServings(recipe.servings);
+  }
+
+  /**
+   * ⚠️ B3: khi BE đã trả `inFridge` cho từng nguyên liệu -> DÙNG LUÔN giá trị
+   * của BE (BE đối chiếu theo `ingredientId`, chính xác hơn so tên chuỗi).
+   * Chỉ fallback sang cách so tên khi chạy mock (mock không có `inFridge`).
+   */
+  const hasBeFridgeFlag = useMemo(
+    () =>
+      Array.isArray(recipe?.ingredients) &&
+      recipe.ingredients.some((ing) => typeof ing?.inFridge === 'boolean'),
+    [recipe]
+  );
+
+  // Tính match percent
+  const matchInfo = useMemo(() => {
+    if (!recipe?.ingredients || recipe.ingredients.length === 0) {
+      return {
+        haveCount: 0,
+        needCount: 0,
+        percent: 0,
+        missingItems: [],
+        haveItems: [],
+      };
+    }
+
+    const have = [];
+    const missing = [];
+
+    if (hasBeFridgeFlag) {
+      // BE đã phân tích sẵn theo tủ lạnh thật của user.
+      for (const ing of recipe.ingredients) {
+        if (ing.inFridge) have.push(ing.name);
+        else missing.push(ing.name);
+      }
+    } else {
+      // Mock: tự so tên với danh sách tủ lạnh.
+      const fridgeNames = (fridgeItems || []).map((it) => it.name.toLowerCase());
+      for (const ing of recipe.ingredients) {
+        const name = typeof ing === 'string' ? ing : ing.name;
+        const found = fridgeNames.some(
+          (n) => n.includes(name.toLowerCase()) || name.toLowerCase().includes(n)
+        );
+        if (found) have.push(name);
+        else missing.push(name);
+      }
+    }
+
+    const total = recipe.ingredients.length;
+    const percent = total > 0 ? Math.round((have.length / total) * 100) : 0;
+    return {
+      haveCount: have.length,
+      needCount: missing.length,
+      percent,
+      missingItems: missing,
+      haveItems: have,
+    };
+  }, [recipe, fridgeItems, hasBeFridgeFlag]);
+
+  const isIngredientInFridge = useCallback(
+    (ingredientName) => {
+      // Ưu tiên cờ `inFridge` của BE.
+      if (hasBeFridgeFlag) {
+        const ing = (recipe?.ingredients || []).find((i) => i && i.name === ingredientName);
+        return ing ? !!ing.inFridge : false;
+      }
+      if (!fridgeItems) return false;
+      const lower = ingredientName.toLowerCase();
+      return fridgeItems.some(
+        (it) => it.name.toLowerCase().includes(lower) || lower.includes(it.name.toLowerCase())
+      );
+    },
+    [fridgeItems, hasBeFridgeFlag, recipe]
+  );
+
+  // Scale ingredients theo servings
+  const scaledIngredients = useMemo(() => {
+    if (!recipe?.ingredients) return [];
+    const ratio = servings / (recipe.servings || 1);
+    return recipe.ingredients.map((ing) => {
+      if (typeof ing === 'string') return { name: ing, amount: null, unit: null };
+      return {
+        name: ing.name,
+        amount: ing.amount ? Math.round(ing.amount * ratio * 10) / 10 : null,
+        unit: ing.unit,
+      };
+    });
+  }, [recipe, servings]);
+
+  /**
+   * Bookmark — optimistic update + ROLLBACK nếu API fail.
+   *
+   * ⚠️ B3: trước đây nút tim chỉ đổi state cục bộ (không gọi API) -> đóng app
+   * là mất. Giờ gọi `POST/DELETE /recipes/{id}/bookmark`.
+   * `id` phải là ID CÔNG THỨC, không phải id slot -> dùng `recipe.recipeId ?? recipe.id`.
+   */
+  const toggleBookmark = useCallback(async () => {
+    if (!recipeId || bookmarkBusy) return;
+
+    const targetId = recipe?.recipeId ?? recipeId;
+    const next = !isBookmarked;
+
+    setBookmarkBusy(true);
+    setIsBookmarked(next); // optimistic
+    try {
+      if (next) {
+        await services.recipeService.addBookmark(targetId);
+        showSuccess(t('home.addedToFavorites'));
+      } else {
+        await services.recipeService.removeBookmark(targetId);
+        showSuccess(t('home.removedFromFavorites'));
+      }
+    } catch (e) {
+      setIsBookmarked(!next); // rollback
+      showError(e?.message || t('common.error'));
+    } finally {
+      setBookmarkBusy(false);
+    }
+  }, [recipeId, recipe, isBookmarked, bookmarkBusy, services, t]);
+
+  /**
+   * "Thêm nguyên liệu thiếu vào danh sách mua".
+   *
+   * ⚠️ TRƯỚC ĐÂY hàm này CHỈ hiện toast giả:
+   *    `showSuccess(t('home.addedToShoppingList'))` — không gọi API, không
+   *    điều hướng tới danh sách -> user bấm xong không thấy gì cả.
+   *
+   * GIỜ ĐÃ NỐI BE THẬT:
+   *   1. `POST /meal-planning/slots/{slotId}/missing-to-shopping-list`
+   *      -> BE tính nguyên liệu thiếu (so với tủ lạnh thật) rồi ghi vào giỏ mua.
+   *   2. Điều hướng tới màn Danh sách mua để user thấy & chỉnh sửa ngay.
+   *
+   * Nếu mở từ Home (không có slotId) -> dùng danh sách mặc định và gọi
+   * `addShoppingListItem` cho từng nguyên liệu thiếu tính được ở client.
+   */
+  const [addingToList, setAddingToList] = useState(false);
+
+  const addMissingToShoppingList = useCallback(async () => {
+    if (addingToList) return;
+    setAddingToList(true);
+
+    try {
+      const missing = matchInfo.missingItems ?? [];
+
+      // Ưu tiên đường đi qua slot (BE tính chính xác phần thiếu theo tủ lạnh).
+      // ⚠️ CHỈ dùng `params.slotId` — `params.id` là RECIPE id, PATCH/POST
+      //    theo nó sẽ trả 404 vì endpoint cần MEAL SLOT id.
+      const slotId = route.params?.slotId ?? null;
+
+      let addedCount = 0;
+      if (slotId) {
+        const result = await services.recipeService.addSlotMissingToShoppingList(slotId);
+        addedCount = result?.addedCount ?? 0;
+      } else if (missing.length > 0) {
+        // Không có slot -> thêm từng món vào giỏ mua mặc định.
+        const list = await services.recipeService.getActiveShoppingList();
+        if (!list) throw new Error(t('home.error'));
+
+        const missingIngredients = (recipe.ingredients ?? []).filter((ing) => {
+          const name = typeof ing === 'string' ? ing : ing?.name;
+          return missing.includes(name);
+        });
+
+        for (const ing of missingIngredients) {
+          const ingredientId = ing?.id ?? ing?.ingredientId;
+          if (!ingredientId) continue;
+          await services.recipeService.addShoppingListItem(list.id, {
+            ingredientId,
+            quantity: ing.amount ?? 1,
+            unit: ing.unit ?? undefined,
+          });
+          addedCount += 1;
+        }
+      }
+
+      showSuccess(
+        addedCount > 0
+          ? t('home.addedToShoppingList')
+          : t('home.shoppingNothingMissing')
+      );
+
+      // Điều hướng tới danh sách mua để user thấy kết quả + chỉnh sửa.
+      navigation.navigate(Routes.ShoppingReminder);
+    } catch (e) {
+      showError(e?.message ?? t('home.error'));
+    } finally {
+      setAddingToList(false);
+    }
+  }, [addingToList, matchInfo.missingItems, recipe, route.params, services, navigation, t]);
+
+  /**
+   * "Bắt đầu nấu" — ĐÁNH DẤU ĐÃ NẤU + TRỪ NGUYÊN LIỆU khỏi tủ lạnh.
+   *
+   * ⚠️ BUG ĐÃ SỬA (P0): trước đây nút này CHỈ hiện toast rỗng
+   *    `showSuccess(t('home.startCooking'))` — không gọi API, không trừ gì,
+   *    không đánh dấu -> user bấm xong "không thấy có gì xảy ra cả".
+   *
+   * GIỜ ĐÃ NỐI BE THẬT (qua hook `useCookSlot`):
+   *   1. `PATCH /meal-planning/slots/{slotId}` với `{ completed: true, servings }`
+   *      -> BE set `completedAt` + trừ nguyên liệu FIFO trong tủ lạnh
+   *         (idempotent: chỉ trừ lần đầu) + trả về `consumedIngredients`
+   *         và `missingIngredients`.
+   *   2. Hiện toast cho user biết đã trừ bao nhiêu / còn thiếu gì.
+   *   3. Quay lại màn trước để thấy chip "Đã nấu" + số liệu thống kê.
+   *
+   * ⚠️ PHẢI gửi `servings` (khẩu phần user vừa chỉnh ở Stepper):
+   *    BE scale nguyên liệu theo `servings / recipe.servings`. Nếu không
+   *    gửi, BE dùng `slot.servings` (lúc sinh kế hoạch) -> TRỪ SAI LƯỢNG.
+   *
+   * ⚠️ Cần `slotId` trong route params. Mở từ Home (chỉ có `recipe`) thì
+   *    KHÔNG có slot -> không thể tick -> báo user mở từ "Thực đơn tuần tới".
+   */
+
+  // Slot id của bữa ăn này (nếu mở từ màn thực đơn tuần / từ Home).
+  //
+  // ⚠️ CHỈ dùng `route.params.slotId` — KHÔNG fallback sang `params.id`,
+  //    vì `id` ở màn danh sách công thức là RECIPE id, không phải meal
+  //    slot id -> PATCH sai endpoint sẽ lỗi 404.
+  const slotId = route.params?.slotId ?? null;
+
+  // Trạng thái đã nấu của slot (nếu có).
+  const slotCooked = Boolean(route.params?.cooked ?? routeRecipe?.cooked);
+
+  const handleCooked = useCallback(() => {
+    // Quay lại màn trước để user thấy chip "Đã nấu" đã cập nhật.
+    if (navigation.canGoBack()) navigation.goBack();
+  }, [navigation]);
+
+  const { cook, cooking } = useCookSlot({ onSuccess: handleCooked });
+
+  const startCooking = useCallback(async () => {
+    if (cooking) return;
+
+    if (!slotId) {
+      // Không có slot -> không thể đánh dấu/trừ nguyên liệu.
+      showError(t('home.startCookingNoSlot'));
+      return;
+    }
+
+    // ⚠️ Gửi `servings` -> BE trừ đúng lượng theo khẩu phần user chọn.
+    await cook({ slotId, servings });
+  }, [cooking, slotId, servings, cook, t]);
+
+  const imageMap = {
+    recipe_tomato_egg: require('../../../../assets/images/recipe_tomato_egg.png'),
+    recipe_veggie_soup: require('../../../../assets/images/recipe_veggie_soup.png'),
+  };
+  // Ảnh từ BE là URL TUYỆT ĐỐI (đã qua appConfig.getImageUrl) -> render { uri }.
+  // Ảnh của mock là KEY -> tra asset đóng gói sẵn.
+  const resolveImageSource = (image) => {
+    if (!image || typeof image !== 'string') return null;
+    if (/^https?:\/\//i.test(image)) return { uri: image };
+    return imageMap[image] || null;
+  };
+  const imageSource = resolveImageSource(recipe.image);
+
+  // Loading — chỉ hiện skeleton khi chưa có dữ liệu nào để hiển thị.
+  if (loading && !recipe?.ingredients) {
+    return (
+      <View style={styles.container}>
+        <Skeleton width="100%" height={sp(280)} borderRadius={0} />
+        <View style={{ padding: sp(20) }}>
+          <Skeleton width="80%" height={sp(24)} style={{ marginBottom: sp(12) }} />
+          <Skeleton width="60%" height={sp(16)} style={{ marginBottom: sp(20) }} />
+          <Skeleton width="100%" height={sp(120)} borderRadius={sp(12)} />
+        </View>
+      </View>
+    );
+  }
+
+  if (error && !fetchedRecipe && !routeRecipe?.ingredients) {
+    return (
+      <View style={[styles.container, { backgroundColor: isDark ? '#0E1611' : '#FFFFFF' }]}>
+        <ErrorState onRetry={refetch} style={{ marginTop: sp(80) }} />
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.container}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 120 }}
+      >
+        {/* Hero */}
+        <View style={styles.hero}>
+          {imageSource ? (
+            <Image source={imageSource} style={styles.heroImg} resizeMode="cover" />
+          ) : (
+            <LinearGradient
+              colors={isDark ? ['#19271E', '#1E3A25'] : ['#E8F5E9', '#C7EFC2']}
+              style={[styles.heroImg, { alignItems: 'center', justifyContent: 'center' }]}
+            >
+              <ChefHat color={isDark ? AppColors.primaryLight : AppColors.primary} size={80} />
+            </LinearGradient>
+          )}
+          <LinearGradient colors={['rgba(0,0,0,0.5)', 'transparent']} style={styles.heroOverlay} />
+          <Pressable onPress={() => navigation.goBack()} style={styles.backBtn} hitSlop={8}>
+            <ChevronLeft color="#FFFFFF" size={24} />
+          </Pressable>
+          <Pressable
+            onPress={() => showSuccess('Đã sao chép link')}
+            style={[styles.backBtn, { left: undefined, right: 16 }]}
+            hitSlop={8}
+          >
+            <Share2 color="#FFFFFF" size={20} />
+          </Pressable>
+
+          {matchInfo.percent > 0 ? (
+            <View style={styles.matchBadge}>
+              <Text style={styles.matchText}>{matchInfo.percent}% KHỚP</Text>
+            </View>
+          ) : null}
+        </View>
+
+        <View style={[styles.body, { backgroundColor: isDark ? '#0E1611' : '#FFFFFF' }]}>
+          <Text
+            style={[
+              styles.title,
+              { color: isDark ? '#FFFFFF' : AppColors.textPrimary, fontSize: sp(24) },
+            ]}
+          >
+            {recipe.name}
+          </Text>
+
+          {/* Rating + reviews */}
+          {recipe.rating ? (
+            <View style={styles.ratingRow}>
+              <Star color="#FFB300" size={14} fill="#FFB300" />
+              <Text
+                style={[
+                  styles.ratingText,
+                  { color: isDark ? '#FFFFFF' : AppColors.textPrimary, fontSize: sp(13) },
+                ]}
+              >
+                {recipe.rating}
+              </Text>
+              <Text
+                style={[
+                  styles.reviewText,
+                  {
+                    color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                    fontSize: sp(12),
+                  },
+                ]}
+              >
+                ({recipe.reviews} đánh giá)
+              </Text>
+            </View>
+          ) : null}
+
+          <View style={styles.metaRow}>
+            <View style={[styles.metaItem, { backgroundColor: isDark ? '#19271E' : '#E8F5E9' }]}>
+              <Clock color={isDark ? AppColors.primaryLight : AppColors.forestAccent} size={16} />
+              <Text
+                style={[
+                  styles.metaText,
+                  { color: isDark ? '#FFFFFF' : AppColors.textPrimary, fontSize: sp(13) },
+                ]}
+              >
+                {recipe.cookTime} {t('home.minutes')}
+              </Text>
+            </View>
+            <View style={[styles.metaItem, { backgroundColor: isDark ? '#19271E' : '#E8F5E9' }]}>
+              <Users color={isDark ? AppColors.primaryLight : AppColors.forestAccent} size={16} />
+              <Text
+                style={[
+                  styles.metaText,
+                  { color: isDark ? '#FFFFFF' : AppColors.textPrimary, fontSize: sp(13) },
+                ]}
+              >
+                {servings} {t('home.people')}
+              </Text>
+            </View>
+          </View>
+
+          {/* Match summary */}
+          {fridgeItems && recipe.ingredients ? (
+            <View
+              style={[
+                styles.matchCard,
+                {
+                  backgroundColor:
+                    matchInfo.percent === 100
+                      ? isDark
+                        ? '#1B3324'
+                        : '#E8F5E9'
+                      : isDark
+                        ? '#3D2E1A'
+                        : '#FFF3E0',
+                  borderColor:
+                    matchInfo.percent === 100
+                      ? isDark
+                        ? '#2E4D36'
+                        : '#A5D6A7'
+                      : isDark
+                        ? '#5E4A35'
+                        : '#FFCC80',
+                },
+              ]}
+            >
+              <View style={{ flex: 1 }}>
+                <Text
+                  style={[
+                    styles.matchTitle,
+                    {
+                      color:
+                        matchInfo.percent === 100
+                          ? isDark
+                            ? AppColors.primaryLight
+                            : AppColors.primaryDark
+                          : isDark
+                            ? '#FFB74D'
+                            : '#E65100',
+                    },
+                  ]}
+                >
+                  {matchInfo.percent === 100
+                    ? '✅ Đủ nguyên liệu!'
+                    : `Còn thiếu ${matchInfo.needCount} nguyên liệu`}
+                </Text>
+                <Text
+                  style={[
+                    styles.matchSub,
+                    {
+                      color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                      fontSize: sp(11),
+                    },
+                  ]}
+                >
+                  Có sẵn: {matchInfo.haveCount}/{recipe.ingredients.length}
+                </Text>
+              </View>
+              {matchInfo.needCount > 0 ? (
+                <Pressable
+                  onPress={addMissingToShoppingList}
+                  disabled={addingToList}
+                  style={({ pressed }) => [
+                    styles.addListBtn,
+                    {
+                      backgroundColor: isDark ? '#5E4A35' : '#FFCC80',
+                      opacity: addingToList ? 0.6 : pressed ? 0.7 : 1,
+                    },
+                  ]}
+                  testID="recipe-detail-add-to-list"
+                  accessibilityLabel={t('home.addedToShoppingList')}
+                >
+                  <Text
+                    style={[
+                      styles.addListText,
+                      { color: isDark ? '#FFB74D' : '#E65100', fontSize: sp(11) },
+                    ]}
+                  >
+                    {addingToList ? t('common.loading') : '+ Thêm vào DS'}
+                  </Text>
+                </Pressable>
+              ) : null}
+            </View>
+          ) : null}
+
+          {/* Tabs */}
+          <View style={{ marginTop: sp(24) }}>
+            <SegmentedControl options={TABS} selectedKey={activeTab} onSelect={setActiveTab} />
+          </View>
+
+          {/* Tab content */}
+          {activeTab === 'ingredients' ? (
+            <View style={{ marginTop: sp(20) }}>
+              {/* Servings adjuster */}
+              <View
+                style={[
+                  styles.servingsCard,
+                  {
+                    backgroundColor: isDark ? '#19271E' : '#E8F5E9',
+                    borderColor: isDark ? '#2E4D36' : '#A5E69C',
+                  },
+                ]}
+              >
+                <View>
+                  <Text
+                    style={[
+                      styles.servingsLabel,
+                      {
+                        color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                        fontSize: sp(11),
+                      },
+                    ]}
+                  >
+                    SỐ NGƯỜI ĂN
+                  </Text>
+                  <Text
+                    style={[
+                      styles.servingsValue,
+                      { color: isDark ? '#FFFFFF' : AppColors.textPrimary, fontSize: sp(20) },
+                    ]}
+                  >
+                    {servings} người
+                  </Text>
+                </View>
+                <Stepper value={servings} onChange={setServings} min={1} max={12} />
+              </View>
+
+              <View style={{ marginTop: sp(16) }}>
+                {scaledIngredients.map((ing, i) => {
+                  const have = isIngredientInFridge(ing.name);
+                  return (
+                    <View
+                      key={i}
+                      style={[styles.ingRow, { backgroundColor: isDark ? '#19271E' : '#F4F7F4' }]}
+                    >
+                      <View
+                        style={[
+                          styles.ingCheck,
+                          {
+                            backgroundColor: have ? AppColors.primary : 'transparent',
+                            borderColor: have ? AppColors.primary : isDark ? '#2E4D36' : '#C7D6CB',
+                          },
+                        ]}
+                      >
+                        {have ? <Text style={styles.ingCheckText}>✓</Text> : null}
+                      </View>
+                      <Text
+                        style={[
+                          styles.ingText,
+                          {
+                            color: isDark ? '#FFFFFF' : AppColors.textPrimary,
+                            fontWeight: have ? FontWeights.semibold : FontWeights.regular,
+                          },
+                        ]}
+                      >
+                        {ing.name}
+                      </Text>
+                      {ing.amount ? (
+                        <Text
+                          style={[
+                            styles.ingAmount,
+                            {
+                              color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                              fontSize: sp(12),
+                            },
+                          ]}
+                        >
+                          {ing.amount} {ing.unit}
+                        </Text>
+                      ) : null}
+                      {/* Badge "Có trong tủ" / "Cần mua" — dùng cờ `inFridge` của BE */}
+                      <View
+                        style={[
+                          styles.ingBadge,
+                          {
+                            backgroundColor: have
+                              ? isDark
+                                ? '#1B3324'
+                                : '#E8F5E9'
+                              : isDark
+                                ? '#3D2E1A'
+                                : '#FFF3E0',
+                          },
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.ingBadgeText,
+                            {
+                              color: have ? AppColors.primary : '#E65100',
+                              fontSize: sp(10),
+                            },
+                          ]}
+                        >
+                          {have ? t('home.ingredientsYouHave') : t('home.ingredientsYouNeed')}
+                        </Text>
+                      </View>
+                    </View>
+                  );
+                })}
+              </View>
+            </View>
+          ) : null}
+
+          {activeTab === 'steps' ? (
+            <View style={{ marginTop: sp(20) }}>
+              {recipe.steps.map((step, i) => {
+                const expanded = expandedStep === i || expandedStep === 'all';
+                return (
+                  <Pressable
+                    key={i}
+                    onPress={() => setExpandedStep(expandedStep === i ? null : i)}
+                    style={[styles.stepRow, { backgroundColor: isDark ? '#19271E' : '#F4F7F4' }]}
+                  >
+                    <View style={[styles.stepNum, { backgroundColor: AppColors.primary }]}>
+                      <Text style={styles.stepNumText}>{i + 1}</Text>
+                    </View>
+                    <Text
+                      style={[
+                        styles.stepText,
+                        { color: isDark ? '#FFFFFF' : AppColors.textPrimary, fontSize: sp(14) },
+                      ]}
+                      numberOfLines={expanded ? undefined : 2}
+                    >
+                      {step}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          ) : null}
+
+          {activeTab === 'nutrition' && recipe.nutrition ? (
+            <View style={{ marginTop: sp(20) }}>
+              <View
+                style={[
+                  styles.nutritionHero,
+                  {
+                    backgroundColor: isDark ? '#19271E' : '#E8F5E9',
+                    borderColor: isDark ? '#2E4D36' : '#A5E69C',
+                  },
+                ]}
+              >
+                <Flame color={isDark ? AppColors.primaryLight : AppColors.primary} size={28} />
+                <Text
+                  style={[
+                    styles.nutritionBig,
+                    { color: isDark ? '#FFFFFF' : AppColors.textPrimary, fontSize: sp(36) },
+                  ]}
+                >
+                  {recipe.nutrition.calories}
+                </Text>
+                <Text
+                  style={[
+                    styles.nutritionLabel,
+                    {
+                      color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                      fontSize: sp(12),
+                    },
+                  ]}
+                >
+                  kcal / {servings} người
+                </Text>
+              </View>
+              <View style={styles.nutritionGrid}>
+                <NutritionItem
+                  icon={Beef}
+                  label="Protein"
+                  value={recipe.nutrition.protein}
+                  unit="g"
+                  color="#E57373"
+                  isDark={isDark}
+                />
+                <NutritionItem
+                  icon={Wheat}
+                  label="Carbs"
+                  value={recipe.nutrition.carbs}
+                  unit="g"
+                  color="#FFB300"
+                  isDark={isDark}
+                />
+                <NutritionItem
+                  icon={Droplet}
+                  label="Fat"
+                  value={recipe.nutrition.fat}
+                  unit="g"
+                  color="#9C27B0"
+                  isDark={isDark}
+                />
+              </View>
+            </View>
+          ) : null}
+
+          {activeTab === 'tips' ? (
+            <View style={{ marginTop: sp(20) }}>
+              {recipe.tips?.length > 0 ? (
+                <ListSection title="Mẹo nấu ăn" style={{ marginBottom: sp(16) }}>
+                  {recipe.tips.map((tip, i) => (
+                    <View
+                      key={i}
+                      style={[styles.tipRow, { backgroundColor: isDark ? '#19271E' : '#F4F7F4' }]}
+                    >
+                      <Text style={[styles.tipBullet, { color: AppColors.primary }]}>💡</Text>
+                      <Text
+                        style={[
+                          styles.tipText,
+                          { color: isDark ? '#FFFFFF' : AppColors.textPrimary, fontSize: sp(13) },
+                        ]}
+                      >
+                        {tip}
+                      </Text>
+                    </View>
+                  ))}
+                </ListSection>
+              ) : null}
+
+              {recipe.variants?.length > 0 ? (
+                <ListSection title="Biến thể" style={{}}>
+                  {recipe.variants.map((variant, i) => (
+                    <View
+                      key={i}
+                      style={[
+                        styles.variantRow,
+                        { backgroundColor: isDark ? '#19271E' : '#F4F7F4' },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.variantName,
+                          { color: isDark ? '#FFFFFF' : AppColors.textPrimary, fontSize: sp(14) },
+                        ]}
+                      >
+                        {variant.name}
+                      </Text>
+                      <Text
+                        style={[
+                          styles.variantDesc,
+                          {
+                            color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                            fontSize: sp(12),
+                          },
+                        ]}
+                      >
+                        {variant.description}
+                      </Text>
+                    </View>
+                  ))}
+                </ListSection>
+              ) : null}
+            </View>
+          ) : null}
+        </View>
+      </ScrollView>
+
+      {/* Bottom action bar */}
+      <View
+        style={[
+          styles.bottom,
+          {
+            backgroundColor: isDark ? '#0E1611' : '#FFFFFF',
+            borderTopColor: isDark ? '#2E4D36' : '#E3E8E4',
+          },
+        ]}
+      >
+        <Pressable
+          onPress={toggleBookmark}
+          style={({ pressed }) => [
+            styles.iconBtn,
+            {
+              backgroundColor: isBookmarked ? AppColors.error : isDark ? '#19271E' : '#E8F5E9',
+              opacity: pressed ? 0.7 : 1,
+            },
+          ]}
+          hitSlop={8}
+          testID="recipe-detail-bookmark"
+          accessibilityLabel={t('home.favorite')}
+        >
+          <Heart
+            color={isBookmarked ? '#FFFFFF' : isDark ? AppColors.primaryLight : AppColors.primary}
+            size={20}
+            fill={isBookmarked ? '#FFFFFF' : 'transparent'}
+          />
+        </Pressable>
+        <View style={{ flex: 1, marginLeft: sp(12) }}>
+          <CustomButton
+            title={slotCooked ? t('home.alreadyCooked') : t('home.startCooking')}
+            onPress={startCooking}
+            loading={cooking}
+            disabled={slotCooked}
+          />
+        </View>
+      </View>
+    </View>
+  );
+};
+
+const NutritionItem = ({ icon: Icon, label, value, unit, color, isDark }) => (
+  <View style={[styles.nutritionItem, { backgroundColor: isDark ? '#19271E' : '#F4F7F4' }]}>
+    <View style={[styles.nutritionIcon, { backgroundColor: color + '20' }]}>
+      <Icon color={color} size={18} />
+    </View>
+    <Text
+      style={[
+        styles.nutritionItemLabel,
+        { color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary, fontSize: sp(11) },
+      ]}
+    >
+      {label}
+    </Text>
+    <Text
+      style={[
+        styles.nutritionItemValue,
+        { color: isDark ? '#FFFFFF' : AppColors.textPrimary, fontSize: sp(20) },
+      ]}
+    >
+      {value}
+      {unit}
+    </Text>
+  </View>
+);
+
+const styles = StyleSheet.create({
+  container: { flex: 1 },
+  hero: { width: '100%', height: sp(280), position: 'relative' },
+  heroImg: { width: '100%', height: '100%' },
+  heroOverlay: { position: 'absolute', top: 0, left: 0, right: 0, height: 120 },
+  backBtn: {
+    position: 'absolute',
+    top: 50,
+    left: 16,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  matchBadge: {
+    position: 'absolute',
+    bottom: 16,
+    right: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    backgroundColor: AppColors.primary,
+  },
+  matchText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontFamily: FontFamily.bold,
+    fontWeight: FontWeights.bold,
+    letterSpacing: 0.5,
+  },
+  body: { paddingHorizontal: 20, paddingTop: 20 },
+  title: { fontFamily: FontFamily.black, fontWeight: FontWeights.black },
+  ratingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 6,
+    gap: 4,
+  },
+  ratingText: {
+    fontFamily: FontFamily.bold,
+    fontWeight: FontWeights.bold,
+    marginLeft: 4,
+  },
+  reviewText: {
+    fontFamily: FontFamily.regular,
+    marginLeft: 4,
+  },
+  metaRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginTop: 12,
+    gap: 8,
+  },
+  metaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 14,
+    gap: 6,
+  },
+  metaText: { fontFamily: FontFamily.semibold, fontWeight: FontWeights.semibold },
+  matchCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+    marginTop: 16,
+  },
+  matchTitle: { fontSize: 13, fontFamily: FontFamily.bold, fontWeight: FontWeights.bold },
+  matchSub: { fontFamily: FontFamily.medium, fontWeight: FontWeights.medium, marginTop: 2 },
+  addListBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 10,
+  },
+  addListText: { fontFamily: FontFamily.bold, fontWeight: FontWeights.bold },
+  servingsCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+  },
+  servingsLabel: {
+    fontFamily: FontFamily.bold,
+    fontWeight: FontWeights.bold,
+    letterSpacing: 0.5,
+  },
+  servingsValue: {
+    fontFamily: FontFamily.black,
+    fontWeight: FontWeights.black,
+    marginTop: 2,
+  },
+  ingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 12,
+    marginBottom: 8,
+  },
+  ingCheck: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  ingCheckText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  ingText: {
+    flex: 1,
+    fontFamily: FontFamily.regular,
+    marginLeft: 10,
+  },
+  ingAmount: {
+    fontFamily: FontFamily.semibold,
+    fontWeight: FontWeights.semibold,
+    marginLeft: 8,
+  },
+  ingBadge: {
+    paddingHorizontal: sp(6),
+    paddingVertical: sp(2),
+    borderRadius: sp(6),
+    marginLeft: sp(8),
+  },
+  ingBadgeText: {
+    fontFamily: FontFamily.bold,
+    fontWeight: FontWeights.bold,
+  },
+  stepRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 12,
+    marginBottom: 8,
+  },
+  stepNum: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stepNumText: {
+    color: '#FFFFFF',
+    fontFamily: FontFamily.bold,
+    fontWeight: FontWeights.bold,
+    fontSize: 12,
+  },
+  stepText: {
+    flex: 1,
+    fontFamily: FontFamily.regular,
+    marginLeft: 10,
+    lineHeight: 20,
+  },
+  nutritionHero: {
+    alignItems: 'center',
+    padding: 20,
+    borderRadius: 16,
+    borderWidth: 1,
+  },
+  nutritionBig: {
+    fontFamily: FontFamily.black,
+    fontWeight: FontWeights.black,
+    marginTop: 6,
+  },
+  nutritionLabel: {
+    fontFamily: FontFamily.medium,
+    fontWeight: FontWeights.medium,
+    marginTop: 2,
+  },
+  nutritionGrid: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 12,
+  },
+  nutritionItem: {
+    flex: 1,
+    padding: 12,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  nutritionIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 6,
+  },
+  nutritionItemLabel: {
+    fontFamily: FontFamily.medium,
+    fontWeight: FontWeights.medium,
+  },
+  nutritionItemValue: {
+    fontFamily: FontFamily.black,
+    fontWeight: FontWeights.black,
+    marginTop: 2,
+  },
+  tipRow: {
+    flexDirection: 'row',
+    padding: 12,
+    borderRadius: 12,
+    marginBottom: 8,
+  },
+  tipBullet: {
+    fontSize: 16,
+    marginRight: 8,
+  },
+  tipText: {
+    flex: 1,
+    fontFamily: FontFamily.regular,
+    lineHeight: 20,
+  },
+  variantRow: {
+    padding: 12,
+    borderRadius: 12,
+    marginBottom: 8,
+  },
+  variantName: {
+    fontFamily: FontFamily.bold,
+    fontWeight: FontWeights.bold,
+  },
+  variantDesc: {
+    fontFamily: FontFamily.regular,
+    marginTop: 4,
+  },
+  bottom: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderTopWidth: 1,
+  },
+  iconBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+});

@@ -338,10 +338,17 @@ export class SubscriptionsService {
     const expiredAt = new Date(Date.now() + 15 * 60 * 1000);
 
     // Tạo payment link PayOS TRƯỚC — nếu lỗi thì sub không bị ảnh hưởng
+    //
+    // ⚠️ CHUỖI NỘI DUNG CHUYỂN KHOẢN PHẢI KHỚP RN:
+    //   RN dựng lại chuỗi này để hiển thị cho user (không bịa số tiền) —
+    //   xem `mobile-native/src/presentation/components/subscription/PayOSPaymentSheet.jsx`
+    //   -> `buildTransferDescription(planName, planDisplayName, isRenew)`.
+    //   => KHÔNG dùng viết tắt "GH" (chỉ có ở đây, không có trong UI/txn
+    //   description) — dùng "Gia hạn" đầy đủ cho khớp 1-1.
     const payosResponse = await this.payOsService.createPaymentLink({
       orderCode,
       amount: sub.plan.priceVnd,
-      description: `GH Friggy ${sub.plan.displayName}`,
+      description: `Gia hạn Friggy ${sub.plan.displayName}`,
       planName: `Gia hạn ${sub.plan.displayName}`,
     });
 

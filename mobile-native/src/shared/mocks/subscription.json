@@ -1,0 +1,8 @@
+{
+  "plan": {
+    "name": "free",
+    "displayName": "Gói Miễn Phí",
+    "price": 0,
+    "currency": "VND"
+  }
+}
