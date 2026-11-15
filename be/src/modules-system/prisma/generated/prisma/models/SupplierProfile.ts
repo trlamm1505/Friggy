@@ -28,7 +28,6 @@ export type SupplierProfileMinAggregateOutputType = {
   id: string | null
   userId: string | null
   companyName: string | null
-  taxCode: string | null
   contactPhone: string | null
   address: string | null
   logoPath: string | null
@@ -43,7 +42,6 @@ export type SupplierProfileMaxAggregateOutputType = {
   id: string | null
   userId: string | null
   companyName: string | null
-  taxCode: string | null
   contactPhone: string | null
   address: string | null
   logoPath: string | null
@@ -58,7 +56,6 @@ export type SupplierProfileCountAggregateOutputType = {
   id: number
   userId: number
   companyName: number
-  taxCode: number
   contactPhone: number
   address: number
   logoPath: number
@@ -75,7 +72,6 @@ export type SupplierProfileMinAggregateInputType = {
   id?: true
   userId?: true
   companyName?: true
-  taxCode?: true
   contactPhone?: true
   address?: true
   logoPath?: true
@@ -90,7 +86,6 @@ export type SupplierProfileMaxAggregateInputType = {
   id?: true
   userId?: true
   companyName?: true
-  taxCode?: true
   contactPhone?: true
   address?: true
   logoPath?: true
@@ -105,7 +100,6 @@ export type SupplierProfileCountAggregateInputType = {
   id?: true
   userId?: true
   companyName?: true
-  taxCode?: true
   contactPhone?: true
   address?: true
   logoPath?: true
@@ -193,7 +187,6 @@ export type SupplierProfileGroupByOutputType = {
   id: string
   userId: string
   companyName: string
-  taxCode: string | null
   contactPhone: string | null
   address: string | null
   logoPath: string | null
@@ -229,7 +222,6 @@ export type SupplierProfileWhereInput = {
   id?: Prisma.StringFilter<"SupplierProfile"> | string
   userId?: Prisma.StringFilter<"SupplierProfile"> | string
   companyName?: Prisma.StringFilter<"SupplierProfile"> | string
-  taxCode?: Prisma.StringNullableFilter<"SupplierProfile"> | string | null
   contactPhone?: Prisma.StringNullableFilter<"SupplierProfile"> | string | null
   address?: Prisma.StringNullableFilter<"SupplierProfile"> | string | null
   logoPath?: Prisma.StringNullableFilter<"SupplierProfile"> | string | null
@@ -248,7 +240,6 @@ export type SupplierProfileOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   userId?: Prisma.SortOrder
   companyName?: Prisma.SortOrder
-  taxCode?: Prisma.SortOrderInput | Prisma.SortOrder
   contactPhone?: Prisma.SortOrderInput | Prisma.SortOrder
   address?: Prisma.SortOrderInput | Prisma.SortOrder
   logoPath?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -271,7 +262,6 @@ export type SupplierProfileWhereUniqueInput = Prisma.AtLeast<{
   OR?: Prisma.SupplierProfileWhereInput[]
   NOT?: Prisma.SupplierProfileWhereInput | Prisma.SupplierProfileWhereInput[]
   companyName?: Prisma.StringFilter<"SupplierProfile"> | string
-  taxCode?: Prisma.StringNullableFilter<"SupplierProfile"> | string | null
   contactPhone?: Prisma.StringNullableFilter<"SupplierProfile"> | string | null
   address?: Prisma.StringNullableFilter<"SupplierProfile"> | string | null
   logoPath?: Prisma.StringNullableFilter<"SupplierProfile"> | string | null
@@ -290,7 +280,6 @@ export type SupplierProfileOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   userId?: Prisma.SortOrder
   companyName?: Prisma.SortOrder
-  taxCode?: Prisma.SortOrderInput | Prisma.SortOrder
   contactPhone?: Prisma.SortOrderInput | Prisma.SortOrder
   address?: Prisma.SortOrderInput | Prisma.SortOrder
   logoPath?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -311,7 +300,6 @@ export type SupplierProfileScalarWhereWithAggregatesInput = {
   id?: Prisma.StringWithAggregatesFilter<"SupplierProfile"> | string
   userId?: Prisma.StringWithAggregatesFilter<"SupplierProfile"> | string
   companyName?: Prisma.StringWithAggregatesFilter<"SupplierProfile"> | string
-  taxCode?: Prisma.StringNullableWithAggregatesFilter<"SupplierProfile"> | string | null
   contactPhone?: Prisma.StringNullableWithAggregatesFilter<"SupplierProfile"> | string | null
   address?: Prisma.StringNullableWithAggregatesFilter<"SupplierProfile"> | string | null
   logoPath?: Prisma.StringNullableWithAggregatesFilter<"SupplierProfile"> | string | null
@@ -325,7 +313,6 @@ export type SupplierProfileScalarWhereWithAggregatesInput = {
 export type SupplierProfileCreateInput = {
   id?: string
   companyName: string
-  taxCode?: string | null
   contactPhone?: string | null
   address?: string | null
   logoPath?: string | null
@@ -344,7 +331,6 @@ export type SupplierProfileUncheckedCreateInput = {
   id?: string
   userId: string
   companyName: string
-  taxCode?: string | null
   contactPhone?: string | null
   address?: string | null
   logoPath?: string | null
@@ -361,7 +347,6 @@ export type SupplierProfileUncheckedCreateInput = {
 export type SupplierProfileUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   companyName?: Prisma.StringFieldUpdateOperationsInput | string
-  taxCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   contactPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   logoPath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -380,7 +365,6 @@ export type SupplierProfileUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   userId?: Prisma.StringFieldUpdateOperationsInput | string
   companyName?: Prisma.StringFieldUpdateOperationsInput | string
-  taxCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   contactPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   logoPath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -398,7 +382,6 @@ export type SupplierProfileCreateManyInput = {
   id?: string
   userId: string
   companyName: string
-  taxCode?: string | null
   contactPhone?: string | null
   address?: string | null
   logoPath?: string | null
@@ -412,7 +395,6 @@ export type SupplierProfileCreateManyInput = {
 export type SupplierProfileUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   companyName?: Prisma.StringFieldUpdateOperationsInput | string
-  taxCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   contactPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   logoPath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -427,7 +409,6 @@ export type SupplierProfileUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   userId?: Prisma.StringFieldUpdateOperationsInput | string
   companyName?: Prisma.StringFieldUpdateOperationsInput | string
-  taxCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   contactPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   logoPath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -453,7 +434,6 @@ export type SupplierProfileCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   userId?: Prisma.SortOrder
   companyName?: Prisma.SortOrder
-  taxCode?: Prisma.SortOrder
   contactPhone?: Prisma.SortOrder
   address?: Prisma.SortOrder
   logoPath?: Prisma.SortOrder
@@ -468,7 +448,6 @@ export type SupplierProfileMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   userId?: Prisma.SortOrder
   companyName?: Prisma.SortOrder
-  taxCode?: Prisma.SortOrder
   contactPhone?: Prisma.SortOrder
   address?: Prisma.SortOrder
   logoPath?: Prisma.SortOrder
@@ -483,7 +462,6 @@ export type SupplierProfileMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   userId?: Prisma.SortOrder
   companyName?: Prisma.SortOrder
-  taxCode?: Prisma.SortOrder
   contactPhone?: Prisma.SortOrder
   address?: Prisma.SortOrder
   logoPath?: Prisma.SortOrder
@@ -576,7 +554,6 @@ export type SupplierProfileUpdateOneRequiredWithoutPaymentTransactionsNestedInpu
 export type SupplierProfileCreateWithoutUserInput = {
   id?: string
   companyName: string
-  taxCode?: string | null
   contactPhone?: string | null
   address?: string | null
   logoPath?: string | null
@@ -593,7 +570,6 @@ export type SupplierProfileCreateWithoutUserInput = {
 export type SupplierProfileUncheckedCreateWithoutUserInput = {
   id?: string
   companyName: string
-  taxCode?: string | null
   contactPhone?: string | null
   address?: string | null
   logoPath?: string | null
@@ -626,7 +602,6 @@ export type SupplierProfileUpdateToOneWithWhereWithoutUserInput = {
 export type SupplierProfileUpdateWithoutUserInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   companyName?: Prisma.StringFieldUpdateOperationsInput | string
-  taxCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   contactPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   logoPath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -643,7 +618,6 @@ export type SupplierProfileUpdateWithoutUserInput = {
 export type SupplierProfileUncheckedUpdateWithoutUserInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   companyName?: Prisma.StringFieldUpdateOperationsInput | string
-  taxCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   contactPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   logoPath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -660,7 +634,6 @@ export type SupplierProfileUncheckedUpdateWithoutUserInput = {
 export type SupplierProfileCreateWithoutSubscriptionInput = {
   id?: string
   companyName: string
-  taxCode?: string | null
   contactPhone?: string | null
   address?: string | null
   logoPath?: string | null
@@ -678,7 +651,6 @@ export type SupplierProfileUncheckedCreateWithoutSubscriptionInput = {
   id?: string
   userId: string
   companyName: string
-  taxCode?: string | null
   contactPhone?: string | null
   address?: string | null
   logoPath?: string | null
@@ -710,7 +682,6 @@ export type SupplierProfileUpdateToOneWithWhereWithoutSubscriptionInput = {
 export type SupplierProfileUpdateWithoutSubscriptionInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   companyName?: Prisma.StringFieldUpdateOperationsInput | string
-  taxCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   contactPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   logoPath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -728,7 +699,6 @@ export type SupplierProfileUncheckedUpdateWithoutSubscriptionInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   userId?: Prisma.StringFieldUpdateOperationsInput | string
   companyName?: Prisma.StringFieldUpdateOperationsInput | string
-  taxCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   contactPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   logoPath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -744,7 +714,6 @@ export type SupplierProfileUncheckedUpdateWithoutSubscriptionInput = {
 export type SupplierProfileCreateWithoutIngredientsInput = {
   id?: string
   companyName: string
-  taxCode?: string | null
   contactPhone?: string | null
   address?: string | null
   logoPath?: string | null
@@ -762,7 +731,6 @@ export type SupplierProfileUncheckedCreateWithoutIngredientsInput = {
   id?: string
   userId: string
   companyName: string
-  taxCode?: string | null
   contactPhone?: string | null
   address?: string | null
   logoPath?: string | null
@@ -794,7 +762,6 @@ export type SupplierProfileUpdateToOneWithWhereWithoutIngredientsInput = {
 export type SupplierProfileUpdateWithoutIngredientsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   companyName?: Prisma.StringFieldUpdateOperationsInput | string
-  taxCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   contactPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   logoPath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -812,7 +779,6 @@ export type SupplierProfileUncheckedUpdateWithoutIngredientsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   userId?: Prisma.StringFieldUpdateOperationsInput | string
   companyName?: Prisma.StringFieldUpdateOperationsInput | string
-  taxCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   contactPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   logoPath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -828,7 +794,6 @@ export type SupplierProfileUncheckedUpdateWithoutIngredientsInput = {
 export type SupplierProfileCreateWithoutPaymentTransactionsInput = {
   id?: string
   companyName: string
-  taxCode?: string | null
   contactPhone?: string | null
   address?: string | null
   logoPath?: string | null
@@ -846,7 +811,6 @@ export type SupplierProfileUncheckedCreateWithoutPaymentTransactionsInput = {
   id?: string
   userId: string
   companyName: string
-  taxCode?: string | null
   contactPhone?: string | null
   address?: string | null
   logoPath?: string | null
@@ -878,7 +842,6 @@ export type SupplierProfileUpdateToOneWithWhereWithoutPaymentTransactionsInput =
 export type SupplierProfileUpdateWithoutPaymentTransactionsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   companyName?: Prisma.StringFieldUpdateOperationsInput | string
-  taxCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   contactPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   logoPath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -896,7 +859,6 @@ export type SupplierProfileUncheckedUpdateWithoutPaymentTransactionsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   userId?: Prisma.StringFieldUpdateOperationsInput | string
   companyName?: Prisma.StringFieldUpdateOperationsInput | string
-  taxCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   contactPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   logoPath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -953,7 +915,6 @@ export type SupplierProfileSelect<ExtArgs extends runtime.Types.Extensions.Inter
   id?: boolean
   userId?: boolean
   companyName?: boolean
-  taxCode?: boolean
   contactPhone?: boolean
   address?: boolean
   logoPath?: boolean
@@ -975,7 +936,6 @@ export type SupplierProfileSelectScalar = {
   id?: boolean
   userId?: boolean
   companyName?: boolean
-  taxCode?: boolean
   contactPhone?: boolean
   address?: boolean
   logoPath?: boolean
@@ -986,7 +946,7 @@ export type SupplierProfileSelectScalar = {
   deletedAt?: boolean
 }
 
-export type SupplierProfileOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "companyName" | "taxCode" | "contactPhone" | "address" | "logoPath" | "description" | "isVerified" | "createdAt" | "updatedAt" | "deletedAt", ExtArgs["result"]["supplierProfile"]>
+export type SupplierProfileOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "companyName" | "contactPhone" | "address" | "logoPath" | "description" | "isVerified" | "createdAt" | "updatedAt" | "deletedAt", ExtArgs["result"]["supplierProfile"]>
 export type SupplierProfileInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   subscription?: boolean | Prisma.SupplierProfile$subscriptionArgs<ExtArgs>
@@ -1007,7 +967,6 @@ export type $SupplierProfilePayload<ExtArgs extends runtime.Types.Extensions.Int
     id: string
     userId: string
     companyName: string
-    taxCode: string | null
     contactPhone: string | null
     address: string | null
     logoPath: string | null
@@ -1392,7 +1351,6 @@ export interface SupplierProfileFieldRefs {
   readonly id: Prisma.FieldRef<"SupplierProfile", 'String'>
   readonly userId: Prisma.FieldRef<"SupplierProfile", 'String'>
   readonly companyName: Prisma.FieldRef<"SupplierProfile", 'String'>
-  readonly taxCode: Prisma.FieldRef<"SupplierProfile", 'String'>
   readonly contactPhone: Prisma.FieldRef<"SupplierProfile", 'String'>
   readonly address: Prisma.FieldRef<"SupplierProfile", 'String'>
   readonly logoPath: Prisma.FieldRef<"SupplierProfile", 'String'>

@@ -17,17 +17,31 @@
  *   CREATE TABLE [IF NOT EXISTS] t (...)   - tạo bảng (cột lấy từ DDL)
  *   CREATE INDEX ...                       - bỏ qua
  *   DROP TABLE [IF EXISTS] t               - xoá bảng
+ *   ALTER TABLE t ADD COLUMN c TYPE        - thêm cột (dùng cho migration)
  *   PRAGMA ...                             - bỏ qua
  *   INSERT [OR REPLACE] INTO t (cols) VALUES (?, ...)
  *   UPDATE t SET c=?, ... WHERE ...
  *   DELETE FROM t [WHERE ...]
  *   SELECT * | cols FROM t [WHERE ...] [ORDER BY ...] [GROUP BY ...]
  *
- * WHERE chỉ hỗ trợ: `col = ?`, `col = 'literal'`, nối bằng `AND`.
+ * TRANSACTION (mô phỏng đúng semantics SQLite):
+ *   `withTransactionAsync` ném lỗi "cannot start a transaction within a
+ *   transaction" khi có `BEGIN` lồng nhau, và ROLLBACK khi task ném lỗi.
+ *
+ * WHERE chỉ hỗ trợ: `col = ?`, `col != ?`, `col = 'literal'`, nối bằng `AND`.
  */
 
 /** Chia sẻ dữ liệu giữa các lần `openDatabaseAsync` (mô phỏng file thật). */
 const stores = new Map();
+
+/**
+ * Danh sách instance `FakeDatabase` đã tạo.
+ *
+ * Dùng để `__resetFakeDb()` reset luôn trạng thái transaction đang dở
+ * (nếu 1 test fail giữa chừng transaction, test sau sẽ bị "kẹt" trong
+ * transaction -> mọi `BEGIN` sau đó đều lỗi).
+ */
+const instances = new Set();
 
 const getStore = (name) => {
   if (!stores.has(name)) stores.set(name, { tables: new Map() });
@@ -49,6 +63,11 @@ export const __resetFakeDb = () => {
     store.tables.forEach((table) => {
       table.rows = [];
     });
+  });
+  // Reset trạng thái transaction đang treo.
+  instances.forEach((db) => {
+    db._inTransaction = false;
+    db._txSnapshot = null;
   });
 };
 
@@ -168,6 +187,26 @@ const matchesWhere = (row, whereClause, params = []) => {
         continue;
       }
 
+      // `col != ?` / `col <> ?` (khác) — dùng cho `sync_status != 'pending_delete'`.
+      const neqMatch = trimmed.match(/^(\w+)\s*(!=|<>)\s*(\?|'[^']*'|"[^"]*"|\d+)$/);
+      if (neqMatch) {
+        const column = neqMatch[1];
+        const raw = neqMatch[3];
+        let expected;
+        if (raw === '?') {
+          expected = params[paramIndex];
+          paramIndex += 1;
+        } else if (raw.startsWith("'")) {
+          expected = raw.slice(1, -1);
+        } else if (raw.startsWith('"')) {
+          expected = raw.slice(1, -1);
+        } else {
+          expected = Number(raw);
+        }
+        if (valuesEqual(row[column], expected)) return false;
+        continue;
+      }
+
       // `col LIKE ?` (SQLite LIKE: `%` = 0..n ký tự, `_` = 1 ký tự)
       const likeMatch = trimmed.match(/^(\w+)\s+LIKE\s+(\?|'[^']*'|"[^"]*")$/i);
       if (likeMatch) {
@@ -270,6 +309,11 @@ class FakeDatabase {
     this.store = store;
     this._lastInsertRowId = 0;
     this._autoIncrement = new Map();
+    // ⚠️ Trạng thái transaction (mô phỏng SQLite thật).
+    // SQLite chỉ chịu được 1 transaction tại 1 thời điểm trên 1 connection ->
+    // `BEGIN` lồng nhau sẽ ném "cannot start a transaction within a transaction".
+    this._inTransaction = false;
+    this._txSnapshot = null;
   }
 
   get tables() {
@@ -305,6 +349,25 @@ class FakeDatabase {
     const dropTable = trimmed.match(/^DROP\s+TABLE\s+(?:IF\s+EXISTS\s+)?(\w+);?$/i);
     if (dropTable) {
       this.tables.delete(dropTable[1]);
+      return { lastInsertRowId: 0, changes: 0 };
+    }
+
+    // ALTER TABLE t ADD COLUMN c TYPE — dùng cho migration schema.
+    const addColumn = trimmed.match(
+      /^ALTER\s+TABLE\s+(\w+)\s+ADD\s+COLUMN\s+(\w+)(\s+[\w\(\)]+)?;?$/i
+    );
+    if (addColumn) {
+      const table = this._getTable(addColumn[1]);
+      if (table) {
+        const columnName = addColumn[2];
+        const already = table.columns.some((c) => c.name === columnName);
+        if (!already) {
+          table.columns.push({
+            name: columnName,
+            definition: `${columnName}${addColumn[3] ?? ''}`,
+          });
+        }
+      }
       return { lastInsertRowId: 0, changes: 0 };
     }
 
@@ -364,9 +427,10 @@ class FakeDatabase {
       return { lastInsertRowId: this._lastInsertRowId, changes: 1 };
     }
 
-    const update = trimmed.match(/^UPDATE\s+(\w+)\s+SET\s+([\s\S]+?)\s+WHERE\s+([\s\S]+?);?$/i);
+    const update = trimmed.match(/^UPDATE\s+(\w+)\s+SET\s+([\s\S]+?)(?:\s+WHERE\s+([\s\S]+?))?;?$/i);
     if (update) {
       const table = this._requireTable(update[1]);
+      const whereClause = update[3];
 
       // Mỗi assignment: `col = ?` (param) hoặc `col = 'lit'` / `col = 5` (literal).
       const assignmentSpecs = splitTopLevel(update[2]).map((a) => {
@@ -497,12 +561,70 @@ class FakeDatabase {
   }
 
   // ── Transaction ──
+  /**
+   * Chụp snapshot toàn bộ bảng để rollback.
+   * @private
+   */
+  _snapshot() {
+    const snapshot = new Map();
+    this.tables.forEach((table, name) => {
+      snapshot.set(name, table.rows.map((row) => ({ ...row })));
+    });
+    return { tables: snapshot, autoIncrement: new Map(this._autoIncrement) };
+  }
+
+  /**
+   * Khôi phục snapshot (rollback).
+   * @private
+   */
+  _restore(snapshot) {
+    if (!snapshot) return;
+    snapshot.tables.forEach((rows, name) => {
+      const table = this.tables.get(name);
+      if (table) table.rows = rows.map((row) => ({ ...row }));
+    });
+    this._autoIncrement = new Map(snapshot.autoIncrement);
+  }
+
+  /**
+   * Mô phỏng `withTransactionAsync` của `expo-sqlite`.
+   *
+   * ⚠️ QUAN TRỌNG — mô phỏng ĐÚNG semantics của SQLite:
+   *   1. `BEGIN` lồng nhau -> ném lỗi "cannot start a transaction within a
+   *      transaction" (đây chính là bug đã gặp trong app thật).
+   *   2. Khi task ném lỗi -> ROLLBACK (khôi phục dữ liệu trước transaction).
+   *
+   * Bản cũ chỉ `return fn()` -> mọi bug transaction đều lọt qua test.
+   *
+   * @param {Function} fn
+   */
   async withTransactionAsync(fn) {
-    return fn();
+    if (this._inTransaction) {
+      const error = new Error('cannot start a transaction within a transaction');
+      error.code = 'SQLITE_ERROR';
+      throw error;
+    }
+
+    const snapshot = this._snapshot();
+    this._inTransaction = true;
+    this._txSnapshot = snapshot;
+
+    try {
+      const result = await fn();
+      this._inTransaction = false;
+      this._txSnapshot = null;
+      return result;
+    } catch (error) {
+      // ROLLBACK
+      this._restore(snapshot);
+      this._inTransaction = false;
+      this._txSnapshot = null;
+      throw error;
+    }
   }
 
   async withExclusiveTransactionAsync(fn) {
-    return fn();
+    return this.withTransactionAsync(fn);
   }
 
   async closeAsync() {
@@ -525,7 +647,11 @@ function createTable2(name, columnDefsText) {
  * @returns {{openDatabaseAsync: Function}}
  */
 export const createExpoSqliteMock = () => ({
-  openDatabaseAsync: jest.fn(async (name) => new FakeDatabase(getStore(name))),
+  openDatabaseAsync: jest.fn(async (name) => {
+    const db = new FakeDatabase(getStore(name));
+    instances.add(db);
+    return db;
+  }),
 });
 
 export default createExpoSqliteMock;

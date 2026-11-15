@@ -147,6 +147,31 @@ const readIngredientCatalog = async (query = '', limit = 20) => {
 };
 
 /**
+ * Đọc cache danh sách công thức (offline màn "Gợi ý công thức").
+ *
+ * ⚠️ VÌ SAO CẦN (v4):
+ *   `GET /recipes` không có cache -> offline fallback sang MOCK -> user thấy
+ *   công thức BỊA (có thể nấu theo món không tồn tại). Cache là dữ liệu THẬT
+ *   đã tải về trước đó.
+ *
+ * @param {object} [filters] - `{ search, difficulty, maxCookTime }`
+ * @returns {Promise<Array|null>}
+ */
+const readRecipeList = async (filters = {}) => {
+  const items = await offlineCache.getRecipeList(filters);
+  return items.length > 0 ? items : null;
+};
+
+/**
+ * Đọc cache công thức đã bookmark (offline).
+ * @returns {Promise<Array|null>}
+ */
+const readBookmarkedRecipes = async () => {
+  const items = await offlineCache.getBookmarkedRecipes();
+  return items.length > 0 ? items : null;
+};
+
+/**
  * Bảng ánh xạ: key service -> { methodName: hàm đọc cache }.
  *
  * ⚠️ Tên method phải KHỚP CHÍNH XÁC tên method trong `Real*Service`,
@@ -205,6 +230,10 @@ export const CACHE_FALLBACKS = {
     },
     getNextWeekPlan: readWeeklyPlan,
     getPlanDetail: readWeeklyPlan,
+    // ⚠️ v4: cache danh sách công thức + bookmark.
+    getRecipes: async () => readRecipeList(),
+    getRecipesFiltered: async (filters = {}) => readRecipeList(filters),
+    getBookmarked: readBookmarkedRecipes,
   },
 
   userService: {

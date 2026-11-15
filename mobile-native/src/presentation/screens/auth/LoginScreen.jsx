@@ -40,6 +40,8 @@ import { Routes } from '../../../shared/constants/routes';
 import { isValidEmail, isValidPassword } from '../../utils/validators';
 import { useAuthActions } from '../../../shared/stores/useAuthStore';
 import { showSuccess, showError } from '../../utils/helpers';
+import { useNetworkStatus } from '../../hooks/useNetworkStatus';
+import { TokenStorage } from '../../../data/storage/TokenStorage';
 import { getGoogleIdToken } from '../../utils/googleAuth';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -48,7 +50,8 @@ export const LoginScreen = () => {
   const { isDark } = useTheme();
   const navigation = useNavigation();
   const { t } = useTranslation();
-  const { signIn, signInWithGoogle } = useAuthActions();
+  const { signIn, signInWithGoogle, resumeOfflineSession } = useAuthActions();
+  const { isOffline } = useNetworkStatus();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -56,6 +59,19 @@ export const LoginScreen = () => {
   const [remember, setRemember] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  // ⚠️ OFFLINE (đối chiếu Flutter 14/11 - `checkAndRefreshToken`):
+  //   Nếu máy đã từng đăng nhập -> có token + user trong MMKV.
+  //   Khi mất mạng, màn Login vẫn phải cho user vào app bằng phiên local,
+  //   không bắt user nhập lại mật khẩu (server không check được).
+  //   -> Hiện nút "Đăng nhập bằng dữ liệu đã lưu".
+  // Đọc 1 lần lúc mount (token trong MMKV là bất biến trong phiên màn Login).
+  const [hasSavedSession] = useState(() => {
+    try {
+      return Boolean(TokenStorage.getAccessToken() || TokenStorage.getRefreshToken());
+    } catch (_e) {
+      return false;
+    }
+  });
 
   const topPadding = 44;
   const topHeaderHeight = SCREEN_HEIGHT * 0.35 + topPadding;
@@ -121,6 +137,32 @@ export const LoginScreen = () => {
       setIsLoading(false);
     }
   }, [signInWithGoogle, t]);
+
+  /**
+   * Đăng nhập OFFLINE bằng phiên đã lưu trên máy.
+   *
+   * Không verify mật khẩu (server offline không check được) - chỉ dùng
+   * token/user đã lưu. Đây là cơ chế tương đương Flutter: token còn trong
+   * bộ nhớ + lỗi mạng -> vẫn coi là đã đăng nhập.
+   */
+  const handleOfflineLogin = useCallback(async () => {
+    setErrors({});
+    setIsLoading(true);
+    try {
+      const ok = await resumeOfflineSession();
+      if (ok) {
+        showSuccess(t('offline.loginOfflineSuccess'));
+        // KHÔNG navigation.reset: `login()` đã set isAuthenticated ->
+        // RootNavigator tự đổi sang Onboarding/Main.
+      } else {
+        showError(t('offline.loginOfflineUnavailable'));
+      }
+    } catch (e) {
+      showError(e?.message || t('offline.loginOfflineUnavailable'));
+    } finally {
+      setIsLoading(false);
+    }
+  }, [resumeOfflineSession, t]);
 
   const cardTranslateY = cardAnim.interpolate({
     inputRange: [0, 1],
@@ -261,6 +303,31 @@ export const LoginScreen = () => {
             <SocialButton type="google" onPress={handleGoogleLogin} />
           </View>
 
+          {/* Đăng nhập offline: chỉ hiện khi máy có phiên đã lưu.
+              Đồng thời ưu tiên hiện khi đang offline (lúc đó màn Login
+              vô dụng vì server không xác thực được). */}
+          {hasSavedSession && (
+            <View style={{ marginTop: 18 }}>
+              {isOffline && (
+                <Text
+                  style={[
+                    styles.offlineHint,
+                    { color: isDark ? AppColors.hintText : '#6B786F', fontSize: sp(12) },
+                  ]}
+                >
+                  {t('offline.loginOfflineHint')}
+                </Text>
+              )}
+              <CustomButton
+                title={t('offline.loginOffline')}
+                onPress={handleOfflineLogin}
+                loading={isLoading}
+                variant="outline"
+                height={50}
+              />
+            </View>
+          )}
+
           <View style={styles.footer}>
             <Text
               style={[
@@ -355,6 +422,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 24,
+  },
+  offlineHint: {
+    fontFamily: FontFamily.regular,
+    textAlign: 'center',
+    marginBottom: 10,
   },
   footerText: {
     fontFamily: FontFamily.regular,

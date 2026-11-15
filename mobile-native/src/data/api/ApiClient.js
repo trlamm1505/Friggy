@@ -92,6 +92,32 @@ const handleSessionExpired = () => {
 };
 
 /**
+ * Lỗi MẠNG (không phải lỗi xác thực) — dùng để phân biệt:
+ *   - máy offline / server chết   -> PHIÊN VẪN CÒN, app dùng cache offline
+ *   - server trả 401/403           -> PHIÊN THẬT SỰ HẾT HẠN, phải logout
+ *
+ * ⚠️ VÌ SAO CẦN (offline auth — đối chiếu Flutter 14/11):
+ *   Flutter `AuthService.checkAndRefreshToken()` bắt lỗi network -> nếu máy
+ *   còn token local thì `return true` (cho vào app offline). Còn RN trước đây
+ *   gọi `handleSessionExpired()` -> XOÁ token + logout -> user MẤT phiên chỉ vì
+ *   mất mạng. Đây là bug nghiêm trọng: mở app ở chỗ không có mạng là mất
+ *   phiên, dù data đã cache đầy đủ.
+ */
+const isNetworkFailure = (err) => {
+  if (!err) return false;
+  if (err.isNetworkError === true) return true;
+
+  const status = err?.response?.status ?? err?.statusCode ?? null;
+  // Không có response = không gọi tới server được -> network.
+  if (status === null && (err?.response === undefined || err?.response === null)) {
+    return /network|timeout|ECONN|ENOTFOUND|ETIMEDOUT|offline|Network Error/i.test(
+      err?.message ?? ''
+    );
+  }
+  return false;
+};
+
+/**
  * BẮT BUỘC 7: suy ra thời điểm hết hạn từ response BE.
  * Ưu tiên `expiresAt` BE trả về -> fallback decode JWT payload `exp`.
  * TUYỆT ĐỐI không hardcode 7 ngày (BE đã chuyển sang config động).
@@ -233,7 +259,6 @@ client.interceptors.response.use(
           })
         );
       }
-
       // Đang refresh -> request này xếp hàng chờ (BẮT BUỘC 4)
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
@@ -291,6 +316,27 @@ client.interceptors.response.use(
         processQueue(null, newAccessToken);
         return client.request(originalRequest);
       } catch (_refreshErr) {
+        // ⚠️ OFFLINE (đối chiếu Flutter 14/11): lỗi MẠNG khi refresh token ->
+        //   KHÔNG logout. Phiên local vẫn còn giá trị (token đã lưu trên máy),
+        //   app tiếp tục chạy bằng cache offline. CHỉ logout khi server thật sự
+        //   từ chối (401/403) -> phiên hết hạn thật.
+        //
+        //   Flutter: `AuthService.checkAndRefreshToken` -> bắt DioException
+        //   connectionError/timeout -> nếu còn token local -> `return true`.
+        if (isNetworkFailure(_refreshErr)) {
+          isRefreshing = false;
+          const offlineErr = new ApiException(
+            'Không thể kết nối máy chủ. Đang dùng dữ liệu đã lưu trên máy.',
+            {
+              statusCode: 503,
+              isNetworkError: true,
+            }
+          );
+          // Giữ nguyên token local -> KHÔNG gọi `handleSessionExpired()`.
+          processQueue(offlineErr, null);
+          return Promise.reject(offlineErr);
+        }
+
         const expiredErr = new ApiException('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!', {
           statusCode: 401,
         });

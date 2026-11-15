@@ -29,6 +29,12 @@ import { databaseService } from '../storage/DatabaseService';
  * - `fridge_delete`  : xoá khỏi tủ
  * - `shopping_toggle`: tick / untick món mua
  * - `slot_complete`  : tick "đã nấu" ở meal plan
+ *
+ * ⚠️ v4 — bổ sung theo Flutter (đối chiếu 14/11):
+ * - `allergy_add`    : thêm dị ứng khi offline (Flutter: `saveOfflineAllergy`)
+ * - `allergy_delete` : xoá dị ứng khi offline (Flutter: `markPendingDelete`)
+ * - `profile_update` : sửa hồ sơ khi offline (Flutter: profile `syncStatus='pending'`)
+ * - `prefs_update`   : sửa tùy chọn ăn uống khi offline (Flutter: `getPendingPreferences`)
  */
 export const OP_TYPES = {
   FRIDGE_ADD: 'fridge_add',
@@ -37,6 +43,10 @@ export const OP_TYPES = {
   FRIDGE_DELETE: 'fridge_delete',
   SHOPPING_TOGGLE: 'shopping_toggle',
   SLOT_COMPLETE: 'slot_complete',
+  ALLERGY_ADD: 'allergy_add',
+  ALLERGY_DELETE: 'allergy_delete',
+  PROFILE_UPDATE: 'profile_update',
+  PREFS_UPDATE: 'prefs_update',
 };
 
 /** Số lần thử tối đa trước khi bỏ op (tránh retry vô hạn). */

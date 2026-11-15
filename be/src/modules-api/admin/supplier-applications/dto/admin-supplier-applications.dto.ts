@@ -40,7 +40,6 @@ export class ListSupplierApplicationsDto {
 export class AdminSupplierApplicationResponseDto {
   @ApiProperty() id: string;
   @ApiProperty() companyName: string;
-  @ApiPropertyOptional() taxCode: string | null;
   @ApiProperty() contactName: string;
   @ApiProperty() email: string;
   @ApiPropertyOptional() phone: string | null;

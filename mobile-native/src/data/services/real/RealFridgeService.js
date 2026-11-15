@@ -200,6 +200,28 @@ export class RealFridgeService {
     return params;
   }
 
+  /**
+   * Query có dùng filter SERVER-SIDE hay không.
+   *
+   * ⚠️ VÌ SAO CẦN:
+   *   Khi có filter server-side, response chỉ chứa TẬP CON của tủ lạnh.
+   *   Nếu ghi response đó vào cache (write-through) -> `saveFridgeItems` xoá hết
+   *   row 'synced' rồi chỉ insert tập con -> CACHE BỊ CẮT CỤT, mất mọi món
+   *   không khớp filter. Lần offline sau user chỉ thấy món của filter cũ.
+   *
+   *   Filter CLIENT-SIDE (search/sort/status=expired) thì data vẫn đầy đủ ->
+   *   ghi cache bình thường.
+   *
+   * @param {object} filters
+   * @returns {boolean}
+   */
+  _hasServerFilter(filters) {
+    if (!filters) return false;
+    if (filters.compartment) return true;
+    if (filters.status === 'expiring') return true;
+    return false;
+  }
+
   // ═══════════════ Interface IFridgeService ═══════════════
 
   /**
@@ -210,9 +232,12 @@ export class RealFridgeService {
    *   CLIENT-SIDE: search, sort, status=expired
    *
    * @param {object} [filters]
+   * @param {object} [options]
+   * @param {boolean} [options.skipCacheWrite] - KHÔNG ghi cache (dùng khi
+   *   `SyncEngine` tự ghi cache sau khi pull -> tránh ghi 2 lần).
    * @returns {Promise<object[]>}
    */
-  async getItems(filters = {}) {
+  async getItems(filters = {}, options = {}) {
     const params = this._buildListQuery(filters);
     const data = await this.client.get('/fridge', { params });
     const list = Array.isArray(data) ? data : [];
@@ -222,7 +247,12 @@ export class RealFridgeService {
     // P1 (offline) — write-through cache: lưu bản server xuống SQLite để
     // khi offline app vẫn hiện TỦ LẠNH THẬT (không phải mock ảo).
     // Lỗi cache không được làm hỏng luồng chính -> nuốt + log.
-    this._writeCache(mapped);
+    //
+    // ⚠️ CHỈ ghi cache khi KHÔNG có filter server-side: response lọc chỉ là
+    //    tập con -> ghi vào sẽ CẮT CỤT cache (mất các món không khớp filter).
+    if (!options.skipCacheWrite && !this._hasServerFilter(filters)) {
+      this._writeCache(mapped);
+    }
 
     let result = mapped;
     result = this._applySearch(result, filters.search);
@@ -233,10 +263,14 @@ export class RealFridgeService {
 
   /**
    * Ghi cache tủ lạnh (best-effort).
+   *
+   * ⚠️ Không bỏ qua khi `items` RỖNG: server đã xoá hết item -> cache phải
+   *    được xoá theo (giữ row 'pending' - xem `OfflineCache.saveFridgeItems`).
+   *
    * @private
    */
   _writeCache(items) {
-    if (!Array.isArray(items) || items.length === 0) return;
+    if (!Array.isArray(items)) return;
     offlineCache.saveFridgeItems(items).catch((e) => {
       if (typeof __DEV__ !== 'undefined' && __DEV__) {
         console.warn('[RealFridgeService] Không ghi được cache tủ lạnh:', e?.message);

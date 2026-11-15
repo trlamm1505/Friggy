@@ -65,7 +65,11 @@
     "syncFailed": "Sync incomplete, will retry",
     "conflict": "Some changes conflicted — please review",
     "refreshOffline": "No connection — showing saved data",
-    "cachedData": "Showing saved data"
+    "cachedData": "Showing saved data",
+    "loginOffline": "Continue with saved data",
+    "loginOfflineHint": "Your device is offline. You can still open the app with your previous session.",
+    "loginOfflineSuccess": "Opened with data saved on this device",
+    "loginOfflineUnavailable": "No saved session found on this device"
   },
   "home": {
     "greetingMorning": "Good morning",

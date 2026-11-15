@@ -1,10 +1,10 @@
-import { Controller, Get, Patch, Param, Body } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Param, Body } from '@nestjs/common';
 import {
   ApiTags, ApiBearerAuth, ApiOperation, ApiParam, ApiResponse,
 } from '@nestjs/swagger';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { AdminRolesService } from './admin-roles.service';
-import { UpdateRoleDto } from './dto/admin-roles.dto';
+import { CreateRoleDto, UpdateRoleDescriptionDto } from './dto/admin-roles.dto';
 import { RoleItemDto } from './dto/admin-roles-response.dto';
 
 @ApiTags('Admin / Roles')
@@ -27,25 +27,39 @@ export class AdminRolesController {
     return this.service.getRoles();
   }
 
+  // ─── POST /admin/roles ─────────────────────────────────────────────────────
+
+  @Post()
+  @ApiOperation({
+    summary: '[Chỉ Admin] Tạo vai trò (role) mới trong hệ thống',
+    description:
+      'Chỉ tài khoản admin mới có quyền tạo role mới. Tên role chỉ được chứa chữ thường, số, dấu gạch dưới hoặc gạch ngang.',
+  })
+  @ApiResponse({ status: 201, type: RoleItemDto })
+  @ApiResponse({ status: 400, description: 'Tên role không đúng định dạng' })
+  @ApiResponse({ status: 409, description: 'Role đã tồn tại trong hệ thống' })
+  createRole(@Body() dto: CreateRoleDto): Promise<RoleItemDto> {
+    return this.service.createRole(dto);
+  }
+
   // ─── PATCH /admin/roles/:name ──────────────────────────────────────────────
 
   @Patch(':name')
   @ApiOperation({
-    summary: '[Chỉ Admin] Cập nhật name / description của role',
-    description: 'Cập nhật tên (`name`) hoặc mô tả (`description`) cho role chỉ định. Các field đều optional — chỉ truyền field cần thay đổi.',
+    summary: '[Chỉ Admin] Cập nhật mô tả của role',
+    description: 'Cập nhật mô tả (`description`) cho role chỉ định.',
   })
   @ApiParam({
     name: 'name',
-    description: 'Tên role hiện tại (dùng để định danh)',
+    description: 'Tên role',
     example: 'manager',
   })
   @ApiResponse({ status: 200, type: RoleItemDto })
   @ApiResponse({ status: 404, description: 'Không tìm thấy role' })
-  @ApiResponse({ status: 409, description: 'Tên role mới đã tồn tại' })
-  updateRole(
+  updateRoleDescription(
     @Param('name') name: string,
-    @Body() dto: UpdateRoleDto,
+    @Body() dto: UpdateRoleDescriptionDto,
   ): Promise<RoleItemDto> {
-    return this.service.updateRole(name, dto);
+    return this.service.updateRoleDescription(name, dto);
   }
 }

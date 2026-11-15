@@ -291,19 +291,31 @@ describe('401 tại /auth/refresh -> hết phiên chắc chắn', () => {
     expect(expiredCount).toBe(before + 1);
   });
 
-  it('refresh fail (network) -> clear token + emit session-expired', async () => {
+  // ⚠️ OFFLINE (đối chiếu Flutter 14/11 - `checkAndRefreshToken`):
+  //   Lỗi MẠNG khi refresh token -> KHÔNG logout, KHÔNG xoá token.
+  //   Phiên local còn giá trị -> app tiếp tục chạy offline bằng cache.
+  //   CHỈ logout khi server thật sự từ chối (401/403) -> phiên hết hạn thật.
+  it('refresh fail (network) -> GIỮ token, KHÔNG emit session-expired', async () => {
     TokenStorage.setAccessToken('old');
     TokenStorage.setRefreshToken('good-refresh');
     const before = expiredCount;
 
     rawClient.request.mockRejectedValue({ message: 'Network down' });
 
-    await expect(
-      runErr(401, { message: 'hết hạn' }, { url: '/fridge/items', headers: {} })
-    ).rejects.toThrow(SESSION_MSG);
+    let caught = null;
+    try {
+      await runErr(401, { message: 'hết hạn' }, { url: '/fridge/items', headers: {} });
+    } catch (e) {
+      caught = e;
+    }
 
-    expect(TokenStorage.getAccessToken()).toBeNull();
-    expect(expiredCount).toBe(before + 1);
+    expect(caught).not.toBeNull();
+    expect(caught.isNetworkError).toBe(true);
+    // Token local PHẢI được giữ lại.
+    expect(TokenStorage.getAccessToken()).toBe('old');
+    expect(TokenStorage.getRefreshToken()).toBe('good-refresh');
+    // KHÔNG được logout khi lỗi mạng.
+    expect(expiredCount).toBe(before);
   });
 });
 

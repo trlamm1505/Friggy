@@ -165,6 +165,11 @@ export type ChatSession = Prisma.ChatSessionModel
  */
 export type ChatMessage = Prisma.ChatMessageModel
 /**
+ * Model AiEvaluationLog
+ * 
+ */
+export type AiEvaluationLog = Prisma.AiEvaluationLogModel
+/**
  * Model AiProviderConfig
  * 
  */
@@ -174,6 +179,26 @@ export type AiProviderConfig = Prisma.AiProviderConfigModel
  * 
  */
 export type AiUsageLog = Prisma.AiUsageLogModel
+/**
+ * Model Sponsor
+ * 
+ */
+export type Sponsor = Prisma.SponsorModel
+/**
+ * Model SponsorCampaign
+ * 
+ */
+export type SponsorCampaign = Prisma.SponsorCampaignModel
+/**
+ * Model CampaignRecipe
+ * 
+ */
+export type CampaignRecipe = Prisma.CampaignRecipeModel
+/**
+ * Model IngredientPurchaseLink
+ * 
+ */
+export type IngredientPurchaseLink = Prisma.IngredientPurchaseLinkModel
 /**
  * Model AdminActivityLog
  * 

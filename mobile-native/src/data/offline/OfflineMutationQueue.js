@@ -46,9 +46,15 @@ export const queueMutation = async (serviceKey, methodName, args = []) => {
 
   // Bước 1: cập nhật cache local (optimistic) - lỗi ở đây KHÔNG chặn queue,
   // vì cache chỉ là phụ trợ, hàng đợi mới là thứ quan trọng.
+  //
+  // ⚠️ Truyền `entityId` vào `applyCache`:
+  //   Handler `addItem` sinh id tạm cho món offline. Nếu `applyCache` tự sinh
+  //   id RIÊNG (khác `entityId`) -> row pending trong `local_ingredients` và
+  //   `entity_id` trong `local_pending_ops` không khớp -> upload xong xoá nhầm
+  //   id -> row pending mồ côi (món "ma" hiện trong tủ nhưng không còn op).
   if (typeof handler.applyCache === 'function') {
     try {
-      await handler.applyCache(args);
+      await handler.applyCache(args, { entityId });
     } catch (e) {
       if (typeof __DEV__ !== 'undefined' && __DEV__) {
         console.warn(

@@ -20,6 +20,10 @@ import { AdminUsersService } from './users/admin-users.service';
 import { AdminStatsController } from './stats/admin-stats.controller';
 import { AdminStatsService } from './stats/admin-stats.service';
 
+// ── Sponsors ──────────────────────────────────────────────
+import { AdminSponsorsController } from './sponsors/admin-sponsors.controller';
+import { AdminSponsorsService } from './sponsors/admin-sponsors.service';
+
 // ── Plans ─────────────────────────────────────────────────
 import { AdminPlansController } from './plans/admin-plans.controller';
 import { AdminPlansService } from './plans/admin-plans.service';
@@ -89,6 +93,7 @@ import { AdminSupplierPaymentTransactionsService } from './supplier-payment-tran
     AdminUsersController,
     AdminRolesController,
     AdminStatsController,
+    AdminSponsorsController,
     AdminPlansController,
     AdminPaymentTransactionsController,
     AdminIngredientsController,
@@ -111,6 +116,7 @@ import { AdminSupplierPaymentTransactionsService } from './supplier-payment-tran
     AdminUsersService,
     AdminRolesService,
     AdminStatsService,
+    AdminSponsorsService,
     AdminPlansService,
     AdminPaymentTransactionsService,
     AdminIngredientsService,

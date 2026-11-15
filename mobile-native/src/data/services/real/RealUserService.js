@@ -19,7 +19,7 @@ import { appConfig } from '../../../shared/config/appConfig';
 import { registerService } from '../../api/ServiceRegistry';
 import { RealSubscriptionService } from './RealSubscriptionService';
 import { RealFamilyService } from './RealFamilyService';
-import { offlineCache } from '../../offline/OfflineCache';
+import { offlineCache, SYNC_STATUS } from '../../offline/OfflineCache';
 
 // ─────────────────────────────────────────────────────────────
 // ENUM — lấy từ `be/src/modules-api/users/dto/users.dto.ts`
@@ -196,7 +196,14 @@ export class RealUserService extends IUserService {
     });
 
     const res = await ApiClient.patch('/users/me/profile', payload);
-    return this._toUserProfile(res);
+    const profile = this._toUserProfile(res);
+
+    // P1 (offline) — cập nhật cache (đánh dấu 'synced' vì đã lên server).
+    if (profile) {
+      offlineCache.saveUserProfile(profile, SYNC_STATUS.SYNCED).catch(() => {});
+    }
+
+    return profile;
   }
 
   /**
@@ -232,7 +239,12 @@ export class RealUserService extends IUserService {
   /** PATCH /users/me/preferences */
   async updatePreferences(prefs) {
     const res = await ApiClient.patch('/users/me/preferences', this._prefsToPayload(prefs));
-    return this._toPreferences(res);
+    const result = this._toPreferences(res);
+
+    // P1 (offline) — cập nhật cache (đánh dấu 'synced' vì đã lên server).
+    offlineCache.saveUserPreferences(result, SYNC_STATUS.SYNCED).catch(() => {});
+
+    return result;
   }
 
   // ══════════════════════════════════════════════════════════════
@@ -279,12 +291,17 @@ export class RealUserService extends IUserService {
    * trả về mảng phẳng để UI dùng thẳng, giống quy ước của plan với `GET /recipes`.
    *
    * @param {string} search
-   * @param {number} [limit]
+   * @param {number} [limit] - BE tối đa 100 (`@Max(100)`) -> quá sẽ bị 400.
+   * @param {number} [page] - trang hiện tại (1-based), dùng cho sync catalog offline.
+   * @param {object} [options]
+   * @param {boolean} [options.skipCacheWrite] - KHÔNG ghi cache (dùng khi
+   *   `SyncEngine` tự ghi cache sau khi pull -> tránh ghi nhiều lần, mỗi
+   *   lần ghi lại sẽ XOÁ sạch bảng cache).
    * @returns {Promise<Array<{id:number, name:string, imagePath?:string|null}>>}
    */
-  async searchIngredients(search, limit = 20) {
+  async searchIngredients(search, limit = 20, page = 1, options = {}) {
     const res = await ApiClient.get('/ingredients', {
-      params: { search, limit, page: 1 },
+      params: { search, limit, page },
     });
     const items = Array.isArray(res) ? res : res?.data;
     if (!Array.isArray(items)) return [];
@@ -294,10 +311,14 @@ export class RealUserService extends IUserService {
       name: d.name ?? '',
       // R2: ảnh nguyên liệu là đường dẫn tương đối -> phải qua getImageUrl
       image: appConfig.getImageUrl(d.imagePath),
+      // Giữ thêm field để picker offline hiển thị đầy đủ (đối chiếu Flutter
+      // `LocalIngredientCatalogModel` có `defaultUnit` / `category`).
+      defaultUnit: d.defaultUnit ?? null,
+      categoryName: d.categoryName ?? null,
     }));
 
     // P1 (offline) — cache danh mục nguyên liệu để picker hoạt động offline.
-    if (mapped.length > 0) {
+    if (!options.skipCacheWrite && mapped.length > 0) {
       offlineCache.saveIngredientCatalog(mapped).catch(() => {});
     }
 

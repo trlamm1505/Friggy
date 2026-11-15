@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { EXTRA_HEADERS } from '../utils/constants';
 
 export const useFetch = (url) => {
   const [data, setData] = useState(null);
@@ -9,7 +10,7 @@ export const useFetch = (url) => {
     let isMounted = true;
     setLoading(true);
 
-    fetch(url)
+    fetch(url, { headers: { ...EXTRA_HEADERS } })
       .then((res) => {
         if (!res.ok) throw new Error('Failed to fetch data');
         return res.json();

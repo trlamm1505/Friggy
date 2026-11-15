@@ -8,7 +8,7 @@
 import * as SQLite from 'expo-sqlite';
 
 const DB_NAME = 'friggy_local.db';
-const DB_VERSION = 2;
+const DB_VERSION = 4;
 
 /**
  * ⚠️ TỪ DB_VERSION 2: bảng `local_*` (offline cache + hàng đợi đồng bộ).
@@ -39,7 +39,8 @@ const LOCAL_SCHEMA_SQL = [
     days_until_expiry INTEGER,
     image_path TEXT,
     updated_at INTEGER,
-    sync_status TEXT NOT NULL DEFAULT 'synced'
+    sync_status TEXT NOT NULL DEFAULT 'synced',
+    version INTEGER
   );`,
 
   // ── Thống kê tủ lạnh ──
@@ -142,6 +143,29 @@ const LOCAL_SCHEMA_SQL = [
     updated_at INTEGER
   );`,
 
+  // ── Danh sách công thức (cache read-only, để offline không thấy recipe giả) ──
+  //
+  // ⚠️ VÌ SAO CẦN (v4):
+  //   `local_recipe_details` chỉ cache CHI TIẾT từng công thức đã mở. Danh sách
+  //   công thức (`GET /recipes`) không có cache -> offline màn "Gợi ý công thức"
+  //   rơi xuống MOCK -> user thấy công thức bịa (nguy hiểm: có thể nấu theo
+  //   công thức không tồn tại).
+  //   Bảng này lưu snapshot danh sách đã tải về trước đó.
+  `CREATE TABLE IF NOT EXISTS local_recipe_list (
+    id TEXT PRIMARY KEY,
+    name TEXT,
+    image TEXT,
+    cook_time INTEGER,
+    difficulty TEXT,
+    servings INTEGER,
+    meal_type TEXT,
+    estimated_cost REAL,
+    is_ai_generated INTEGER DEFAULT 0,
+    tags_json TEXT,
+    is_bookmarked INTEGER DEFAULT 0,
+    updated_at INTEGER
+  );`,
+
   // ── Hàng đợi thao tác offline (thay cho `pending_ops` cũ không dùng) ──
   `CREATE TABLE IF NOT EXISTS local_pending_ops (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -159,6 +183,7 @@ const LOCAL_SCHEMA_SQL = [
   `CREATE INDEX IF NOT EXISTS idx_local_shopping_sync ON local_shopping_items(sync_status);`,
   `CREATE INDEX IF NOT EXISTS idx_local_catalog_name ON local_ingredient_catalog(name);`,
   `CREATE INDEX IF NOT EXISTS idx_local_pending_ops_type ON local_pending_ops(op_type);`,
+  `CREATE INDEX IF NOT EXISTS idx_local_recipe_list_name ON local_recipe_list(name);`,
 ];
 
 /**
@@ -172,6 +197,35 @@ const MIGRATIONS = [
     version: 2,
     up: async (db) => {
       for (const sql of LOCAL_SCHEMA_SQL) {
+        await db.execAsync(sql);
+      }
+    },
+  },
+  {
+    // ⚠️ v3: thêm cột `version` cho `local_ingredients`.
+    // Lý do: BE `UpdateFridgeItemDto.version` là BẮT BUỘC (`@IsInt() @Min(0)`)
+    // -> offline update không có version sẽ bị BE trả 400.
+    version: 3,
+    up: async (db) => {
+      try {
+        await db.execAsync(`ALTER TABLE local_ingredients ADD COLUMN version INTEGER;`);
+      } catch (_e) {
+        // DB mới đã có cột trong DDL -> "duplicate column name" -> bỏ qua.
+        if (typeof __DEV__ !== 'undefined' && __DEV__) {
+          console.log('[DatabaseService] Migration v3: cột version đã tồn tại, bỏ qua');
+        }
+      }
+    },
+  },
+  {
+    // ⚠️ v4: bảng `local_recipe_list` (cache danh sách công thức).
+    // Lý do: offline màn "Gợi ý công thức" phải hiện công thức THẬT đã tải
+    // về trước đó, không phải MOCK. Chi tiết từng món đã có ở
+    // `local_recipe_details`, nhưng danh sách thì chưa có.
+    version: 4,
+    up: async (db) => {
+      for (const sql of LOCAL_SCHEMA_SQL) {
+        // `CREATE TABLE/INDEX IF NOT EXISTS` -> chạy lại nhiều lần vô hại.
         await db.execAsync(sql);
       }
     },
@@ -314,6 +368,12 @@ class DatabaseService {
   constructor() {
     this._db = null;
     this._initPromise = null;
+    // ⚠️ Mutex cho transaction: chuỗi promise để serialize `withTransaction`.
+    // SQLite chỉ chịu được 1 transaction tại 1 thời điểm trên 1 connection.
+    // Nếu 2 lần `withTransactionAsync` chạy chồng -> "cannot start a transaction
+    // within a transaction", và lỗi ROLLACK bên trong sẽ kéo đổ transaction
+    // ngoài -> "cannot commit - no transaction is active".
+    this._txChain = Promise.resolve();
   }
 
   /**
@@ -385,21 +445,41 @@ class DatabaseService {
    * ⚠️ `expo-sqlite` (SDK 54+) có `withTransactionAsync`; các phiên bản cũ
    *   không có -> fallback sang gọi tuần tự (không atomic nhưng vẫn chạy).
    *
+   * ⚠️ SERIALIZE BẮT BUỘC:
+   *   Một connection SQLite chỉ chịu được 1 transaction tại 1 thời điểm.
+   *   `OfflineCache` (write-through) + `SyncEngine` (pull) + `OutboxQueue`
+   *   đều có thể gọi `withTransaction` đồng thời -> `BEGIN` chồng `BEGIN`.
+   *   => Dùng chuỗi promise để các transaction chạy TUẦN TỰ.
+   *
    * @param {(tx: object) => Promise<void>} fn
    */
   async withTransaction(fn) {
     await this.init();
     const db = this._db;
 
-    if (typeof db.withTransactionAsync === 'function') {
-      await db.withTransactionAsync(async () => {
-        await fn(db);
-      });
-      return;
-    }
+    const run = async () => {
+      // `expo-sqlite` trả `void` từ `withTransactionAsync` -> ta tự giữ kết quả
+      // để `withTransaction` có thể trả về giá trị của task (tiện cho test).
+      let result;
+      if (typeof db.withTransactionAsync === 'function') {
+        await db.withTransactionAsync(async () => {
+          result = await fn(db);
+        });
+        return result;
+      }
+      // Fallback: không atomic.
+      return await fn(db);
+    };
 
-    // Fallback: không atomic.
-    await fn(db);
+    // `then(run, run)` -> transaction trước đã lỗi vẫn không chặn transaction sau.
+    const next = this._txChain.then(run, run);
+    // Giữ chain sống (không bị unhandled rejection) nhưng KHÔNG nuốt lỗi
+    // của caller: `next` vẫn reject cho phía gọi.
+    this._txChain = next.then(
+      () => undefined,
+      () => undefined
+    );
+    return next;
   }
 
   /**
@@ -468,6 +548,7 @@ class DatabaseService {
       await this._db.closeAsync();
       this._db = null;
       this._initPromise = null;
+      this._txChain = Promise.resolve();
     }
   }
 

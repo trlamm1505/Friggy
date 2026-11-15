@@ -123,7 +123,14 @@ export const useAuthStore = create((set, get) => ({
               isOnboarded: resolveOnboarded(fresh, localOnboarded),
             });
           })
-          .catch(() => {
+          .catch((e) => {
+            // ⚠️ OFFLINE (đối chiếu Flutter 14/11):
+            //   - Lỗi MẠNG -> giữ phiên local, app vẫn dùng được offline.
+            //     (`ApiClient` đã KHÔNG xoá token khi refresh lỗi mạng.)
+            //   - Lỗi 401/403 -> `ApiClient` đã emit 'session-expired' ->
+            //     listener bên dưới sẽ logout. Ở đây KHÔNG cần làm gì.
+            if (e?.isNetworkError === true) return;
+
             // Lỗi 401 đã được ApiClient xử lý (clear token + session-expired).
             // Lỗi mạng -> giữ phiên local, app vẫn dùng được offline.
           });
@@ -300,6 +307,36 @@ export const useAuthActions = () => {
     }
   }, [authService]);
 
+  /**
+   * Đăng nhập OFFLINE bằng phiên đã lưu trên máy.
+   *
+   * ⚠️ VÌ SAO CẦN (đối chiếu Flutter 14/11):
+   *   Khi user đã từng đăng nhập trên máy này, token + user đã nằm trong MMKV.
+   *   Nếu mạng mất, màn Login vẫn cho user nhập lại mật khẩu -> không vào
+   *   được app, dù toàn bộ dữ liệu đã cache đầy đủ.
+   *   => Cho phép user vào app bằng phiên local (KHÔNG verify mật khẩu).
+   *
+   * ⚠️ BẢO MẬT:
+   *   - Chỉ dùng được khi máy CÒN token hợp lệ (chưa bị xoá).
+   *   - Đây là cùng cơ chế với Flutter `checkAndRefreshToken` khi lỗi mạng:
+   *     "device offline + có token local -> cho vào app".
+   *   - KHÔNG cho phép tạo phiên mới khi chưa từng đăng nhập (không có token).
+   *
+   * @returns {Promise<boolean>} true nếu vào được app offline
+   */
+  const resumeOfflineSession = useCallback(async () => {
+    const token = TokenStorage.getAccessToken() || TokenStorage.getRefreshToken();
+    if (!token) return false;
+
+    const saved = TokenStorage.getUserData() ?? readStoredUser();
+    if (!saved) return false;
+
+    // `login()` set isAuthenticated=true và tự resolve isOnboarded
+    // (ưu tiên field BE `isOnboardingCompleted`, fallback cờ local).
+    useAuthStore.getState().login(saved);
+    return true;
+  }, []);
+
   return {
     user,
     isAuthenticated,
@@ -312,5 +349,6 @@ export const useAuthActions = () => {
     resetPassword,
     changePassword,
     signOut,
+    resumeOfflineSession,
   };
 };

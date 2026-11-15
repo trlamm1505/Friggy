@@ -5,6 +5,8 @@
  *   - `fridge_ops_local_service.dart`  (update / consume / delete)
  *   - `slot_completion_local_service.dart` (tick "đã nấu")
  *   - `ingredient_local_service.dart` (thêm nguyên liệu)
+ *   - `allergy_local_service.dart` (thêm / xoá dị ứng) — v4
+ *   - `user_profile_local_service.dart` + `user_preference_local_service.dart` — v4
  *
  * VÌ SAO CẦN:
  *   Khi offline, mọi thao tác ghi (thêm/sửa/xoá/tick) phải được LƯU LẠI,
@@ -17,9 +19,14 @@
  *     opType:    string,             // xem `OP_TYPES`
  *     entityId:  (args) => string,   // id đối tượng bị tác động
  *     payload:   (args) => object,   // dữ liệu để gọi API lúc sync
- *     applyCache:(args) => Promise,  // cập nhật cache local (optimistic)
+ *     applyCache:(args, ctx) => Promise,  // cập nhật cache local (optimistic)
  *     result:    (args) => any       // giá trị trả về giả cho UI (tuỳ chọn)
  *   }
+ *
+ * ⚠️ `ctx` TRONG `applyCache`:
+ *   `ctx = { entityId }` — id đã resolve của thao tác. Handler `addItem` PHẢI
+ *   dùng `ctx.entityId` cho row pending để khớp với `entity_id` trong
+ *   `local_pending_ops` (nếu không -> món "ma" mồ côi sau khi sync).
  *
  * ⚠️ VÌ SAO 4xx KHÔNG QUEUE:
  *   Lỗi 4xx = yêu cầu sai (payload hỏng, không đủ quyền, conflict).
@@ -30,7 +37,7 @@
  * R7: comment tiếng Việt.
  */
 
-import { offlineCache } from './OfflineCache';
+import { offlineCache, SYNC_STATUS } from './OfflineCache';
 import { OP_TYPES } from './OutboxQueue';
 /**
  * Lỗi ném ra khi thao tác đã được LƯU OFFLINE (không phải lỗi thật).
@@ -91,10 +98,15 @@ export const MUTATION_HANDLERS = {
           expiryDate: item.expiryDate ?? null,
         };
       },
-      applyCache: async (args) => {
+      applyCache: async (args, ctx) => {
         const item = args[0] ?? {};
+        // ⚠️ Dùng `ctx.entityId` (id đã sinh cho `local_pending_ops`) để id
+        //   của row pending trong `local_ingredients` KHỚP với `entity_id`.
+        //   Nếu tự sinh id riêng -> upload xong không xoá được row pending ->
+        //   món "ma" mãi trong tủ mà không còn op để sync.
+        const id = ctx?.entityId ?? pendingId();
         await offlineCache.savePendingFridgeItem({
-          id: pendingId(),
+          id,
           name: item.name ?? '',
           ingredientId: item.ingredientId ?? null,
           quantity: Number(item.quantity) || 0,
@@ -234,6 +246,160 @@ export const MUTATION_HANDLERS = {
 
         // Lưu trạng thái cooked vào cache slot để UI vẫn hiện đúng tick.
         await offlineCache.setSlotCooked(String(slotId), args[1]?.completed === true);
+      },
+    },
+  },
+
+  /**
+   * ⚠️ v4 — nhóm dị ứng / hồ sơ / sở thích (đối chiếu Flutter 14/11).
+   *
+   * Flutter xử lý 3 nhóm này offline qua cột `sync_status` trong
+   * `local_allergies` / `local_user_profile` / `local_user_preferences`
+   * (không dùng bảng queue riêng). RN dùng chung `local_pending_ops` nên
+   * vẫn queue được, nhưng phải giữ đúng quy ước:
+   *   - thêm dị ứng -> row 'pending' (ẩn khỏi server, hiện trong UI)
+   *   - xoá dị ứng -> row 'pending_delete' (ẩn khỏi UI, chờ DELETE server)
+   */
+  userService: {
+    /**
+     * `POST /users/me/allergies` — thêm dị ứng.
+     *
+     * ⚠️ BE BẮT BUỘC `ingredientId` là số >= 1 -> nếu thiếu thì để lỗi ném lên
+     *    (không queue payload vô nghĩa).
+     */
+    addAllergy: {
+      opType: OP_TYPES.ALLERGY_ADD,
+      entityId: () => pendingId(),
+      payload: (args) => {
+        const ingredientId = Number(args[0]);
+        return {
+          ingredientId,
+          note: args[1] ?? null,
+        };
+      },
+      canQueue: (args) => {
+        const id = Number(args[0]);
+        return Number.isInteger(id) && id >= 1;
+      },
+      applyCache: async (args, ctx) => {
+        const ingredientId = Number(args[0]);
+        if (!Number.isInteger(ingredientId) || ingredientId < 1) return;
+
+        // Tên nguyên liệu lấy từ catalog cache (nếu có) -> UI hiện đúng tên.
+        let name = `Nguyên liệu #${ingredientId}`;
+        try {
+          const catalog = await offlineCache.searchIngredientCatalog('', 500);
+          const found = catalog.find((c) => Number(c.id) === ingredientId);
+          if (found?.name) name = found.name;
+        } catch (_e) {
+          // Không có catalog -> dùng tên tạm, không chặn luồng.
+        }
+
+        await offlineCache.savePendingAllergy({
+          id: ctx?.entityId ?? pendingId(),
+          ingredientId,
+          name,
+          note: args[1] ?? null,
+        });
+      },
+    },
+
+    /**
+     * `DELETE /users/me/allergies/:id` — xoá dị ứng.
+     *
+     * ⚠️ Chỉ queue được khi id là id thật từ server. Id tạm `pending_*` đã
+     *    được queue bởi `ALLERGY_ADD` -> xoá nó chỉ cần gỡ op add, không
+     *    cần gọi DELETE server.
+     */
+    removeAllergy: {
+      opType: OP_TYPES.ALLERGY_DELETE,
+      entityId: (args) => String(args[0] ?? ''),
+      canQueue: (args) => {
+        const id = String(args[0] ?? '');
+        // Id tạm -> không có trên server -> không gọi DELETE.
+        return id.length > 0 && !id.startsWith('pending_');
+      },
+      payload: (args) => ({ id: String(args[0] ?? '') }),
+      applyCache: async (args) => {
+        const id = String(args[0] ?? '');
+        if (!id) return;
+
+        await offlineCache.markAllergyPendingDelete(id);
+      },
+    },
+
+    /**
+     * `PATCH /users/me/profile` — sửa hồ sơ.
+     */
+    updateProfile: {
+      opType: OP_TYPES.PROFILE_UPDATE,
+      entityId: () => 'me',
+      payload: (args) => {
+        const updates = args[0] ?? {};
+        return {
+          name: updates.name ?? null,
+          dateOfBirth: updates.birthday || updates.dateOfBirth || null,
+          gender: updates.gender ?? null,
+          bio: updates.bio ?? null,
+        };
+      },
+      applyCache: async (args) => {
+        const updates = args[0] ?? {};
+        const cached = await offlineCache.getUserProfile();
+
+        await offlineCache.saveUserProfile(
+          {
+            ...(cached ?? {}),
+            name: updates.name ?? cached?.name ?? '',
+            email: cached?.email ?? '',
+            phone: cached?.phone ?? null,
+            avatar: cached?.avatar ?? null,
+            birthday: updates.birthday || updates.dateOfBirth || cached?.birthday || null,
+            gender: updates.gender ?? cached?.gender ?? null,
+            bio: updates.bio ?? cached?.bio ?? null,
+            role: cached?.role ?? null,
+            status: cached?.status ?? null,
+          },
+          SYNC_STATUS.PENDING
+        );
+      },
+    },
+
+    /**
+     * `PATCH /users/me/preferences` — sửa tùy chọn ăn uống.
+     */
+    updatePreferences: {
+      opType: OP_TYPES.PREFS_UPDATE,
+      entityId: () => 'me',
+      payload: (args) => {
+        const prefs = args[0] ?? {};
+        return {
+          weeklyBudget: prefs.weeklyBudget ?? null,
+          dailyCalorieTarget: prefs.dailyCalorieTarget ?? null,
+          dietaryStyle: prefs.dietaryStyle ?? null,
+          preferSimpleRecipes: prefs.preferSimpleRecipes ?? false,
+          maxCookTimeMinutes: prefs.maxCookTimeMinutes ?? null,
+          skillLevel: prefs.skillLevel ?? null,
+          householdSize: prefs.householdSize ?? null,
+          aiPersonalityMode: prefs.aiPersonalityMode ?? null,
+          primaryGoal: prefs.primaryGoal ?? null,
+          cookingFrequency: prefs.cookingFrequency ?? null,
+          height: prefs.height ?? null,
+          weight: prefs.weight ?? null,
+          activityLevel: prefs.activityLevel ?? null,
+        };
+      },
+      applyCache: async (args) => {
+        const prefs = args[0] ?? {};
+        const cached = await offlineCache.getUserPreferences();
+
+        await offlineCache.saveUserPreferences(
+          {
+            ...(cached ?? {}),
+            ...prefs,
+          },
+          SYNC_STATUS.PENDING
+        );
       },
     },
   },

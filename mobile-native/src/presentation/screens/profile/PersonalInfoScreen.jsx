@@ -33,7 +33,7 @@ import { CustomButton } from '../../components/common/CustomButton';
 import { SegmentedControl } from '../../components/common/SegmentedControl';
 import { useAuthStore } from '../../../shared/stores/useAuthStore';
 import { useServices } from '../../../data/ServiceProvider';
-import { showSuccess, showError } from '../../utils/helpers';
+import { showSuccess, showError, showMutationError } from '../../utils/helpers';
 import { Mail, Phone, User, Calendar } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
 
@@ -160,6 +160,15 @@ export const PersonalInfoScreen = () => {
       navigation.goBack();
     } catch (e) {
       // 4xx đi thẳng lên đây (BE từ chối dữ liệu) → hiện lỗi thật, KHÔNG báo thành công.
+      //
+      // ⚠️ OFFLINE (v4): nếu lỗi mạng, thao tác đã được lưu vào hàng đợi
+      //   (`OfflineQueuedError`) -> báo "đã lưu offline" và KHÔNG thoát màn,
+      //   để user thấy giá trị đã sửa ngay (cache đã cập nhật optimistic).
+      const queued = showMutationError(e, 'Không thể lưu thông tin', {
+        offlineMessage: t('offline.savedQueued'),
+      });
+      if (queued) return;
+
       showError(e?.message || 'Không thể lưu thông tin');
     } finally {
       setIsSaving(false);

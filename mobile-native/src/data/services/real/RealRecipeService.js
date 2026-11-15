@@ -256,6 +256,14 @@ export class RealRecipeService {
    * BE trả `{ data, total, page, limit, totalPages }`.
    * UI cần MẢNG phẳng -> trả array, giữ `meta` riêng cho phân trang vô hạn.
    *
+   * ⚠️ OFFLINE — cache:
+   *   - KHÔNG có filter server-side (`search`/`mealType`/`difficulty`/`tagIds`)
+   *     và KHÔNG phân trang -> kết quả là snapshot ĐẦY ĐỦ -> dùng
+   *     `saveRecipeList` (xoá sạch rồi insert) để cache luôn đúng bản mới nhất.
+   *   - Có filter / có `page` -> kết quả chỉ là TẬP CON -> dùng
+   *     `upsertRecipeList` (gộp, KHÔNG xoá) -> nếu xoá, cache bị cắt cụt và
+   *     user offline chỉ thấy đúng phần đang lọc.
+   *
    * @param {object} [filters]
    * @param {string} [filters.search]
    * @param {string} [filters.mealType]
@@ -269,7 +277,33 @@ export class RealRecipeService {
   async getRecipes(filters = {}) {
     const params = this._buildListParams(filters);
     const payload = await this.client.get('/recipes', { params });
-    return this._extractRecipeList(payload).map((dto) => this._toRecipe(dto));
+    const recipes = this._extractRecipeList(payload).map((dto) => this._toRecipe(dto));
+
+    // P1 (offline) — cache danh sách công thức để màn "Gợi ý công thức"
+    // không rơi xuống MOCK khi offline (user không được thấy món bịa).
+    if (recipes.length > 0) {
+      const isFullSnapshot = !this._hasServerFilter(filters) && !filters.page;
+      const write = isFullSnapshot
+        ? offlineCache.saveRecipeList(recipes)
+        : offlineCache.upsertRecipeList(recipes);
+      write.catch(() => {});
+    }
+
+    return recipes;
+  }
+
+  /**
+   * Có filter server-side trong `filters` hay không.
+   * @param {object} filters
+   * @returns {boolean}
+   */
+  _hasServerFilter(filters = {}) {
+    return Boolean(
+      (filters.search ?? '').trim() ||
+        (filters.mealType && filters.mealType !== 'all') ||
+        (filters.difficulty && filters.difficulty !== 'all') ||
+        filters.tagIds
+    );
   }
 
   /**
@@ -286,6 +320,16 @@ export class RealRecipeService {
     const params = this._buildListParams(filters);
     const payload = await this.client.get('/recipes', { params });
     const recipes = this._extractRecipeList(payload).map((dto) => this._toRecipe(dto));
+
+    // P1 (offline) — cache danh sách công thức (bộ chưa lọc) để offline
+    // lọc client-side trong `OfflineCache.getRecipeList`.
+    //
+    // ⚠️ Kết quả ĐÃ LỌC (hoặc 1 trang) chỉ là tập con -> phải GỘP vào cache,
+    //    KHÔNG dùng `saveRecipeList` (xoá sạch) -> nếu không, cache bị cắt cụt
+    //    còn đúng phần đang lọc và user offline mất phần còn lại.
+    if (recipes.length > 0) {
+      offlineCache.upsertRecipeList(recipes).catch(() => {});
+    }
 
     const { sortBy, sortDir } = filters;
     if (!sortBy) return recipes;
@@ -335,7 +379,18 @@ export class RealRecipeService {
   async getBookmarked() {
     const payload = await this.client.get('/recipes/bookmarked');
     const list = Array.isArray(payload) ? payload : [];
-    return list.map((dto) => this._toRecipe(dto));
+    const recipes = list.map((dto) => this._toRecipe(dto));
+
+    // P1 (offline) — cache danh sách bookmark để offline vẫn thấy món đã lưu.
+    // ⚠️ Dùng `syncBookmarkedFlags` (KHÔNG dùng `saveRecipeList`) — hàm đó xoá
+    //    sạch bảng, sẽ mất danh sách công thức chính đã cache.
+    if (recipes.length > 0) {
+      offlineCache
+        .syncBookmarkedFlags(recipes.map((r) => r.id))
+        .catch(() => {});
+    }
+
+    return recipes;
   }
 
   /**
@@ -344,6 +399,8 @@ export class RealRecipeService {
    */
   async addBookmark(id) {
     await this.client.post(`/recipes/${id}/bookmark`);
+    // P1 (offline) — cập nhật cache để offline vẫn hiện icon đã lưu.
+    offlineCache.setRecipeBookmarked(id, true).catch(() => {});
   }
 
   /**
@@ -351,6 +408,8 @@ export class RealRecipeService {
    */
   async removeBookmark(id) {
     await this.client.delete(`/recipes/${id}/bookmark`);
+    // P1 (offline) — cập nhật cache.
+    offlineCache.setRecipeBookmarked(id, false).catch(() => {});
   }
 
   // ═══════════════ Suggestions (meal-planning slots) ═══════════════

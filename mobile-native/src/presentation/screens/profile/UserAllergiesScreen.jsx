@@ -37,7 +37,7 @@ import { BackCircleButton } from '../../components/common/BackCircleButton';
 import { CustomTextField } from '../../components/common/CustomTextField';
 import { EmptyState } from '../../components/common/EmptyState';
 import { useServices } from '../../../data/ServiceProvider';
-import { showError } from '../../utils/helpers';
+import { showError, showMutationError } from '../../utils/helpers';
 import { Plus, X, Search, TriangleAlert } from 'lucide-react-native';
 
 export const UserAllergiesScreen = () => {
@@ -107,17 +107,38 @@ export const UserAllergiesScreen = () => {
     async (ingredient) => {
       setIsSaving(true);
       try {
-        const created = await userService.addAllergy(ingredient.id);
+        const created = await userService.addAllergy(ingredient.id, ingredient.note);
         if (created) setAllergies((prev) => [...prev, created]);
         setIsPickerOpen(false);
       } catch (e) {
+        // ⚠️ OFFLINE (v4): `SafeService` đã lưu thao tác vào hàng đợi và
+        //   ném `OfflineQueuedError`. Thêm optimistic vào UI (cache đã có row
+        //   'pending') và báo "đã lưu offline" — KHÔNG báo lỗi.
+        const queued = showMutationError(e, 'Không thể thêm dị ứng', {
+          offlineMessage: t('offline.savedQueued'),
+        });
+        if (queued) {
+          setAllergies((prev) => [
+            ...prev,
+            {
+              id: `pending_${Date.now()}`,
+              ingredientId: ingredient.id,
+              name: ingredient.name,
+              note: ingredient.note ?? null,
+              _syncStatus: 'pending',
+            },
+          ]);
+          setIsPickerOpen(false);
+          return;
+        }
+
         // 400 trùng nguyên liệu là lỗi của người dùng → hiện message BE trả về.
         showError(e?.message || 'Không thể thêm dị ứng');
       } finally {
         setIsSaving(false);
       }
     },
-    [userService]
+    [userService, t]
   );
 
   /** Optimistic: ẩn khỏi UI ngay, gọi API, lỗi thì trả về danh sách cũ. */
@@ -134,6 +155,13 @@ export const UserAllergiesScreen = () => {
             try {
               await userService.removeAllergy(item.id);
             } catch (e) {
+              // ⚠️ OFFLINE (v4): đã đánh dấu 'pending_delete' trong cache ->
+              //   giữ trạng thái đã ẩn (KHÔNG rollback) và báo "đã lưu offline".
+              const queued = showMutationError(e, 'Không thể xoá dị ứng', {
+                offlineMessage: t('offline.savedQueued'),
+              });
+              if (queued) return;
+
               setAllergies(snapshot); // rollback
               showError(e?.message || 'Không thể xoá dị ứng');
             }

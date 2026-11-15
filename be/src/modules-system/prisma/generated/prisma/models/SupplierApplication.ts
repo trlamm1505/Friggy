@@ -27,7 +27,6 @@ export type AggregateSupplierApplication = {
 export type SupplierApplicationMinAggregateOutputType = {
   id: string | null
   companyName: string | null
-  taxCode: string | null
   contactName: string | null
   email: string | null
   phone: string | null
@@ -47,7 +46,6 @@ export type SupplierApplicationMinAggregateOutputType = {
 export type SupplierApplicationMaxAggregateOutputType = {
   id: string | null
   companyName: string | null
-  taxCode: string | null
   contactName: string | null
   email: string | null
   phone: string | null
@@ -67,7 +65,6 @@ export type SupplierApplicationMaxAggregateOutputType = {
 export type SupplierApplicationCountAggregateOutputType = {
   id: number
   companyName: number
-  taxCode: number
   contactName: number
   email: number
   phone: number
@@ -89,7 +86,6 @@ export type SupplierApplicationCountAggregateOutputType = {
 export type SupplierApplicationMinAggregateInputType = {
   id?: true
   companyName?: true
-  taxCode?: true
   contactName?: true
   email?: true
   phone?: true
@@ -109,7 +105,6 @@ export type SupplierApplicationMinAggregateInputType = {
 export type SupplierApplicationMaxAggregateInputType = {
   id?: true
   companyName?: true
-  taxCode?: true
   contactName?: true
   email?: true
   phone?: true
@@ -129,7 +124,6 @@ export type SupplierApplicationMaxAggregateInputType = {
 export type SupplierApplicationCountAggregateInputType = {
   id?: true
   companyName?: true
-  taxCode?: true
   contactName?: true
   email?: true
   phone?: true
@@ -222,7 +216,6 @@ export type SupplierApplicationGroupByArgs<ExtArgs extends runtime.Types.Extensi
 export type SupplierApplicationGroupByOutputType = {
   id: string
   companyName: string
-  taxCode: string | null
   contactName: string
   email: string
   phone: string | null
@@ -263,7 +256,6 @@ export type SupplierApplicationWhereInput = {
   NOT?: Prisma.SupplierApplicationWhereInput | Prisma.SupplierApplicationWhereInput[]
   id?: Prisma.StringFilter<"SupplierApplication"> | string
   companyName?: Prisma.StringFilter<"SupplierApplication"> | string
-  taxCode?: Prisma.StringNullableFilter<"SupplierApplication"> | string | null
   contactName?: Prisma.StringFilter<"SupplierApplication"> | string
   email?: Prisma.StringFilter<"SupplierApplication"> | string
   phone?: Prisma.StringNullableFilter<"SupplierApplication"> | string | null
@@ -285,7 +277,6 @@ export type SupplierApplicationWhereInput = {
 export type SupplierApplicationOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   companyName?: Prisma.SortOrder
-  taxCode?: Prisma.SortOrderInput | Prisma.SortOrder
   contactName?: Prisma.SortOrder
   email?: Prisma.SortOrder
   phone?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -312,7 +303,6 @@ export type SupplierApplicationWhereUniqueInput = Prisma.AtLeast<{
   OR?: Prisma.SupplierApplicationWhereInput[]
   NOT?: Prisma.SupplierApplicationWhereInput | Prisma.SupplierApplicationWhereInput[]
   companyName?: Prisma.StringFilter<"SupplierApplication"> | string
-  taxCode?: Prisma.StringNullableFilter<"SupplierApplication"> | string | null
   contactName?: Prisma.StringFilter<"SupplierApplication"> | string
   email?: Prisma.StringFilter<"SupplierApplication"> | string
   phone?: Prisma.StringNullableFilter<"SupplierApplication"> | string | null
@@ -333,7 +323,6 @@ export type SupplierApplicationWhereUniqueInput = Prisma.AtLeast<{
 export type SupplierApplicationOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   companyName?: Prisma.SortOrder
-  taxCode?: Prisma.SortOrderInput | Prisma.SortOrder
   contactName?: Prisma.SortOrder
   email?: Prisma.SortOrder
   phone?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -359,7 +348,6 @@ export type SupplierApplicationScalarWhereWithAggregatesInput = {
   NOT?: Prisma.SupplierApplicationScalarWhereWithAggregatesInput | Prisma.SupplierApplicationScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"SupplierApplication"> | string
   companyName?: Prisma.StringWithAggregatesFilter<"SupplierApplication"> | string
-  taxCode?: Prisma.StringNullableWithAggregatesFilter<"SupplierApplication"> | string | null
   contactName?: Prisma.StringWithAggregatesFilter<"SupplierApplication"> | string
   email?: Prisma.StringWithAggregatesFilter<"SupplierApplication"> | string
   phone?: Prisma.StringNullableWithAggregatesFilter<"SupplierApplication"> | string | null
@@ -379,7 +367,6 @@ export type SupplierApplicationScalarWhereWithAggregatesInput = {
 export type SupplierApplicationCreateInput = {
   id?: string
   companyName: string
-  taxCode?: string | null
   contactName: string
   email: string
   phone?: string | null
@@ -399,7 +386,6 @@ export type SupplierApplicationCreateInput = {
 export type SupplierApplicationUncheckedCreateInput = {
   id?: string
   companyName: string
-  taxCode?: string | null
   contactName: string
   email: string
   phone?: string | null
@@ -419,7 +405,6 @@ export type SupplierApplicationUncheckedCreateInput = {
 export type SupplierApplicationUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   companyName?: Prisma.StringFieldUpdateOperationsInput | string
-  taxCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   contactName?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -439,7 +424,6 @@ export type SupplierApplicationUpdateInput = {
 export type SupplierApplicationUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   companyName?: Prisma.StringFieldUpdateOperationsInput | string
-  taxCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   contactName?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -459,7 +443,6 @@ export type SupplierApplicationUncheckedUpdateInput = {
 export type SupplierApplicationCreateManyInput = {
   id?: string
   companyName: string
-  taxCode?: string | null
   contactName: string
   email: string
   phone?: string | null
@@ -479,7 +462,6 @@ export type SupplierApplicationCreateManyInput = {
 export type SupplierApplicationUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   companyName?: Prisma.StringFieldUpdateOperationsInput | string
-  taxCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   contactName?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -497,7 +479,6 @@ export type SupplierApplicationUpdateManyMutationInput = {
 export type SupplierApplicationUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   companyName?: Prisma.StringFieldUpdateOperationsInput | string
-  taxCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   contactName?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -538,7 +519,6 @@ export type SupplierApplicationOrderByRelevanceInput = {
 export type SupplierApplicationCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   companyName?: Prisma.SortOrder
-  taxCode?: Prisma.SortOrder
   contactName?: Prisma.SortOrder
   email?: Prisma.SortOrder
   phone?: Prisma.SortOrder
@@ -558,7 +538,6 @@ export type SupplierApplicationCountOrderByAggregateInput = {
 export type SupplierApplicationMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   companyName?: Prisma.SortOrder
-  taxCode?: Prisma.SortOrder
   contactName?: Prisma.SortOrder
   email?: Prisma.SortOrder
   phone?: Prisma.SortOrder
@@ -578,7 +557,6 @@ export type SupplierApplicationMaxOrderByAggregateInput = {
 export type SupplierApplicationMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   companyName?: Prisma.SortOrder
-  taxCode?: Prisma.SortOrder
   contactName?: Prisma.SortOrder
   email?: Prisma.SortOrder
   phone?: Prisma.SortOrder
@@ -672,7 +650,6 @@ export type SupplierApplicationUncheckedUpdateManyWithoutReviewerNestedInput = {
 export type SupplierApplicationCreateWithoutUserInput = {
   id?: string
   companyName: string
-  taxCode?: string | null
   contactName: string
   email: string
   phone?: string | null
@@ -691,7 +668,6 @@ export type SupplierApplicationCreateWithoutUserInput = {
 export type SupplierApplicationUncheckedCreateWithoutUserInput = {
   id?: string
   companyName: string
-  taxCode?: string | null
   contactName: string
   email: string
   phone?: string | null
@@ -715,7 +691,6 @@ export type SupplierApplicationCreateOrConnectWithoutUserInput = {
 export type SupplierApplicationCreateWithoutReviewerInput = {
   id?: string
   companyName: string
-  taxCode?: string | null
   contactName: string
   email: string
   phone?: string | null
@@ -734,7 +709,6 @@ export type SupplierApplicationCreateWithoutReviewerInput = {
 export type SupplierApplicationUncheckedCreateWithoutReviewerInput = {
   id?: string
   companyName: string
-  taxCode?: string | null
   contactName: string
   email: string
   phone?: string | null
@@ -774,7 +748,6 @@ export type SupplierApplicationUpdateToOneWithWhereWithoutUserInput = {
 export type SupplierApplicationUpdateWithoutUserInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   companyName?: Prisma.StringFieldUpdateOperationsInput | string
-  taxCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   contactName?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -793,7 +766,6 @@ export type SupplierApplicationUpdateWithoutUserInput = {
 export type SupplierApplicationUncheckedUpdateWithoutUserInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   companyName?: Prisma.StringFieldUpdateOperationsInput | string
-  taxCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   contactName?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -831,7 +803,6 @@ export type SupplierApplicationScalarWhereInput = {
   NOT?: Prisma.SupplierApplicationScalarWhereInput | Prisma.SupplierApplicationScalarWhereInput[]
   id?: Prisma.StringFilter<"SupplierApplication"> | string
   companyName?: Prisma.StringFilter<"SupplierApplication"> | string
-  taxCode?: Prisma.StringNullableFilter<"SupplierApplication"> | string | null
   contactName?: Prisma.StringFilter<"SupplierApplication"> | string
   email?: Prisma.StringFilter<"SupplierApplication"> | string
   phone?: Prisma.StringNullableFilter<"SupplierApplication"> | string | null
@@ -851,7 +822,6 @@ export type SupplierApplicationScalarWhereInput = {
 export type SupplierApplicationCreateManyReviewerInput = {
   id?: string
   companyName: string
-  taxCode?: string | null
   contactName: string
   email: string
   phone?: string | null
@@ -870,7 +840,6 @@ export type SupplierApplicationCreateManyReviewerInput = {
 export type SupplierApplicationUpdateWithoutReviewerInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   companyName?: Prisma.StringFieldUpdateOperationsInput | string
-  taxCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   contactName?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -889,7 +858,6 @@ export type SupplierApplicationUpdateWithoutReviewerInput = {
 export type SupplierApplicationUncheckedUpdateWithoutReviewerInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   companyName?: Prisma.StringFieldUpdateOperationsInput | string
-  taxCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   contactName?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -908,7 +876,6 @@ export type SupplierApplicationUncheckedUpdateWithoutReviewerInput = {
 export type SupplierApplicationUncheckedUpdateManyWithoutReviewerInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   companyName?: Prisma.StringFieldUpdateOperationsInput | string
-  taxCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   contactName?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -929,7 +896,6 @@ export type SupplierApplicationUncheckedUpdateManyWithoutReviewerInput = {
 export type SupplierApplicationSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   companyName?: boolean
-  taxCode?: boolean
   contactName?: boolean
   email?: boolean
   phone?: boolean
@@ -953,7 +919,6 @@ export type SupplierApplicationSelect<ExtArgs extends runtime.Types.Extensions.I
 export type SupplierApplicationSelectScalar = {
   id?: boolean
   companyName?: boolean
-  taxCode?: boolean
   contactName?: boolean
   email?: boolean
   phone?: boolean
@@ -970,7 +935,7 @@ export type SupplierApplicationSelectScalar = {
   deletedAt?: boolean
 }
 
-export type SupplierApplicationOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "companyName" | "taxCode" | "contactName" | "email" | "phone" | "address" | "description" | "website" | "status" | "rejectionReason" | "reviewedAt" | "reviewedBy" | "userId" | "createdAt" | "updatedAt" | "deletedAt", ExtArgs["result"]["supplierApplication"]>
+export type SupplierApplicationOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "companyName" | "contactName" | "email" | "phone" | "address" | "description" | "website" | "status" | "rejectionReason" | "reviewedAt" | "reviewedBy" | "userId" | "createdAt" | "updatedAt" | "deletedAt", ExtArgs["result"]["supplierApplication"]>
 export type SupplierApplicationInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   user?: boolean | Prisma.SupplierApplication$userArgs<ExtArgs>
   reviewer?: boolean | Prisma.SupplierApplication$reviewerArgs<ExtArgs>
@@ -985,7 +950,6 @@ export type $SupplierApplicationPayload<ExtArgs extends runtime.Types.Extensions
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
     companyName: string
-    taxCode: string | null
     contactName: string
     email: string
     phone: string | null
@@ -1373,7 +1337,6 @@ export interface Prisma__SupplierApplicationClient<T, Null = never, ExtArgs exte
 export interface SupplierApplicationFieldRefs {
   readonly id: Prisma.FieldRef<"SupplierApplication", 'String'>
   readonly companyName: Prisma.FieldRef<"SupplierApplication", 'String'>
-  readonly taxCode: Prisma.FieldRef<"SupplierApplication", 'String'>
   readonly contactName: Prisma.FieldRef<"SupplierApplication", 'String'>
   readonly email: Prisma.FieldRef<"SupplierApplication", 'String'>
   readonly phone: Prisma.FieldRef<"SupplierApplication", 'String'>

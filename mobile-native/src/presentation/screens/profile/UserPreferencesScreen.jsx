@@ -31,7 +31,7 @@ import { CustomChip } from '../../components/common/CustomChip';
 import { CustomTextField } from '../../components/common/CustomTextField';
 import { Stepper } from '../../components/common/Stepper';
 import { useServices } from '../../../data/ServiceProvider';
-import { showSuccess, showError } from '../../utils/helpers';
+import { showSuccess, showError, showMutationError } from '../../utils/helpers';
 import { Wallet, Flame, Clock, Ruler, Scale } from 'lucide-react-native';
 
 /** Giá trị mặc định — chỉ dùng cho lần tải đầu, sau đó ghi đè bằng dữ liệu BE. */
@@ -120,6 +120,13 @@ export const UserPreferencesScreen = () => {
       showSuccess(t('profile.saveChanges'));
       navigation.goBack();
     } catch (e) {
+      // ⚠️ OFFLINE (v4): đã lưu vào hàng đợi -> báo "đã lưu offline", KHÔNG
+      //   báo lỗi (user sẽ bấm lại -> ghi đè). Giá trị đã cập nhật trong cache.
+      const queued = showMutationError(e, t('profile.saveFailed'), {
+        offlineMessage: t('offline.savedQueued'),
+      });
+      if (queued) return;
+
       showError(e?.message || t('profile.saveFailed'));
     } finally {
       setIsSaving(false);

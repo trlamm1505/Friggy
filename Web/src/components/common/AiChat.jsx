@@ -34,7 +34,7 @@ export const AiChat = () => {
   const [isTyping, setIsTyping] = useState(false);
   const [sessionId, setSessionId] = useState(() => localStorage.getItem(SESSION_STORAGE_KEY));
   const messagesEndRef = useRef(null);
-  const activeEventSourceRef = useRef(null);
+  const activeStreamRef = useRef(null);
 
   const [messages, setMessages] = useState([DEFAULT_WELCOME_MSG]);
 
@@ -79,11 +79,11 @@ export const AiChat = () => {
     loadHistory();
   }, [isOpen]);
 
-  // Clean up SSE EventSource khi unmount
+  // Clean up SSE stream khi unmount
   useEffect(() => {
     return () => {
-      if (activeEventSourceRef.current) {
-        activeEventSourceRef.current.close();
+      if (activeStreamRef.current) {
+        activeStreamRef.current.close();
       }
     };
   }, []);
@@ -121,11 +121,11 @@ export const AiChat = () => {
       const activeSessionId = newSessionId || currentSessionId;
 
       // 3. Mở kết nối SSE Stream nhận từng token
-      if (activeEventSourceRef.current) {
-        activeEventSourceRef.current.close();
+      if (activeStreamRef.current) {
+        activeStreamRef.current.close();
       }
 
-      activeEventSourceRef.current = subscribePublicChatStream(streamKey, {
+      activeStreamRef.current = subscribePublicChatStream(streamKey, {
         onToken: (token) => {
           hasReceivedToken = true;
           setIsTyping(false);

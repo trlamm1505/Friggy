@@ -13,87 +13,52 @@ export class AdminStatsService {
   // ─────────────────────────────────────────────────────────
   async getOverview() {
     const now = new Date();
+    const thirtyDaysAgo = new Date(now);
+    thirtyDaysAgo.setDate(now.getDate() - 30);
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
     const [
-      // ── Users ──────────────────────────────────────────
       totalUsers,
       activeUsers,
       suspendedUsers,
       newUsersThisMonth,
-      activeUserSubscriptions,
-      userRevenueThisMonth,
-      userTotalRevenue,
-      // ── Suppliers ──────────────────────────────────────
-      totalSuppliers,
-      verifiedSuppliers,
-      activeSupplierSubscriptions,
-      pendingApplications,
-      supplierRevenueThisMonth,
-      supplierTotalRevenue,
-      pendingIngredients,
+      activeSubscriptions,
+      revenueThisMonth,
+      totalRevenue,
     ] = await Promise.all([
-      // Users
-      this.prisma.user.count({ where: { deletedAt: null, supplierProfile: null } }),
-      this.prisma.user.count({ where: { deletedAt: null, status: 'active', supplierProfile: null } }),
-      this.prisma.user.count({ where: { deletedAt: null, status: 'suspended', supplierProfile: null } }),
-      this.prisma.user.count({ where: { deletedAt: null, createdAt: { gte: monthStart }, supplierProfile: null } }),
+      this.prisma.user.count({ where: { deletedAt: null } }),
+      this.prisma.user.count({ where: { deletedAt: null, status: 'active' } }),
+      this.prisma.user.count({ where: { deletedAt: null, status: 'suspended' } }),
+      this.prisma.user.count({ where: { deletedAt: null, createdAt: { gte: monthStart } } }),
       this.prisma.userSubscription.count({
         where: {
           status: 'active',
           OR: [{ endDate: null }, { endDate: { gte: now } }],
         },
       }),
+      // Doanh thu tháng này = tổng tiền giao dịch paid trong tháng
       this.prisma.paymentTransaction.aggregate({
         where: { status: 'paid', createdAt: { gte: monthStart } },
         _sum: { amount: true },
       }),
+      // Tổng doanh thu toàn thời gian
       this.prisma.paymentTransaction.aggregate({
         where: { status: 'paid' },
         _sum: { amount: true },
       }),
-
-      // Suppliers
-      this.prisma.supplierProfile.count({ where: { deletedAt: null } }),
-      this.prisma.supplierProfile.count({ where: { deletedAt: null, isVerified: true } }),
-      this.prisma.supplierSubscription.count({
-        where: { status: 'active', endDate: { gte: now } },
-      }),
-      this.prisma.supplierApplication.count({ where: { status: 'pending' } }),
-      this.prisma.supplierPaymentTransaction.aggregate({
-        where: { status: { in: ['completed', 'paid'] }, createdAt: { gte: monthStart } },
-        _sum: { amount: true },
-      }),
-      this.prisma.supplierPaymentTransaction.aggregate({
-        where: { status: { in: ['completed', 'paid'] } },
-        _sum: { amount: true },
-      }),
-      this.prisma.supplierIngredient.count({ where: { status: 'pending', deletedAt: null } }),
     ]);
 
+    const revenueVnd = revenueThisMonth._sum.amount ?? 0;
+    const totalRevenueVnd = totalRevenue._sum.amount ?? 0;
+
     return {
-      users: {
-        total:            totalUsers,
-        active:           activeUsers,
-        suspended:        suspendedUsers,
-        newThisMonth:     newUsersThisMonth,
-        activeSubscriptions: activeUserSubscriptions,
-        revenueThisMonthVnd: userRevenueThisMonth._sum.amount ?? 0,
-        totalRevenueVnd:     userTotalRevenue._sum.amount ?? 0,
-      },
-      suppliers: {
-        total:                totalSuppliers,
-        verified:             verifiedSuppliers,
-        activeSubscriptions:  activeSupplierSubscriptions,
-        pendingApplications,
-        pendingIngredients,
-        revenueThisMonthVnd:  supplierRevenueThisMonth._sum.amount ?? 0,
-        totalRevenueVnd:      supplierTotalRevenue._sum.amount ?? 0,
-      },
-      combined: {
-        revenueThisMonthVnd: (userRevenueThisMonth._sum.amount ?? 0) + (supplierRevenueThisMonth._sum.amount ?? 0),
-        totalRevenueVnd:     (userTotalRevenue._sum.amount ?? 0) + (supplierTotalRevenue._sum.amount ?? 0),
-      },
+      totalUsers,
+      activeUsers,
+      suspendedUsers,
+      newUsersThisMonth,
+      activeSubscriptions,
+      revenueThisMonthVnd: revenueVnd,
+      totalRevenueVnd,
     };
   }
 
@@ -127,46 +92,21 @@ export class AdminStatsService {
   // GET /admin/stats/subscriptions
   // ─────────────────────────────────────────────────────────
   async getSubscriptionBreakdown() {
-    const now = new Date();
+    const breakdown = await this.prisma.userSubscription.groupBy({
+      by: ['planId'],
+      where: { status: 'active' },
+      _count: { id: true },
+    });
 
-    const [
-      userBreakdown,
-      userPlans,
-      supplierBreakdown,
-      supplierPlans,
-    ] = await Promise.all([
-      // Phân bố gói user
-      this.prisma.userSubscription.groupBy({
-        by: ['planId'],
-        where: { status: 'active' },
-        _count: { id: true },
-      }),
-      this.prisma.subscriptionPlan.findMany({
-        select: { id: true, name: true, displayName: true },
-      }),
-      // Phân bố gói supplier
-      this.prisma.supplierSubscription.groupBy({
-        by: ['planId'],
-        where: { status: 'active', endDate: { gte: now } },
-        _count: { id: true },
-      }),
-      this.prisma.supplierPlan.findMany({
-        select: { id: true, name: true },
-      }),
-    ]);
+    const plans = await this.prisma.subscriptionPlan.findMany({
+      select: { id: true, name: true, displayName: true },
+    });
 
-    const userPlanMap     = new Map(userPlans.map((p) => [p.id, p]));
-    const supplierPlanMap = new Map(supplierPlans.map((p) => [p.id, p]));
+    const planMap = new Map(plans.map((p) => [p.id, p]));
 
-    return {
-      users: userBreakdown.map((b) => ({
-        plan:              userPlanMap.get(b.planId) ?? { id: b.planId, name: 'Unknown' },
-        activeSubscribers: b._count.id,
-      })),
-      suppliers: supplierBreakdown.map((b) => ({
-        plan:              supplierPlanMap.get(b.planId) ?? { id: b.planId, name: 'Unknown' },
-        activeSubscribers: b._count.id,
-      })),
-    };
+    return breakdown.map((b) => ({
+      plan: planMap.get(b.planId) ?? { id: b.planId, name: 'Unknown' },
+      activeSubscribers: b._count.id,
+    }));
   }
 }

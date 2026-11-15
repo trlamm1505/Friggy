@@ -284,6 +284,13 @@ export class RealAuthService extends IAuthService {
   /**
    * GET /users/me - lấy user hiện tại (dùng khi mở app, validate token còn sống).
    * BE trả `MeResponseDto` có thêm `profile` (chứa avatarUrl).
+   *
+   * ⚠️ OFFLINE (đối chiếu Flutter 14/11):
+   *   Khi mạng lỗi, `ApiClient` KHÔNG xoá token (phiên vẫn còn giá trị trên
+   *   máy) và ném `ApiException` với `isNetworkError = true`. `_throwAuthError`
+   *   đổi lỗi mạng thành 4xx -> `useAuthStore.initAuth` không phân biệt được.
+   *   => Ở đây giữ nguyên `isNetworkError = true` cho lỗi mạng để store biết
+   *   "giữ phiên, dùng offline" thay vì "logout".
    */
   async getCurrentUser() {
     try {
@@ -295,6 +302,10 @@ export class RealAuthService extends IAuthService {
       );
       return user;
     } catch (e) {
+      // Lỗi mạng -> giữ nguyên cờ `isNetworkError` để store giữ phiên offline.
+      if (e?.isNetworkError === true) {
+        throw e;
+      }
       this._throwAuthError(e);
     }
   }

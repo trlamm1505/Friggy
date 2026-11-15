@@ -58,6 +58,21 @@ import { offlineCache, SYNC_STATUS } from './OfflineCache';
  */
 const realService = (key) => getRegisteredService(key);
 
+/**
+ * Bỏ field `_syncStatus` (chỉ là metadata nội bộ) khỏi object cache.
+ *
+ * Dùng khi merge dữ liệu server với dữ liệu local đang 'pending' -> tránh
+ * lẫn trạng thái của server vào payload lưu xuống DB.
+ *
+ * @param {object|null} obj
+ * @returns {object}
+ */
+const stripSyncStatus = (obj) => {
+  if (!obj) return {};
+  const { _syncStatus, ...rest } = obj;
+  return rest;
+};
+
 class SyncEngine {
   constructor() {
     // Cờ chống chạy trùng (giống `BackgroundSyncService._isSyncing`).
@@ -238,7 +253,7 @@ class SyncEngine {
       case OP_TYPES.FRIDGE_ADD: {
         const fridge = realService('fridgeService');
         if (!fridge) throw new Error('fridgeService chưa sẵn sàng');
-        await fridge.addItem({
+        const created = await fridge.addItem({
           name: payload.name,
           ingredientId: payload.ingredientId,
           quantity: payload.quantity,
@@ -246,7 +261,12 @@ class SyncEngine {
           compartment: payload.compartment,
           expiryDate: payload.expiryDate,
         });
-        // Xoá row pending local (dữ liệu đã lên server -> sẽ được pull lại).
+
+        // Item đã lên server -> thay row `pending_*` bằng item thật (có id +
+        // version chính thức) rồi xoá row pending.
+        if (created?.id) {
+          await offlineCache.upsertFridgeItem(created, SYNC_STATUS.SYNCED);
+        }
         await offlineCache.removeFridgeItem(op.entity_id);
         return;
       }
@@ -254,22 +274,24 @@ class SyncEngine {
       case OP_TYPES.FRIDGE_UPDATE: {
         const fridge = realService('fridgeService');
         if (!fridge) throw new Error('fridgeService chưa sẵn sàng');
-        await fridge.updateItem(op.entity_id, {
+        const updated = await fridge.updateItem(op.entity_id, {
           quantity: payload.quantity ?? undefined,
           unit: payload.unit ?? undefined,
           expiryDate: payload.expiryDate ?? undefined,
           clearExpiry: payload.clearExpiry === true ? true : undefined,
           version: payload.version ?? undefined,
         });
-        await offlineCache.markFridgeItemPending(op.entity_id);
+        // Đã sync xong -> KHÔNG giữ trạng thái 'pending' (nếu không item mãi
+        // hiện "đang chờ đồng bộ") + cập nhật version mới (BE increment 1).
+        await offlineCache.markFridgeItemSynced(op.entity_id, updated?.version ?? null);
         return;
       }
 
       case OP_TYPES.FRIDGE_CONSUME: {
         const fridge = realService('fridgeService');
         if (!fridge) throw new Error('fridgeService chưa sẵn sàng');
-        await fridge.markConsumed(op.entity_id);
-        await offlineCache.markFridgeItemPending(op.entity_id);
+        const consumed = await fridge.markConsumed(op.entity_id);
+        await offlineCache.markFridgeItemSynced(op.entity_id, consumed?.version ?? null);
         return;
       }
 
@@ -301,6 +323,61 @@ class SyncEngine {
         return;
       }
 
+      case OP_TYPES.ALLERGY_ADD: {
+        const user = realService('userService');
+        if (!user) throw new Error('userService chưa sẵn sàng');
+        const created = await user.addAllergy(payload.ingredientId, payload.note);
+        // Server đã có dị ứng với id thật -> đổi row pending sang id thật
+        // (giống Flutter `markAsSynced(localId, serverId)`).
+        if (created?.id && op.entity_id) {
+          await offlineCache.deleteAllergy(op.entity_id);
+          await offlineCache.upsertAllergy({
+            id: String(created.id),
+            ingredientId: created.ingredientId ?? payload.ingredientId,
+            name: created.name ?? '',
+            note: created.note ?? payload.note ?? null,
+          });
+        }
+        return;
+      }
+
+      case OP_TYPES.ALLERGY_DELETE: {
+        const user = realService('userService');
+        if (!user) throw new Error('userService chưa sẵn sàng');
+        await user.removeAllergy(op.entity_id);
+        // Xoá trên server thành công -> xoá hẳn row khỏi cache.
+        await offlineCache.deleteAllergy(op.entity_id);
+        return;
+      }
+
+      case OP_TYPES.PROFILE_UPDATE: {
+        const user = realService('userService');
+        if (!user) throw new Error('userService chưa sẵn sàng');
+        await user.updateProfile({
+          name: payload.name ?? undefined,
+          dateOfBirth: payload.dateOfBirth ?? undefined,
+          gender: payload.gender ?? undefined,
+          bio: payload.bio ?? undefined,
+        });
+        // Đã sync -> đánh dấu 'synced' (đừng để mãi 'pending').
+        const cached = await offlineCache.getUserProfile();
+        if (cached) {
+          await offlineCache.saveUserProfile(cached, SYNC_STATUS.SYNCED);
+        }
+        return;
+      }
+
+      case OP_TYPES.PREFS_UPDATE: {
+        const user = realService('userService');
+        if (!user) throw new Error('userService chưa sẵn sàng');
+        await user.updatePreferences(payload);
+        const cached = await offlineCache.getUserPreferences();
+        if (cached) {
+          await offlineCache.saveUserPreferences(cached, SYNC_STATUS.SYNCED);
+        }
+        return;
+      }
+
       default:
         // Op không còn hỗ trợ -> bỏ (tránh chặn cả hàng đợi).
         if (typeof __DEV__ !== 'undefined' && __DEV__) {
@@ -325,6 +402,7 @@ class SyncEngine {
       { name: 'weeklyPlan', run: () => this._pullWeeklyPlan() },
       { name: 'userData', run: () => this._pullUserData() },
       { name: 'ingredientCatalog', run: () => this._pullIngredientCatalog() },
+      { name: 'recipeList', run: () => this._pullRecipeList() },
     ];
 
     for (const group of groups) {
@@ -338,12 +416,25 @@ class SyncEngine {
     }
   }
 
-  /** @private */
+  /**
+   * Tải dữ liệu tủ lạnh mới từ server xuống cache.
+   *
+   * ⚠️ CHỈ GHI CACHE 1 LẦN:
+   *   `RealFridgeService.getItems` mặc định sẽ write-through cache. Nếu
+   *   `_pullFridgeItems` lại ghi thêm lần nữa -> 2 transaction SQLite chạy
+   *   chồng nhau -> "cannot start a transaction within a transaction" ->
+   *   cache ghi hỏng hoàn toàn (log "[RealFridgeService] Không ghi được cache").
+   *   => Gọi `getItems` với `skipCacheWrite: true`, rồi `SyncEngine` tự ghi
+   *   cache 1 lần (giữ được hành vi với cả mock service trong test).
+   *
+   * @private
+   */
   async _pullFridgeItems() {
     const fridge = realService('fridgeService');
     if (!fridge) return;
-    const items = await fridge.getItems({});
-    await offlineCache.saveFridgeItems(items);
+
+    const items = await fridge.getItems({}, { skipCacheWrite: true });
+    await offlineCache.saveFridgeItems(items ?? []);
   }
 
   /** @private */
@@ -380,31 +471,138 @@ class SyncEngine {
     });
   }
 
-  /** @private */
+  /**
+   * Tải hồ sơ / sở thích / dị ứng về cache.
+   *
+   * ⚠️ QUAN TRỌNG — KHÔNG ghi đè thay đổi chưa đồng bộ:
+   *   Nếu user sửa hồ sơ OFFLINE (cache đang 'pending'), mà lúc này pull
+   *   dữ liệu server về và ghi đè -> thay đổi của user MẤT, dù op trong
+   *   hàng đợi vẫn còn (sẽ upload giá trị cũ lên server).
+   *   -> Giữ nguyên giá trị local đang 'pending', chỉ cập nhật phần server.
+   *
+   * Đối chiếu Flutter: `user_profile_local_service.dart` / `user_preference_
+   * local_service.dart` cũng giữ row 'pending' khi pull.
+   *
+   * @private
+   */
   async _pullUserData() {
     const user = realService('userService');
     if (!user) return;
 
     const profile = await user.getProfile();
-    await offlineCache.saveUserProfile(profile);
+    if (profile) {
+      const cached = await offlineCache.getUserProfile();
+      const isPending = cached?._syncStatus === SYNC_STATUS.PENDING;
+      await offlineCache.saveUserProfile(
+        isPending ? { ...profile, ...stripSyncStatus(cached) } : profile,
+        isPending ? SYNC_STATUS.PENDING : SYNC_STATUS.SYNCED
+      );
+    }
 
     const prefs = await user.getPreferences();
-    await offlineCache.saveUserPreferences(prefs);
+    if (prefs) {
+      const cachedPrefs = await offlineCache.getUserPreferences();
+      const isPending = cachedPrefs?._syncStatus === SYNC_STATUS.PENDING;
+      await offlineCache.saveUserPreferences(
+        isPending ? { ...prefs, ...stripSyncStatus(cachedPrefs) } : prefs,
+        isPending ? SYNC_STATUS.PENDING : SYNC_STATUS.SYNCED
+      );
+    }
 
     const allergies = await user.getAllergies();
+    // `saveAllergies` chỉ xoá row 'synced' -> row 'pending' / 'pending_delete'
+    // được giữ nguyên (đúng như Flutter).
     await offlineCache.saveAllergies(allergies);
   }
 
-  /** @private */
+  /**
+   * Tải TOÀN BỘ danh mục nguyên liệu về cache (picker offline).
+   *
+   * ⚠️ Phân trang (đối chiếu Flutter `_syncIngredientCatalog`):
+   *   Flutter duyệt tối đa 20 trang x 100 item = tối đa 2000 nguyên liệu.
+   *   BE `GET /ingredients` giới hạn `limit <= 100` (`@Max(100)`) -> gọi
+   *   `limit=200` sẽ bị 400. Phải gọi TỪNG TRANG rồi gộp.
+   *
+   * ⚠️ `saveIngredientCatalog` XOÁ SẠCH bảng rồi insert lại -> chỉ gọi 1
+   *   lần sau khi đã gộp hết các trang (gọi mỗi trang sẽ mất trang trước).
+   *   -> Truyền `skipCacheWrite: true` để service không tự ghi cache.
+   *
+   * @private
+   */
   async _pullIngredientCatalog() {
     const user = realService('userService');
     if (!user) return;
-    const items = await user.searchIngredients('', 100);
-    if (items.length > 0) {
-      await offlineCache.saveIngredientCatalog(items);
+
+    const PAGE_SIZE = 100;
+    const MAX_PAGES = 20; // Flutter cũng giới hạn 20 trang.
+    const all = [];
+
+    for (let page = 1; page <= MAX_PAGES; page += 1) {
+      const items = await user.searchIngredients('', PAGE_SIZE, page, {
+        skipCacheWrite: true,
+      });
+      const list = Array.isArray(items) ? items : [];
+      all.push(...list);
+
+      // Trang cuối -> BE trả về ít hơn PAGE_SIZE item.
+      if (list.length < PAGE_SIZE) break;
+    }
+
+    if (all.length > 0) {
+      await offlineCache.saveIngredientCatalog(all);
     }
   }
 
+  /**
+   * Tải danh sách công thức về cache (offline màn "Gợi ý công thức").
+   *
+   * ⚠️ VÌ SAO CẦN:
+   *   `GET /recipes` không có cache -> offline `SafeService` fallback sang MOCK
+   *   -> user thấy công thức BỊA. Đây là nguồn dữ liệu thay thế.
+   *
+   * ⚠️ Phân trang (BE giới hạn `limit <= 100`):
+   *   Chỉ lấy trang đầu (100 món) là thiếu -> duyệt tối đa 10 trang x 100.
+   *
+   * ⚠️ `getRecipesFiltered` không gọi write-through cache -> phải tự ghi.
+   *
+   * @private
+   */
+  async _pullRecipeList() {
+    const recipe = realService('recipeService');
+    if (!recipe) return;
+
+    // Lấy danh sách chính (không filter) để cache đầy đủ -> offline lọc client-side.
+    const PAGE_SIZE = 100;
+    const MAX_PAGES = 10;
+    const all = [];
+
+    for (let page = 1; page <= MAX_PAGES; page += 1) {
+      const recipes = await recipe.getRecipes({ limit: PAGE_SIZE, page });
+      const list = Array.isArray(recipes) ? recipes : [];
+      all.push(...list);
+
+      // Trang cuối -> BE trả về ít hơn PAGE_SIZE item.
+      if (list.length < PAGE_SIZE) break;
+    }
+
+    if (all.length === 0) return;
+
+    // Gắn cờ bookmark từ server (nếu có) để offline hiện đúng icon.
+    let bookmarkedIds = [];
+    try {
+      const bookmarked = await recipe.getBookmarked();
+      bookmarkedIds = (bookmarked ?? []).map((r) => String(r.id));
+    } catch (_e) {
+      // Bỏ qua — cache vẫn dùng được, chỉ thiếu cờ bookmark.
+    }
+
+    const merged = all.map((r) => ({
+      ...r,
+      isBookmarked: bookmarkedIds.includes(String(r.id)),
+    }));
+
+    await offlineCache.saveRecipeList(merged);
+  }
   // ══════════════════════════════════════════════════════════════════
   // PHASE 3 — PRE-CACHE RECIPES
   // ══════════════════════════════════════════════════════════════════

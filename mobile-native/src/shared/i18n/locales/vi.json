@@ -65,7 +65,11 @@
     "syncFailed": "Đồng bộ chưa hoàn tất, sẽ thử lại",
     "conflict": "Có thao tác bị xung đột, vui lòng kiểm tra lại",
     "refreshOffline": "Không có mạng — đang hiển thị dữ liệu đã lưu",
-    "cachedData": "Đang hiển thị dữ liệu đã lưu"
+    "cachedData": "Đang hiển thị dữ liệu đã lưu",
+    "loginOffline": "Đăng nhập bằng dữ liệu đã lưu",
+    "loginOfflineHint": "Máy đang offline. Bạn có thể vào app bằng phiên đã đăng nhập trước đó.",
+    "loginOfflineSuccess": "Đã vào app bằng dữ liệu trên máy",
+    "loginOfflineUnavailable": "Không có phiên đăng nhập nào được lưu trên máy này"
   },
   "home": {
     "greetingMorning": "Chào buổi sáng",

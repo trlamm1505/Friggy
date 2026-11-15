@@ -276,6 +276,7 @@ export type WeeklyPlanWhereInput = {
   createdAt?: Prisma.DateTimeFilter<"WeeklyPlan"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"WeeklyPlan"> | Date | string
   deletedAt?: Prisma.DateTimeNullableFilter<"WeeklyPlan"> | Date | string | null
+  evaluationLogs?: Prisma.AiEvaluationLogListRelationFilter
   dailyPlans?: Prisma.DailyPlanListRelationFilter
   shoppingLists?: Prisma.ShoppingListListRelationFilter
   aiSession?: Prisma.XOR<Prisma.ChatSessionNullableScalarRelationFilter, Prisma.ChatSessionWhereInput> | null
@@ -296,6 +297,7 @@ export type WeeklyPlanOrderByWithRelationInput = {
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  evaluationLogs?: Prisma.AiEvaluationLogOrderByRelationAggregateInput
   dailyPlans?: Prisma.DailyPlanOrderByRelationAggregateInput
   shoppingLists?: Prisma.ShoppingListOrderByRelationAggregateInput
   aiSession?: Prisma.ChatSessionOrderByWithRelationInput
@@ -320,6 +322,7 @@ export type WeeklyPlanWhereUniqueInput = Prisma.AtLeast<{
   createdAt?: Prisma.DateTimeFilter<"WeeklyPlan"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"WeeklyPlan"> | Date | string
   deletedAt?: Prisma.DateTimeNullableFilter<"WeeklyPlan"> | Date | string | null
+  evaluationLogs?: Prisma.AiEvaluationLogListRelationFilter
   dailyPlans?: Prisma.DailyPlanListRelationFilter
   shoppingLists?: Prisma.ShoppingListListRelationFilter
   aiSession?: Prisma.XOR<Prisma.ChatSessionNullableScalarRelationFilter, Prisma.ChatSessionWhereInput> | null
@@ -375,6 +378,7 @@ export type WeeklyPlanCreateInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
+  evaluationLogs?: Prisma.AiEvaluationLogCreateNestedManyWithoutWeeklyPlanInput
   dailyPlans?: Prisma.DailyPlanCreateNestedManyWithoutWeeklyPlanInput
   shoppingLists?: Prisma.ShoppingListCreateNestedManyWithoutWeeklyPlanInput
   aiSession?: Prisma.ChatSessionCreateNestedOneWithoutWeeklyPlansInput
@@ -395,6 +399,7 @@ export type WeeklyPlanUncheckedCreateInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
+  evaluationLogs?: Prisma.AiEvaluationLogUncheckedCreateNestedManyWithoutWeeklyPlanInput
   dailyPlans?: Prisma.DailyPlanUncheckedCreateNestedManyWithoutWeeklyPlanInput
   shoppingLists?: Prisma.ShoppingListUncheckedCreateNestedManyWithoutWeeklyPlanInput
 }
@@ -409,6 +414,7 @@ export type WeeklyPlanUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  evaluationLogs?: Prisma.AiEvaluationLogUpdateManyWithoutWeeklyPlanNestedInput
   dailyPlans?: Prisma.DailyPlanUpdateManyWithoutWeeklyPlanNestedInput
   shoppingLists?: Prisma.ShoppingListUpdateManyWithoutWeeklyPlanNestedInput
   aiSession?: Prisma.ChatSessionUpdateOneWithoutWeeklyPlansNestedInput
@@ -429,6 +435,7 @@ export type WeeklyPlanUncheckedUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  evaluationLogs?: Prisma.AiEvaluationLogUncheckedUpdateManyWithoutWeeklyPlanNestedInput
   dailyPlans?: Prisma.DailyPlanUncheckedUpdateManyWithoutWeeklyPlanNestedInput
   shoppingLists?: Prisma.ShoppingListUncheckedUpdateManyWithoutWeeklyPlanNestedInput
 }
@@ -674,6 +681,22 @@ export type WeeklyPlanUncheckedUpdateManyWithoutAiSessionNestedInput = {
   deleteMany?: Prisma.WeeklyPlanScalarWhereInput | Prisma.WeeklyPlanScalarWhereInput[]
 }
 
+export type WeeklyPlanCreateNestedOneWithoutEvaluationLogsInput = {
+  create?: Prisma.XOR<Prisma.WeeklyPlanCreateWithoutEvaluationLogsInput, Prisma.WeeklyPlanUncheckedCreateWithoutEvaluationLogsInput>
+  connectOrCreate?: Prisma.WeeklyPlanCreateOrConnectWithoutEvaluationLogsInput
+  connect?: Prisma.WeeklyPlanWhereUniqueInput
+}
+
+export type WeeklyPlanUpdateOneWithoutEvaluationLogsNestedInput = {
+  create?: Prisma.XOR<Prisma.WeeklyPlanCreateWithoutEvaluationLogsInput, Prisma.WeeklyPlanUncheckedCreateWithoutEvaluationLogsInput>
+  connectOrCreate?: Prisma.WeeklyPlanCreateOrConnectWithoutEvaluationLogsInput
+  upsert?: Prisma.WeeklyPlanUpsertWithoutEvaluationLogsInput
+  disconnect?: Prisma.WeeklyPlanWhereInput | boolean
+  delete?: Prisma.WeeklyPlanWhereInput | boolean
+  connect?: Prisma.WeeklyPlanWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.WeeklyPlanUpdateToOneWithWhereWithoutEvaluationLogsInput, Prisma.WeeklyPlanUpdateWithoutEvaluationLogsInput>, Prisma.WeeklyPlanUncheckedUpdateWithoutEvaluationLogsInput>
+}
+
 export type WeeklyPlanCreateNestedManyWithoutFamilyGroupInput = {
   create?: Prisma.XOR<Prisma.WeeklyPlanCreateWithoutFamilyGroupInput, Prisma.WeeklyPlanUncheckedCreateWithoutFamilyGroupInput> | Prisma.WeeklyPlanCreateWithoutFamilyGroupInput[] | Prisma.WeeklyPlanUncheckedCreateWithoutFamilyGroupInput[]
   connectOrCreate?: Prisma.WeeklyPlanCreateOrConnectWithoutFamilyGroupInput | Prisma.WeeklyPlanCreateOrConnectWithoutFamilyGroupInput[]
@@ -726,6 +749,7 @@ export type WeeklyPlanCreateWithoutUserInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
+  evaluationLogs?: Prisma.AiEvaluationLogCreateNestedManyWithoutWeeklyPlanInput
   dailyPlans?: Prisma.DailyPlanCreateNestedManyWithoutWeeklyPlanInput
   shoppingLists?: Prisma.ShoppingListCreateNestedManyWithoutWeeklyPlanInput
   aiSession?: Prisma.ChatSessionCreateNestedOneWithoutWeeklyPlansInput
@@ -744,6 +768,7 @@ export type WeeklyPlanUncheckedCreateWithoutUserInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
+  evaluationLogs?: Prisma.AiEvaluationLogUncheckedCreateNestedManyWithoutWeeklyPlanInput
   dailyPlans?: Prisma.DailyPlanUncheckedCreateNestedManyWithoutWeeklyPlanInput
   shoppingLists?: Prisma.ShoppingListUncheckedCreateNestedManyWithoutWeeklyPlanInput
 }
@@ -802,6 +827,7 @@ export type WeeklyPlanCreateWithoutDailyPlansInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
+  evaluationLogs?: Prisma.AiEvaluationLogCreateNestedManyWithoutWeeklyPlanInput
   shoppingLists?: Prisma.ShoppingListCreateNestedManyWithoutWeeklyPlanInput
   aiSession?: Prisma.ChatSessionCreateNestedOneWithoutWeeklyPlansInput
   familyGroup?: Prisma.FamilyGroupCreateNestedOneWithoutWeeklyPlansInput
@@ -821,6 +847,7 @@ export type WeeklyPlanUncheckedCreateWithoutDailyPlansInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
+  evaluationLogs?: Prisma.AiEvaluationLogUncheckedCreateNestedManyWithoutWeeklyPlanInput
   shoppingLists?: Prisma.ShoppingListUncheckedCreateNestedManyWithoutWeeklyPlanInput
 }
 
@@ -850,6 +877,7 @@ export type WeeklyPlanUpdateWithoutDailyPlansInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  evaluationLogs?: Prisma.AiEvaluationLogUpdateManyWithoutWeeklyPlanNestedInput
   shoppingLists?: Prisma.ShoppingListUpdateManyWithoutWeeklyPlanNestedInput
   aiSession?: Prisma.ChatSessionUpdateOneWithoutWeeklyPlansNestedInput
   familyGroup?: Prisma.FamilyGroupUpdateOneWithoutWeeklyPlansNestedInput
@@ -869,6 +897,7 @@ export type WeeklyPlanUncheckedUpdateWithoutDailyPlansInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  evaluationLogs?: Prisma.AiEvaluationLogUncheckedUpdateManyWithoutWeeklyPlanNestedInput
   shoppingLists?: Prisma.ShoppingListUncheckedUpdateManyWithoutWeeklyPlanNestedInput
 }
 
@@ -882,6 +911,7 @@ export type WeeklyPlanCreateWithoutShoppingListsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
+  evaluationLogs?: Prisma.AiEvaluationLogCreateNestedManyWithoutWeeklyPlanInput
   dailyPlans?: Prisma.DailyPlanCreateNestedManyWithoutWeeklyPlanInput
   aiSession?: Prisma.ChatSessionCreateNestedOneWithoutWeeklyPlansInput
   familyGroup?: Prisma.FamilyGroupCreateNestedOneWithoutWeeklyPlansInput
@@ -901,6 +931,7 @@ export type WeeklyPlanUncheckedCreateWithoutShoppingListsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
+  evaluationLogs?: Prisma.AiEvaluationLogUncheckedCreateNestedManyWithoutWeeklyPlanInput
   dailyPlans?: Prisma.DailyPlanUncheckedCreateNestedManyWithoutWeeklyPlanInput
 }
 
@@ -930,6 +961,7 @@ export type WeeklyPlanUpdateWithoutShoppingListsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  evaluationLogs?: Prisma.AiEvaluationLogUpdateManyWithoutWeeklyPlanNestedInput
   dailyPlans?: Prisma.DailyPlanUpdateManyWithoutWeeklyPlanNestedInput
   aiSession?: Prisma.ChatSessionUpdateOneWithoutWeeklyPlansNestedInput
   familyGroup?: Prisma.FamilyGroupUpdateOneWithoutWeeklyPlansNestedInput
@@ -949,6 +981,7 @@ export type WeeklyPlanUncheckedUpdateWithoutShoppingListsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  evaluationLogs?: Prisma.AiEvaluationLogUncheckedUpdateManyWithoutWeeklyPlanNestedInput
   dailyPlans?: Prisma.DailyPlanUncheckedUpdateManyWithoutWeeklyPlanNestedInput
 }
 
@@ -962,6 +995,7 @@ export type WeeklyPlanCreateWithoutAiSessionInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
+  evaluationLogs?: Prisma.AiEvaluationLogCreateNestedManyWithoutWeeklyPlanInput
   dailyPlans?: Prisma.DailyPlanCreateNestedManyWithoutWeeklyPlanInput
   shoppingLists?: Prisma.ShoppingListCreateNestedManyWithoutWeeklyPlanInput
   familyGroup?: Prisma.FamilyGroupCreateNestedOneWithoutWeeklyPlansInput
@@ -980,6 +1014,7 @@ export type WeeklyPlanUncheckedCreateWithoutAiSessionInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
+  evaluationLogs?: Prisma.AiEvaluationLogUncheckedCreateNestedManyWithoutWeeklyPlanInput
   dailyPlans?: Prisma.DailyPlanUncheckedCreateNestedManyWithoutWeeklyPlanInput
   shoppingLists?: Prisma.ShoppingListUncheckedCreateNestedManyWithoutWeeklyPlanInput
 }
@@ -1010,6 +1045,90 @@ export type WeeklyPlanUpdateManyWithWhereWithoutAiSessionInput = {
   data: Prisma.XOR<Prisma.WeeklyPlanUpdateManyMutationInput, Prisma.WeeklyPlanUncheckedUpdateManyWithoutAiSessionInput>
 }
 
+export type WeeklyPlanCreateWithoutEvaluationLogsInput = {
+  id?: string
+  weekStartDate: Date | string
+  totalBudget: number
+  actualCost?: number | null
+  status?: $Enums.WeeklyPlanStatus
+  generatedByAi?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  dailyPlans?: Prisma.DailyPlanCreateNestedManyWithoutWeeklyPlanInput
+  shoppingLists?: Prisma.ShoppingListCreateNestedManyWithoutWeeklyPlanInput
+  aiSession?: Prisma.ChatSessionCreateNestedOneWithoutWeeklyPlansInput
+  familyGroup?: Prisma.FamilyGroupCreateNestedOneWithoutWeeklyPlansInput
+  user: Prisma.UserCreateNestedOneWithoutWeeklyPlansInput
+}
+
+export type WeeklyPlanUncheckedCreateWithoutEvaluationLogsInput = {
+  id?: string
+  userId: string
+  familyGroupId?: string | null
+  weekStartDate: Date | string
+  totalBudget: number
+  actualCost?: number | null
+  status?: $Enums.WeeklyPlanStatus
+  generatedByAi?: boolean
+  aiSessionId?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  dailyPlans?: Prisma.DailyPlanUncheckedCreateNestedManyWithoutWeeklyPlanInput
+  shoppingLists?: Prisma.ShoppingListUncheckedCreateNestedManyWithoutWeeklyPlanInput
+}
+
+export type WeeklyPlanCreateOrConnectWithoutEvaluationLogsInput = {
+  where: Prisma.WeeklyPlanWhereUniqueInput
+  create: Prisma.XOR<Prisma.WeeklyPlanCreateWithoutEvaluationLogsInput, Prisma.WeeklyPlanUncheckedCreateWithoutEvaluationLogsInput>
+}
+
+export type WeeklyPlanUpsertWithoutEvaluationLogsInput = {
+  update: Prisma.XOR<Prisma.WeeklyPlanUpdateWithoutEvaluationLogsInput, Prisma.WeeklyPlanUncheckedUpdateWithoutEvaluationLogsInput>
+  create: Prisma.XOR<Prisma.WeeklyPlanCreateWithoutEvaluationLogsInput, Prisma.WeeklyPlanUncheckedCreateWithoutEvaluationLogsInput>
+  where?: Prisma.WeeklyPlanWhereInput
+}
+
+export type WeeklyPlanUpdateToOneWithWhereWithoutEvaluationLogsInput = {
+  where?: Prisma.WeeklyPlanWhereInput
+  data: Prisma.XOR<Prisma.WeeklyPlanUpdateWithoutEvaluationLogsInput, Prisma.WeeklyPlanUncheckedUpdateWithoutEvaluationLogsInput>
+}
+
+export type WeeklyPlanUpdateWithoutEvaluationLogsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  weekStartDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  totalBudget?: Prisma.IntFieldUpdateOperationsInput | number
+  actualCost?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  status?: Prisma.EnumWeeklyPlanStatusFieldUpdateOperationsInput | $Enums.WeeklyPlanStatus
+  generatedByAi?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  dailyPlans?: Prisma.DailyPlanUpdateManyWithoutWeeklyPlanNestedInput
+  shoppingLists?: Prisma.ShoppingListUpdateManyWithoutWeeklyPlanNestedInput
+  aiSession?: Prisma.ChatSessionUpdateOneWithoutWeeklyPlansNestedInput
+  familyGroup?: Prisma.FamilyGroupUpdateOneWithoutWeeklyPlansNestedInput
+  user?: Prisma.UserUpdateOneRequiredWithoutWeeklyPlansNestedInput
+}
+
+export type WeeklyPlanUncheckedUpdateWithoutEvaluationLogsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  userId?: Prisma.StringFieldUpdateOperationsInput | string
+  familyGroupId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  weekStartDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  totalBudget?: Prisma.IntFieldUpdateOperationsInput | number
+  actualCost?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  status?: Prisma.EnumWeeklyPlanStatusFieldUpdateOperationsInput | $Enums.WeeklyPlanStatus
+  generatedByAi?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  aiSessionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  dailyPlans?: Prisma.DailyPlanUncheckedUpdateManyWithoutWeeklyPlanNestedInput
+  shoppingLists?: Prisma.ShoppingListUncheckedUpdateManyWithoutWeeklyPlanNestedInput
+}
+
 export type WeeklyPlanCreateWithoutFamilyGroupInput = {
   id?: string
   weekStartDate: Date | string
@@ -1020,6 +1139,7 @@ export type WeeklyPlanCreateWithoutFamilyGroupInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
+  evaluationLogs?: Prisma.AiEvaluationLogCreateNestedManyWithoutWeeklyPlanInput
   dailyPlans?: Prisma.DailyPlanCreateNestedManyWithoutWeeklyPlanInput
   shoppingLists?: Prisma.ShoppingListCreateNestedManyWithoutWeeklyPlanInput
   aiSession?: Prisma.ChatSessionCreateNestedOneWithoutWeeklyPlansInput
@@ -1038,6 +1158,7 @@ export type WeeklyPlanUncheckedCreateWithoutFamilyGroupInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
+  evaluationLogs?: Prisma.AiEvaluationLogUncheckedCreateNestedManyWithoutWeeklyPlanInput
   dailyPlans?: Prisma.DailyPlanUncheckedCreateNestedManyWithoutWeeklyPlanInput
   shoppingLists?: Prisma.ShoppingListUncheckedCreateNestedManyWithoutWeeklyPlanInput
 }
@@ -1092,6 +1213,7 @@ export type WeeklyPlanUpdateWithoutUserInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  evaluationLogs?: Prisma.AiEvaluationLogUpdateManyWithoutWeeklyPlanNestedInput
   dailyPlans?: Prisma.DailyPlanUpdateManyWithoutWeeklyPlanNestedInput
   shoppingLists?: Prisma.ShoppingListUpdateManyWithoutWeeklyPlanNestedInput
   aiSession?: Prisma.ChatSessionUpdateOneWithoutWeeklyPlansNestedInput
@@ -1110,6 +1232,7 @@ export type WeeklyPlanUncheckedUpdateWithoutUserInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  evaluationLogs?: Prisma.AiEvaluationLogUncheckedUpdateManyWithoutWeeklyPlanNestedInput
   dailyPlans?: Prisma.DailyPlanUncheckedUpdateManyWithoutWeeklyPlanNestedInput
   shoppingLists?: Prisma.ShoppingListUncheckedUpdateManyWithoutWeeklyPlanNestedInput
 }
@@ -1152,6 +1275,7 @@ export type WeeklyPlanUpdateWithoutAiSessionInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  evaluationLogs?: Prisma.AiEvaluationLogUpdateManyWithoutWeeklyPlanNestedInput
   dailyPlans?: Prisma.DailyPlanUpdateManyWithoutWeeklyPlanNestedInput
   shoppingLists?: Prisma.ShoppingListUpdateManyWithoutWeeklyPlanNestedInput
   familyGroup?: Prisma.FamilyGroupUpdateOneWithoutWeeklyPlansNestedInput
@@ -1170,6 +1294,7 @@ export type WeeklyPlanUncheckedUpdateWithoutAiSessionInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  evaluationLogs?: Prisma.AiEvaluationLogUncheckedUpdateManyWithoutWeeklyPlanNestedInput
   dailyPlans?: Prisma.DailyPlanUncheckedUpdateManyWithoutWeeklyPlanNestedInput
   shoppingLists?: Prisma.ShoppingListUncheckedUpdateManyWithoutWeeklyPlanNestedInput
 }
@@ -1212,6 +1337,7 @@ export type WeeklyPlanUpdateWithoutFamilyGroupInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  evaluationLogs?: Prisma.AiEvaluationLogUpdateManyWithoutWeeklyPlanNestedInput
   dailyPlans?: Prisma.DailyPlanUpdateManyWithoutWeeklyPlanNestedInput
   shoppingLists?: Prisma.ShoppingListUpdateManyWithoutWeeklyPlanNestedInput
   aiSession?: Prisma.ChatSessionUpdateOneWithoutWeeklyPlansNestedInput
@@ -1230,6 +1356,7 @@ export type WeeklyPlanUncheckedUpdateWithoutFamilyGroupInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  evaluationLogs?: Prisma.AiEvaluationLogUncheckedUpdateManyWithoutWeeklyPlanNestedInput
   dailyPlans?: Prisma.DailyPlanUncheckedUpdateManyWithoutWeeklyPlanNestedInput
   shoppingLists?: Prisma.ShoppingListUncheckedUpdateManyWithoutWeeklyPlanNestedInput
 }
@@ -1254,11 +1381,13 @@ export type WeeklyPlanUncheckedUpdateManyWithoutFamilyGroupInput = {
  */
 
 export type WeeklyPlanCountOutputType = {
+  evaluationLogs: number
   dailyPlans: number
   shoppingLists: number
 }
 
 export type WeeklyPlanCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  evaluationLogs?: boolean | WeeklyPlanCountOutputTypeCountEvaluationLogsArgs
   dailyPlans?: boolean | WeeklyPlanCountOutputTypeCountDailyPlansArgs
   shoppingLists?: boolean | WeeklyPlanCountOutputTypeCountShoppingListsArgs
 }
@@ -1271,6 +1400,13 @@ export type WeeklyPlanCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.E
    * Select specific fields to fetch from the WeeklyPlanCountOutputType
    */
   select?: Prisma.WeeklyPlanCountOutputTypeSelect<ExtArgs> | null
+}
+
+/**
+ * WeeklyPlanCountOutputType without action
+ */
+export type WeeklyPlanCountOutputTypeCountEvaluationLogsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.AiEvaluationLogWhereInput
 }
 
 /**
@@ -1301,6 +1437,7 @@ export type WeeklyPlanSelect<ExtArgs extends runtime.Types.Extensions.InternalAr
   createdAt?: boolean
   updatedAt?: boolean
   deletedAt?: boolean
+  evaluationLogs?: boolean | Prisma.WeeklyPlan$evaluationLogsArgs<ExtArgs>
   dailyPlans?: boolean | Prisma.WeeklyPlan$dailyPlansArgs<ExtArgs>
   shoppingLists?: boolean | Prisma.WeeklyPlan$shoppingListsArgs<ExtArgs>
   aiSession?: boolean | Prisma.WeeklyPlan$aiSessionArgs<ExtArgs>
@@ -1328,6 +1465,7 @@ export type WeeklyPlanSelectScalar = {
 
 export type WeeklyPlanOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "familyGroupId" | "weekStartDate" | "totalBudget" | "actualCost" | "status" | "generatedByAi" | "aiSessionId" | "createdAt" | "updatedAt" | "deletedAt", ExtArgs["result"]["weeklyPlan"]>
 export type WeeklyPlanInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  evaluationLogs?: boolean | Prisma.WeeklyPlan$evaluationLogsArgs<ExtArgs>
   dailyPlans?: boolean | Prisma.WeeklyPlan$dailyPlansArgs<ExtArgs>
   shoppingLists?: boolean | Prisma.WeeklyPlan$shoppingListsArgs<ExtArgs>
   aiSession?: boolean | Prisma.WeeklyPlan$aiSessionArgs<ExtArgs>
@@ -1339,6 +1477,7 @@ export type WeeklyPlanInclude<ExtArgs extends runtime.Types.Extensions.InternalA
 export type $WeeklyPlanPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "WeeklyPlan"
   objects: {
+    evaluationLogs: Prisma.$AiEvaluationLogPayload<ExtArgs>[]
     dailyPlans: Prisma.$DailyPlanPayload<ExtArgs>[]
     shoppingLists: Prisma.$ShoppingListPayload<ExtArgs>[]
     aiSession: Prisma.$ChatSessionPayload<ExtArgs> | null
@@ -1698,6 +1837,7 @@ readonly fields: WeeklyPlanFieldRefs;
  */
 export interface Prisma__WeeklyPlanClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
+  evaluationLogs<T extends Prisma.WeeklyPlan$evaluationLogsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.WeeklyPlan$evaluationLogsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AiEvaluationLogPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   dailyPlans<T extends Prisma.WeeklyPlan$dailyPlansArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.WeeklyPlan$dailyPlansArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DailyPlanPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   shoppingLists<T extends Prisma.WeeklyPlan$shoppingListsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.WeeklyPlan$shoppingListsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ShoppingListPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   aiSession<T extends Prisma.WeeklyPlan$aiSessionArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.WeeklyPlan$aiSessionArgs<ExtArgs>>): Prisma.Prisma__ChatSessionClient<runtime.Types.Result.GetResult<Prisma.$ChatSessionPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
@@ -2089,6 +2229,30 @@ export type WeeklyPlanDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.In
    * Limit how many WeeklyPlans to delete.
    */
   limit?: number
+}
+
+/**
+ * WeeklyPlan.evaluationLogs
+ */
+export type WeeklyPlan$evaluationLogsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the AiEvaluationLog
+   */
+  select?: Prisma.AiEvaluationLogSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the AiEvaluationLog
+   */
+  omit?: Prisma.AiEvaluationLogOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.AiEvaluationLogInclude<ExtArgs> | null
+  where?: Prisma.AiEvaluationLogWhereInput
+  orderBy?: Prisma.AiEvaluationLogOrderByWithRelationInput | Prisma.AiEvaluationLogOrderByWithRelationInput[]
+  cursor?: Prisma.AiEvaluationLogWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.AiEvaluationLogScalarFieldEnum | Prisma.AiEvaluationLogScalarFieldEnum[]
 }
 
 /**

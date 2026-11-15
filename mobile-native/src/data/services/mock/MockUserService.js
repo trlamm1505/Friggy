@@ -187,7 +187,7 @@ export class MockUserService extends IUserService {
    * Danh sách rút gọn; `ingredientId` phải trùng với `allergies.json` để
    * thêm/xoá dị ứng trong mock hoạt động như thật.
    */
-  async searchIngredients(search, limit = 20) {
+  async searchIngredients(search, limit = 20, _page = 1) {
     await sleep(MOCK_DELAY / 2);
     const keyword = (search || '').trim().toLowerCase();
     return INGREDIENT_CATALOG.filter(

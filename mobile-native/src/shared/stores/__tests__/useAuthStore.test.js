@@ -123,6 +123,29 @@ describe('useAuthStore.initAuth', () => {
     // Local flag 'true' nhưng BE là nguồn sự thật -> false
     expect(useAuthStore.getState().isOnboarded).toBe(false);
   });
+
+  // ⚠️ OFFLINE (đối chiếu Flutter 14/11 - `checkAndRefreshToken`):
+  //   Lỗi MẠNG khi validate token -> GIỮ phiên local, KHÔNG logout.
+  it('getCurrentUser lỗi MẠNG -> giữ phiên local, KHÔNG logout', async () => {
+    TokenStorage.setAccessToken('token-abc');
+    TokenStorage.setUserData({ id: 'u-1', name: 'Lâm', email: 'a@b.com' });
+
+    const networkError = new Error('Mất mạng');
+    networkError.isNetworkError = true;
+    mockGetRegisteredService.mockReturnValue({
+      getCurrentUser: jest.fn().mockRejectedValue(networkError),
+    });
+
+    useAuthStore.getState().initAuth();
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(useAuthStore.getState().isAuthenticated).toBe(true);
+    expect(useAuthStore.getState().user.email).toBe('a@b.com');
+    expect(TokenStorage.getAccessToken()).toBe('token-abc');
+  });
 });
 
 // ═══════════════ login / logout ═══════════════
@@ -241,5 +264,67 @@ describe('useAuthActions', () => {
 
     expect(mockAuthService.sendResetOtp).toHaveBeenCalledWith('a@b.com');
     expect(mockAuthService.resetPassword).toHaveBeenCalled();
+  });
+});
+
+// ═══════════════ ĐĂNG NHẬP OFFLINE ═══════════════
+
+describe('useAuthActions.resumeOfflineSession', () => {
+  it('có token + user đã lưu -> vào được app (không gọi network)', async () => {
+    TokenStorage.setAccessToken('token-abc');
+    TokenStorage.setRefreshToken('refresh-abc');
+    TokenStorage.setUserData({ id: 'u-1', name: 'Lâm', email: 'a@b.com' });
+
+    const { result } = renderHook(() => useAuthActions());
+    let ok = false;
+    await act(async () => {
+      ok = await result.current.resumeOfflineSession();
+    });
+
+    expect(ok).toBe(true);
+    expect(useAuthStore.getState().isAuthenticated).toBe(true);
+    expect(useAuthStore.getState().user.email).toBe('a@b.com');
+    // KHÔNG gọi network (offline).
+    expect(mockAuthService.login).not.toHaveBeenCalled();
+  });
+
+  it('chỉ có refresh token -> vẫn vào được app', async () => {
+    TokenStorage.setRefreshToken('refresh-abc');
+    TokenStorage.setUserData({ id: 'u-1', name: 'Lâm', email: 'a@b.com' });
+
+    const { result } = renderHook(() => useAuthActions());
+    let ok = false;
+    await act(async () => {
+      ok = await result.current.resumeOfflineSession();
+    });
+
+    expect(ok).toBe(true);
+    expect(useAuthStore.getState().isAuthenticated).toBe(true);
+  });
+
+  it('KHÔNG có token -> trả false (không tạo phiên mới)', async () => {
+    TokenStorage.setUserData({ id: 'u-1', name: 'Lâm', email: 'a@b.com' });
+
+    const { result } = renderHook(() => useAuthActions());
+    let ok = true;
+    await act(async () => {
+      ok = await result.current.resumeOfflineSession();
+    });
+
+    expect(ok).toBe(false);
+    expect(useAuthStore.getState().isAuthenticated).toBe(false);
+  });
+
+  it('có token nhưng KHÔNG có user đã lưu -> trả false', async () => {
+    TokenStorage.setAccessToken('token-abc');
+
+    const { result } = renderHook(() => useAuthActions());
+    let ok = true;
+    await act(async () => {
+      ok = await result.current.resumeOfflineSession();
+    });
+
+    expect(ok).toBe(false);
+    expect(useAuthStore.getState().isAuthenticated).toBe(false);
   });
 });

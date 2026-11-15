@@ -1,5 +1,8 @@
 /**
- * DatabaseService - migration v1 -> v2 (bảng `local_*` cho offline).
+ * DatabaseService - migration offline (bảng `local_*` cho offline).
+ *
+ * ⚠️ DB_VERSION hiện = 4
+ *   (v3: cột `version` cho `local_ingredients`; v4: bảng `local_recipe_list`).
  */
 
 import { databaseService } from '../../storage/DatabaseService';
@@ -17,6 +20,7 @@ const REQUIRED_LOCAL_TABLES = [
   'local_allergies',
   'local_ingredient_catalog',
   'local_pending_ops',
+  'local_recipe_list',
   'local_meta',
 ];
 
@@ -43,7 +47,7 @@ describe('DatabaseService - migration offline', () => {
   it('ghi lại db_version vào local_meta (idempotent)', async () => {
     const db = await databaseService.init();
     const row = await db.getFirstAsync(`SELECT value FROM local_meta WHERE key = 'db_version';`);
-    expect(Number(row.value)).toBe(2);
+    expect(Number(row.value)).toBe(4);
   });
 
   it('chạy init 2 lần không lỗi (idempotent)', async () => {
@@ -53,7 +57,7 @@ describe('DatabaseService - migration offline', () => {
 
     const db = await databaseService.init();
     const row = await db.getFirstAsync(`SELECT value FROM local_meta WHERE key = 'db_version';`);
-    expect(Number(row.value)).toBe(2);
+    expect(Number(row.value)).toBe(4);
   });
   it('bảng mock cũ vẫn còn (không phá seedData)', async () => {
     const db = await databaseService.init();
@@ -86,12 +90,23 @@ describe('DatabaseService - migration offline', () => {
     expect(rows[0].sync_status).toBe('pending');
   });
 
+  it('local_ingredients có cột version (migration v3)', async () => {
+    const db = await databaseService.init();
+    await db.runAsync(
+      `INSERT INTO local_ingredients (id, name, sync_status, updated_at, version)
+       VALUES ('local_v', 'Táo', 'synced', 123, 5);`
+    );
+
+    const rows = await db.getAllAsync(`SELECT * FROM local_ingredients;`);
+    expect(rows[0].version).toBe(5);
+  });
+
   it('dropAllTables xoá cả bảng offline rồi tạo lại', async () => {
     await databaseService.init();
     await databaseService.dropAllTables();
 
     const db = await databaseService.init();
     const row = await db.getFirstAsync(`SELECT value FROM local_meta WHERE key = 'db_version';`);
-    expect(Number(row.value)).toBe(2);
+    expect(Number(row.value)).toBe(4);
   });
 });

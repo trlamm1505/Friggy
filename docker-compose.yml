@@ -54,9 +54,13 @@ services:
     image: rabbitmq:3-management-alpine
     container_name: con-friggy-rabbitmq
     restart: unless-stopped
+    hostname: friggy
     env_file: .env.docker
     environment:
       <<: *tz
+      # Cố định node name: nếu không, mỗi lần recreate container sẽ đổi hostname
+      # theo container-id, tạo mnesia dir orphan và Khepri projections có thể bị treo.
+      RABBITMQ_NODENAME: rabbit@friggy
     ports:
       - "5673:5672"    # AMQP
       - "15673:15672"  # Management UI
@@ -135,8 +139,11 @@ services:
 
 volumes:
   mysql_data:
+    name: friggy_mysql_data
   redis_data:
+    name: friggy_redis_data
   rabbitmq_data:
+    name: friggy_rabbitmq_data
 
 networks:
   friggy-net:
