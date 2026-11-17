@@ -172,6 +172,63 @@ const readBookmarkedRecipes = async () => {
 };
 
 /**
+ * Đọc cache gợi ý món ăn hôm nay từ kế hoạch tuần (B2).
+ *
+ * ⚠️ B2 - `recipeService.getSuggestions()`:
+ *   Offline mà không có cache -> UI hiện `ErrorState` (đúng), nhưng nếu ĐÃ
+ *   có kế hoạch tuần trong cache thì đó là dữ liệu THẬT -> nên dùng.
+ *   Shape phải khớp `RealRecipeService.getSuggestions()`.
+ *
+ * @returns {Promise<Array|null>}
+ */
+const readSuggestions = async () => {
+  const slots = await offlineCache.getWeeklyPlanSlotsForDate();
+  if (!slots || slots.length === 0) return null;
+
+  return slots.map((slot) => ({
+    id: slot.id,
+    recipeId: slot.recipeId ?? null,
+    mealType: slot.mealType ?? null,
+    cooked: Boolean(slot.completedAt ?? slot.cooked ?? false),
+    servings: slot.servings ?? null,
+    image: slot.recipeImage ?? slot.recipe?.image ?? null,
+    title: slot.recipeName ?? slot.recipe?.title ?? null,
+    name: slot.recipeName ?? slot.recipe?.title ?? null,
+  }));
+};
+
+/**
+ * Đọc cache thông báo (B3).
+ *
+ * @param {object} [filters] - `{ type, unreadOnly }`
+ * @returns {Promise<Array|null>}
+ */
+const readNotifications = async (filters = {}) => {
+  const list = await offlineCache.getNotifications(filters);
+  return list.length > 0 ? list : null;
+};
+
+/**
+ * Đọc số thông báo chưa đọc từ cache (B3).
+ * @returns {Promise<number|null>}
+ */
+const readUnreadCount = async () => {
+  const count = await offlineCache.getUnreadNotificationCount();
+  return count > 0 ? count : null;
+};
+
+/**
+ * Đọc cache JSON theo key (B4).
+ *
+ * @param {string} key - 'current_plan' | 'family_info' | 'payment_history' | 'packages'
+ * @returns {Promise<any|null>}
+ */
+const readJsonCache = async (key) => {
+  const value = await offlineCache.getJsonCache(key);
+  return value === undefined || value === null ? null : value;
+};
+
+/**
  * Bảng ánh xạ: key service -> { methodName: hàm đọc cache }.
  *
  * ⚠️ Tên method phải KHỚP CHÍNH XÁC tên method trong `Real*Service`,
@@ -234,6 +291,14 @@ export const CACHE_FALLBACKS = {
     getRecipes: async () => readRecipeList(),
     getRecipesFiltered: async (filters = {}) => readRecipeList(filters),
     getBookmarked: readBookmarkedRecipes,
+    // ⚠️ B2: gợi ý món ăn hôm nay lấy từ cache kế hoạch tuần.
+    getSuggestions: readSuggestions,
+  },
+
+  notificationService: {
+    // ⚠️ B3: cache thông báo + số chưa đọc.
+    getNotifications: readNotifications,
+    getUnreadCount: readUnreadCount,
   },
 
   userService: {
@@ -241,6 +306,22 @@ export const CACHE_FALLBACKS = {
     getPreferences: readUserPreferences,
     getAllergies: readAllergies,
     searchIngredients: readIngredientCatalog,
+    // ⚠️ B4: nhóm tài chính / gia đình - CHỈ ĐỌC offline.
+    getCurrentPlan: async () => readJsonCache('current_plan'),
+    getFamily: async () => readJsonCache('family_info'),
+    getFamilyInfo: async () => readJsonCache('family_info'),
+    getAvailablePackages: async () => readJsonCache('packages'),
+    getPaymentHistory: async (page = 1, limit = 20) => {
+      const cached = await readJsonCache('payment_history');
+      if (!cached) return null;
+      // Cache chỉ giữ trang 1 -> trả về shape đúng cho UI.
+      return {
+        items: cached.items ?? [],
+        total: cached.total ?? (cached.items ?? []).length,
+        page: cached.page ?? 1,
+        limit: cached.limit ?? limit,
+      };
+    },
   },
 };
 

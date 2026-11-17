@@ -479,15 +479,88 @@ class OfflineCache {
   }
 
   /**
-   * Đánh dấu món mua đã đồng bộ (xoá row pending).
+   * Đánh dấu món mua đã đồng bộ.
+   *
+   * ⚠️ BUG ĐÃ SỬA (F3): trước đây hàm này `DELETE FROM local_shopping_items`
+   *   -> món vừa tick offline BIẾN MẤT khỏi danh sách sau khi upload
+   *   (user tick xong, đồng bộ xong -> món tự bay mất).
+   *   Sửa thành `UPDATE sync_status = 'synced'` -> GIỮ row, chỉ đổi trạng thái.
+   *   Đối chiếu Flutter `saveShoppingItemsOverwrite` chỉ xoá row `'synced'`
+   *   (`Mobile/lib/sqlite/services/shopping_local_service.dart`).
+   *
    * @param {string|number} itemId
    */
   async clearShoppingPending(itemId) {
     const db = await this._ensureDb();
     await db.runAsync(
-      `DELETE FROM local_shopping_items
+      `UPDATE local_shopping_items
+         SET sync_status = ?, updated_at = ?
        WHERE (id = ? OR backend_item_id = ?) AND sync_status = ?;`,
-      [String(itemId), itemId, SYNC_STATUS.PENDING]
+      [SYNC_STATUS.SYNCED, now(), String(itemId), itemId, SYNC_STATUS.PENDING]
+    );
+  }
+
+  /**
+   * Thêm 1 món vào danh sách mua (offline, chưa có id server).
+   *
+   * ⚠️ F3: id local là `pending_*`, `backend_item_id = null` -> khi sync xong,
+   *   `SyncEngine` sẽ thay row pending bằng item thật từ server.
+   *
+   * @param {object} item - `{ id, name, quantity, unit, ingredientId, listId }`
+   * @returns {Promise<string>} id local của row vừa tạo
+   */
+  async addPendingShoppingItem(item) {
+    const db = await this._ensureDb();
+    if (!item?.id) return null;
+
+    await db.runAsync(
+      `INSERT OR REPLACE INTO local_shopping_items
+         (id, ingredient_id, ingredient_name, quantity, unit, is_purchased,
+          updated_at, sync_status, list_id, backend_item_id)
+       VALUES (?, ?, ?, ?, ?, 0, ?, ?, ?, NULL);`,
+      [
+        String(item.id),
+        item.ingredientId ?? null,
+        item.name ?? '',
+        item.quantity ?? 0,
+        item.unit ?? '',
+        now(),
+        SYNC_STATUS.PENDING,
+        item.listId ?? null,
+      ]
+    );
+    return String(item.id);
+  }
+
+  /**
+   * Xoá 1 món khỏi danh sách mua (offline).
+   *
+   * ⚠️ F3: xoá hẳn khỏi cache local (row biến mất khỏi UI ngay) + đẩy op
+   *   `SHOPPING_ITEM_REMOVE` để server xoá sau khi có mạng.
+   *
+   * @param {string|number} itemId
+   */
+  async removeShoppingItem(itemId) {
+    const db = await this._ensureDb();
+    await db.runAsync(`DELETE FROM local_shopping_items WHERE id = ? OR backend_item_id = ?;`, [
+      String(itemId),
+      itemId,
+    ]);
+  }
+
+  /**
+   * Cập nhật số lượng của 1 món mua (offline - F3).
+   *
+   * @param {string|number} itemId
+   * @param {number} quantity
+   */
+  async updateShoppingItemQuantity(itemId, quantity) {
+    const db = await this._ensureDb();
+    await db.runAsync(
+      `UPDATE local_shopping_items
+         SET quantity = ?, updated_at = ?, sync_status = ?
+       WHERE id = ? OR backend_item_id = ?;`,
+      [Number(quantity) || 0, now(), SYNC_STATUS.PENDING, String(itemId), itemId]
     );
   }
 
@@ -526,6 +599,97 @@ class OfflineCache {
       weekStart: row.week_start_date ?? null,
       days: safeParse(row.days_data_json, []),
     };
+  }
+
+  /**
+   * Lấy các slot meal plan của 1 ngày cụ thể từ cache (B2).
+   *
+   * ⚠️ B2 - dùng cho cache fallback của `recipeService.getSuggestions()`:
+   *   offline mà không có cache -> UI phải hiện `ErrorState`, không hiện món ảo.
+   *   Cache kế hoạch tuần là nguồn DUY NHẤT còn lại offline.
+   *
+   * @param {string} [dateStr] - `YYYY-MM-DD` (mặc định = hôm nay)
+   * @returns {Promise<Array<object>>} danh sách slot của ngày đó
+   */
+  async getWeeklyPlanSlotsForDate(dateStr = null) {
+    const plan = await this.getWeeklyPlan();
+    if (!plan) return [];
+
+    const days = Array.isArray(plan.days) ? plan.days : [];
+    const target = dateStr ?? new Date().toISOString().slice(0, 10);
+
+    const matched = days.filter((day) => {
+      if (!day) return false;
+      // Slot có thể nằm trong `day.date` hoặc `day.dayOfWeek`.
+      if (day.date && String(day.date).slice(0, 10) === target) return true;
+      if (!day.date && day.dayOfWeek !== undefined && day.dayOfWeek !== null) {
+        return String(day.dayOfWeek) === String(new Date(target).getDay());
+      }
+      return false;
+    });
+
+    const slots = [];
+    matched.forEach((day) => {
+      (day.slots ?? []).forEach((slot) => {
+        if (!slot) return;
+        slots.push({ ...slot, dayOfWeek: day.dayOfWeek ?? slot.dayOfWeek ?? null });
+      });
+    });
+
+    return slots;
+  }
+
+  /**
+   * Đổi công thức của 1 slot meal plan (offline - F6).
+   *
+   * ⚠️ F6: `local_weekly_plans.days_data_json` là JSON blob -> phải đọc,
+   *   sửa slot tương ứng, rồi ghi lại. Tên/ảnh công thức lấy từ cache
+   *   `local_recipe_list` nếu có (để UI hiện đúng ngay offline).
+   *
+   * @param {string} slotId
+   * @param {string} recipeId
+   * @returns {Promise<boolean>} true nếu tìm thấy slot và đã cập nhật
+   */
+  async setWeeklyPlanSlotRecipe(slotId, recipeId) {
+    const db = await this._ensureDb();
+    const row = await db.getFirstAsync(
+      `SELECT * FROM local_weekly_plans ORDER BY updated_at DESC LIMIT 1;`
+    );
+    if (!row) return false;
+
+    const days = safeParse(row.days_data_json, []);
+    if (!Array.isArray(days)) return false;
+
+    // Tìm thông tin công thức trong cache danh sách (để hiện tên/ảnh offline).
+    let recipeMeta = null;
+    try {
+      const recipes = await this.getRecipeList();
+      recipeMeta = recipes.find((r) => String(r.id) === String(recipeId)) ?? null;
+    } catch (_e) {
+      recipeMeta = null;
+    }
+
+    let found = false;
+    days.forEach((day) => {
+      (day?.slots ?? []).forEach((slot) => {
+        if (!slot || String(slot.id) !== String(slotId)) return;
+        found = true;
+        slot.recipeId = recipeId;
+        if (recipeMeta) {
+          slot.recipeName = recipeMeta.name ?? null;
+          slot.recipeImage = recipeMeta.image ?? null;
+        }
+      });
+    });
+
+    if (!found) return false;
+
+    await db.runAsync(`UPDATE local_weekly_plans SET days_data_json = ?, updated_at = ? WHERE id = ?;`, [
+      JSON.stringify(days),
+      now(),
+      row.id,
+    ]);
+    return true;
   }
 
   // ══════════════════════════════════════════════════════════════════
@@ -597,14 +761,15 @@ class OfflineCache {
 
     await db.runAsync(
       `INSERT OR REPLACE INTO local_user_profile
-         (id, name, email, phone, avatar_url, date_of_birth, gender, bio,
+         (id, name, email, phone, avatar_url, avatar_local_path, date_of_birth, gender, bio,
           role, status, updated_at, sync_status)
-       VALUES ('me', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+       VALUES ('me', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
       [
         profile.name ?? null,
         profile.email ?? null,
         profile.phone ?? null,
         profile.avatar ?? null,
+        profile.avatarLocalPath ?? profile.avatar_local_path ?? null,
         profile.birthday ?? null,
         profile.gender ?? null,
         profile.bio ?? null,
@@ -631,6 +796,7 @@ class OfflineCache {
       email: row.email ?? '',
       phone: row.phone ?? null,
       avatar: row.avatar_url ?? null,
+      avatarLocalPath: row.avatar_local_path ?? null,
       birthday: row.date_of_birth ?? null,
       gender: row.gender ?? null,
       bio: row.bio ?? null,
@@ -638,6 +804,43 @@ class OfflineCache {
       status: row.status ?? null,
       _syncStatus: row.sync_status ?? SYNC_STATUS.SYNCED,
     };
+  }
+
+  /**
+   * Lưu đường dẫn avatar cục bộ (F1 - upload avatar offline).
+   *
+   * ⚠️ VÌ SAO CẦN:
+   *   Khi offline, user chọn ảnh mới -> file nằm trên máy. UI cần hiện ảnh
+   *   đó ngay (không phải avatar cũ từ server). Sau khi sync thành công
+   *   -> xoá `avatar_local_path` và thay bằng URL từ server.
+   *
+   * @param {string} localPath - đường dẫn file local (rỗng = đã upload xong)
+   * @param {string} [avatarUrl] - URL avatar từ server (nếu vừa upload xong)
+   */
+  async setAvatarLocal(localPath, avatarUrl = null) {
+    const db = await this._ensureDb();
+
+    const existing = await this.getUserProfile();
+    await db.runAsync(
+      `INSERT OR REPLACE INTO local_user_profile
+         (id, name, email, phone, avatar_url, avatar_local_path, date_of_birth, gender, bio,
+          role, status, updated_at, sync_status)
+       VALUES ('me', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+      [
+        existing?.name ?? null,
+        existing?.email ?? null,
+        existing?.phone ?? null,
+        avatarUrl ?? existing?.avatar ?? null,
+        localPath || null,
+        existing?.birthday ?? null,
+        existing?.gender ?? null,
+        existing?.bio ?? null,
+        existing?.role ?? null,
+        existing?.status ?? null,
+        now(),
+        existing?._syncStatus ?? SYNC_STATUS.SYNCED,
+      ]
+    );
   }
 
   /**
@@ -1034,12 +1237,35 @@ class OfflineCache {
   /**
    * Đánh dấu 1 công thức đã / chưa bookmark (optimistic offline).
    *
+   * ⚠️ F2 - BUG ĐÃ SỬA: trước đây chỉ `UPDATE` -> nếu công thức chưa từng
+   *   được cache (`local_recipe_list` chưa có row) thì cờ bookmark bị MẤT
+   *   -> user bookmark offline xong bật mạng thì bookmark không có trên server
+   *   mà UI cũng không hiện.
+   *   Sửa: UPSERT - nếu chưa có row thì tạo row tối thiểu với cờ bookmark.
+   *
    * @param {string} id
    * @param {boolean} isBookmarked
    */
   async setRecipeBookmarked(id, isBookmarked) {
     if (!id) return;
     const db = await this._ensureDb();
+
+    const existing = await db.getFirstAsync(`SELECT id FROM local_recipe_list WHERE id = ?;`, [
+      String(id),
+    ]);
+
+    if (!existing) {
+      // Chưa có trong cache -> tạo row tối thiểu (chỉ cần id + cờ bookmark).
+      await db.runAsync(
+        `INSERT OR REPLACE INTO local_recipe_list
+           (id, name, image, cook_time, difficulty, servings, meal_type,
+            estimated_cost, is_ai_generated, tags_json, is_bookmarked, updated_at)
+         VALUES (?, '', NULL, 0, 'easy', NULL, NULL, NULL, 0, '[]', ?, ?);`,
+        [String(id), isBookmarked ? 1 : 0, now()]
+      );
+      return;
+    }
+
     await db.runAsync(`UPDATE local_recipe_list SET is_bookmarked = ? WHERE id = ?;`, [
       isBookmarked ? 1 : 0,
       String(id),
@@ -1182,6 +1408,176 @@ class OfflineCache {
   }
 
   // ══════════════════════════════════════════════════════════════════
+  // THÔNG BÁO — local_notifications (v5 / B3)
+  // ══════════════════════════════════════════════════════════════════
+
+  /**
+   * Thay cache thông báo bằng dữ liệu mới từ server.
+   *
+   * ⚠️ B3: offline mà không có cache -> rơi xuống MOCK -> user thấy thông
+   *   báo bịa ("Tủ lạnh sắp hết thực phẩm" khi tủ đầy). Bảng này giữ
+   *   snapshot thông báo THẬT đã tải về.
+   *
+   * @param {Array<object>} list - shape UI `NotificationItem`
+   * @returns {Promise<number>}
+   */
+  async saveNotifications(list) {
+    if (!Array.isArray(list)) return 0;
+
+    await this._ensureDb();
+    const timestamp = now();
+
+    await databaseService.withTransaction(async (tx) => {
+      await tx.runAsync(`DELETE FROM local_notifications;`);
+
+      for (const item of list) {
+        if (!item?.id) continue;
+
+        await tx.runAsync(
+          `INSERT OR REPLACE INTO local_notifications
+             (id, type, title, message, time, is_read, raw_type, metadata_json, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+          [
+            String(item.id),
+            item.type ?? null,
+            item.title ?? '',
+            item.message ?? '',
+            item.time ?? null,
+            item.isRead || item.read ? 1 : 0,
+            item.rawType ?? item.type ?? null,
+            item.metadata ? JSON.stringify(item.metadata) : null,
+            timestamp,
+          ]
+        );
+      }
+    });
+
+    return list.length;
+  }
+
+  /**
+   * Đọc thông báo từ cache (lọc client-side theo `type` / `unreadOnly`).
+   *
+   * @param {object} [filters]
+   * @param {string} [filters.type] - lọc theo loại
+   * @param {boolean} [filters.unreadOnly] - chỉ lấy thông báo chưa đọc
+   * @returns {Promise<Array<object>>}
+   */
+  async getNotifications(filters = {}) {
+    const db = await this._ensureDb();
+    const rows = await db.getAllAsync(
+      `SELECT * FROM local_notifications ORDER BY time DESC;`
+    );
+
+    let list = (rows ?? []).map((row) => ({
+      id: row.id,
+      type: row.type ?? null,
+      title: row.title ?? '',
+      message: row.message ?? '',
+      time: row.time ?? null,
+      isRead: row.is_read === 1,
+      rawType: row.raw_type ?? row.type ?? null,
+      metadata: safeParse(row.metadata_json, null),
+    }));
+
+    if (filters?.type) {
+      list = list.filter((n) => n.type === filters.type || n.rawType === filters.type);
+    }
+    if (filters?.unreadOnly === true) {
+      list = list.filter((n) => !n.isRead);
+    }
+
+    return list;
+  }
+
+  /**
+   * Đánh dấu 1 thông báo đã đọc / chưa đọc (optimistic offline - F5).
+   *
+   * @param {string} id
+   * @param {boolean} [isRead=true]
+   */
+  async setNotificationRead(id, isRead = true) {
+    if (!id) return;
+    const db = await this._ensureDb();
+    await db.runAsync(`UPDATE local_notifications SET is_read = ?, updated_at = ? WHERE id = ?;`, [
+      isRead ? 1 : 0,
+      now(),
+      String(id),
+    ]);
+  }
+
+  /**
+   * Đánh dấu TẤT CẢ thông báo đã đọc (optimistic offline - F5).
+   */
+  async markAllNotificationsRead() {
+    const db = await this._ensureDb();
+    await db.runAsync(`UPDATE local_notifications SET is_read = 1, updated_at = ?;`, [now()]);
+  }
+
+  /**
+   * Xoá 1 thông báo khỏi cache (optimistic offline - F5).
+   *
+   * @param {string} id
+   */
+  async removeNotification(id) {
+    if (!id) return;
+    const db = await this._ensureDb();
+    await db.runAsync(`DELETE FROM local_notifications WHERE id = ?;`, [String(id)]);
+  }
+
+  /**
+   * Đếm số thông báo CHƯA ĐỌC trong cache (B3).
+   * @returns {Promise<number>}
+   */
+  async getUnreadNotificationCount() {
+    const db = await this._ensureDb();
+    const row = await db.getFirstAsync(
+      `SELECT COUNT(*) as count FROM local_notifications WHERE is_read = 0;`
+    );
+    return row?.count ?? 0;
+  }
+
+  // ══════════════════════════════════════════════════════════════════
+  // CACHE JSON TỔNG QUÁT — local_json_cache (v5 / B4)
+  // ══════════════════════════════════════════════════════════════════
+
+  /**
+   * Lưu 1 blob JSON bất kỳ vào cache.
+   *
+   * ⚠️ B4: nhóm tài chính/gia đình chỉ ĐỌC offline (gói đăng ký, thông tin
+   *   gia đình, lịch sử thanh toán). Không có cache -> màn đó rơi xuống MOCK
+   *   -> user thấy số tiền / gói bịa.
+   *
+   * @param {string} key - vd 'current_plan', 'family_info', 'payment_history'
+   * @param {any} data - dữ liệu (mọi kiểu JSON)
+   */
+  async saveJsonCache(key, data) {
+    if (!key) return;
+    const db = await this._ensureDb();
+    await db.runAsync(
+      `INSERT OR REPLACE INTO local_json_cache (key, payload, updated_at) VALUES (?, ?, ?);`,
+      [String(key), JSON.stringify(data ?? null), now()]
+    );
+  }
+
+  /**
+   * Đọc 1 blob JSON từ cache.
+   *
+   * @param {string} key
+   * @param {any} [fallback=null]
+   * @returns {Promise<any>}
+   */
+  async getJsonCache(key, fallback = null) {
+    if (!key) return fallback;
+    const db = await this._ensureDb();
+    const row = await db.getFirstAsync(`SELECT payload FROM local_json_cache WHERE key = ?;`, [
+      String(key),
+    ]);
+    if (!row) return fallback;
+    return safeParse(row.payload, fallback);
+  }
+
+  // ══════════════════════════════════════════════════════════════════
   // QUẢN LÝ CHUNG
   // ══════════════════════════════════════════════════════════════════
 
@@ -1204,6 +1600,8 @@ class OfflineCache {
       'local_allergies',
       'local_ingredient_catalog',
       'local_recipe_list',
+      'local_notifications',
+      'local_json_cache',
     ];
 
     for (const table of tables) {
@@ -1230,6 +1628,7 @@ class OfflineCache {
       fridgeItems: await countOf('local_ingredients'),
       shoppingItems: await countOf('local_shopping_items'),
       recipes: await countOf('local_recipe_details'),
+      notifications: await countOf('local_notifications'),
       pending: await countOf('local_ingredients', 'sync_status = ?', [SYNC_STATUS.PENDING]),
     };
   }

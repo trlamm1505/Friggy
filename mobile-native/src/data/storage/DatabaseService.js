@@ -8,7 +8,7 @@
 import * as SQLite from 'expo-sqlite';
 
 const DB_NAME = 'friggy_local.db';
-const DB_VERSION = 4;
+const DB_VERSION = 5;
 
 /**
  * ⚠️ TỪ DB_VERSION 2: bảng `local_*` (offline cache + hàng đợi đồng bộ).
@@ -167,6 +167,9 @@ const LOCAL_SCHEMA_SQL = [
   );`,
 
   // ── Hàng đợi thao tác offline (thay cho `pending_ops` cũ không dùng) ──
+  //
+  // ⚠️ `sync_state` (v5): 'pending' = chờ upload, 'conflict' = upload bị 409
+  //   -> chờ user xử lý (bounded conflict, KHÔNG retry vô hạn).
   `CREATE TABLE IF NOT EXISTS local_pending_ops (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     op_type TEXT NOT NULL,
@@ -174,7 +177,38 @@ const LOCAL_SCHEMA_SQL = [
     payload TEXT,
     retries INTEGER DEFAULT 0,
     last_error TEXT,
+    sync_state TEXT NOT NULL DEFAULT 'pending',
     created_at INTEGER NOT NULL
+  );`,
+
+  // ── Cache thông báo (offline) ──
+  //
+  // ⚠️ VÌ SAO CẦN (v5):
+  //   Màn "Thông báo" khi offline không có cache -> rơi xuống MOCK -> user
+  //   thấy thông báo bịa (vd "Tủ lạnh sắp hết thực phẩm" khi tủ đầy).
+  //   Bảng này lưu snapshot thông báo đã tải về + cờ đã đọc.
+  `CREATE TABLE IF NOT EXISTS local_notifications (
+    id TEXT PRIMARY KEY,
+    type TEXT,
+    title TEXT,
+    message TEXT,
+    time TEXT,
+    is_read INTEGER DEFAULT 0,
+    raw_type TEXT,
+    metadata_json TEXT,
+    updated_at INTEGER
+  );`,
+
+  // ── Cache JSON tổng quát (gói đăng ký / gia đình / lịch sử thanh toán) ──
+  //
+  // ⚠️ VÌ SAO CẦN (v5):
+  //   Nhóm tài chính/gia đình chỉ ĐỌC offline (không ghi). Nếu không có
+  //   cache, offline thì màn "Gói đăng ký" / "Gia đình" / "Lịch sử thanh toán"
+  //   rơi xuống MOCK -> user thấy gói giá bịa, số tiền bịa.
+  `CREATE TABLE IF NOT EXISTS local_json_cache (
+    key TEXT PRIMARY KEY,
+    payload TEXT,
+    updated_at INTEGER
   );`,
 
   // ── Index ──
@@ -184,6 +218,7 @@ const LOCAL_SCHEMA_SQL = [
   `CREATE INDEX IF NOT EXISTS idx_local_catalog_name ON local_ingredient_catalog(name);`,
   `CREATE INDEX IF NOT EXISTS idx_local_pending_ops_type ON local_pending_ops(op_type);`,
   `CREATE INDEX IF NOT EXISTS idx_local_recipe_list_name ON local_recipe_list(name);`,
+  `CREATE INDEX IF NOT EXISTS idx_local_notifications_read ON local_notifications(is_read);`,
 ];
 
 /**
@@ -227,6 +262,33 @@ const MIGRATIONS = [
       for (const sql of LOCAL_SCHEMA_SQL) {
         // `CREATE TABLE/INDEX IF NOT EXISTS` -> chạy lại nhiều lần vô hại.
         await db.execAsync(sql);
+      }
+    },
+  },
+  {
+    // ⚠️ v5: cache thông báo + cache JSON tổng quát + `sync_state` cho outbox.
+    //
+    // 1. `local_notifications` -> offline màn thông báo phải hiện thông báo THẬT
+    //    đã tải về trước đó, không phải thông báo bịa.
+    // 2. `local_json_cache` -> nhóm tài chính/gia đình chỉ ĐỌC offline
+    //    (gói đăng ký, thông tin gia đình, lịch sử thanh toán).
+    // 3. `local_pending_ops.sync_state` -> đánh dấu op bị XUNG ĐỘT (409)
+    //    để KHÔNG retry vô hạn (B5 - bounded conflict).
+    version: 5,
+    up: async (db) => {
+      for (const sql of LOCAL_SCHEMA_SQL) {
+        // `CREATE TABLE/INDEX IF NOT EXISTS` -> chạy lại nhiều lần vô hại.
+        await db.execAsync(sql);
+      }
+      try {
+        await db.execAsync(
+          `ALTER TABLE local_pending_ops ADD COLUMN sync_state TEXT NOT NULL DEFAULT 'pending';`
+        );
+      } catch (_e) {
+        // DB mới đã có cột trong DDL -> "duplicate column name" -> bỏ qua.
+        if (typeof __DEV__ !== 'undefined' && __DEV__) {
+          console.log('[DatabaseService] Migration v5: cột sync_state đã tồn tại, bỏ qua');
+        }
       }
     },
   },
@@ -565,7 +627,8 @@ class DatabaseService {
       'local_ingredients', 'local_fridge_stats', 'local_weekly_plans',
       'local_shopping_items', 'local_recipe_details', 'local_user_profile',
       'local_user_preferences', 'local_allergies', 'local_ingredient_catalog',
-      'local_pending_ops', 'local_meta',
+      'local_pending_ops', 'local_meta', 'local_recipe_list',
+      'local_notifications', 'local_json_cache',
     ];
     for (const t of tables) {
       await this._db.execAsync(`DROP TABLE IF EXISTS ${t};`);

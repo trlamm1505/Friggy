@@ -183,55 +183,62 @@ describe('withFallback - đường thành công', () => {
 });
 
 describe('withFallback - đường lỗi 5xx / network', () => {
-  it('real trả 500 -> trả dữ liệu mock', async () => {
+  it('real trả 500 -> NÉM LỖI THẬT, KHÔNG trả dữ liệu mock (Option C)', async () => {
     const mock = mkMock();
-    const real = mkReal({
-      getItems: jest
-        .fn()
-        .mockRejectedValue(new ApiException('Server on fire', { statusCode: 500 })),
-    });
+    const err = new ApiException('Server on fire', { statusCode: 500 });
+    const real = mkReal({ getItems: jest.fn().mockRejectedValue(err) });
     const safe = withFallback(real, mock);
 
-    const result = await safe.getItems();
-
-    expect(result).toEqual(['mock-item-1', 'mock-item-2']);
-    expect(mock.getItems).toHaveBeenCalledTimes(1);
+    await expect(safe.getItems()).rejects.toBe(err);
+    expect(mock.getItems).not.toHaveBeenCalled();
   });
 
-  it('real lỗi network -> trả dữ liệu mock', async () => {
+  it('real lỗi network + cache rỗng -> NÉM LỖI THẬT, KHÔNG trả mock', async () => {
     const mock = mkMock();
-    const real = mkReal({
-      getItems: jest.fn().mockRejectedValue(new ApiException('Mất mạng', { isNetworkError: true })),
-    });
+    const err = new ApiException('Mất mạng', { isNetworkError: true });
+    const real = mkReal({ getItems: jest.fn().mockRejectedValue(err) });
     const safe = withFallback(real, mock);
 
-    const result = await safe.getItems();
-
-    expect(result).toEqual(['mock-item-1', 'mock-item-2']);
+    await expect(safe.getItems()).rejects.toBe(err);
+    expect(mock.getItems).not.toHaveBeenCalled();
   });
 
-  it('fallback truyền lại đúng args cho mock', async () => {
+  it('allowMockData=true -> 5xx vẫn trả dữ liệu mock (chế độ demo)', async () => {
     const mock = mkMock();
     const real = mkReal({
       getItems: jest.fn().mockRejectedValue(new ApiException('x', { statusCode: 503 })),
     });
-    const safe = withFallback(real, mock);
+    const safe = withFallback(real, mock, { allowMockData: true });
+
+    await expect(safe.getItems()).resolves.toEqual(['mock-item-1', 'mock-item-2']);
+    expect(mock.getItems).toHaveBeenCalledTimes(1);
+  });
+
+  it('allowMockData=true -> truyền lại đúng args cho mock', async () => {
+    const mock = mkMock();
+    const real = mkReal({
+      getItems: jest.fn().mockRejectedValue(new ApiException('x', { statusCode: 503 })),
+    });
+    const safe = withFallback(real, mock, { allowMockData: true });
 
     await safe.getItems({ compartment: 'freezer' });
 
     expect(mock.getItems).toHaveBeenCalledWith({ compartment: 'freezer' });
   });
 
-  it('lỗi 5xx ở method bất kỳ -> cũng fallback (không chỉ getItems)', async () => {
+  it('allowMockData=false -> KHÔNG gọi mock dù method khác cũng lỗi 5xx', async () => {
     const mock = mkMock();
+    const err = new ApiException('x', { statusCode: 500 });
     const real = mkReal({
-      createItem: jest.fn().mockRejectedValue(new ApiException('x', { statusCode: 500 })),
-      deleteItem: jest.fn().mockRejectedValue(new ApiException('x', { statusCode: 500 })),
+      createItem: jest.fn().mockRejectedValue(err),
+      deleteItem: jest.fn().mockRejectedValue(err),
     });
     const safe = withFallback(real, mock);
 
-    await expect(safe.createItem({ name: 'Cà chua' })).resolves.toEqual({ id: 'mock-new' });
-    await expect(safe.deleteItem('id-1')).resolves.toBeUndefined();
+    await expect(safe.createItem({ name: 'Cà chua' })).rejects.toBe(err);
+    await expect(safe.deleteItem('id-1')).rejects.toBe(err);
+    expect(mock.createItem).not.toHaveBeenCalled();
+    expect(mock.deleteItem).not.toHaveBeenCalled();
   });
 });
 
@@ -284,14 +291,27 @@ describe('withFallback - đường lỗi 4xx (KHÔNG fallback)', () => {
 });
 
 describe('withFallback - cấu hình', () => {
-  it('enabled=false -> trả thẳng real, KHÔNG bọc (debug lỗi thật)', async () => {
+  it('offlineEnabled=false VÀ allowMockData=false -> trả thẳng real, KHÔNG bọc', async () => {
     const mock = mkMock();
     const real = mkReal({
       getItems: jest.fn().mockRejectedValue(new ApiException('x', { statusCode: 500 })),
     });
-    const safe = withFallback(real, mock, { enabled: false });
+    const safe = withFallback(real, mock, { offlineEnabled: false, allowMockData: false });
 
     // Không có wrapper -> lỗi bay thẳng ra UI, không bị giấu
+    await expect(safe.getItems()).rejects.toThrow('x');
+    expect(mock.getItems).not.toHaveBeenCalled();
+  });
+
+  it('offlineEnabled=true VÀ allowMockData=false -> VẪN dựng proxy (tầng offline sống)', async () => {
+    const mock = mkMock();
+    const real = mkReal({
+      getItems: jest.fn().mockRejectedValue(new ApiException('x', { statusCode: 500 })),
+    });
+    const safe = withFallback(real, mock, { offlineEnabled: true, allowMockData: false });
+
+    // Proxy phải tồn tại (cache + queue chạy) -> lỗi 5xx ném lên, KHÔNG phải
+    // trả thẳng real, và KHÔNG trả mock.
     await expect(safe.getItems()).rejects.toThrow('x');
     expect(mock.getItems).not.toHaveBeenCalled();
   });
@@ -306,10 +326,20 @@ describe('withFallback - cấu hình', () => {
     expect(withFallback(null, mock)).toBe(mock);
   });
 
-  it('real chưa implement method -> gọi mock thẳng, không trả undefined', async () => {
+  it('real chưa implement method -> NÉM lỗi, không trả dữ liệu mock (Option C)', () => {
     const mock = mkMock();
     const real = { getItems: jest.fn().mockResolvedValue(['real']) }; // thiếu createItem
     const safe = withFallback(real, mock);
+
+    // Hàm ném ĐỒNG BỘ (không trả Promise) -> dùng toThrow, không dùng rejects.
+    expect(() => safe.createItem({ name: 'X' })).toThrow(/chưa được hỗ trợ/i);
+    expect(mock.createItem).not.toHaveBeenCalled();
+  });
+
+  it('real chưa implement method + allowMockData=true -> vẫn gọi mock', async () => {
+    const mock = mkMock();
+    const real = { getItems: jest.fn().mockResolvedValue(['real']) }; // thiếu createItem
+    const safe = withFallback(real, mock, { allowMockData: true });
 
     await expect(safe.createItem({ name: 'X' })).resolves.toEqual({ id: 'mock-new' });
   });
@@ -375,7 +405,7 @@ describe('withFallback - method discovery qua prototype chain', () => {
 
     const mock = new MockFridge();
     const real = new RealFridge();
-    const safe = withFallback(real, mock, { label: 'fridge' });
+    const safe = withFallback(real, mock, { label: 'fridge', allowMockData: true });
 
     // getItems có ở cả real và mock -> fallback về mock
     await expect(safe.getItems()).resolves.toEqual(['from-mock']);

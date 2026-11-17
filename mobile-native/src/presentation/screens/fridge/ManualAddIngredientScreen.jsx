@@ -126,6 +126,10 @@ export const ManualAddIngredientScreen = () => {
   // true = đã search xong và KHÔNG có kết quả nào cho từ khoá hiện tại.
   // Dùng để hiện dòng "không tìm thấy trong danh mục" thay vì im lặng.
   const [noResult, setNoResult] = useState(false);
+  // B8: search lỗi (offline + cache rỗng) -> PHẢI báo lỗi thật.
+  // Nếu nuốt lỗi, user tưởng món mình gõ "không có trong danh mục" ->
+  // nhưng thực ra chỉ là mất mạng.
+  const [searchError, setSearchError] = useState(null);
 
   const [unitPickerOpen, setUnitPickerOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -144,6 +148,7 @@ export const ManualAddIngredientScreen = () => {
         setSuggestions([]);
         setShowSuggestions(false);
         setNoResult(false);
+        setSearchError(null);
         return;
       }
 
@@ -152,6 +157,7 @@ export const ManualAddIngredientScreen = () => {
       const currentId = requestIdRef.current;
 
       setSearching(true);
+      setSearchError(null);
       services.fridgeService
         .searchIngredients(q, SUGGESTION_LIMIT)
         .then((results) => {
@@ -164,10 +170,13 @@ export const ManualAddIngredientScreen = () => {
           // trong danh mục hệ thống (BE sẽ trả 400 nếu gửi tên tự do).
           setNoResult(list.length === 0);
         })
-        .catch(() => {
+        .catch((e) => {
           if (currentId !== requestIdRef.current) return;
           setSuggestions([]);
+          setShowSuggestions(false);
+          // B8: lỗi thật -> không được hiện "không có trong danh mục".
           setNoResult(false);
+          setSearchError(e);
         })
         .finally(() => {
           if (currentId === requestIdRef.current) setSearching(false);
@@ -380,6 +389,25 @@ export const ManualAddIngredientScreen = () => {
                 />
               </Pressable>
             ))}
+          </View>
+        ) : null}
+
+        {/* ── Lỗi search (B8) ──
+            Mất mạng + cache rỗng -> KHÔNG được hiện "không có trong danh mục"
+            (sai lệch nguyên nhân). Báo lỗi tải dữ liệu thật. */}
+        {searchError && !searching ? (
+          <View
+            style={[
+              styles.noResultBox,
+              {
+                backgroundColor: isDark ? '#3D1F1A' : '#FFEBEE',
+                borderColor: isDark ? '#5E352B' : '#FFCDD2',
+              },
+            ]}
+          >
+            <Text style={[styles.noResultTitle, { color: isDark ? '#FF8A80' : AppColors.error }]}>
+              {t('offline.readFailed')}
+            </Text>
           </View>
         ) : null}
 

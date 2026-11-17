@@ -36,7 +36,7 @@
 
 import { getRegisteredService } from '../api/ServiceRegistry';
 import { extractStatus } from '../api/SafeService';
-import { outboxQueue, OP_TYPES } from './OutboxQueue';
+import { outboxQueue, OP_TYPES, SYNC_STATES } from './OutboxQueue';
 import { offlineCache, SYNC_STATUS } from './OfflineCache';
 
 /**
@@ -85,7 +85,7 @@ class SyncEngine {
   /**
    * Subscribe trạng thái sync (để UI hiện badge).
    *
-   * @param {(state: {isSyncing:boolean, pendingCount:number, lastResult:SyncResult|null}) => void} handler
+   * @param {(state: {isSyncing:boolean, pendingCount:number, conflictCount:number, lastResult:SyncResult|null}) => void} handler
    * @returns {Function} unsubscribe
    */
   subscribe(handler) {
@@ -94,6 +94,7 @@ class SyncEngine {
     handler({
       isSyncing: this._isSyncing,
       pendingCount: 0,
+      conflictCount: 0,
       lastResult: this._lastResult,
     });
     return () => this._listeners.delete(handler);
@@ -104,10 +105,13 @@ class SyncEngine {
    * @private
    */
   async _emit() {
-    const pendingCount = await outboxQueue.count();
+    const pendingCount = await outboxQueue.countPending();
+    // ⚠️ B5: đếm op bị CONFLICT riêng -> badge đỏ + modal chi tiết.
+    const conflictCount = await outboxQueue.countByState(SYNC_STATES.CONFLICT);
     const state = {
       isSyncing: this._isSyncing,
       pendingCount,
+      conflictCount,
       lastResult: this._lastResult,
     };
     this._listeners.forEach((handler) => {
@@ -268,6 +272,15 @@ class SyncEngine {
           await offlineCache.upsertFridgeItem(created, SYNC_STATUS.SYNCED);
         }
         await offlineCache.removeFridgeItem(op.entity_id);
+
+        // ⚠️ B6: remap entity ID của các op còn lại (update/consume/delete)
+        //   từ `pending_*` sang UUID server + ghi kèm `version` (BE bắt buộc
+        //   version khi update -> thiếu là 400).
+        if (created?.id) {
+          await outboxQueue.reassignEntity(op.entity_id, String(created.id), {
+            version: created.version ?? 0,
+          });
+        }
         return;
       }
 
@@ -378,6 +391,118 @@ class SyncEngine {
         return;
       }
 
+      // ── F1: upload avatar offline ──
+      case OP_TYPES.AVATAR_UPLOAD: {
+        const user = realService('userService');
+        if (!user) throw new Error('userService chưa sẵn sàng');
+        const uploaded = await user.uploadAvatar(payload.localUri);
+        // Đã upload xong -> xoá đường dẫn local, thay bằng URL server.
+        await offlineCache.setAvatarLocal('', uploaded?.avatar ?? uploaded?.url ?? null);
+        return;
+      }
+
+      // ── F2: bookmark công thức offline ──
+      case OP_TYPES.RECIPE_BOOKMARK: {
+        const recipe = realService('recipeService');
+        if (!recipe) throw new Error('recipeService chưa sẵn sàng');
+        if (payload.bookmarked === false) {
+          await recipe.removeBookmark(payload.id);
+        } else {
+          await recipe.addBookmark(payload.id);
+        }
+        await offlineCache.setRecipeBookmarked(payload.id, payload.bookmarked !== false);
+        return;
+      }
+
+      // ── F3: CRUD danh sách mua offline ──
+      case OP_TYPES.SHOPPING_ITEM_ADD: {
+        const recipe = realService('recipeService');
+        if (!recipe) throw new Error('recipeService chưa sẵn sàng');
+        const created = await recipe.addShoppingListItem(payload.listId, payload.item ?? {});
+        // Server đã tạo item thật -> thay row pending bằng item thật.
+        if (created?.id) {
+          await offlineCache.removeShoppingItem(op.entity_id);
+          await offlineCache.saveShoppingItems([
+            {
+              id: created.id,
+              name: created.name ?? payload.item?.name ?? '',
+              quantity: created.quantity ?? payload.item?.quantity ?? 0,
+              unit: created.unit ?? payload.item?.unit ?? '',
+              ingredientId: created.ingredientId ?? payload.item?.ingredientId ?? null,
+              done: false,
+              listId: payload.listId ?? null,
+            },
+          ]);
+          await outboxQueue.reassignEntity(op.entity_id, String(created.id));
+        }
+        return;
+      }
+
+      case OP_TYPES.SHOPPING_ITEM_UPDATE: {
+        const recipe = realService('recipeService');
+        if (!recipe) throw new Error('recipeService chưa sẵn sàng');
+        await recipe.updateShoppingListItem(payload.listId, payload.itemId, {
+          quantity: payload.quantity ?? undefined,
+        });
+        await offlineCache.clearShoppingPending(payload.itemId);
+        return;
+      }
+
+      case OP_TYPES.SHOPPING_ITEM_REMOVE: {
+        const recipe = realService('recipeService');
+        if (!recipe) throw new Error('recipeService chưa sẵn sàng');
+        await recipe.removeShoppingListItem(payload.listId, payload.itemId);
+        await offlineCache.removeShoppingItem(payload.itemId);
+        return;
+      }
+
+      // ── F5: thao tác thông báo offline ──
+      case OP_TYPES.NOTIFICATION_READ: {
+        const notification = realService('notificationService');
+        if (!notification) throw new Error('notificationService chưa sẵn sàng');
+        await notification.markAsRead(payload.id);
+        await offlineCache.setNotificationRead(payload.id, true);
+        return;
+      }
+
+      case OP_TYPES.NOTIFICATION_READ_ALL: {
+        const notification = realService('notificationService');
+        if (!notification) throw new Error('notificationService chưa sẵn sàng');
+        await notification.markAllAsRead();
+        await offlineCache.markAllNotificationsRead();
+        return;
+      }
+
+      case OP_TYPES.NOTIFICATION_DELETE: {
+        const notification = realService('notificationService');
+        if (!notification) throw new Error('notificationService chưa sẵn sàng');
+        await notification.deleteNotification(payload.id);
+        await offlineCache.removeNotification(payload.id);
+        return;
+      }
+
+      // ── F6: đổi công thức của slot offline ──
+      case OP_TYPES.SLOT_UPDATE: {
+        const recipe = realService('recipeService');
+        if (!recipe) throw new Error('recipeService chưa sẵn sàng');
+        await recipe.updateSlot(payload.slotId, { recipeId: payload.recipeId });
+        await offlineCache.setWeeklyPlanSlotRecipe(payload.slotId, payload.recipeId);
+        return;
+      }
+
+      // ── F7: nộp khảo sát onboarding offline ──
+      case OP_TYPES.ONBOARDING_SUBMIT: {
+        const user = realService('userService');
+        if (!user) throw new Error('userService chưa sẵn sàng');
+        await user.submitOnboarding(payload);
+        const cached = await offlineCache.getUserPreferences();
+        if (cached) {
+          await offlineCache.saveUserPreferences(cached, SYNC_STATUS.SYNCED);
+        }
+        await offlineCache.saveJsonCache('onboarding', payload);
+        return;
+      }
+
       default:
         // Op không còn hỗ trợ -> bỏ (tránh chặn cả hàng đợi).
         if (typeof __DEV__ !== 'undefined' && __DEV__) {
@@ -403,6 +528,10 @@ class SyncEngine {
       { name: 'userData', run: () => this._pullUserData() },
       { name: 'ingredientCatalog', run: () => this._pullIngredientCatalog() },
       { name: 'recipeList', run: () => this._pullRecipeList() },
+      // ⚠️ B3: cache thông báo (offline màn thông báo phải hiện data THẬT).
+      { name: 'notifications', run: () => this._pullNotifications() },
+      // ⚠️ B4: cache gói đăng ký / gia đình / lịch sử thanh toán.
+      { name: 'userContext', run: () => this._pullUserContext() },
     ];
 
     for (const group of groups) {
@@ -602,6 +731,72 @@ class SyncEngine {
     }));
 
     await offlineCache.saveRecipeList(merged);
+  }
+
+  /**
+   * Tải thông báo về cache (B3).
+   *
+   * ⚠️ VÌ SAO CẦN:
+   *   Offline mà không có cache -> rơi xuống MOCK -> user thấy thông báo BỊA
+   *   ("Tủ lạnh sắp hết thực phẩm" khi tủ còn đầy).
+   *
+   * @private
+   */
+  async _pullNotifications() {
+    const notification = realService('notificationService');
+    if (!notification) return;
+
+    const list = await notification.getNotifications();
+    if (!Array.isArray(list) || list.length === 0) return;
+
+    await offlineCache.saveNotifications(list);
+  }
+
+  /**
+   * Tải ngữ cảnh người dùng về cache JSON (B4).
+   *
+   * ⚠️ NHÓM TÀI CHÍNH / GIA ĐÌNH - CHỈ ĐỌC OFFLINE:
+   *   Gom gói đăng ký / thông tin gia đình / lịch sử thanh toán. Ghi trong
+   *   nhóm này KHÔNG có mutation handler -> B1 tự ném
+   *   `OfflineRequiresNetworkError` khi offline (đúng yêu cầu).
+   *
+   * ⚠️ Mỗi endpoint fail độc lập -> 1 cái fail không chặn các cái còn lại.
+   *
+   * @private
+   */
+  async _pullUserContext() {
+    const user = realService('userService');
+    if (!user) return;
+
+    const safe = async (label, fn) => {
+      try {
+        await fn();
+      } catch (e) {
+        if (typeof __DEV__ !== 'undefined' && __DEV__) {
+          console.warn(`[SyncEngine] pull userContext.${label} lỗi:`, e?.message);
+        }
+      }
+    };
+
+    await safe('getCurrentPlan', async () => {
+      const plan = await user.getCurrentPlan();
+      if (plan) await offlineCache.saveJsonCache('current_plan', plan);
+    });
+
+    await safe('getFamilyInfo', async () => {
+      const family = await user.getFamilyInfo();
+      if (family) await offlineCache.saveJsonCache('family_info', family);
+    });
+
+    await safe('getAvailablePackages', async () => {
+      const packages = await user.getAvailablePackages();
+      if (packages) await offlineCache.saveJsonCache('packages', packages);
+    });
+
+    await safe('getPaymentHistory', async () => {
+      const history = await user.getPaymentHistory(1, 20);
+      if (history) await offlineCache.saveJsonCache('payment_history', history);
+    });
   }
   // ══════════════════════════════════════════════════════════════════
   // PHASE 3 — PRE-CACHE RECIPES

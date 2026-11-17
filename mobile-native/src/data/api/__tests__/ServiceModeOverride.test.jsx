@@ -22,6 +22,8 @@ import {
 } from '../ServiceRegistry';
 
 /** Mini renderHook - dùng lại pattern của ServiceRegistry.test.jsx */
+const mountedTrees = [];
+
 function renderHook(hookFn, { wrapper } = {}) {
   const ref = { current: undefined };
   const Probe = () => {
@@ -34,6 +36,7 @@ function renderHook(hookFn, { wrapper } = {}) {
   act(() => {
     tree = TestRenderer.create(Inner);
   });
+  mountedTrees.push(tree);
   return {
     result: ref,
     unmount: () => act(() => tree.unmount()),
@@ -41,10 +44,38 @@ function renderHook(hookFn, { wrapper } = {}) {
   };
 }
 
+/**
+ * ⚠️ Provider đã mount giữ listener của `overrideMode`. Nếu không unmount,
+ * test sau gọi `overrideMode` -> provider cũ re-render -> `resolveServices`
+ * chạy lại với registry đã bị `clearRegistry()` -> ném lỗi "chưa có bản
+ * service thật" -> test KHÔNG liên quan bị fail.
+ */
+afterEach(() => {
+  while (mountedTrees.length) {
+    const tree = mountedTrees.pop();
+    try {
+      act(() => tree.unmount());
+    } catch (e) {
+      // unmount lỗi không quan trọng cho mục đích cleanup
+    }
+  }
+});
+
 const mockServices = () => ({
   authService: { tag: 'mock-auth' },
   fridgeService: { tag: 'mock-fridge' },
 });
+
+/**
+ * ⚠️ B0 (Option C): domain CHƯA có real + `SAFE_FALLBACK=false` -> `resolveServices`
+ *   NÉM lỗi (không trả mock thuần) để không bao giờ lộ dữ liệu giả.
+ *   => Test này cần đăng ký real cho TẤT CẢ domain trong map.
+ */
+const registerAllReal = (services) => {
+  Object.entries(services).forEach(([key, mock]) => {
+    registerService(key, { tag: mock.tag.replace('mock-', 'real-') });
+  });
+};
 
 // __DEV__ là global do babel/jest-expo cung cấp. Ta gán lại được để test cả 2 nhánh.
 const setDev = (v) => {
@@ -92,7 +123,7 @@ describe('P0.6e bảo mật: production KHÔNG cho override', () => {
 
   it('__DEV__=false -> resolveServices KHÔNG bị ép mock', () => {
     setDev(false);
-    registerService('fridgeService', { tag: 'real-fridge' });
+    registerAllReal(mockServices());
 
     // Env USE_MOCKS mặc định false trong test, nên real phải được dùng.
     // Nếu override lọt, fridgeService sẽ là mock -> tag sai.
@@ -164,7 +195,7 @@ describe('P0.6e dev: toggle đổi mode', () => {
 
 describe('P0.6e resolveServices theo mode', () => {
   beforeEach(() => {
-    registerService('fridgeService', { tag: 'real-fridge' });
+    registerAllReal(mockServices());
   });
 
   it('mode mock -> tất cả là mock, kể cả domain có real', () => {
@@ -173,11 +204,11 @@ describe('P0.6e resolveServices theo mode', () => {
     expect(out.fridgeService.tag).toBe('mock-fridge');
   });
 
-  it('mode real -> domain có real dùng real, domain chưa có thì mock', () => {
+  it('mode real -> domain có real dùng real', () => {
     overrideMode(false);
     const out = resolveServices(mockServices());
     expect(out.fridgeService.tag).toBe('real-fridge');
-    expect(out.authService.tag).toBe('mock-auth');
+    expect(out.authService.tag).toBe('real-auth');
   });
 
   it('toggle mock -> real -> mock trả về đúng từng bước (không bị cache)', () => {
@@ -199,6 +230,12 @@ describe('P0.6e resolveServices theo mode', () => {
 describe('P0.6e Provider re-render khi toggle', () => {
   const Wrapper = ({ children }) =>
     createElement(ServiceRegistryProvider, { mockServices: mockServices() }, children);
+
+  // ⚠️ B0 (Option C): mọi domain trong map đều phải có real, nếu không
+  // `resolveServices` ném lỗi "chưa có bản service thật".
+  beforeEach(() => {
+    registerAllReal(mockServices());
+  });
 
   it('toggle từ mock sang real -> component thấy service mới', () => {
     registerService('fridgeService', { tag: 'real-fridge' });

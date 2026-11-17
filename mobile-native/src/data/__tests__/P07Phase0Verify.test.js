@@ -59,7 +59,7 @@ describe('P0.7 #1: USE_MOCKS=false + chưa có real -> tự fallback mock', () =
     expect(appConfig.USE_MOCKS).toBe(false);
   });
 
-  it('không real nào đăng ký -> 100% mock, KHÔNG màn hình nào undefined', () => {
+  it('không real nào đăng ký + SAFE_FALLBACK tắt -> NÉM lỗi rõ ràng (Option C)', () => {
     const mocks = {
       authService: { name: 'mock-auth' },
       fridgeService: { name: 'mock-fridge' },
@@ -68,15 +68,15 @@ describe('P0.7 #1: USE_MOCKS=false + chưa có real -> tự fallback mock', () =
       userService: { name: 'mock-user' },
     };
 
-    const resolved = resolveServices(mocks);
-
-    Object.entries(mocks).forEach(([key, mock]) => {
-      expect(resolved[key]).toBeDefined();
-      expect(resolved[key].name).toBe(mock.name);
-    });
+    // Không được trả mock thuần (user sẽ tưởng dữ liệu giả là thật).
+    expect(() => resolveServices(mocks)).toThrow(/chưa có bản service thật/i);
   });
 
-  it('trả đúng 5 key, không thiếu không thừa', () => {
+  it('trả đúng 5 key, không thiếu không thừa (khi đã có real cho cả 5 domain)', () => {
+    ['authService', 'fridgeService', 'recipeService', 'notificationService', 'userService'].forEach(
+      (key) => registerService(key, { name: `real-${key}` })
+    );
+
     const resolved = resolveServices({
       authService: {},
       fridgeService: {},
@@ -114,18 +114,28 @@ describe('P0.7 #1: USE_MOCKS=false + chưa có real -> tự fallback mock', () =
 // #2 - BE tắt / lỗi 5xx -> vẫn hiện mock data, không trắng màn hình (P0.7)
 // ═══════════════════════════════════════════════════════════════════
 
-describe('P0.7 #2: BE lỗi 5xx / mạng -> fallback mock', () => {
+describe('P0.7 #2: BE lỗi 5xx / mạng -> NÉM LỖI THẬT (Option C), mock chỉ khi bật', () => {
   const realChet = (msg) => ({
     getItems: async () => {
       throw new ApiException(msg, { statusCode: 500 });
     },
   });
 
-  it('5xx -> trả dữ liệu mock thay vì ném lỗi', async () => {
+  it('5xx -> ném lỗi thật, KHÔNG trả dữ liệu mock', async () => {
     const mock = { getItems: async () => [{ id: '1', name: 'Cà chua' }] };
     const svc = withFallback(realChet('Server unreachable'), mock, {
       label: 'fridge',
-      enabled: true,
+      allowMockData: false,
+    });
+
+    await expect(svc.getItems()).rejects.toThrow('Server unreachable');
+  });
+
+  it('5xx + allowMockData=true -> trả dữ liệu mock (chế độ demo)', async () => {
+    const mock = { getItems: async () => [{ id: '1', name: 'Cà chua' }] };
+    const svc = withFallback(realChet('Server unreachable'), mock, {
+      label: 'fridge',
+      allowMockData: true,
     });
 
     const items = await svc.getItems();
@@ -133,16 +143,16 @@ describe('P0.7 #2: BE lỗi 5xx / mạng -> fallback mock', () => {
     expect(items[0].name).toBe('Cà chua');
   });
 
-  it('network error -> cũng fallback mock', async () => {
+  it('network error -> ném lỗi thật khi không bật mock', async () => {
     const real = {
       getItems: async () => {
         throw new ApiException('Network request failed', { isNetworkError: true });
       },
     };
     const mock = { getItems: async () => [{ id: '1', name: 'Cà chua' }] };
-    const svc = withFallback(real, mock, { label: 'fridge', enabled: true });
+    const svc = withFallback(real, mock, { label: 'fridge', allowMockData: false });
 
-    await expect(svc.getItems()).resolves.toHaveLength(1);
+    await expect(svc.getItems()).rejects.toThrow('Network request failed');
   });
 
   it('4xx -> KHÔNG fallback, UI form phải hiện lỗi (P0.6b)', async () => {
@@ -175,7 +185,7 @@ describe('P0.7 #2: BE lỗi 5xx / mạng -> fallback mock', () => {
       getSummary: async () => ({ ok: true }),
       removeItem: async () => ({ ok: true }),
     };
-    const svc = withFallback(real, mock, { label: 'fridge', enabled: true });
+    const svc = withFallback(real, mock, { label: 'fridge', allowMockData: true });
 
     await expect(svc.getItems()).resolves.toEqual(['a']);
     await expect(svc.getSummary()).resolves.toEqual({ ok: true });
@@ -184,7 +194,11 @@ describe('P0.7 #2: BE lỗi 5xx / mạng -> fallback mock', () => {
 
   it('SAFE_FALLBACK tắt -> lỗi 5xx ném thẳng (đủ để chẩn đoán)', () => {
     const mock = { getItems: async () => ['a'] };
-    const svc = withFallback(realChet('x'), mock, { label: 'fridge', enabled: false });
+    const svc = withFallback(realChet('x'), mock, {
+      label: 'fridge',
+      offlineEnabled: false,
+      allowMockData: false,
+    });
 
     return expect(svc.getItems()).rejects.toThrow();
   });
@@ -294,8 +308,12 @@ describe('P0.7 #5: cấu hình nền tảng đúng', () => {
     expect(appConfig.API_BASE_URL).toMatch(/^https?:\/\//);
   });
 
-  it('SAFE_FALLBACK bật mặc định (P0.6b)', () => {
-    expect(appConfig.SAFE_FALLBACK).toBe(true);
+  it('SAFE_FALLBACK tắt mặc định (Option C - không bao giờ trả dữ liệu giả)', () => {
+    expect(appConfig.SAFE_FALLBACK).toBe(false);
+  });
+
+  it('OFFLINE_ENABLED bật mặc định (tầng offline luôn sống)', () => {
+    expect(appConfig.OFFLINE_ENABLED).toBe(true);
   });
 
   it('module ApiClient import được, không throw', () => {

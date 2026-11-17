@@ -352,9 +352,12 @@ class FakeDatabase {
       return { lastInsertRowId: 0, changes: 0 };
     }
 
-    // ALTER TABLE t ADD COLUMN c TYPE — dùng cho migration schema.
+    // ALTER TABLE t ADD COLUMN c TYPE [NOT NULL DEFAULT 'x'] — dùng cho migration schema.
+    //
+    // ⚠️ Phần định nghĩa cột có thể dài (`TEXT NOT NULL DEFAULT 'pending'`) ->
+    //   regex phải khớp TOÀN BỘ phần còn lại, không chỉ 1 token.
     const addColumn = trimmed.match(
-      /^ALTER\s+TABLE\s+(\w+)\s+ADD\s+COLUMN\s+(\w+)(\s+[\w\(\)]+)?;?$/i
+      /^ALTER\s+TABLE\s+(\w+)\s+ADD\s+COLUMN\s+(\w+)\s+([\s\S]+?);?$/i
     );
     if (addColumn) {
       const table = this._getTable(addColumn[1]);
@@ -364,7 +367,7 @@ class FakeDatabase {
         if (!already) {
           table.columns.push({
             name: columnName,
-            definition: `${columnName}${addColumn[3] ?? ''}`,
+            definition: `${columnName} ${addColumn[3] ?? ''}`.trim(),
           });
         }
       }
@@ -430,9 +433,11 @@ class FakeDatabase {
     const update = trimmed.match(/^UPDATE\s+(\w+)\s+SET\s+([\s\S]+?)(?:\s+WHERE\s+([\s\S]+?))?;?$/i);
     if (update) {
       const table = this._requireTable(update[1]);
-      const whereClause = update[3];
 
       // Mỗi assignment: `col = ?` (param) hoặc `col = 'lit'` / `col = 5` (literal).
+      //
+      // ⚠️ B5: `markConflict` dùng `retries = retries + 1` -> cần hỗ trợ
+      // biểu thức số học trên chính cột đang UPDATE (`col = col ± N`).
       const assignmentSpecs = splitTopLevel(update[2]).map((a) => {
         const [column, rawValue] = a.split('=');
         const trimmedValue = String(rawValue ?? '').trim();
@@ -442,6 +447,16 @@ class FakeDatabase {
         }
         if (trimmedValue.toUpperCase() === 'NULL') {
           return { column: column.trim(), kind: 'literal', value: null };
+        }
+        // `col = col + 1` / `col = col - 2` -> tăng/giảm theo giá trị hiện tại.
+        const arithmetic = trimmedValue.match(/^(\w+)\s*([+-])\s*(\d+(?:\.\d+)?)$/);
+        if (arithmetic && arithmetic[1] === column.trim()) {
+          return {
+            column: column.trim(),
+            kind: 'arithmetic',
+            operator: arithmetic[2],
+            operand: Number(arithmetic[3]),
+          };
         }
         const asNumber = Number(trimmedValue);
         if (!Number.isNaN(asNumber)) {
@@ -461,6 +476,10 @@ class FakeDatabase {
           if (spec.kind === 'param') {
             row[spec.column] = params[paramIndex];
             paramIndex += 1;
+          } else if (spec.kind === 'arithmetic') {
+            const current = Number(row[spec.column] ?? 0);
+            row[spec.column] =
+              spec.operator === '+' ? current + spec.operand : current - spec.operand;
           } else {
             row[spec.column] = spec.value;
           }

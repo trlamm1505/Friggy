@@ -14,7 +14,18 @@
 import React, { createElement } from 'react';
 import TestRenderer, { act } from 'react-test-renderer';
 import { ServiceProvider, useServices } from '../ServiceProvider';
-import { clearRegistry, registerService } from '../api/ServiceRegistry';
+import { clearRegistry, registerService, __setModeForTest } from '../api/ServiceRegistry';
+
+/**
+ * ⚠️ B0 (Option C): domain CHƯA có real + `SAFE_FALLBACK=false` -> `resolveServices`
+ *   NÉM lỗi (không trả mock thuần) để không bao giờ lộ dữ liệu giả.
+ *   => Test cần đăng ký stub real cho TẤT CẢ domain trước khi render.
+ */
+const registerStubReals = (tag = 'real') => {
+  ['authService', 'fridgeService', 'recipeService', 'notificationService', 'userService'].forEach(
+    (key) => registerService(key, { tag: `${tag}-${key}` })
+  );
+};
 
 /** Mini renderHook: mount probe trong Provider, đọc kết quả hook. */
 function renderWithProvider(hookFn, { providerProps } = {}) {
@@ -33,7 +44,7 @@ function renderWithProvider(hookFn, { providerProps } = {}) {
 }
 
 /** React 19 render lỗi bất đồng bộ -> bắt bằng ErrorBoundary. */
-function captureRenderError(hookFn) {
+function captureRenderError(hookFn, { withProvider = false } = {}) {
   let captured = null;
 
   class Boundary extends React.Component {
@@ -57,12 +68,16 @@ function captureRenderError(hookFn) {
     return null;
   };
 
+  const content = withProvider
+    ? createElement(ServiceProvider, null, createElement(Probe))
+    : createElement(Probe);
+
   const realError = console.error;
   console.error = () => {};
   let tree;
   try {
     act(() => {
-      tree = TestRenderer.create(createElement(Boundary, null, createElement(Probe)));
+      tree = TestRenderer.create(createElement(Boundary, null, content));
     });
   } finally {
     console.error = realError;
@@ -91,6 +106,8 @@ describe('contract export từ ServiceProvider', () => {
   });
 
   it('trong Provider -> useServices trả object có đủ 5 domain', () => {
+    registerStubReals();
+
     const { result } = renderWithProvider(() => useServices());
 
     expect(Object.keys(result.current).sort()).toEqual([
@@ -114,6 +131,8 @@ describe('contract export từ ServiceProvider', () => {
 
 describe('useServiceHooks dùng được với Provider mới (không sửa file hooks)', () => {
   it('useAsyncData nhận đúng shape services như trước', async () => {
+    registerStubReals();
+
     const { useAsyncData } = require('../../presentation/hooks/useServiceHooks');
 
     let api;
@@ -140,21 +159,22 @@ describe('useServiceHooks dùng được với Provider mới (không sửa file
 // ═══════════════ hành vi resolve sau khi đóng đường biên ═══════════════
 
 describe('Provider tự resolve real/mock', () => {
-  it('chưa Real*Service nào đăng ký -> toàn bộ mock', () => {
-    const { result } = renderWithProvider(() => useServices());
+  it('chưa Real*Service nào đăng ký + SAFE_FALLBACK tắt -> NÉM lỗi (Option C)', () => {
+    const err = captureRenderError(() => useServices(), { withProvider: true });
 
-    expect(result.current.authService.constructor.name).toMatch(/Mock/);
-    expect(result.current.fridgeService.constructor.name).toMatch(/Mock/);
+    expect(err).toBeDefined();
+    expect(err.message).toMatch(/chưa có bản service thật/i);
   });
 
-  it('đăng ký real cho auth -> chỉ auth đổi, 4 domain khác giữ nguyên mock', () => {
+  it('đăng ký real cho auth -> chỉ auth đổi, domain khác giữ bản real riêng', () => {
+    registerStubReals();
     registerService('authService', { constructor: { name: 'RealAuthService' }, tag: 'real' });
 
     const { result } = renderWithProvider(() => useServices());
 
     expect(result.current.authService.tag).toBe('real');
-    expect(result.current.fridgeService.constructor.name).toMatch(/Mock/);
-    expect(result.current.recipeService.constructor.name).toMatch(/Mock/);
+    expect(result.current.fridgeService.tag).toBe('real-fridgeService');
+    expect(result.current.recipeService.tag).toBe('real-recipeService');
   });
 });
 
@@ -208,9 +228,16 @@ describe('services prop override', () => {
 
 describe('singleton giữ state qua remount', () => {
   it('2 lần mount -> cùng instance mock', () => {
-    const first = renderWithProvider(() => useServices()).result.current.fridgeService;
-    const second = renderWithProvider(() => useServices()).result.current.fridgeService;
+    // Chế độ mock -> `resolveServices` trả đúng instance mock singleton
+    // (module-level trong `ServiceProvider.defaultServices`).
+    __setModeForTest(true);
+    try {
+      const first = renderWithProvider(() => useServices()).result.current.fridgeService;
+      const second = renderWithProvider(() => useServices()).result.current.fridgeService;
 
-    expect(first).toBe(second);
+      expect(first).toBe(second);
+    } finally {
+      __setModeForTest(null);
+    }
   });
 });

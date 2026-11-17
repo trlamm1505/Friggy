@@ -106,6 +106,16 @@ const mockMap = () => ({
 const realAuth = { tag: 'real-auth' };
 const realFridge = { tag: 'real-fridge' };
 
+/**
+ * ⚠️ B0 (Option C): domain CHƯA có real + `SAFE_FALLBACK=false` -> `resolveServices`
+ *   NÉM lỗi (không trả mock thuần) để không bao giờ lộ dữ liệu giả.
+ */
+const registerAllReal = (services) => {
+  Object.entries(services).forEach(([key, mock]) => {
+    registerService(key, { tag: mock.tag.replace('mock-', 'real-') });
+  });
+};
+
 beforeEach(() => {
   clearRegistry();
 });
@@ -133,10 +143,11 @@ describe('registerService / hasRealService', () => {
   });
 
   it('register cùng key 2 lần -> giữ bản mới nhất (overwrite)', () => {
+    registerAllReal(mockMap());
     registerService('authService', { tag: 'v1' });
     registerService('authService', { tag: 'v2' });
 
-    expect(listRegisteredServices()).toHaveLength(1);
+    expect(listRegisteredServices()).toHaveLength(5);
     expect(resolveServices(mockMap()).authService.tag).toBe('v2');
   });
 
@@ -161,37 +172,31 @@ describe('registerService / hasRealService', () => {
 // ═══════════════ resolveServices - contract quan trọng ═══════════════
 
 describe('resolveServices - contract quan trọng', () => {
-  it('chưa register gì -> trả mock toàn bộ', () => {
-    const out = resolveServices(mockMap());
-
-    expect(out.authService.tag).toBe('mock-auth');
-    expect(out.fridgeService.tag).toBe('mock-fridge');
-    expect(out.recipeService.tag).toBe('mock-recipe');
-    expect(out.notificationService.tag).toBe('mock-notif');
-    expect(out.userService.tag).toBe('mock-user');
+  it('chưa register gì + SAFE_FALLBACK tắt -> NÉM lỗi (không trả dữ liệu giả)', () => {
+    // ⚠️ Option C: trả mock thuần = user tưởng dữ liệu giả là thật.
+    expect(() => resolveServices(mockMap())).toThrow(/chưa có bản service thật/i);
   });
 
-  it('register 1 domain -> chỉ domain đó chuyển sang real', () => {
-    registerService('authService', realAuth);
-
-    const out = resolveServices(mockMap());
-
-    expect(out.authService.tag).toBe('real-auth');
-    expect(out.fridgeService.tag).toBe('mock-fridge');
-    expect(out.recipeService.tag).toBe('mock-recipe');
-  });
-
-  it('chỉ auth + fridge real -> recipe/notif/user vẫn mock', () => {
-    registerService('authService', realAuth);
-    registerService('fridgeService', realFridge);
+  it('đăng ký real cho TẤT CẢ domain -> mỗi domain dùng bản real của nó', () => {
+    registerAllReal(mockMap());
 
     const out = resolveServices(mockMap());
 
     expect(out.authService.tag).toBe('real-auth');
     expect(out.fridgeService.tag).toBe('real-fridge');
-    expect(out.recipeService.tag).toBe('mock-recipe');
-    expect(out.notificationService.tag).toBe('mock-notif');
-    expect(out.userService.tag).toBe('mock-user');
+    expect(out.recipeService.tag).toBe('real-recipe');
+    expect(out.notificationService.tag).toBe('real-notif');
+    expect(out.userService.tag).toBe('real-user');
+  });
+
+  it('register 1 domain -> domain đó chuyển sang real, domain khác có real riêng', () => {
+    registerAllReal(mockMap());
+    registerService('authService', realAuth);
+
+    const out = resolveServices(mockMap());
+
+    expect(out.authService.tag).toBe('real-auth');
+    expect(out.fridgeService.tag).toBe('real-fridge');
   });
 
   it('không truyền mockServices -> trả object rỗng (không crash)', () => {
@@ -200,6 +205,7 @@ describe('resolveServices - contract quan trọng', () => {
   });
 
   it('output là object mới -> sửa không ảnh hưởng mock gốc', () => {
+    registerAllReal(mockMap());
     const mocks = mockMap();
     const out = resolveServices(mocks);
     out.authService = { tag: 'tampered' };
@@ -217,6 +223,7 @@ describe('resolveServices - contract quan trọng', () => {
       criticalAuth: true,
       login: () => Promise.reject(new Error('boom')),
     };
+    registerAllReal(mockMap());
     registerService('authService', criticalReal);
 
     const out = resolveServices(mockMap());
@@ -227,6 +234,7 @@ describe('resolveServices - contract quan trọng', () => {
   });
 
   it('service KHÔNG đánh dấu criticalAuth -> vẫn bọc withFallback như cũ', () => {
+    registerAllReal(mockMap());
     registerService('fridgeService', { tag: 'real-fridge' });
 
     const out = resolveServices(mockMap());
@@ -237,6 +245,7 @@ describe('resolveServices - contract quan trọng', () => {
   });
 
   it('criticalAuth: lỗi 5xx ném lên UI thay vì trả dữ liệu giả', async () => {
+    registerAllReal(mockMap());
     const criticalReal = {
       tag: 'critical-real',
       criticalAuth: true,
@@ -273,6 +282,7 @@ describe('ServiceRegistryProvider + useServices', () => {
   });
 
   it('không truyền services prop -> dựa vào resolveServices(mockServices)', () => {
+    registerAllReal(mockMap());
     registerService('authService', realAuth);
 
     const { result } = renderHook(() => useServices(), {
@@ -281,10 +291,12 @@ describe('ServiceRegistryProvider + useServices', () => {
     });
 
     expect(result.current.authService.tag).toBe('real-auth');
-    expect(result.current.fridgeService.tag).toBe('mock-fridge');
+    expect(result.current.fridgeService.tag).toBe('real-fridge');
   });
 
   it('destructure key cụ thể hoạt động như cũ', () => {
+    registerAllReal(mockMap());
+
     const { result } = renderHook(
       () => {
         const services = useServices();
@@ -296,7 +308,7 @@ describe('ServiceRegistryProvider + useServices', () => {
       }
     );
 
-    expect(result.current.tag).toBe('mock-fridge');
+    expect(result.current.tag).toBe('real-fridge');
   });
 });
 
@@ -304,6 +316,7 @@ describe('ServiceRegistryProvider + useServices', () => {
 
 describe('useServiceRegistry - debug hook', () => {
   it('trả về has + list để debug', () => {
+    registerAllReal(mockMap());
     registerService('authService', realAuth);
 
     const { result } = renderHook(() => useServiceRegistry(), {
@@ -312,8 +325,8 @@ describe('useServiceRegistry - debug hook', () => {
     });
 
     expect(result.current.has('authService')).toBe(true);
-    expect(result.current.has('fridgeService')).toBe(false);
-    expect(result.current.list()).toEqual(['authService']);
+    expect(result.current.has('fridgeService')).toBe(true);
+    expect(result.current.list()).toContain('authService');
   });
 });
 
@@ -338,8 +351,10 @@ describe('useServices fallback khi không có Provider', () => {
 // ═══════════════ tình huống sprint A1 vừa xong ═══════════════
 
 describe('mục đích của resolve', () => {
-  it('A1 vừa xong: chỉ auth real, 4 domain còn lại mock', () => {
-    // Auth vừa được nối thật - tất cả UI khác vẫn chạy vì fallback mock
+  it('A1 vừa xong: chỉ auth real, 4 domain còn lại có real riêng', () => {
+    // Auth vừa được nối thật - tất cả UI khác vẫn chạy vì mỗi domain có
+    // bản real riêng đã đăng ký.
+    registerAllReal(mockMap());
     registerService('authService', realAuth);
 
     const services = resolveServices(mockMap());
@@ -349,6 +364,6 @@ describe('mục đích của resolve', () => {
     const mockCount = Object.values(tags).filter((t) => t.startsWith('mock-')).length;
 
     expect(realCount).toBe(1);
-    expect(mockCount).toBe(4);
+    expect(mockCount).toBe(0);
   });
 });

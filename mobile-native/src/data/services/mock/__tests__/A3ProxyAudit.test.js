@@ -97,7 +97,7 @@ describe('A3 proxy audit - method phải nằm trong prototype chain của mock'
         // Không implement -> proxy phải fallback sang mock (5xx/network).
         getPaymentStatus: jest.fn().mockRejectedValue(new Error('network down')),
       };
-      return { proxy: withFallback(real, mock, { enabled: true }), real, mock };
+      return { proxy: withFallback(real, mock, { allowMockData: true }), real, mock };
     };
 
     it('proxy expose đủ method A3 qua `userService.*`', () => {

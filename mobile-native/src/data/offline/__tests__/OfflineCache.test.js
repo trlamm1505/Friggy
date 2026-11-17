@@ -157,13 +157,17 @@ describe('OfflineCache - danh sách mua', () => {
     expect(items[0]._syncStatus).toBe(SYNC_STATUS.PENDING);
   });
 
-  it('clearShoppingPending xoá row pending sau khi upload', async () => {
+  it('clearShoppingPending đánh dấu synced, KHÔNG xoá row (F3 - món không biến mất)', async () => {
     await offlineCache.saveShoppingItems([{ id: 10, name: 'Thịt', done: false }]);
     await offlineCache.setShoppingItemPurchased(10, true);
     await offlineCache.clearShoppingPending(10);
 
     const items = await offlineCache.getShoppingItems();
-    expect(items).toHaveLength(0);
+    // ⚠️ Bug cũ: DELETE row -> món vừa tick offline biến mất khỏi danh sách
+    // sau khi upload. Giờ chỉ đổi trạng thái, GIỮ row.
+    expect(items).toHaveLength(1);
+    expect(items[0].done).toBe(true);
+    expect(items[0]._syncStatus).toBe(SYNC_STATUS.SYNCED);
   });
 });
 

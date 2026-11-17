@@ -28,12 +28,21 @@ export const showInfo = (message) => showToast(message, 'info');
  * @param {string} fallbackMessage - message khi lỗi không có message riêng
  * @param {object} [options]
  * @param {string} [options.offlineMessage] - message khi đã lưu offline
+ * @param {string} [options.requiresNetworkMessage] - message khi tính năng cần mạng
  * @returns {boolean} true nếu đây là lỗi "đã lưu offline"
  */
 export const showMutationError = (e, fallbackMessage, options = {}) => {
   if (e?.isOfflineQueued === true) {
     showInfo(options.offlineMessage || 'Đã lưu offline, sẽ đồng bộ khi có mạng');
     return true;
+  }
+  // Lỗi "cần kết nối mạng" (nhóm tài chính/gia đình bị từ chối offline).
+  // Thông báo riêng để user hiểu nguyên nhân thay vì thấy lỗi chung chung.
+  if (e?.isOfflineRequiresNetwork === true) {
+    showError(
+      options.requiresNetworkMessage || 'Tính năng này cần kết nối mạng, vui lòng thử lại'
+    );
+    return false;
   }
   showError(e?.message || fallbackMessage);
   return false;

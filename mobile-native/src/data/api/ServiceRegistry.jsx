@@ -153,9 +153,19 @@ export const resolveServices = (mockServices = {}) => {
   for (const [key, mock] of Object.entries(mockServices)) {
     const real = realServices.get(key);
     if (!real) {
-      // Chưa có real cho domain này -> mock thuần, không cần bọc
-      out[key] = mock;
-      continue;
+      // Chưa có real cho domain này.
+      // ⚠️ Option C: khi KHÔNG cho phép dữ liệu giả -> ném lỗi rõ ràng thay
+      // vì trả mock thuần (user sẽ tưởng đó là dữ liệu thật).
+      // Ở production cả 5 domain đều đã registerService nên nhánh này gần
+      // như không dùng, nhưng để an toàn cho test/dev.
+      if (appConfig.SAFE_FALLBACK) {
+        out[key] = mock;
+        continue;
+      }
+      throw new Error(
+        `[ServiceRegistry] Domain "${key}" chưa có bản service thật. ` +
+          'Kiểm tra registerService() trong App.jsx.'
+      );
     }
 
     // ══════════════════════════════════════════════════════════════
@@ -173,7 +183,12 @@ export const resolveServices = (mockServices = {}) => {
 
     out[key] = withFallback(real, mock, {
       label: key.replace(/Service$/, ''),
-      enabled: appConfig.SAFE_FALLBACK,
+      serviceKey: key,
+      // B0: 2 cờ ĐỘC LẬP.
+      //   `offlineEnabled` bật TẦNG OFFLINE (đọc cache + ghi hàng đợi).
+      //   `allowMockData` cho phép trả DỮ LIỆU GIẢ (mặc định tắt).
+      offlineEnabled: appConfig.OFFLINE_ENABLED,
+      allowMockData: appConfig.SAFE_FALLBACK,
       // P1 (offline): khi lỗi network -> đọc cache local trước khi fallback
       //   sang mock. Xem `src/data/offline/CacheFallback.js`.
       cacheFallback: (methodName, args) => {

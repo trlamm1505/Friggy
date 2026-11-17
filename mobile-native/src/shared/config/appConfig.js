@@ -75,6 +75,7 @@ export const getImageUrl = (url) => {
 
 const rawUseMocks = process.env.EXPO_PUBLIC_USE_MOCKS;
 const rawSafeFallback = process.env.EXPO_PUBLIC_SAFE_FALLBACK;
+const rawOfflineEnabled = process.env.EXPO_PUBLIC_OFFLINE_ENABLED;
 
 /**
  * Header để bỏ qua trang cảnh báo của ngrok.
@@ -102,7 +103,33 @@ export const appConfig = {
 
   // Flags
   USE_MOCKS: rawUseMocks === 'true',
-  SAFE_FALLBACK: rawSafeFallback !== 'false',
+
+  /**
+   * `SAFE_FALLBACK` — cho phép trả DỮ LIỆU GIẢ (mock) khi BE lỗi hay không.
+   *
+   * ⚠️ MẶC ĐỊNH = `false` (KHÔNG trả dữ liệu giả):
+   *   App tủ lạnh mà hiện "Cà chua hết hạn" của tủ ảo thì NGUY HIỂM hơn cả
+   *   lỗi — user có thể bỏ món thật trong nhà. Vì vậy mặc định an toàn là
+   *   không có mock, chỉ bật khi chủ động muốn (demo UI / BE down).
+   *
+   * ⚠️ CỜ NÀY ĐỘC LẬP VỚI `OFFLINE_ENABLED`:
+   *   `SAFE_FALLBACK=false` KHÔNG được tắt tầng offline. Xem `OFFLINE_ENABLED`.
+   */
+  SAFE_FALLBACK: rawSafeFallback === 'true',
+
+  /**
+   * `OFFLINE_ENABLED` — bật TẦNG OFFLINE (đọc cache SQLite + ghi hàng đợi).
+   *
+   * ⚠️ VÌ SAO TÁCH KHỎI `SAFE_FALLBACK`:
+   *   Trước đây `withFallback` dùng chung 1 cờ `enabled`. `enabled=false`
+   *   khiến hàm `return realService` — trả thẳng service thật, KHÔNG có proxy
+   *   -> `cacheFallback` (đọc cache) và `mutationHandler` (ghi hàng đợi)
+   *   KHÔNG BAO GIỜ chạy -> toàn bộ kiến trúc offline là code chết.
+   *   => Tách 2 cờ: bật offline + tắt mock là 2 quyết định độc lập.
+   *
+   * ⚠️ MẶC ĐỊNH = `true` (an toàn): không có env vẫn có offline.
+   */
+  OFFLINE_ENABLED: rawOfflineEnabled !== 'false',
 
   // App info
   APP_NAME: 'Friggy',

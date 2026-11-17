@@ -23,18 +23,31 @@
  *        thực tế app đang bị chặn rate)
  *  3. Log bằng console.warn kèm label để debug. TUYỆT ĐỐI KHÔNG log dữ liệu nhạy
  *     (token, password, email) - chỉ log tên method + message.
- *  4. appConfig.SAFE_FALLBACK=false để tắt fallback, dùng khi debug lỗi thật.
+ *  4. appConfig.OFFLINE_ENABLED=false để tắt HOÀN TOÀN tầng offline (debug lỗi thật).
  *
  * ⚠️ P1 (OFFLINE) - THỨ TỰ ƯU TIÊN 4 TẦNG:
  *   Trước: real -> (lỗi network/5xx) -> MOCK.
  *   Nay:   real -> (lỗi network) -> [GHI: lưu hàng đợi offline]
- *                    -> [ĐỌC: cache local] -> (cache rỗng) -> MOCK.
+ *                    -> [ĐỌC: cache local] -> (cache rỗng) -> LỖI THẬT.
  *
  *   VÌ SAO CẦN CACHE Ở GIỮA:
  *     MOCK là dữ liệu GIẢ (món ảo, tủ ảo). Khi offline, hiện mock khiến user
  *     tưởng tủ lạnh của họ chứa món không có thật -> nguy hiểm hơn cả lỗi.
  *     Cache local chứa dữ liệu THẬT đã tải về trước đó -> đúng như Flutter.
- *     Mock chỉ là chốt chặn cuối để app không trắng màn.
+ *
+ * ⚠️ OPTION C - APP KHÔNG BAO GIỜ TRẢ DỮ LIỆU GIẢ (mặc định):
+ *   `allowMockData` (mặc định `false`) kiểm soát việc trả DỮ LIỆU mock.
+ *   Khi tắt: mọi tình huống hết đường -> NÉM LỖI THẬT lên UI (UI hiện ErrorState).
+ *   Mock vẫn được giữ trong bundle vì 2 việc KHÁC:
+ *     1. `collectNames(mockService)` -> dựng proxy đúng contract của interface
+ *        (bỏ mock -> proxy mất method -> UI gọi ra "undefined is not a function").
+ *     2. Chế độ demo `EXPO_PUBLIC_USE_MOCKS=true`.
+ *
+ * ⚠️ CHÍNH SÁCH LỖI GHI (Option B) - xem `WriteMethods.js`:
+ *   - GHI + lỗi 5xx    -> ném lỗi thật (KHÔNG mock, KHÔNG queue).
+ *   - GHI + lỗi network -> có mutation handler? -> queue + `OfflineQueuedError`
+ *                          không có handler?      -> `OfflineRequiresNetworkError`.
+ *   - ĐỌC + lỗi network -> cache local -> cache rỗng -> ném lỗi thật.
  *
  *   `cacheFallback` là hàm BẤT ĐỒNG BỘ trả về dữ liệu cache cho 1 method.
  *   Nếu không truyền `cacheFallback` -> hành vi cũ (real -> mock) giữ nguyên.
@@ -44,6 +57,8 @@
  */
 
 import { OfflineQueuedError } from '../offline/OfflineQueuedError';
+import { OfflineRequiresNetworkError } from '../offline/OfflineRequiresNetworkError';
+import { isWriteMethod } from './WriteMethods';
 
 /**
  * Trích status code từ nhiều hình dạng lỗi khác nhau.
@@ -111,16 +126,26 @@ export const shouldFallback = (e) => {
 };
 
 /**
- * Bọc 1 real service: mọi method gọi real trước, lỗi 5xx/network thì gọi mock.
+ * Bọc 1 real service: mọi method gọi real trước, lỗi thì đi theo chính sách
+ * 4 tầng (cache offline -> queue offline -> lỗi thật -> mock CHỈ KHI được bật).
  *
  * @param {object} realService - instance Real*Service
- * @param {object} mockService - instance Mock*Service (cung kiem prototype)
+ * @param {object} mockService - instance Mock*Service (cung ciem prototype + contract)
  * @param {object} [options]
  * @param {string} [options.label] - tên để log, vd 'fridge'
- * @param {boolean} [options.enabled] - mặc định appConfig.SAFE_FALLBACK
+ * @param {boolean} [options.offlineEnabled]
+ *        - mặc định `true`. Bật TẦNG OFFLINE: `cacheFallback` + `mutationHandler`.
+ *        ⚠️ CỜ NÀY ĐỘC LẬP VỚI `allowMockData`:
+ *          offline bật + mock tắt là trạng thái ĐÚNG cho production.
+ * @param {boolean} [options.allowMockData]
+ *        - mặc định `false`. Cho phép trả DỮ LIỆU GIẢ (mock) khi hết cache.
+ *        ⚠️ Mặc định `false` vì dữ liệu giả trong app tủ lạnh NGUY HIỂM hơn lỗi:
+ *          user có thể bỏ món thật trong nhà khi tưởng tủ đã có sẵn.
+ * @param {string} [options.serviceKey]
+ *        - key của service (vd 'fridgeService') để phân biệt method ĐỌC / GHI.
  * @param {(methodName:string, args:Array) => Promise<any>} [options.cacheFallback]
  *        - hàm đọc dữ liệu cache local khi lỗi network. Nếu trả `undefined`
- *          hoặc `null` -> tiếp tục fallback sang mock.
+ *          hoặc `null` -> coi như cache RỖNG -> tiếp tục theo chính sách.
  * @param {(methodName:string, args:Array) => Promise<any>} [options.mutationHandler]
  *        - hàm lưu thao tác ghi offline khi lỗi network (ghi cache + đẩy hàng đợi).
  *          Nếu handler xử lý được -> ném `OfflineQueuedError` để UI biết đây
@@ -128,14 +153,21 @@ export const shouldFallback = (e) => {
  * @returns {object} proxy có đúng các method của interface
  */
 export const withFallback = (realService, mockService, options = {}) => {
-  const { label = 'service', enabled, cacheFallback, mutationHandler } = options;
+  const {
+    label = 'service',
+    serviceKey,
+    offlineEnabled = true,
+    allowMockData = false,
+    cacheFallback,
+    mutationHandler,
+  } = options;
 
   if (!realService) return mockService;
   if (!mockService) return realService;
 
-  // Tắt fallback -> trả thẳng real, không bọc (dùng khi debug lỗi thật)
-  const isEnabled = enabled !== undefined ? enabled : true;
-  if (!isEnabled) return realService;
+  // Tắt HOÀN TOÀN proxy (offline + mock) -> trả thẳng real, không bọc.
+  // Dùng khi debug lỗi thật / muốn xem hành vi gốc của BE.
+  if (!offlineEnabled && !allowMockData) return realService;
 
   // Gom TẤT CẢ property (kể cả không phải function) từ CẢ prototype chain.
   // Mock extends I*Service nên method nằm ở prototype của lớp con, không phải
@@ -189,6 +221,28 @@ export const withFallback = (realService, mockService, options = {}) => {
     if (typeof __DEV__ !== 'undefined' && __DEV__) {
       console.warn(`[SafeService:${label}.${name}] dùng dữ liệu cache offline`);
     }
+  };
+
+  /**
+   * Trả về dữ liệu MOCK nếu được phép, ngược lại ném lỗi thật.
+   *
+   * ⚠️ Option C - app KHÔNG BAO GIỜ trả dữ liệu giả cho user khi
+   *   `allowMockData === false` (mặc định production).
+   *   => Mọi tình huống hết đường -> ném lỗi thật lên UI (UI hiện ErrorState).
+   *
+   * @param {string} name
+   * @param {Function|null} mockFn
+   * @param {Array} args
+   * @param {any} e - lỗi gốc
+   * @returns {any}
+   */
+  const fallbackToMockOrThrow = (name, mockFn, args, e) => {
+    if (allowMockData && typeof mockFn === 'function') {
+      logFallback(label, name, e);
+      return mockFn.apply(mockService, args);
+    }
+    // Không có mock, hoặc mock bị cấm -> ném LỖI THẬT.
+    throw e;
   };
 
   /**
@@ -274,6 +328,9 @@ export const withFallback = (realService, mockService, options = {}) => {
    * @returns {Function}
    */
   const wrapMethod = (name, realFn, mockFn) => {
+    // Method này là ĐỌC hay GHI? (B1 - chính sách lỗi khác nhau cho đọc/ghi)
+    const isWrite = isWriteMethod(serviceKey, name);
+
     return function wrappedMethod(...args) {
       // ── Gọi real ──
       let realResult;
@@ -282,10 +339,22 @@ export const withFallback = (realService, mockService, options = {}) => {
       } catch (e) {
         // Lỗi ném ĐỒNG BỘ (không phải generator lazy) -> xử lý như method thường.
         if (!shouldFallback(e)) throw e;
-        if (typeof mockFn !== 'function') throw e;
+        const status = extractStatus(e);
+        const isServerError = status !== null && status >= 500;
 
-        logFallback(label, name, e);
-        return mockFn.apply(mockService, args);
+        // ── B1 / Option B: GHI + lỗi 5xx -> NÉM LỖI THẬT (không mock, không queue) ──
+        if (isWrite && isServerError) throw e;
+
+        // ── 5xx khi ĐỌC: KHÔNG trả dữ liệu giả (Option C) ──
+        // Nếu được phép trả dữ liệu giả (chế độ demo) -> trả mock cho nhất quán
+        // với nhánh Promise bên dưới.
+        if (isServerError && !(allowMockData && typeof mockFn === 'function')) throw e;
+
+        if (allowMockData && typeof mockFn === 'function') {
+          logFallback(label, name, e);
+          return mockFn.apply(mockService, args);
+        }
+        throw e;
       }
 
       // ── Kết quả là async iterable (generator) -> trả về generator wrapper ──
@@ -297,17 +366,25 @@ export const withFallback = (realService, mockService, options = {}) => {
             try {
               step = await source.next();
             } catch (e) {
-              if (!shouldFallback(e) || typeof mockFn !== 'function') throw e;
+              if (!shouldFallback(e)) throw e;
+              const status = extractStatus(e);
+              const isServerError = status !== null && status >= 500;
 
-              logFallback(label, name, e);
+              // GHI + 5xx -> ném lỗi thật (Option B).
+              if (isWrite && isServerError) throw e;
 
-              // Chuyển sang generator của mock, phát lại từ đầu.
-              const mockSource = mockFn.apply(mockService, args)[Symbol.asyncIterator]();
-              while (true) {
-                const mockStep = await mockSource.next();
-                if (mockStep.done) return;
-                yield mockStep.value;
+              if (allowMockData && typeof mockFn === 'function') {
+                logFallback(label, name, e);
+
+                // Chuyển sang generator của mock, phát lại từ đầu.
+                const mockSource = mockFn.apply(mockService, args)[Symbol.asyncIterator]();
+                while (true) {
+                  const mockStep = await mockSource.next();
+                  if (mockStep.done) return;
+                  yield mockStep.value;
+                }
               }
+              throw e;
             }
 
             if (step.done) return;
@@ -318,18 +395,31 @@ export const withFallback = (realService, mockService, options = {}) => {
 
       // ── Kết quả là Promise -> bọc fallback ──
       return Promise.resolve(realResult).catch(async (e) => {
+        // 4xx (và lỗi không xác định) -> ném thẳng, UI form hiển thị.
         if (!shouldFallback(e)) throw e;
 
-        // Tầng 0: thao tác GHI -> lưu offline để upload sau (chỉ lỗi network).
+        const status = extractStatus(e);
+        const isServerError = status !== null && status >= 500;
+
+        // ── B1 / Option B: GHI + lỗi 5xx -> NÉM LỖI THẬT ──
+        // Server ĐÃ xử lý yêu cầu và báo lỗi -> không queue (tránh bản ghi trùng),
+        // không mock (tránh báo "thành công giả"). User phải thấy lỗi thật.
+        if (isWrite && isServerError) throw e;
+
+        // ── Lỗi NETWORK ──
         if (isNetworkError(e)) {
-          const queued = await tryQueueMutation(name, args);
-          if (queued) {
-            // Đã lưu offline -> ném lỗi riêng để UI hiện "đã lưu, sẽ đồng bộ".
-            throw new OfflineQueuedError(name);
+          // Tầng 0: thao tác GHI -> lưu offline để upload sau.
+          if (isWrite) {
+            const queued = await tryQueueMutation(name, args);
+            if (queued) {
+              // Đã lưu offline -> ném lỗi riêng để UI hiện "đã lưu, sẽ đồng bộ".
+              throw new OfflineQueuedError(name);
+            }
+            // Không có handler (ghi tài chính/gia đình) -> ném lỗi tường minh.
+            throw new OfflineRequiresNetworkError(name, serviceKey);
           }
-        }
-        // Tầng 1: dữ liệu CACHE LOCAL (chỉ khi lỗi network).
-        if (isNetworkError(e)) {
+
+          // Tầng 1: dữ liệu CACHE LOCAL (chỉ khi lỗi network).
           const cached = await tryCache(name, args);
           if (cached.hit) {
             logCache(label, name);
@@ -337,10 +427,8 @@ export const withFallback = (realService, mockService, options = {}) => {
           }
         }
 
-        if (typeof mockFn !== 'function') throw e;
-
-        logFallback(label, name, e);
-        return mockFn.apply(mockService, args);
+        // ── Tầng cuối: MOCK chỉ khi được phép, ngược lại ném lỗi thật ──
+        return fallbackToMockOrThrow(name, mockFn, args, e);
       });
     };
   };
@@ -379,9 +467,19 @@ export const withFallback = (realService, mockService, options = {}) => {
       return;
     }
 
-    // Real chưa implement method này -> gọi mock thẳng,
-    // đừng để UI nhận undefined.
-    proxy[name] = (...args) => mockService[name](...args);
+    // Real chưa implement method này -> KHÔNG được trả dữ liệu giả (Option C).
+    // Ném lỗi rõ ràng để dev biết method chưa được hỗ trợ, thay vì âm thầm
+    // trả dữ liệu mock khiến user tưởng là dữ liệu thật.
+    proxy[name] = (...args) => {
+      if (allowMockData) return mockService[name](...args);
+      const err = new Error(
+        `[SafeService:${label}.${name}] Method chưa được hỗ trợ ở service thật (chưa implement)`
+      );
+      err.name = 'MethodNotSupportedError';
+      err.methodName = name;
+      err.serviceKey = serviceKey;
+      throw err;
+    };
   });
 
   // ══════════════════════════════════════════════════════════════════

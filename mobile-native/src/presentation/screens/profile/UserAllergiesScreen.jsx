@@ -36,6 +36,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BackCircleButton } from '../../components/common/BackCircleButton';
 import { CustomTextField } from '../../components/common/CustomTextField';
 import { EmptyState } from '../../components/common/EmptyState';
+import { ErrorState } from '../../components/common/ErrorState';
 import { useServices } from '../../../data/ServiceProvider';
 import { showError, showMutationError } from '../../utils/helpers';
 import { Plus, X, Search, TriangleAlert } from 'lucide-react-native';
@@ -49,6 +50,9 @@ export const UserAllergiesScreen = () => {
 
   const [allergies, setAllergies] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  // B8 (Option C): BE lỗi + cache rỗng -> PHẢI hiện `ErrorState`, KHÔNG được
+  // hiện EmptyState "chưa có dị ứng nào" (user tưởng mình không bị dị ứng).
+  const [loadError, setLoadError] = useState(null);
 
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [keyword, setKeyword] = useState('');
@@ -58,14 +62,34 @@ export const UserAllergiesScreen = () => {
   // Ẩn dị ứng đang có khỏi danh sách chọn — tránh bấm thêm trùng (BE trả 400).
   const existingIds = allergies.map((a) => a.ingredientId);
 
+  const loadAllergies = useCallback(async () => {
+    setIsLoading(true);
+    setLoadError(null);
+    try {
+      const list = await userService.getAllergies();
+      setAllergies(Array.isArray(list) ? list : []);
+    } catch (e) {
+      // Giữ danh sách cũ (cache) nếu có; nếu không có thì `loadError` được set
+      // -> UI hiện ErrorState + nút thử lại.
+      setLoadError(e);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [userService]);
+
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
         const list = await userService.getAllergies();
-        if (!cancelled) setAllergies(Array.isArray(list) ? list : []);
-      } catch (_e) {
-        // Offline -> danh sách rỗng, người dùng thấy EmptyState (không crash).
+        if (!cancelled) {
+          setAllergies(Array.isArray(list) ? list : []);
+          setLoadError(null);
+        }
+      } catch (e) {
+        if (!cancelled) {
+          setLoadError(e);
+        }
       } finally {
         if (!cancelled) setIsLoading(false);
       }
@@ -221,6 +245,13 @@ export const UserAllergiesScreen = () => {
               {t('home.searching')}
             </Text>
           </View>
+        ) : loadError && allergies.length === 0 ? (
+          // B8: load lỗi + không có cache -> ErrorState (không phải EmptyState).
+          <ErrorState
+            message={t('offline.readFailed')}
+            onRetry={loadAllergies}
+            style={{ marginTop: sp(40) }}
+          />
         ) : allergies.length === 0 ? (
           <View style={{ marginTop: sp(40) }}>
             <EmptyState

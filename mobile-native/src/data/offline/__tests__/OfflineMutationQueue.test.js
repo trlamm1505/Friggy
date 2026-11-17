@@ -140,16 +140,29 @@ describe('OfflineMutationQueue - shopping / slot', () => {
     expect(ops[0].payload.servings).toBe(4);
   });
 
-  it('updateSlot KHÔNG có completed -> KHÔNG queue (canQueue = false)', async () => {
+  it('updateSlot KHÔNG có completed/recipeId -> KHÔNG queue (canQueue = false)', async () => {
     const handled = await queueMutation('recipeService', 'updateSlot', [
       'slot-1',
-      { recipeId: 'r9' },
+      { note: 'ghi chú' },
     ]);
 
     expect(handled).toBe(false);
 
     const { outboxQueue } = require('../OutboxQueue');
     expect(await outboxQueue.count()).toBe(0);
+  });
+
+  it('updateSlot CÓ recipeId -> queue được (F6 - đổi công thức offline)', async () => {
+    const handled = await queueMutation('recipeService', 'updateSlot', [
+      'slot-1',
+      { recipeId: 'r9' },
+    ]);
+
+    expect(handled).toBe(true);
+
+    const { outboxQueue } = require('../OutboxQueue');
+    const ops = await outboxQueue.list();
+    expect(ops[0].payload.recipeId).toBe('r9');
   });
 });
 

@@ -1,8 +1,9 @@
 /**
  * DatabaseService - migration offline (bảng `local_*` cho offline).
  *
- * ⚠️ DB_VERSION hiện = 4
- *   (v3: cột `version` cho `local_ingredients`; v4: bảng `local_recipe_list`).
+ * ⚠️ DB_VERSION hiện = 5
+ *   (v3: cột `version` cho `local_ingredients`; v4: bảng `local_recipe_list`;
+ *    v5: `local_notifications` + `local_json_cache` + `local_pending_ops.sync_state`).
  */
 
 import { databaseService } from '../../storage/DatabaseService';
@@ -21,6 +22,8 @@ const REQUIRED_LOCAL_TABLES = [
   'local_ingredient_catalog',
   'local_pending_ops',
   'local_recipe_list',
+  'local_notifications',
+  'local_json_cache',
   'local_meta',
 ];
 
@@ -47,7 +50,7 @@ describe('DatabaseService - migration offline', () => {
   it('ghi lại db_version vào local_meta (idempotent)', async () => {
     const db = await databaseService.init();
     const row = await db.getFirstAsync(`SELECT value FROM local_meta WHERE key = 'db_version';`);
-    expect(Number(row.value)).toBe(4);
+    expect(Number(row.value)).toBe(5);
   });
 
   it('chạy init 2 lần không lỗi (idempotent)', async () => {
@@ -57,7 +60,7 @@ describe('DatabaseService - migration offline', () => {
 
     const db = await databaseService.init();
     const row = await db.getFirstAsync(`SELECT value FROM local_meta WHERE key = 'db_version';`);
-    expect(Number(row.value)).toBe(4);
+    expect(Number(row.value)).toBe(5);
   });
   it('bảng mock cũ vẫn còn (không phá seedData)', async () => {
     const db = await databaseService.init();
@@ -69,14 +72,30 @@ describe('DatabaseService - migration offline', () => {
   it('local_pending_ops có cột đầy đủ cho hàng đợi', async () => {
     const db = await databaseService.init();
     await db.runAsync(
-      `INSERT INTO local_pending_ops (op_type, entity_id, payload, retries, last_error, created_at)
-       VALUES ('fridge_add', 'e1', '{}', 0, NULL, 123);`
+      `INSERT INTO local_pending_ops (op_type, entity_id, payload, retries, last_error, sync_state, created_at)
+       VALUES ('fridge_add', 'e1', '{}', 0, NULL, 'pending', 123);`
     );
 
     const rows = await db.getAllAsync(`SELECT * FROM local_pending_ops;`);
     expect(rows).toHaveLength(1);
     expect(rows[0].op_type).toBe('fridge_add');
     expect(rows[0].retries).toBe(0);
+    // ⚠️ v5: `sync_state` mặc định 'pending' -> dùng để đánh dấu conflict.
+    expect(rows[0].sync_state).toBe('pending');
+  });
+
+  it('local_pending_ops có cột sync_state (migration v5)', async () => {
+    const db = await databaseService.init();
+    await db.runAsync(
+      `INSERT INTO local_pending_ops (op_type, entity_id, payload, retries, last_error, sync_state, created_at)
+       VALUES ('fridge_add', 'e_conflict', '{}', 0, NULL, 'pending', 123);`
+    );
+    await db.runAsync(
+      `UPDATE local_pending_ops SET sync_state = 'conflict' WHERE entity_id = 'e_conflict';`
+    );
+
+    const rows = await db.getAllAsync(`SELECT sync_state FROM local_pending_ops WHERE entity_id = 'e_conflict';`);
+    expect(rows[0].sync_state).toBe('conflict');
   });
 
   it('local_ingredients có cột sync_status', async () => {
@@ -107,6 +126,6 @@ describe('DatabaseService - migration offline', () => {
 
     const db = await databaseService.init();
     const row = await db.getFirstAsync(`SELECT value FROM local_meta WHERE key = 'db_version';`);
-    expect(Number(row.value)).toBe(4);
+    expect(Number(row.value)).toBe(5);
   });
 });

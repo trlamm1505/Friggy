@@ -12,7 +12,7 @@
  *   Subscription crash ngay khi bật mock mode.
  */
 
-import { resolveServices } from '../ServiceRegistry';
+import { resolveServices, __setModeForTest } from '../ServiceRegistry';
 import { MockUserService } from '../../services/mock/MockUserService';
 import { MockFridgeService } from '../../services/mock/MockFridgeService';
 import { MockRecipeService } from '../../services/mock/MockRecipeService';
@@ -136,17 +136,22 @@ describe('Mock mode — resolveServices trả mock nguyên vẹn', () => {
   it('khi bật mock, service vẫn có đủ method', () => {
     // `resolveServices` ép mock khi `getMode()` true. Test này chỉ kiểm tra
     // shape của mock, không phụ thuộc mode.
-    const resolved = resolveServices({
-      userService: new MockUserService(),
-      fridgeService: new MockFridgeService(),
-      recipeService: new MockRecipeService(),
-    });
+    __setModeForTest(true);
+    try {
+      const resolved = resolveServices({
+        userService: new MockUserService(),
+        fridgeService: new MockFridgeService(),
+        recipeService: new MockRecipeService(),
+      });
 
-    // Dù chế độ nào, service phải gọi được các method ở trên.
-    const missing = USER_METHODS_USED_BY_UI.filter(
-      (m) => typeof resolved.userService[m] !== 'function'
-    );
+      // Dù chế độ nào, service phải gọi được các method ở trên.
+      const missing = USER_METHODS_USED_BY_UI.filter(
+        (m) => typeof resolved.userService[m] !== 'function'
+      );
 
-    expect(missing).toEqual([]);
+      expect(missing).toEqual([]);
+    } finally {
+      __setModeForTest(null);
+    }
   });
 });

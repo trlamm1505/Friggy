@@ -5,6 +5,23 @@
  * Thêm P0 (offline): mock expo-network
  */
 
+/**
+ * ⚠️ ENV PHẢI KHỚP VỚI PRODUCTION (B0).
+ *
+ *   Jest KHÔNG đọc file `.env` -> `process.env.EXPO_PUBLIC_SAFE_FALLBACK`
+ *   là `undefined`. Trước đây appConfig dùng `rawSafeFallback !== 'false'`
+ *   -> `undefined !== 'false'` -> `true` -> TEST thấy mock BẬT, còn app thật
+ *   (`.env` có `=false`) thì mock TẮT. Đó là lý do bug "test pass nhưng app
+ *   hỏng" không bị bắt.
+ *
+ *   => Set cứng env cho test đúng như `.env` production:
+ *      - SAFE_FALLBACK = false -> app KHÔNG BAO GIỜ trả dữ liệu giả.
+ *      - OFFLINE_ENABLED = true -> tầng offline LUÔN bật.
+ */
+process.env.EXPO_PUBLIC_USE_MOCKS = 'false';
+process.env.EXPO_PUBLIC_SAFE_FALLBACK = 'false';
+process.env.EXPO_PUBLIC_OFFLINE_ENABLED = 'true';
+
 jest.mock('react-native-mmkv', () => ({
   MMKV: jest.fn(() => {
     const store = new Map();

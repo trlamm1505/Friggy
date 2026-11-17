@@ -27,7 +27,7 @@ import { onNetworkEvent } from '../../data/offline/NetworkMonitor';
  * @param {boolean} [options.autoSyncOnMount=true] - sync khi mount (Home)
  * @param {boolean} [options.syncOnReconnect=true] - sync khi mạng khôi phục
  * @param {boolean} [options.enabled=true] - tắt toàn bộ (vd khi chưa đăng nhập)
- * @returns {{isSyncing:boolean, pendingCount:number, lastResult:object|null, syncNow:Function}}
+ * @returns {{isSyncing:boolean, pendingCount:number, conflictCount:number, lastResult:object|null, syncNow:Function}}
  */
 export const useSyncEngine = (options = {}) => {
   const { autoSyncOnMount = true, syncOnReconnect = true, enabled = true } = options;
@@ -35,6 +35,8 @@ export const useSyncEngine = (options = {}) => {
   const [state, setState] = useState({
     isSyncing: false,
     pendingCount: 0,
+    // ⚠️ B5: số thao tác bị CONFLICT (409) -> badge đỏ + modal chi tiết.
+    conflictCount: 0,
     lastResult: null,
   });
 

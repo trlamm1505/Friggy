@@ -331,7 +331,11 @@ export const FridgeInventoryScreen = ({ fridge, isEmbedded = false, onRename }) 
   );
 
   // Loading state lần đầu
-  if (loading && !items) {
+  //
+  // ⚠️ B8: `useFridgeItems` dùng `initialValue = []` -> `!items` LUÔN false
+  // (mảng rỗng là truthy) -> nhánh skeleton/error KHÔNG BAO GIỜ chạy.
+  // Điều kiện đúng phải là "chưa có phần tử nào": `!items?.length`.
+  if (loading && !items?.length) {
     return (
       <ScreenBackground>
         <View style={{ paddingHorizontal: sp(20), gap: sp(10), marginTop: sp(8) }}>
@@ -352,10 +356,11 @@ export const FridgeInventoryScreen = ({ fridge, isEmbedded = false, onRename }) 
   }
 
   // Error state
-  if (error && !items) {
+  // B8: cache rỗng + BE lỗi -> `ErrorState` (không phải màn trắng).
+  if (error && !items?.length) {
     return (
       <ScreenBackground>
-        <ErrorState onRetry={refetch} style={{ marginTop: sp(60) }} />
+        <ErrorState message={t('offline.readFailed')} onRetry={refetch} style={{ marginTop: sp(60) }} />
       </ScreenBackground>
     );
   }

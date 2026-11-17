@@ -16,6 +16,7 @@ import { AppColors } from '../../theme/colors';
 import { sp } from '../../utils/responsive';
 import { FontFamily, FontWeights } from '../../theme/typography';
 import { useNavigation } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 import { FriggyAppBar } from '../../components/navigation/FriggyAppBar';
 import { CheckCheck, Settings as SettingsIcon, BellOff } from 'lucide-react-native';
 import { useNotifications } from '../../hooks/useServiceHooks';
@@ -70,6 +71,7 @@ const groupByDate = (items) => {
 
 export const NotificationsScreen = () => {
   const { isDark } = useTheme();
+  const { t } = useTranslation();
   const navigation = useNavigation();
   const services = useServices();
   const { data: items, loading, error, refetch } = useNotifications();
@@ -148,7 +150,11 @@ export const NotificationsScreen = () => {
   ];
 
   // Loading
-  if (loading && !items) {
+  //
+  // ⚠️ B8: `useNotifications` dùng `initialValue = []` -> `!items` LUÔN false
+  // (mảng rỗng là truthy) -> nhánh skeleton/error KHÔNG BAO GIỜ chạy.
+  // Điều kiện đúng phải là "chưa có phần tử nào": `!items?.length`.
+  if (loading && !items?.length) {
     return (
       <View style={[styles.container, { backgroundColor: isDark ? '#0E1611' : '#FFFFFF' }]}>
         <FriggyAppBar showBackButton onBackTap={() => navigation.goBack()} />
@@ -163,11 +169,11 @@ export const NotificationsScreen = () => {
     );
   }
 
-  if (error && !items) {
+  if (error && !items?.length) {
     return (
       <View style={[styles.container, { backgroundColor: isDark ? '#0E1611' : '#FFFFFF' }]}>
         <FriggyAppBar showBackButton onBackTap={() => navigation.goBack()} />
-        <ErrorState onRetry={refetch} style={{ marginTop: sp(40) }} />
+        <ErrorState message={t('offline.readFailed')} onRetry={refetch} style={{ marginTop: sp(40) }} />
       </View>
     );
   }

@@ -38,7 +38,7 @@
  */
 
 import { offlineCache, SYNC_STATUS } from './OfflineCache';
-import { OP_TYPES } from './OutboxQueue';
+import { OP_TYPES, outboxQueue } from './OutboxQueue';
 /**
  * Lỗi ném ra khi thao tác đã được LƯU OFFLINE (không phải lỗi thật).
  *
@@ -59,6 +59,17 @@ export class OfflineQueuedError extends Error {
  * @returns {string}
  */
 const pendingId = () => `pending_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+
+/**
+ * Id này có phải id tạm của item tạo offline không (`pending_*`)?
+ *
+ * ⚠️ B7: item tạo offline có `version = null` -> BE bắt buộc `version` khi
+ *   PATCH -> nếu không coalesce sẽ 400.
+ *
+ * @param {any} id
+ * @returns {boolean}
+ */
+const isPendingId = (id) => typeof id === 'string' && id.startsWith('pending_');
 
 /**
  * Tính `days_until_expiry` từ ngày hết hạn (để cache hiển thị đúng status).
@@ -121,6 +132,13 @@ export const MUTATION_HANDLERS = {
 
     /**
      * `PATCH /fridge/items/:id` — sửa số lượng / đơn vị / hạn dùng.
+     *
+     * ⚠️ B7 - COALESCE ITEM PENDING:
+     *   Item tạo offline có id `pending_*` và `version = null`. BE bắt buộc
+     *   `version` (`@IsInt() @Min(0)`) -> PATCH item pending sẽ 400.
+     *   => Với id `pending_*`: GỘP thay đổi vào payload op `FRIDGE_ADD` đang
+     *      chờ (chỉ cần 1 op ADD cho tới lúc lên server) + KHÔNG tạo op
+     *      `FRIDGE_UPDATE` riêng.
      */
     updateItem: {
       opType: OP_TYPES.FRIDGE_UPDATE,
@@ -135,6 +153,7 @@ export const MUTATION_HANDLERS = {
           version: updates.version ?? null,
         };
       },
+      suppressEnqueue: (args) => isPendingId(args[0]),
       applyCache: async (args) => {
         const id = args[0];
         const updates = args[1] ?? {};
@@ -148,16 +167,31 @@ export const MUTATION_HANDLERS = {
           compartment: updates.compartment,
         });
         await offlineCache.markFridgeItemPending(String(id));
+
+        // Gộp vào op FRIDGE_ADD đang chờ (nếu có) -> tránh PATCH version null.
+        if (isPendingId(id)) {
+          const patch = {};
+          if (updates.quantity !== undefined) patch.quantity = updates.quantity;
+          if (updates.unit !== undefined) patch.unit = updates.unit;
+          if (updates.expiryDate !== undefined) patch.expiryDate = updates.expiryDate;
+          if (updates.compartment !== undefined) patch.compartment = updates.compartment;
+          if (Object.keys(patch).length > 0) {
+            await outboxQueue.mergePayload(OP_TYPES.FRIDGE_ADD, String(id), patch);
+          }
+        }
       },
     },
 
     /**
      * `PATCH /fridge/items/:id/consume` — đánh dấu đã dùng hết.
+     *
+     * ⚠️ B7: id `pending_*` -> gộp `quantity = 0` vào op FRIDGE_ADD đang chờ.
      */
     markConsumed: {
       opType: OP_TYPES.FRIDGE_CONSUME,
       entityId: (args) => String(args[0] ?? ''),
       payload: (args) => ({ id: String(args[0] ?? '') }),
+      suppressEnqueue: (args) => isPendingId(args[0]),
       applyCache: async (args) => {
         const id = args[0];
         if (!id) return;
@@ -168,19 +202,32 @@ export const MUTATION_HANDLERS = {
           daysUntilExpiry: 0,
         });
         await offlineCache.markFridgeItemPending(String(id));
+
+        if (isPendingId(id)) {
+          await outboxQueue.mergePayload(OP_TYPES.FRIDGE_ADD, String(id), { quantity: 0 });
+        }
       },
     },
 
     /**
      * `DELETE /fridge/items/:id` — xoá khỏi tủ.
+     *
+     * ⚠️ B7: id `pending_*` -> item CHƯA từng lên server -> chỉ gỡ op
+     *   `FRIDGE_ADD` đang chờ + xoá row pending. KHÔNG gọi DELETE server.
      */
     deleteItem: {
       opType: OP_TYPES.FRIDGE_DELETE,
       entityId: (args) => String(args[0] ?? ''),
       payload: (args) => ({ id: String(args[0] ?? '') }),
+      suppressEnqueue: (args) => isPendingId(args[0]),
       applyCache: async (args) => {
         const id = args[0];
         if (!id) return;
+
+        if (isPendingId(id)) {
+          // Gỡ op ADD đang chờ -> item sẽ không bao giờ lên server.
+          await outboxQueue.removeByEntity(String(id), OP_TYPES.FRIDGE_ADD);
+        }
         await offlineCache.removeFridgeItem(String(id));
       },
     },
@@ -216,16 +263,17 @@ export const MUTATION_HANDLERS = {
     },
 
     /**
-     * `PATCH /meal-planning/slots/{slotId}` — tick "đã nấu".
+     * `PATCH /meal-planning/slots/{slotId}` — tick "đã nấu" hoặc đổi công thức.
      *
-     * ⚠️ CHỈ queue khi payload có `completed` (các patch khác của `updateSlot`
-     *    không phải thao tác offline được -> để lỗi ném lên).
+     * ⚠️ CHỈ queue khi payload có `completed` HOẶC `recipeId`:
+     *    các patch khác của `updateSlot` không phải thao tác offline được ->
+     *    để lỗi ném lên.
      */
     updateSlot: {
       opType: OP_TYPES.SLOT_COMPLETE,
       canQueue: (args) => {
         const payload = args[1] ?? {};
-        return payload.completed !== undefined;
+        return payload.completed !== undefined || payload.recipeId !== undefined;
       },
       entityId: (args) => String(args[0] ?? ''),
       payload: (args) => {
@@ -238,14 +286,127 @@ export const MUTATION_HANDLERS = {
           //    (khác với lúc user bấm nấu) -> tủ lạnh bị trừ sai lượng.
           //    `undefined` -> BE bỏ qua, dùng `slot.servings` (đúng).
           servings: payload.servings,
+          // ⚠️ F6: đổi công thức của slot.
+          recipeId: payload.recipeId ?? null,
         };
       },
       applyCache: async (args) => {
         const slotId = args[0];
         if (!slotId) return;
 
+        const payload = args[1] ?? {};
+
         // Lưu trạng thái cooked vào cache slot để UI vẫn hiện đúng tick.
-        await offlineCache.setSlotCooked(String(slotId), args[1]?.completed === true);
+        if (payload.completed !== undefined) {
+          await offlineCache.setSlotCooked(String(slotId), payload.completed === true);
+        }
+
+        // F6: đổi công thức -> cập nhật JSON kế hoạch tuần (tên/ảnh lấy từ cache).
+        if (payload.recipeId !== undefined && payload.recipeId !== null) {
+          await offlineCache.setWeeklyPlanSlotRecipe(String(slotId), payload.recipeId);
+        }
+      },
+    },
+
+    /**
+     * `POST /recipes/{id}/bookmark` — bookmark công thức (F2).
+     *
+     * ⚠️ `replace: true` -> bấm bookmark rồi bỏ bookmark khi offline chỉ còn
+     *    1 op cuối cùng (tránh hàng đợi phình to).
+     */
+    addBookmark: {
+      opType: OP_TYPES.RECIPE_BOOKMARK,
+      entityId: (args) => String(args[0] ?? ''),
+      payload: (args) => ({ id: String(args[0] ?? ''), bookmarked: true }),
+      enqueueOptions: { replace: true },
+      applyCache: async (args) => {
+        const id = args[0];
+        if (!id) return;
+        await offlineCache.setRecipeBookmarked(String(id), true);
+      },
+    },
+
+    /**
+     * `DELETE /recipes/{id}/bookmark` — bỏ bookmark công thức (F2).
+     */
+    removeBookmark: {
+      opType: OP_TYPES.RECIPE_BOOKMARK,
+      entityId: (args) => String(args[0] ?? ''),
+      payload: (args) => ({ id: String(args[0] ?? ''), bookmarked: false }),
+      enqueueOptions: { replace: true },
+      applyCache: async (args) => {
+        const id = args[0];
+        if (!id) return;
+        await offlineCache.setRecipeBookmarked(String(id), false);
+      },
+    },
+
+    /**
+     * `POST /meal-planning/shopping-lists/{listId}/items` — thêm món mua (F3).
+     */
+    addShoppingListItem: {
+      opType: OP_TYPES.SHOPPING_ITEM_ADD,
+      entityId: () => pendingId(),
+      payload: (args) => ({
+        listId: args[0] ?? null,
+        item: args[1] ?? {},
+      }),
+      applyCache: async (args, ctx) => {
+        const listId = args[0];
+        const item = args[1] ?? {};
+        const id = ctx?.entityId ?? pendingId();
+
+        await offlineCache.addPendingShoppingItem({
+          id,
+          name: item.name ?? item.ingredientName ?? '',
+          quantity: Number(item.quantity) || 0,
+          unit: item.unit ?? '',
+          ingredientId: item.ingredientId ?? null,
+          listId: listId ?? null,
+        });
+      },
+    },
+
+    /**
+     * `PATCH /meal-planning/shopping-lists/{listId}/items/{itemId}` — sửa món (F3).
+     */
+    updateShoppingListItem: {
+      opType: OP_TYPES.SHOPPING_ITEM_UPDATE,
+      entityId: (args) => String(args[1] ?? ''),
+      payload: (args) => ({
+        listId: args[0] ?? null,
+        itemId: args[1] ?? null,
+        quantity: (args[2] ?? {}).quantity ?? null,
+      }),
+      enqueueOptions: { replace: true },
+      applyCache: async (args) => {
+        const listId = args[0];
+        const itemId = args[1];
+        const payload = args[2] ?? {};
+        if (!itemId) return;
+
+        if (payload.quantity !== undefined && payload.quantity !== null) {
+          await offlineCache.updateShoppingItemQuantity(itemId, payload.quantity);
+        } else {
+          await offlineCache.setShoppingItemPurchased(itemId, false, listId ?? null);
+        }
+      },
+    },
+
+    /**
+     * `DELETE /meal-planning/shopping-lists/{listId}/items/{itemId}` — xoá món (F3).
+     */
+    removeShoppingListItem: {
+      opType: OP_TYPES.SHOPPING_ITEM_REMOVE,
+      entityId: (args) => String(args[1] ?? ''),
+      payload: (args) => ({
+        listId: args[0] ?? null,
+        itemId: args[1] ?? null,
+      }),
+      applyCache: async (args) => {
+        const itemId = args[1];
+        if (!itemId) return;
+        await offlineCache.removeShoppingItem(itemId);
       },
     },
   },
@@ -400,6 +561,122 @@ export const MUTATION_HANDLERS = {
           },
           SYNC_STATUS.PENDING
         );
+      },
+    },
+
+    /**
+     * `POST /users/me/avatar` — upload avatar (F1).
+     *
+     * ⚠️ applyCache lưu `avatar_local_path` + đặt `avatar` = localUri để UI
+     *   hiện ảnh NGAY (file còn nằm trên máy), không phải avatar cũ từ server.
+     */
+    uploadAvatar: {
+      opType: OP_TYPES.AVATAR_UPLOAD,
+      entityId: () => 'me',
+      payload: (args) => ({ localUri: args[0] ?? null }),
+      canQueue: (args) => !!args[0],
+      applyCache: async (args) => {
+        const localUri = args[0];
+        if (!localUri) return;
+
+        await offlineCache.setAvatarLocal(localUri, localUri);
+      },
+    },
+
+    /**
+     * `POST /users/me/onboarding` — nộp khảo sát onboarding (F7).
+     *
+     * ⚠️ BE BẮT BUỘC `primaryGoal` + `cookingFrequency` -> thiếu thì không
+     *   queue (để lỗi ném lên UI thay vì tạo op vô nghĩa).
+     */
+    submitOnboarding: {
+      opType: OP_TYPES.ONBOARDING_SUBMIT,
+      entityId: () => 'me',
+      payload: (args) => {
+        const data = args[0] ?? {};
+        return {
+          primaryGoal: data.primaryGoal ?? null,
+          cookingFrequency: data.cookingFrequency ?? null,
+          dietaryStyle: data.dietaryStyle ?? null,
+          skillLevel: data.skillLevel ?? null,
+          householdSize: data.householdSize ?? null,
+          maxCookTimeMinutes: data.maxCookTimeMinutes ?? null,
+          preferSimpleRecipes: data.preferSimpleRecipes ?? false,
+          weeklyBudget: data.weeklyBudget ?? null,
+          dailyCalorieTarget: data.dailyCalorieTarget ?? null,
+          aiPersonalityMode: data.aiPersonalityMode ?? null,
+        };
+      },
+      canQueue: (args) => {
+        const data = args[0] ?? {};
+        return !!data.primaryGoal && !!data.cookingFrequency;
+      },
+      applyCache: async (args) => {
+        const data = args[0] ?? {};
+        const cached = await offlineCache.getUserPreferences();
+
+        await offlineCache.saveUserPreferences(
+          {
+            ...(cached ?? {}),
+            primaryGoal: data.primaryGoal ?? cached?.primaryGoal ?? null,
+            cookingFrequency: data.cookingFrequency ?? cached?.cookingFrequency ?? null,
+            dietaryStyle: data.dietaryStyle ?? cached?.dietaryStyle ?? null,
+            skillLevel: data.skillLevel ?? cached?.skillLevel ?? null,
+            householdSize: data.householdSize ?? cached?.householdSize ?? null,
+          },
+          SYNC_STATUS.PENDING
+        );
+        await offlineCache.saveJsonCache('onboarding', data);
+      },
+    },
+  },
+
+  /**
+   * ⚠️ F5 — thao tác thông báo offline (đọc / đọc hết / xoá).
+   *
+   * Đối chiếu Flutter `notification_local_service.dart`.
+   */
+  notificationService: {
+    /**
+     * `PATCH /notifications/{id}/read` — đánh dấu 1 thông báo đã đọc.
+     */
+    markAsRead: {
+      opType: OP_TYPES.NOTIFICATION_READ,
+      entityId: (args) => String(args[0] ?? ''),
+      payload: (args) => ({ id: String(args[0] ?? '') }),
+      enqueueOptions: { replace: true },
+      applyCache: async (args) => {
+        const id = args[0];
+        if (!id) return;
+        await offlineCache.setNotificationRead(String(id), true);
+      },
+    },
+
+    /**
+     * `PATCH /notifications/read-all` — đánh dấu tất cả đã đọc.
+     */
+    markAllAsRead: {
+      opType: OP_TYPES.NOTIFICATION_READ_ALL,
+      entityId: () => 'all',
+      payload: () => ({}),
+      enqueueOptions: { replace: true },
+      applyCache: async () => {
+        await offlineCache.markAllNotificationsRead();
+      },
+    },
+
+    /**
+     * `DELETE /notifications/{id}` — xoá 1 thông báo.
+     */
+    deleteNotification: {
+      opType: OP_TYPES.NOTIFICATION_DELETE,
+      entityId: (args) => String(args[0] ?? ''),
+      payload: (args) => ({ id: String(args[0] ?? '') }),
+      enqueueOptions: { replace: true },
+      applyCache: async (args) => {
+        const id = args[0];
+        if (!id) return;
+        await offlineCache.removeNotification(String(id));
       },
     },
   },

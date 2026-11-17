@@ -66,7 +66,19 @@ export const queueMutation = async (serviceKey, methodName, args = []) => {
   }
 
   // Bước 2: đẩy vào hàng đợi.
-  await outboxQueue.enqueue(handler.opType, payload, entityId);
+  //
+  // ⚠️ `suppressEnqueue` (B7 - coalesce item pending):
+  //   Item tủ lạnh tạo offline có id `pending_*` và `version = null`. BE bắt
+  //   buộc `version` là `@IsInt() @Min(0)` -> PATCH item pending sẽ 400.
+  //   Vì vậy thay đổi trên item pending được GỘP vào payload op `FRIDGE_ADD`
+  //   đang chờ (xem handler `updateItem`) -> KHÔNG tạo op `FRIDGE_UPDATE` mới.
+  //   Handler báo qua `suppressEnqueue(args, ctx) === true`.
+  const suppress =
+    typeof handler.suppressEnqueue === 'function' && handler.suppressEnqueue(args, { entityId });
+
+  if (!suppress) {
+    await outboxQueue.enqueue(handler.opType, payload, entityId, handler.enqueueOptions ?? {});
+  }
 
   if (typeof __DEV__ !== 'undefined' && __DEV__) {
     console.log(`[OfflineMutationQueue] Đã lưu offline: ${serviceKey}.${methodName}`);

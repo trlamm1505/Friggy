@@ -251,7 +251,7 @@ export const RecipeSuggestionsScreen = () => {
     return (
       <View style={[styles.container, { backgroundColor: isDark ? '#0E1611' : '#FFFFFF' }]}>
         <FriggyAppBar showBackButton onBackTap={() => navigation.goBack()} />
-        <ErrorState onRetry={refetch} style={{ marginTop: sp(40) }} />
+        <ErrorState message={t('offline.readFailed')} onRetry={refetch} style={{ marginTop: sp(40) }} />
       </View>
     );
   }

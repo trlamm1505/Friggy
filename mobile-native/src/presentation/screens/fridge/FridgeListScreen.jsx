@@ -114,7 +114,11 @@ export const FridgeListScreen = ({ config }) => {
   );
 
   // Loading state
-  if (loading && !items) {
+  //
+  // ⚠️ B8: `useFridgeItems` dùng `initialValue = []` -> `!items` LUÔN false
+  // (mảng rỗng là truthy) -> nhánh skeleton/error KHÔNG BAO GIỜ chạy.
+  // Điều kiện đúng phải là "chưa có phần tử nào": `!items?.length`.
+  if (loading && !items?.length) {
     return (
       <View style={[styles.container, { backgroundColor: isDark ? '#0E1611' : '#FFFFFF' }]}>
         <FriggyAppBar showBackButton onBackTap={() => navigation.goBack()} />
@@ -144,11 +148,12 @@ export const FridgeListScreen = ({ config }) => {
   }
 
   // Error state
-  if (error && !items) {
+  // B8: cache rỗng + BE lỗi -> `ErrorState` (không phải màn trắng).
+  if (error && !items?.length) {
     return (
       <View style={[styles.container, { backgroundColor: isDark ? '#0E1611' : '#FFFFFF' }]}>
         <FriggyAppBar showBackButton onBackTap={() => navigation.goBack()} />
-        <ErrorState onRetry={refetch} style={{ marginTop: sp(40) }} />
+        <ErrorState message={t('offline.readFailed')} onRetry={refetch} style={{ marginTop: sp(40) }} />
       </View>
     );
   }
