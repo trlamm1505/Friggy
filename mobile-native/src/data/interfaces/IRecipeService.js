@@ -425,6 +425,10 @@ export class IRecipeService {
   /**
    * Tick đã mua — `PATCH /meal-planning/shopping-lists/{listId}/items/{itemId}`.
    *
+   * ⚠️ BE TỰ TOGGLE (không nhận `isPurchased` trong body) -> chỉ cần gọi.
+   * ⚠️ Món CHỈ có ở máy (id `local_*`) -> KHÔNG gọi API (BE dùng
+   *   `ParseIntPipe` -> id local sẽ 400) -> tick ở client.
+   *
    * @param {string} listId
    * @param {string|number} itemId
    * @returns {Promise<void>}
@@ -434,9 +438,11 @@ export class IRecipeService {
   }
 
   /**
-   * Giỏ mua đang dùng — `GET /meal-planning/shopping-lists/active`.
+   * Giỏ mua đang dùng.
    *
-   * ⚠️ BE tự tạo list rỗng nếu user chưa có list nào.
+   * ⚠️ BE KHÔNG có route `GET /meal-planning/shopping-lists/active` -> 404.
+   *   Route thật duy nhất là `GET /meal-planning/shopping-lists` (trả MẢNG).
+   *   => Chọn list "đang dùng" ở CLIENT: 'active' -> 'draft' -> list đầu tiên.
    *
    * @returns {Promise<ShoppingList|null>}
    */
@@ -445,12 +451,16 @@ export class IRecipeService {
   }
 
   /**
-   * Thêm 1 mặt hàng — `POST /meal-planning/shopping-lists/{listId}/items`.
+   * Thêm 1 mặt hàng — LÀM Ở CLIENT (không gọi API).
    *
-   * ⚠️ BE tự gộp lượng nếu list đã có cùng nguyên liệu.
+   * ⚠️ VÌ SAO KHÔNG GỌI API:
+   *   BE KHÔNG có `POST /meal-planning/shopping-lists/{listId}/items` -> gọi
+   *   sẽ trả 404. Flutter cũng chỉ thêm ở state local
+   *   (`Mobile/lib/screens/shopping_reminder_screen.dart` -> `_addNewItem`).
+   *   => Món được lưu vào SQLite (`sync_status = 'local_only'`).
    *
    * @param {string} listId
-   * @param {{ingredientId:number, quantity?:number, unit?:string}} item
+   * @param {{ingredientId?:number, name?:string, quantity?:number, unit?:string}} item
    * @returns {Promise<ShoppingItem|null>}
    */
   async addShoppingListItem(listId, item) {
@@ -458,12 +468,17 @@ export class IRecipeService {
   }
 
   /**
-   * Thêm nguyên liệu còn thiếu của 1 slot vào giỏ mua —
-   * `POST /meal-planning/slots/{slotId}/missing-to-shopping-list`.
+   * Thêm nguyên liệu còn thiếu của 1 slot vào giỏ mua — LÀM Ở CLIENT.
+   *
+   * ⚠️ VÌ SAO KHÔNG GỌI API:
+   *   BE KHÔNG có `POST /meal-planning/slots/{slotId}/missing-to-shopping-list`
+   *   -> gọi sẽ trả 404. Thay vào đó đọc `GET /meal-planning/slots/{id}`
+   *   (endpoint CÓ THẬT) -> `summary.missingItems` -> tự tính lượng theo
+   *   khẩu phần user chọn -> lưu local.
    *
    * @param {string} slotId
    * @param {object} [options]
-   * @param {number} [options.servings] - khẩu phần user chọn (BE scale lượng)
+   * @param {number} [options.servings] - khẩu phần user chọn (lượng scale theo)
    * @returns {Promise<{listId:string|null, addedCount:number, addedItems:object[], servings?:number}>}
    */
   async addSlotMissingToShoppingList(slotId, options = {}) {
@@ -471,11 +486,16 @@ export class IRecipeService {
   }
 
   /**
-   * Sửa lượng món — `PATCH /meal-planning/shopping-lists/{listId}/items/{itemId}`.
+   * Sửa lượng món — LÀM Ở CLIENT (không gọi API).
+   *
+   * ⚠️ VÌ SAO KHÔNG GỌI API:
+   *   `PATCH /meal-planning/shopping-lists/{listId}/items/{itemId}` KHÔNG có
+   *   `@Body()` -> nó TOGGLE `isPurchased` (và tự thêm món vào tủ lạnh khi
+   *   tick `true`). Gửi `{ quantity }` sẽ vô tình đánh dấu "đã mua" -> sai.
    *
    * @param {string} listId
    * @param {string|number} itemId
-   * @param {{quantity?:number, isPurchased?:boolean}} payload
+   * @param {{quantity?:number}} payload
    * @returns {Promise<ShoppingItem|null>}
    */
   async updateShoppingListItem(listId, itemId, payload) {
@@ -483,7 +503,13 @@ export class IRecipeService {
   }
 
   /**
-   * Xoá món — `DELETE /meal-planning/shopping-lists/{listId}/items/{itemId}`.
+   * Xoá món — LÀM Ở CLIENT (không gọi API).
+   *
+   * ⚠️ VÌ SAO KHÔNG GỌI API:
+   *   BE KHÔNG có `DELETE /meal-planning/shopping-lists/{listId}/items/{itemId}`
+   *   -> gọi sẽ trả 404. Flutter cũng chỉ xoá ở state local
+   *   (`shopping_reminder_screen.dart` -> `_deleteItem`).
+   *   => Đánh dấu tombstone (`sync_status = 'local_deleted'`) trong SQLite.
    *
    * @param {string} listId
    * @param {string|number} itemId

@@ -240,6 +240,14 @@ export const MUTATION_HANDLERS = {
      *
      * ⚠️ BE TỰ TOGGLE (không nhận `isPurchased` trong body) -> payload chỉ cần
      *    id + listId để sync gọi lại đúng endpoint.
+     *
+     * ⚠️ MÓN CHỈ CÓ Ở MÁY (`local_*`, không có id server):
+     *   BE dùng `ParseIntPipe` -> id local sẽ 400 khi sync.
+     *   Vì vậy món local KHÔNG queue op toggle, chỉ đổi trạng thái ở client
+     *   (`suppressEnqueue` -> không có op trong hàng đợi).
+     *
+     * ⚠️ Món CÓ id server (dù user đã sửa lượng ở máy) -> VẪN queue op toggle
+     *   để đồng bộ lên BE (BE có endpoint toggle).
      */
     toggleShoppingItemInList: {
       opType: OP_TYPES.SHOPPING_TOGGLE,
@@ -248,10 +256,24 @@ export const MUTATION_HANDLERS = {
         listId: args[0] ?? null,
         itemId: args[1] ?? null,
       }),
+      suppressEnqueue: async (args) => {
+        const itemId = args[1];
+        if (itemId === null || itemId === undefined) return true;
+        // Món chỉ có ở máy (không có id server) -> không có endpoint để tick
+        // -> KHÔNG đẩy vào hàng đợi (tránh 404/400 lặp vô hạn lúc sync).
+        return offlineCache.isShoppingItemLocalOnly(itemId);
+      },
       applyCache: async (args) => {
         const listId = args[0];
         const itemId = args[1];
         if (itemId === null || itemId === undefined) return;
+
+        const localOnly = await offlineCache.isShoppingItemLocalOnly(itemId);
+        if (localOnly) {
+          // Tick 100% ở client (giữ nguyên `local_only`).
+          await offlineCache.toggleLocalShoppingItem(itemId);
+          return;
+        }
 
         const items = await offlineCache.getShoppingItems();
         const current = items.find((i) => String(i.id) === String(itemId));
@@ -360,12 +382,16 @@ export const MUTATION_HANDLERS = {
     },
 
     /**
-     * `POST /meal-planning/shopping-lists/{listId}/items` — thêm món mua (F3).
+     * Thêm món mua — LÀM Ở CLIENT (BE không có endpoint thêm món lẻ).
+     *
+     * ⚠️ VÌ SAO `suppressEnqueue: true`:
+     *   BE KHÔNG có `POST /meal-planning/shopping-lists/{listId}/items` -> nếu
+     *   queue op này thì lúc sync sẽ gọi endpoint không tồn tại -> 404 -> món
+     *   mất vĩnh viễn. => Chỉ ghi vào SQLite, KHÔNG đẩy lên hàng đợi.
      *
      * ⚠️ `name` PHẢI có trong payload:
-     *   BE chỉ nhận `ingredientId`/`quantity`/`unit` -> không trả lại tên
-     *   nếu request lỗi. Nhưng cache local cần tên để hiển thị ngay khi
-     *   offline (user vừa thêm món phải THẤY tên, không phải dòng rỗng).
+     *   Cache local cần tên để hiển thị ngay (user vừa thêm món phải THẤY
+     *   tên, không phải dòng rỗng).
      */
     addShoppingListItem: {
       opType: OP_TYPES.SHOPPING_ITEM_ADD,
@@ -374,24 +400,31 @@ export const MUTATION_HANDLERS = {
         listId: args[0] ?? null,
         item: args[1] ?? {},
       }),
+      suppressEnqueue: () => true,
       applyCache: async (args, ctx) => {
         const listId = args[0];
         const item = args[1] ?? {};
         const id = ctx?.entityId ?? pendingId();
 
-        await offlineCache.addPendingShoppingItem({
+        await offlineCache.addLocalShoppingItem({
           id,
           name: item.name ?? item.ingredientName ?? '',
           quantity: Number(item.quantity) || 0,
           unit: item.unit ?? '',
           ingredientId: item.ingredientId ?? null,
           listId: listId ?? null,
+          done: false,
         });
       },
     },
 
     /**
-     * `PATCH /meal-planning/shopping-lists/{listId}/items/{itemId}` — sửa món (F3).
+     * Sửa số lượng món mua — LÀM Ở CLIENT.
+     *
+     * ⚠️ BE `PATCH .../items/{itemId}` KHÔNG có `@Body()` -> nó TOGGLE
+     *   `isPurchased` (và tự thêm món vào tủ lạnh khi tick `true`).
+     *   Gửi `{ quantity }` đi sẽ vô tình đánh dấu "đã mua" -> sai hoàn toàn.
+     *   => Chỉ sửa trong SQLite, KHÔNG queue.
      */
     updateShoppingListItem: {
       opType: OP_TYPES.SHOPPING_ITEM_UPDATE,
@@ -401,23 +434,23 @@ export const MUTATION_HANDLERS = {
         itemId: args[1] ?? null,
         quantity: (args[2] ?? {}).quantity ?? null,
       }),
-      enqueueOptions: { replace: true },
+      suppressEnqueue: () => true,
       applyCache: async (args) => {
-        const listId = args[0];
         const itemId = args[1];
         const payload = args[2] ?? {};
         if (!itemId) return;
 
         if (payload.quantity !== undefined && payload.quantity !== null) {
-          await offlineCache.updateShoppingItemQuantity(itemId, payload.quantity);
-        } else {
-          await offlineCache.setShoppingItemPurchased(itemId, false, listId ?? null);
+          await offlineCache.updateShoppingItemQuantityLocal(itemId, payload.quantity);
         }
       },
     },
 
     /**
-     * `DELETE /meal-planning/shopping-lists/{listId}/items/{itemId}` — xoá món (F3).
+     * Xoá món mua — LÀM Ở CLIENT (BE không có endpoint xoá món lẻ).
+     *
+     * ⚠️ Dùng tombstone (`local_deleted`) thay vì DELETE row -> món đã xoá ở
+     *   máy KHÔNG bị "hồi sinh" khi pull danh sách từ server.
      */
     removeShoppingListItem: {
       opType: OP_TYPES.SHOPPING_ITEM_REMOVE,
@@ -426,16 +459,21 @@ export const MUTATION_HANDLERS = {
         listId: args[0] ?? null,
         itemId: args[1] ?? null,
       }),
+      suppressEnqueue: () => true,
       applyCache: async (args) => {
         const itemId = args[1];
         if (!itemId) return;
-        await offlineCache.removeShoppingItem(itemId);
+        await offlineCache.markShoppingItemLocallyDeleted(itemId);
       },
     },
 
     /**
-     * `POST /meal-planning/slots/{slotId}/missing-to-shopping-list`
-     * — thêm mọi nguyên liệu CÒN THIẾU của 1 slot vào giỏ mua.
+     * Thêm nguyên liệu THIẾU của 1 slot vào giỏ mua — LÀM Ở CLIENT.
+     *
+     * ⚠️ VÌ SAO `suppressEnqueue: true`:
+     *   BE KHÔNG có `POST /meal-planning/slots/{slotId}/missing-to-shopping-list`
+     *   -> queue op này thì lúc sync sẽ gọi endpoint không tồn tại -> 404.
+     *   => Chỉ ghi vào SQLite (`local_only`), KHÔNG đẩy lên hàng đợi.
      *
      * ⚠️ VÌ SAO CẦN (bug user báo):
      *   Method này có trong `WriteMethods.recipeService` (là method GHI) nhưng
@@ -446,13 +484,9 @@ export const MUTATION_HANDLERS = {
      *   BE tính phần thiếu dựa trên TỦ LẠNH THẬT. Offline ta không gọi được
      *   BE -> dùng cache `local_recipe_details` (slot detail đã cache sẵn từ
      *   `getSlotDetail`) -> `summary.missingItems` là đúng danh sách thiếu.
-     *   Thêm từng món vào `local_shopping_items` với `sync_status='pending'`
-     *   (id `pending_missing_<slotId>_<index>`) -> UI hiện ngay + không mất
-     *   khi app bị kill.
-     *
-     * ⚠️ KHI SYNC THÀNH CÔNG:
-     *   `SyncEngine` xoá các row optimistic này (tránh hiện trùng món) rồi
-     *   pull dữ liệu thật từ server.
+     *   Thêm từng món vào `local_shopping_items` với `sync_status='local_only'`
+     *   (id `local_missing_<slotId>_<index>`) -> UI hiện ngay + không mất
+     *   khi app bị kill + không bị mất khi pull dữ liệu server về.
      *
      * ⚠️ `servings` (KHẨU PHẦN) — yêu cầu của user:
      *   Món thêm vào giỏ phải theo đúng khẩu phần user chọn, không phải mặc
@@ -467,7 +501,7 @@ export const MUTATION_HANDLERS = {
         // ⚠️ PHẢI lưu `servings` -> khi sync, BE scale lại đúng khẩu phần.
         servings: args[1]?.servings ?? args[1] ?? null,
       }),
-      enqueueOptions: { replace: true },
+      suppressEnqueue: () => true,
       applyCache: async (args) => {
         const slotId = args[0];
         if (!slotId) return;
@@ -497,8 +531,8 @@ export const MUTATION_HANDLERS = {
           const missingNew = computeMissingPurchaseQuantity(item, scale);
           if (missingNew <= 0) continue;
 
-          await offlineCache.addPendingShoppingItem({
-            id: `pending_missing_${slotId}_${i}`,
+          await offlineCache.addLocalShoppingItem({
+            id: `local_missing_${slotId}_${i}`,
             name: item.name,
             quantity: Math.max(0.01, Math.round(missingNew * 100) / 100),
             // ⚠️ `missingQuantity` đã chuẩn hoá về base unit -> dùng
@@ -507,6 +541,7 @@ export const MUTATION_HANDLERS = {
             unit: item.baseUnit ?? item.originalUnit ?? item.unit ?? '',
             ingredientId: item.ingredientId ?? null,
             listId,
+            done: false,
           });
         }
       },

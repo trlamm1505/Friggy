@@ -406,6 +406,20 @@ class SyncEngine {
       case OP_TYPES.SHOPPING_TOGGLE: {
         const recipe = realService('recipeService');
         if (!recipe) throw new Error('recipeService chưa sẵn sàng');
+
+        // ⚠️ MÓN CHỈ CÓ Ở MÁY (không có id server):
+        //   BE dùng `ParseIntPipe` cho `itemId` -> id local sẽ 400.
+        //   Món user tự thêm được tick 100% ở client -> KHÔNG gọi API.
+        //   ⚠️ Món CÓ id server -> vẫn gọi API (kể cả khi row bị đánh dấu
+        //   `local_only` vì user đã sửa lượng ở máy).
+        const isLocalOnly = await offlineCache.isShoppingItemLocalOnly(
+          payload.itemId ?? op.entity_id
+        );
+        if (isLocalOnly) {
+          await offlineCache.toggleLocalShoppingItem(payload.itemId ?? op.entity_id);
+          return;
+        }
+
         const ctx = await this._resolveShoppingContext(payload);
         if (!ctx.listId) throw new Error('Không tìm thấy danh sách mua để đồng bộ');
         await recipe.toggleShoppingItemInList(ctx.listId, ctx.itemId ?? payload.itemId);
@@ -514,16 +528,24 @@ class SyncEngine {
         return;
       }
 
-      // ── F3: CRUD danh sách mua offline ──
+      // ── F3: CRUD danh sách mua ──
+      //
+      // ⚠️ CHUẨN HOÁ THEO BE (rất quan trọng):
+      //   BE KHÔNG có các endpoint:
+      //     POST   /meal-planning/shopping-lists/{listId}/items
+      //     DELETE /meal-planning/shopping-lists/{listId}/items/{itemId}
+      //     POST   /meal-planning/slots/{slotId}/missing-to-shopping-list
+      //   => Thêm / sửa lượng / xoá món lẻ + thêm nguyên liệu thiếu đều làm
+      //      ở CLIENT (SQLite, `sync_status = 'local_only'`).
+      //   Các op này giờ được `MutationHandlers` đánh dấu `suppressEnqueue`
+      //   -> KHÔNG còn vào hàng đợi. Nhưng hàng đợi cũ (đã lưu từ bản cũ)
+      //   vẫn có thể chứa chúng -> xử lý tại đây theo hướng LOCAL, KHÔNG gọi
+      //   HTTP (tránh 404 lặp vô hạn).
       case OP_TYPES.SHOPPING_ITEM_ADD: {
         const recipe = realService('recipeService');
         if (!recipe) throw new Error('recipeService chưa sẵn sàng');
 
-        // ⚠️ BUG ĐÃ SỬA (user báo: "món thêm offline bị kẹt"):
-        //   `listId` trong payload có thể là id GIẢ `'offline'` (đọc từ cache
-        //   fallback cũ) -> server trả 404 -> món mất vĩnh viễn.
-        //   => Dùng id list THẬT đã cache; nếu không có thì lấy list active
-        //      từ server (BE tự tạo list rỗng nếu chưa có).
+        // Id list THẬT đã cache; nếu không có thì lấy list active từ server.
         let listId = payload.listId;
         if (!listId || listId === OFFLINE_LIST_ID) {
           const cachedListId = await offlineCache.getActiveShoppingListId();
@@ -538,36 +560,10 @@ class SyncEngine {
           throw new Error('Không tìm thấy danh sách mua để đồng bộ món đã thêm offline');
         }
 
-        const created = await recipe.addShoppingListItem(listId, payload.item ?? {});
-
-        // Server đã tạo item thật -> thay row pending bằng item thật.
-        //
-        // ⚠️ KHÔNG dùng `saveShoppingItems([...])`:
-        //   Hàm đó XOÁ SẠCH mọi row `synced` rồi insert lại danh sách mới ->
-        //   gọi với 1 item duy nhất sẽ xoá toàn bộ danh sách mua còn lại khỏi
-        //   cache -> user mất dữ liệu. => Dùng `upsertShoppingItem` (1 row).
-        if (created?.id) {
-          await offlineCache.removeShoppingItem(op.entity_id);
-          await offlineCache.upsertShoppingItem({
-            id: String(created.id),
-            name: created.name ?? payload.item?.name ?? '',
-            quantity: created.quantity ?? payload.item?.quantity ?? 0,
-            unit: created.unit ?? payload.item?.unit ?? '',
-            ingredientId: created.ingredientId ?? payload.item?.ingredientId ?? null,
-            done: false,
-            listId,
-            backendItemId: created.id,
-            syncStatus: SYNC_STATUS.SYNCED,
-          });
-          // ⚠️ Remap `payload.itemId` của các op toggle/update/remove đang chờ
-          //   (user có thể đã tick món ngay sau khi thêm offline) -> nếu không,
-          //   op đó gửi `itemId = 'pending_xxx'` -> BE 404 -> tick bị mất.
-          //   ⚠️ PHẢI gọi TRƯỚC `reassignEntity`:
-          //   `reassignEntity` đổi `entity_id` sang id server -> `remapShoppingItemId`
-          //   tìm theo `entity_id` cũ sẽ không còn match.
-          await outboxQueue.remapShoppingItemId(op.entity_id, created.id);
-          await outboxQueue.reassignEntity(op.entity_id, String(created.id));
-        }
+        // ⚠️ `addShoppingListItem` KHÔNG gọi API (BE không có endpoint) ->
+        //   nó chỉ ghi vào SQLite. Gọi lại ở đây để op cũ trong hàng đợi
+        //   cũng được "chốt" đúng cách (không gọi endpoint không tồn tại).
+        await recipe.addShoppingListItem(listId, payload.item ?? {});
         return;
       }
 
@@ -576,10 +572,11 @@ class SyncEngine {
         if (!recipe) throw new Error('recipeService chưa sẵn sàng');
         const ctx = await this._resolveShoppingContext(payload);
         if (!ctx.listId) throw new Error('Không tìm thấy danh sách mua để đồng bộ');
+        // ⚠️ KHÔNG gọi HTTP: `PATCH .../items/{itemId}` của BE không có body,
+        //   nó TOGGLE `isPurchased` -> sửa lượng chỉ làm ở client.
         await recipe.updateShoppingListItem(ctx.listId, ctx.itemId, {
           quantity: payload.quantity ?? undefined,
         });
-        await offlineCache.clearShoppingPending(payload.itemId);
         return;
       }
 
@@ -587,29 +584,22 @@ class SyncEngine {
         const recipe = realService('recipeService');
         if (!recipe) throw new Error('recipeService chưa sẵn sàng');
 
-        // ⚠️ Món tạo offline có id local `pending_*` -> BE dùng `ParseIntPipe`
-        //   nên id local sẽ 404. Nếu món đã được sync (đã có id server) ->
-        //   dùng id server; nếu chưa -> bỏ qua op DELETE (op ADD sẽ tạo món
-        //   dư thừa, nhưng đây là trường hợp hiếm và an toàn hơn 404).
         const ctx = await this._resolveShoppingContext(payload);
-        if (ctx.itemId) {
-          await recipe.removeShoppingListItem(ctx.listId, ctx.itemId);
-        }
-        await offlineCache.removeShoppingItem(payload.itemId);
+        // ⚠️ KHÔNG gọi HTTP: BE không có endpoint xoá món lẻ.
+        await recipe.removeShoppingListItem(ctx.listId, ctx.itemId);
         return;
       }
 
-      // ── Thêm nguyên liệu thiếu (theo slot) vào giỏ mua offline ──
+      // ── Thêm nguyên liệu thiếu (theo slot) vào giỏ mua ──
       case OP_TYPES.SHOPPING_MISSING_ADD: {
         const recipe = realService('recipeService');
         if (!recipe) throw new Error('recipeService chưa sẵn sàng');
-        // ⚠️ Truyền `servings` -> BE scale lượng mua theo khẩu phần user chọn
-        //   (mặc định = `slot.servings` nếu không truyền).
+        // ⚠️ KHÔNG gọi HTTP: BE không có
+        //   `POST /meal-planning/slots/{slotId}/missing-to-shopping-list`.
+        //   Việc tính phần thiếu làm ở client từ `GET /slots/{id}`.
         await recipe.addSlotMissingToShoppingList(payload.slotId, {
           servings: payload.servings ?? undefined,
         });
-        // Xoá các row optimistic -> tránh hiện TRÙNG món (optimistic + thật).
-        await offlineCache.removePendingShoppingItemsBySlot(payload.slotId);
         return;
       }
 

@@ -90,7 +90,14 @@ describe('SyncEngine — F3 CRUD danh sách mua', () => {
   beforeEach(resetAll);
   afterEach(clearRegistry);
 
-  it('shopping_item_add -> gọi addShoppingListItem + thay row pending bằng item server', async () => {
+  // ⚠️ CHUẨN HOÁ THEO BE:
+  //   BE KHÔNG có các endpoint thêm / sửa lượng / xoá món lẻ:
+  //     POST   /meal-planning/shopping-lists/{listId}/items
+  //     PATCH  /meal-planning/shopping-lists/{listId}/items/{itemId} (chỉ toggle)
+  //     DELETE /meal-planning/shopping-lists/{listId}/items/{itemId}
+  //   => Các thao tác này làm ở CLIENT. SyncEngine KHÔNG được gọi HTTP cho
+  //      chúng (gọi -> 404 -> op bị giữ lại vô hạn -> sync loop).
+  it('shopping_item_add (op cũ trong hàng đợi) -> KHÔNG gọi HTTP, vẫn resolve', async () => {
     const addShoppingListItem = jest.fn().mockResolvedValue({
       id: 55,
       name: 'Sữa',
@@ -107,18 +114,10 @@ describe('SyncEngine — F3 CRUD danh sách mua', () => {
 
     const result = await syncEngine.syncAll({ force: true, prefetchRecipes: false });
     expect(result.uploaded).toBe(1);
-    expect(addShoppingListItem).toHaveBeenCalledWith('list-1', {
-      name: 'Sữa',
-      quantity: 2,
-      unit: 'hộp',
-    });
-
-    const items = await offlineCache.getShoppingItems();
-    expect(items).toHaveLength(1);
-    expect(items[0].id).toBe(55);
+    expect(await outboxQueue.list()).toHaveLength(0);
   });
 
-  it('shopping_item_remove -> xoá item khỏi cache', async () => {
+  it('shopping_item_remove (op cũ trong hàng đợi) -> KHÔNG gọi HTTP, vẫn resolve', async () => {
     const removeShoppingListItem = jest.fn().mockResolvedValue({ ok: true });
     registerService('recipeService', { removeShoppingListItem });
 
@@ -131,8 +130,7 @@ describe('SyncEngine — F3 CRUD danh sách mua', () => {
 
     const result = await syncEngine.syncAll({ force: true, prefetchRecipes: false });
     expect(result.uploaded).toBe(1);
-    expect(removeShoppingListItem).toHaveBeenCalledWith('list-1', 7);
-    expect(await offlineCache.getShoppingItems()).toHaveLength(0);
+    expect(await outboxQueue.list()).toHaveLength(0);
   });
 
   it('shopping_toggle -> clearShoppingPending GIỮ row (không DELETE)', async () => {

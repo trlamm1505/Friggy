@@ -43,7 +43,11 @@ describe('SyncEngine — shopping_missing_add', () => {
   beforeEach(resetAll);
   afterEach(clearRegistry);
 
-  it('upload thành công -> gọi API + xoá các món optimistic (không hiện trùng)', async () => {
+  // ⚠️ CHUẨN HOÁ THEO BE:
+  //   BE KHÔNG có `POST /meal-planning/slots/{slotId}/missing-to-shopping-list`
+  //   -> op này KHÔNG được gọi HTTP. Nếu gọi -> 404 -> op bị giữ lại vô hạn
+  //   (sync loop) và user thấy món bị kẹt.
+  it('op shopping_missing_add -> xử lý ở CLIENT, KHÔNG gọi endpoint không tồn tại', async () => {
     registerPullStubs();
 
     const addSlotMissingToShoppingList = jest.fn().mockResolvedValue({
@@ -71,8 +75,26 @@ describe('SyncEngine — shopping_missing_add', () => {
 
     await queueMutation('recipeService', 'addSlotMissingToShoppingList', ['slot-1']);
 
-    // Trước khi sync -> 1 món optimistic trong cache.
+    // ⚠️ Handler đánh dấu `suppressEnqueue` -> KHÔNG có op trong hàng đợi.
+    expect(await outboxQueue.list()).toHaveLength(0);
+
+    // Món vẫn nằm trong cache local (món chỉ có ở máy).
     expect(await offlineCache.getShoppingItems()).toHaveLength(1);
+    expect(addSlotMissingToShoppingList).not.toHaveBeenCalled();
+  });
+
+  it('op shopping_missing_add CŨ (đã nằm trong hàng đợi) -> KHÔNG gọi HTTP, vẫn resolve', async () => {
+    registerPullStubs();
+
+    const addSlotMissingToShoppingList = jest.fn().mockResolvedValue({
+      listId: 'L1',
+      addedCount: 0,
+      addedItems: [],
+    });
+    registerService('recipeService', { addSlotMissingToShoppingList });
+
+    // Hàng đợi cũ (từ bản trước) vẫn có op này -> không được gọi endpoint 404.
+    await outboxQueue.enqueue(OP_TYPES.SHOPPING_MISSING_ADD, { slotId: 'slot-1' }, 'slot-1');
 
     const result = await syncEngine.syncAll({ force: true, prefetchRecipes: false });
 
@@ -80,11 +102,6 @@ describe('SyncEngine — shopping_missing_add', () => {
     expect(addSlotMissingToShoppingList).toHaveBeenCalledWith('slot-1', {
       servings: undefined,
     });
-
-    // Món optimistic đã bị xoá -> không hiện trùng (server sẽ trả lại khi pull).
-    expect(await offlineCache.getShoppingItems()).toHaveLength(0);
-
-    // Hàng đợi đã sạch.
     expect(await outboxQueue.list()).toHaveLength(0);
   });
 

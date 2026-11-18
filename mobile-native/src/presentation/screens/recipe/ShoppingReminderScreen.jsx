@@ -10,14 +10,18 @@
  * dùng `ParseIntPipe` -> PHẢI giữ nguyên kiểu số khi ghép `listId:itemId`.
  *
  * ── CÁC THAO TÁC ĐÃ NỐI (BE đã có endpoint tương ứng) ─────────────────────
- *   - Thêm món lẻ:   `POST   /meal-planning/shopping-lists/{listId}/items`
+ *   - Thêm món lẻ:   ❌ ĐÃ GỠ UI — BE KHÔNG có `POST /meal-planning/shopping-lists/{listId}/items`
  *   - Sửa số lượng:  `PATCH  /meal-planning/shopping-lists/{listId}/items/{itemId}`
- *   - Xoá món:       `DELETE /meal-planning/shopping-lists/{listId}/items/{itemId}`
- *   - Giỏ active:    `GET    /meal-planning/shopping-lists/active`
+ *                     (⚠️ endpoint này KHÔNG có `@Body()` -> nó TOGGLE `isPurchased`
+ *                      và tự thêm món vào tủ lạnh -> KHÔNG dùng để sửa lượng)
+ *   - Xoá món:       `DELETE /meal-planning/shopping-lists/{listId}/items/{itemId}`  (❌ BE KHÔNG có -> làm ở client)
+ *   - Giỏ active:    `GET    /meal-planning/shopping-lists/active`  (❌ BE KHÔNG có -> chọn ở client)
  *
- * ⚠️ Thêm món cần `ingredientId` (FK tới bảng `ingredients`) — KHÔNG nhận tên
- *   tự do, giống hệt luồng thêm vào tủ lạnh. Vì vậy modal thêm món dùng
- *   `CatalogPickerModal` (tra `GET /ingredients?search=`).
+ * ⚠️ ĐÃ GỠ LUỒNG "THÊM MÓN LẺ" (thêm nguyên liệu tự do ngoài danh sách):
+ *   BE KHÔNG có endpoint tạo 1 item trong giỏ -> mọi món đều đến từ kế hoạch
+ *   tuần (`POST /meal-planning/shopping-lists` với `{ weeklyPlanId }`) hoặc từ
+ *   nguyên liệu thiếu của thực đơn. Giao diện vì vậy KHÔNG còn nút "+" /
+ *   modal chọn nguyên liệu — người dùng chỉ tick mua, sửa lượng và xoá.
  */
 
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
@@ -34,10 +38,8 @@ import { FilterChips } from '../../components/common/FilterChips';
 import { EmptyState } from '../../components/common/EmptyState';
 import { ErrorState } from '../../components/common/ErrorState';
 import { Skeleton } from '../../components/common/Skeleton';
-import { CatalogPickerModal } from '../../components/scan/CatalogPickerModal';
-import { ShoppingAddItemModal } from '../../components/recipe/ShoppingAddItemModal';
 import { Check, Plus, Trash2, X, Minus, Store } from 'lucide-react-native';
-import { showError, showSuccess, showInfo, showMutationError } from '../../utils/helpers';
+import { showError, showSuccess, showMutationError } from '../../utils/helpers';
 import { useServices } from '../../../data/ServiceProvider';
 
 const FILTER_KEYS = {
@@ -62,16 +64,13 @@ export const ShoppingReminderScreen = () => {
   const [filter, setFilter] = useState(FILTER_KEYS.ALL);
   const [busyId, setBusyId] = useState(null);
 
-  // ── Modal thêm món ──
-  const [pickerVisible, setPickerVisible] = useState(false);
-  const [addModalVisible, setAddModalVisible] = useState(false);
-  const [selectedIngredient, setSelectedIngredient] = useState(null);
-  const [addingItem, setAddingItem] = useState(false);
-
   // ── Modal sửa số lượng ──
   const [editingItem, setEditingItem] = useState(null);
   const [editQty, setEditQty] = useState('1');
   const [savingQty, setSavingQty] = useState(false);
+
+  // ── Tạo danh sách mua khi user CHƯA có list ──
+  const [creatingList, setCreatingList] = useState(false);
 
   const loadItems = useCallback(async () => {
     setLoading(true);
@@ -166,9 +165,10 @@ export const ShoppingReminderScreen = () => {
   );
 
   /**
-   * Xoá món — `DELETE /meal-planning/shopping-lists/{listId}/items/{itemId}`.
+   * Xoá món — LÀM Ở CLIENT (BE không có `DELETE .../items/{itemId}`).
    *
-   * ⚠️ BE soft-delete -> item biến mất khỏi `GET /shopping-lists` sau reload.
+   * ⚠️ Flutter cũng chỉ xoá ở state local (`shopping_reminder_screen.dart`
+   *   -> `_deleteItem`) -> giống hệt hành vi này.
    */
   const remove = useCallback(
     (item) => {
@@ -198,80 +198,40 @@ export const ShoppingReminderScreen = () => {
   );
 
   /**
-   * Thêm món — mở picker catalog (`GET /ingredients?search=`).
+   * Tạo danh sách mua từ kế hoạch tuần — `POST /meal-planning/shopping-lists`.
    *
-   * ⚠️ BE bắt buộc `ingredientId` (FK) -> KHÔNG gửi tên tự do, sẽ bị 400.
-   */
-  const add = useCallback(() => {
-    setPickerVisible(true);
-  }, []);
-
-  /**
-   * Đã chọn 1 nguyên liệu trong catalog -> thêm vào giỏ active.
+   * ⚠️ BE CHỈ cho tạo list TỪ KẾ HOẠCH (`{ weeklyPlanId }`) -> không có
+   *   endpoint tạo list rỗng. Vì vậy ta lấy kế hoạch tuần hiện tại rồi tạo.
    *
-   * @param {{id:number,name:string,defaultUnit?:string|null}} option
+   * @returns {Promise<boolean>} true nếu tạo thành công
    */
-  const handlePickIngredient = useCallback((option) => {
-    if (!option?.id) {
-      showError(t('home.error'));
-      return;
-    }
-  
-    setPickerVisible(false);
-    setSelectedIngredient(option);
-    setAddModalVisible(true);
-  }, [t]);
+  const createListFromPlan = useCallback(async () => {
+    if (creatingList) return false;
+    setCreatingList(true);
+    try {
+      // 1) Tìm kế hoạch tuần hiện tại / kế hoạch sắp tới.
+      const plans = await services.recipeService.getPlans();
+      const plan = Array.isArray(plans) && plans.length > 0 ? plans[0] : null;
+      const planId = plan?.id ?? null;
 
-  const handleSubmitShoppingItem = useCallback(
-    async ({ quantity, unit }) => {
-      if (!selectedIngredient?.id || addingItem) return;
-
-      setAddingItem(true);
-
-      try {
-        const list = await services.recipeService.getActiveShoppingList();
-        const listId = list?.id ?? null;
-
-        if (!listId) {
-          showError(t('home.shoppingNoList'));
-          return;
-        }
-
-        // ⚠️ PHẢI gửi `name`:
-        //   BE chỉ nhận `ingredientId`/`quantity`/`unit`, nhưng cache local cần
-        //   tên để hiển thị ngay khi offline (món vừa thêm phải THẤY tên,
-        //   không phải 1 dòng trống). `MutationHandlers` đọc `item.name`.
-        await services.recipeService.addShoppingListItem(listId, {
-          ingredientId: selectedIngredient.id,
-          name: selectedIngredient.name ?? '',
-          quantity,
-          unit,
-        });
-
-        showSuccess(t('home.shoppingAddedCount', { count: 1 }));
-
-        setAddModalVisible(false);
-        setSelectedIngredient(null);
-
-        await loadItems();
-      } catch (e) {
-        // P2 (offline): đã lưu vào hàng đợi -> KHÔNG báo lỗi, chỉ nhắc user
-        // rằng thao tác đã được ghi nhớ và sẽ đồng bộ khi có mạng.
-        const queued = e?.isOfflineQueued === true;
-        if (queued) {
-          showInfo(t('offline.savedQueued'));
-          setAddModalVisible(false);
-          setSelectedIngredient(null);
-          await loadItems();
-        } else {
-          showError(e?.message ?? t('home.error'));
-        }
-      } finally {
-        setAddingItem(false);
+      if (!planId) {
+        showError(t('home.shoppingNoList'));
+        return false;
       }
-    },
-    [selectedIngredient, addingItem, services, t, loadItems]
-  );
+
+      // 2) Tạo list từ kế hoạch (BE tự lọc nguyên liệu thiếu so với tủ).
+      await services.recipeService.createShoppingList(planId);
+      showSuccess(t('home.shoppingListCreated'));
+
+      await loadItems();
+      return true;
+    } catch (e) {
+      showError(e?.message ?? t('home.error'));
+      return false;
+    } finally {
+      setCreatingList(false);
+    }
+  }, [creatingList, services, t, loadItems]);
 
   /** Mở modal sửa số lượng. */
   const openEditQuantity = useCallback((item) => {
@@ -279,7 +239,7 @@ export const ShoppingReminderScreen = () => {
     setEditQty(String(item.quantity ?? 1));
   }, []);
 
-  /** Lưu số lượng mới — `PATCH .../items/{itemId}`. */
+  /** Lưu số lượng mới — LÀM Ở CLIENT (BE không có endpoint sửa lượng). */
   const saveQuantity = useCallback(async () => {
     if (!editingItem) return;
 
@@ -425,18 +385,6 @@ export const ShoppingReminderScreen = () => {
             <Trash2 color={isDark ? AppColors.primaryLight : AppColors.forestAccent} size={16} />
           </Pressable>
         ) : null}
-        <Pressable
-          onPress={add}
-          disabled={addingItem}
-          style={({ pressed }) => [
-            styles.addBtn,
-            { backgroundColor: AppColors.primary, opacity: addingItem ? 0.6 : pressed ? 0.85 : 1 },
-          ]}
-          testID="shopping-add-item"
-          accessibilityLabel={t('home.shoppingAddItemTitle')}
-        >
-          <Plus color="#FFFFFF" size={20} strokeWidth={2.5} />
-        </Pressable>
       </View>
 
       <View style={{ paddingHorizontal: sp(20), marginBottom: sp(10) }}>
@@ -470,36 +418,43 @@ export const ShoppingReminderScreen = () => {
               emoji="🛒"
               title={t('home.shoppingEmpty')}
               hint={t('home.shoppingEmptyHint')}
-              actionText={t('home.shoppingAddItemTitle')}
-              onAction={add}
             />
           ) : hasFilters ? (
             <EmptyState emoji="🔍" title={t('home.noResults')} hint={t('home.noResultsHint')} />
           ) : null
         }
+        ListFooterComponent={
+          items.length === 0 ? (
+            // ⚠️ BE CHỈ cho tạo list TỪ THỰC ĐƠN TUẦN
+            //   (`POST /meal-planning/shopping-lists` với `{ weeklyPlanId }`)
+            //   -> không có endpoint tạo list rỗng. Vì vậy ta cho user nút
+            //   "Tạo DS mua từ thực đơn" thay vì báo lỗi vô ích.
+            <Pressable
+              onPress={createListFromPlan}
+              disabled={creatingList}
+              style={({ pressed }) => [
+                styles.createPlanBtn,
+                {
+                  backgroundColor: isDark ? '#233629' : '#E8F5E9',
+                  borderColor: isDark ? '#2E4D36' : '#A5E69C',
+                  opacity: creatingList ? 0.6 : pressed ? 0.75 : 1,
+                },
+              ]}
+              testID="shopping-create-from-plan"
+              accessibilityLabel={t('home.shoppingCreateFromPlan')}
+            >
+              <Text
+                style={[
+                  styles.createPlanText,
+                  { color: isDark ? AppColors.primaryLight : AppColors.primary },
+                ]}
+              >
+                {creatingList ? t('common.loading') : t('home.shoppingCreateFromPlan')}
+              </Text>
+            </Pressable>
+          ) : null
+        }
       />
-
-      {/* ── Modal chọn nguyên liệu trong catalog ── */}
-      <CatalogPickerModal
-        visible={pickerVisible}
-        onClose={() => setPickerVisible(false)}
-        onSelect={handlePickIngredient}
-      />
-
-      {/* Modal nhập số lượng và đơn vị */}
-      <ShoppingAddItemModal
-        key={selectedIngredient?.id ?? 'no-ingredient'}
-        visible={addModalVisible}
-        ingredient={selectedIngredient}
-        defaultQuantity={1}
-        saving={addingItem}
-        onSubmit={handleSubmitShoppingItem}
-        onClose={() => {
-          setAddModalVisible(false);
-          setSelectedIngredient(null);
-        }}
-      />
-
 
       {/* ── Modal sửa số lượng ── */}
       <QuantityModal
@@ -809,13 +764,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  addBtn: {
-    width: sp(40),
-    height: sp(40),
-    borderRadius: sp(20),
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   itemRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -903,6 +851,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: sp(8),
+  },
+  createPlanBtn: {
+    marginTop: sp(16),
+    paddingVertical: sp(12),
+    borderRadius: sp(12),
+    borderWidth: 1,
+    alignItems: 'center',
+  },
+  createPlanText: {
+    fontFamily: FontFamily.semibold,
+    fontWeight: FontWeights.semibold,
+    fontSize: sp(14),
   },
   skeletonRow: {
     flexDirection: 'row',

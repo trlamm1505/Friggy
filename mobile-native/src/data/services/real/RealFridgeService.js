@@ -520,10 +520,18 @@ export class RealFridgeService {
     }
 
     // `updates.version` do UI truyền vào (item.version lấy từ GET /fridge).
-    // Fallback: `updates.version` -> không có -> bỏ qua (mock / BE cũ).
-    const version = updates.version;
+    //
+    // ⚠️ FALLBACK: nếu UI không truyền version -> đọc version đã cache.
+    //   BE `UpdateFridgeItemDto.version` là `@IsInt() @Min(0)` -> thiếu -> 400.
+    //   Cache là nguồn gần nhất, tốt hơn là gửi request chắc chắn 400.
+    //   (Không có version trong cache -> vẫn bỏ qua, giữ hành vi cũ cho mock.)
+    let version = updates.version;
+    if (version === undefined || version === null) {
+      version = await offlineCache.getFridgeItemVersion(id);
+    }
     if (version !== undefined && version !== null) {
-      payload.version = Number(version);
+      const asNumber = Number(version);
+      if (Number.isFinite(asNumber)) payload.version = asNumber;
     }
 
     const dto = await this.client.patch(`/fridge/items/${id}`, payload);

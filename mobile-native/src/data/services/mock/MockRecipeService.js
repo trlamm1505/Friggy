@@ -632,13 +632,16 @@ export class MockRecipeService extends IRecipeService {
 
   /**
    * `POST /meal-planning/shopping-lists` — mock: tạo list từ kế hoạch tuần.
+   *
+   * ⚠️ BE tạo list với `status = 'draft'` -> mock phải khớp, nếu không UI
+   *   chọn sai list "đang dùng" (BE chỉ trả 'draft' cho list mới).
    */
   async createShoppingList(weeklyPlanId, title) {
     await sleep(MOCK_DELAY);
     return {
       id: 'shopping-list-mock',
       title: (title ?? '').trim() || 'Danh sách mua tuần này',
-      status: 'active',
+      status: 'draft',
       totalEstimatedCost: shoppingList.reduce((sum, i) => sum + (i.estimatedPrice ?? 0), 0),
       weeklyPlanId: weeklyPlanId ?? mockNextWeekPlan.id,
       createdAt: mockNextWeekPlan.weekStart,
@@ -648,6 +651,8 @@ export class MockRecipeService extends IRecipeService {
 
   /**
    * `PATCH /meal-planning/shopping-lists/{listId}/items/{itemId}` — mock: toggle.
+   *
+   * ⚠️ BE TỰ TOGGLE (không nhận `isPurchased` trong body).
    */
   async toggleShoppingItemInList(listId, itemId) {
     await sleep(MOCK_DELAY / 2);
@@ -662,7 +667,10 @@ export class MockRecipeService extends IRecipeService {
   }
 
   /**
-   * `GET /meal-planning/shopping-lists/active` — mock: luôn trả về list mock.
+   * Giỏ mua đang dùng — chọn ở CLIENT từ `GET /shopping-lists`.
+   *
+   * ⚠️ BE KHÔNG có route `/shopping-lists/active` -> mock cũng KHÔNG giả lập
+   *   route đó (trả 1 list chứ không gọi API).
    */
   async getActiveShoppingList() {
     await sleep(MOCK_DELAY / 2);
@@ -678,16 +686,21 @@ export class MockRecipeService extends IRecipeService {
   }
 
   /**
-   * `POST /meal-planning/shopping-lists/{listId}/items` — mock: thêm món lẻ.
+   * Thêm 1 mặt hàng — LÀM Ở CLIENT (giống `RealRecipeService`).
    *
-   * ⚠️ BE tự GỘP lượng nếu list đã có cùng nguyên liệu -> mock cũng vậy.
+   * ⚠️ BE KHÔNG có `POST /meal-planning/shopping-lists/{listId}/items` -> gọi
+   *   sẽ 404. Mock cũng vậy -> chỉ thêm vào state local.
+   *
+   * ⚠️ Gộp lượng nếu list đã có cùng nguyên liệu (giống BE khi tạo list).
    */
   async addShoppingListItem(listId, item) {
     await sleep(MOCK_DELAY);
-    if (!listId || !item?.ingredientId) return null;
+    if (!listId || (!item?.ingredientId && !item?.name)) return null;
 
     const existingIdx = shoppingList.findIndex(
-      (i) => String(i.ingredientId ?? '') === String(item.ingredientId)
+      (i) =>
+        (item.ingredientId != null && String(i.ingredientId ?? '') === String(item.ingredientId)) ||
+        (item.name != null && String(i.name ?? '') === String(item.name))
     );
 
     if (existingIdx !== -1) {
@@ -702,7 +715,7 @@ export class MockRecipeService extends IRecipeService {
 
     const created = {
       id: nextShoppingItemId(),
-      ingredientId: item.ingredientId,
+      ingredientId: item.ingredientId ?? null,
       name: item.name ?? `Nguyên liệu #${item.ingredientId}`,
       quantity: item.quantity ?? 1,
       unit: item.unit ?? '',
@@ -714,7 +727,10 @@ export class MockRecipeService extends IRecipeService {
   }
 
   /**
-   * `POST /meal-planning/slots/{slotId}/missing-to-shopping-list` — mock.
+   * Thêm nguyên liệu còn thiếu của 1 slot vào giỏ mua — LÀM Ở CLIENT.
+   *
+   * ⚠️ BE KHÔNG có `POST /meal-planning/slots/{slotId}/missing-to-shopping-list`
+   *   -> gọi sẽ 404.
    *
    * Mock không có dữ liệu tủ lạnh chi tiết theo slot -> trả 0 món, đúng
    * với hành vi "không xác định được nguyên liệu thiếu".
@@ -725,7 +741,7 @@ export class MockRecipeService extends IRecipeService {
    */
   async addSlotMissingToShoppingList(slotId, options = {}) {
     await sleep(MOCK_DELAY);
-    if (!slotId) return { listId: null, addedCount: 0, addedItems: [] };
+    if (!slotId) return { listId: null, addedCount: 0, addedItems: [], servings: null };
     return {
       listId: 'shopping-list-mock',
       addedCount: 0,
@@ -735,7 +751,11 @@ export class MockRecipeService extends IRecipeService {
   }
 
   /**
-   * `PATCH /meal-planning/shopping-lists/{listId}/items/{itemId}` — mock: sửa lượng.
+   * Sửa lượng món — LÀM Ở CLIENT (không gọi API).
+   *
+   * ⚠️ BE `PATCH .../items/{itemId}` KHÔNG có body -> nó TOGGLE `isPurchased`
+   *   (và tự thêm món vào tủ lạnh khi tick `true`). Gửi `{ quantity }` sẽ
+   *   vô tình đánh dấu "đã mua" -> sai. => Sửa lượng chỉ ở client.
    */
   async updateShoppingListItem(listId, itemId, payload = {}) {
     await sleep(MOCK_DELAY / 2);
@@ -756,7 +776,10 @@ export class MockRecipeService extends IRecipeService {
   }
 
   /**
-   * `DELETE /meal-planning/shopping-lists/{listId}/items/{itemId}` — mock: xoá món.
+   * Xoá món — LÀM Ở CLIENT (không gọi API).
+   *
+   * ⚠️ BE KHÔNG có `DELETE /meal-planning/shopping-lists/{listId}/items/{itemId}`
+   *   -> gọi sẽ 404.
    */
   async removeShoppingListItem(listId, itemId) {
     await sleep(MOCK_DELAY / 2);

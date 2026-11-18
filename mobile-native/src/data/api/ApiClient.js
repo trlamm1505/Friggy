@@ -385,7 +385,7 @@ client.interceptors.response.use(
  */
 const request = async (method, url, data, options = {}) => {
   const config = { ...options };
-  if (data !== undefined && method !== 'get' && method !== 'delete') {
+  if (data !== undefined && method !== 'get') {
     config.data = data;
   }
   return client.request({ ...config, method, url });
@@ -399,7 +399,7 @@ export const ApiClient = {
   post: (url, data, options) => request('post', url, data, options),
   patch: (url, data, options) => request('patch', url, data, options),
   put: (url, data, options) => request('put', url, data, options),
-  delete: (url, options) => request('delete', url, undefined, options),
+  delete: (url, data, options) => request('delete', url, data, options),
 
   /**
    * Upload file qua FormData (avatar, scan ảnh/receipt).

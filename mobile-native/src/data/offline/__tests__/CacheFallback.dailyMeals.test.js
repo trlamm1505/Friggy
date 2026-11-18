@@ -8,7 +8,7 @@
  */
 
 import { getCacheFallbackFor } from '../CacheFallback';
-import { offlineCache, SYNC_STATUS } from '../OfflineCache';
+import { offlineCache, SYNC_STATUS, toLocalDateStr } from '../OfflineCache';
 import { __resetFakeDb } from './helpers/fakeSqlite';
 
 const recipeFallback = (method) => getCacheFallbackFor('recipeService', method);
@@ -20,7 +20,10 @@ describe('CacheFallback - getSuggestions (thực đơn ngày)', () => {
   });
 
   it('đọc cache thực đơn ngày -> đúng tên/ảnh/bữa', async () => {
-    await offlineCache.saveDailyMeals('2026-11-18', [
+    // ⚠️ Dùng `toLocalDateStr()` (hôm nay theo giờ địa phương) -> không
+    //   phụ thuộc ngày chạy test (trước đây hardcode '2026-11-18' -> fail khi
+    //   qua ngày mới).
+    await offlineCache.saveDailyMeals(toLocalDateStr(), [
       {
         id: 'slot-1',
         recipeId: 'r1',

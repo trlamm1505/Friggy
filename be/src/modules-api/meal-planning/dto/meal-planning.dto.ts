@@ -14,7 +14,6 @@ import {
   Min,
   Max,
   IsBoolean,
-  IsNumber,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -23,11 +22,12 @@ import { Type } from 'class-transformer';
 // ─────────────────────────────────────────────────────────
 export class GenerateMealPlanDto {
   @ApiProperty({
-    description: 'Ngày bắt đầu tuần (phải là ngày Thứ 2) — định dạng YYYY-MM-DD',
+    description:
+      'Ngày bắt đầu tuần (phải là ngày Thứ 2) — định dạng YYYY-MM-DD',
     example: '2026-09-15',
   })
   @IsDateString()
-  weekStartDate: string;
+  weekStartDate!: string;
 
   @ApiProperty({
     description: 'Ngân sách cả tuần tính bằng VND',
@@ -37,7 +37,7 @@ export class GenerateMealPlanDto {
   @IsInt()
   @Min(0)
   @Type(() => Number)
-  budget: number;
+  budget!: number;
 }
 
 // ─────────────────────────────────────────────────────────
@@ -103,7 +103,7 @@ export class CreateShoppingListDto {
     example: 'abc123',
   })
   @IsString()
-  weeklyPlanId: string;
+  weeklyPlanId!: string;
 
   @ApiPropertyOptional({
     description: 'Tiêu đề danh sách mua',
@@ -112,82 +112,6 @@ export class CreateShoppingListDto {
   @IsOptional()
   @IsString()
   title?: string;
-}
-
-// ─────────────────────────────────────────────────────────
-// POST /meal-planning/shopping-lists/:id/items
-// ─────────────────────────────────────────────────────────
-export class AddShoppingListItemDto {
-  @ApiProperty({
-    description: 'ID nguyên liệu trong catalog',
-    example: 9,
-  })
-  @IsInt()
-  @Min(1)
-  @Type(() => Number)
-  ingredientId: number;
-
-  @ApiPropertyOptional({
-    description: 'Số lượng cần mua (hỗ trợ số thập, vd 0.5 kg)',
-    example: 2,
-    default: 1,
-  })
-  @IsOptional()
-  @IsNumber()
-  @Min(0.01)
-  @Type(() => Number)
-  quantity?: number;
-
-  @ApiPropertyOptional({
-    description: 'Đơn vị',
-    example: 'kg',
-  })
-  @IsOptional()
-  @IsString()
-  unit?: string;
-}
-
-// ─────────────────────────────────────────────────────────
-// PATCH /meal-planning/shopping-lists/:listId/items/:itemId
-// ─────────────────────────────────────────────────────────
-export class UpdateShoppingListItemDto {
-  @ApiPropertyOptional({
-    description: 'Số lượng mới (dùng để sửa lượng đã thêm) — hỗ trợ số thập',
-    example: 3,
-  })
-  @IsOptional()
-  @IsNumber()
-  @Min(0.01)
-  @Type(() => Number)
-  quantity?: number;
-
-  @ApiPropertyOptional({
-    description: 'Đánh dấu đã mua / chưa mua',
-    example: true,
-  })
-  @IsOptional()
-  @IsBoolean()
-  isPurchased?: boolean;
-}
-
-// ─────────────────────────────────────────────────────────
-// POST /meal-planning/slots/:id/missing-to-shopping-list
-// ─────────────────────────────────────────────────────────
-export class AddSlotMissingToShoppingListDto {
-  @ApiPropertyOptional({
-    description:
-      'Khẩu phần user muốn mua (mặc định = servings của slot trong kế hoạch). ' +
-      'Dùng để scale lượng nguyên liệu khi thêm vào danh sách mua.',
-    example: 4,
-    minimum: 1,
-    maximum: 20,
-  })
-  @IsOptional()
-  @IsInt()
-  @Min(1)
-  @Max(20)
-  @Type(() => Number)
-  servings?: number;
 }
 
 // ─────────────────────────────────────────────────────────

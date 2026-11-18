@@ -269,9 +269,12 @@ export const RecipeDetailScreen = () => {
    *    `showSuccess(t('home.addedToShoppingList'))` — không gọi API, không
    *    điều hướng tới danh sách -> user bấm xong không thấy gì cả.
    *
-   * GIỜ ĐÃ NỐI BE THẬT:
-   *   1. `POST /meal-planning/slots/{slotId}/missing-to-shopping-list`
-   *      -> BE tính nguyên liệu thiếu (so với tủ lạnh thật) rồi ghi vào giỏ mua.
+   * GIỠ ĐÃ NỐI ĐÚNG THEO BE:
+   *   1. `GET /meal-planning/slots/{slotId}` -> BE đã tính sẵn
+   *      `summary.missingItems` (phần thiếu so với tủ lạnh thật).
+   *      ⚠️ BE KHÔNG có `POST /meal-planning/slots/{slotId}/missing-to-shopping-list`
+   *      (gọi sẽ 404) -> phần tính lượng + ghi giỏ mua làm ở CLIENT (SQLite),
+   *      đúng như Flutter (`shopping_reminder_screen.dart` chỉ sửa state local).
    *   2. Điều hướng tới màn Danh sách mua để user thấy & chỉnh sửa ngay.
    *
    * Nếu mở từ Home (không có slotId) -> dùng danh sách mặc định và gọi

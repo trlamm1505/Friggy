@@ -11,16 +11,16 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 // ─────────────────────────────────────────────────────────
 export class GeneratePlanResponseDto {
   @ApiProperty({ description: 'ID job BullMQ để subscribe SSE', example: 'job-uuid-123' })
-  jobId: string;
+  jobId!: string;
 
   @ApiProperty({ description: 'Trạng thái job', example: 'queued' })
-  status: string;
+  status!: string;
 
   @ApiProperty({ description: 'SSE stream URL để nhận tiến độ', example: '/meal-planning/plans/generate/job-uuid-123/stream' })
-  streamUrl: string;
+  streamUrl!: string;
 
   @ApiProperty({ description: 'Thông báo', example: 'Yêu cầu tạo thực đơn đã được nhận. Kết quả sẽ gửi qua stream.' })
-  message: string;
+  message!: string;
 }
 
 // ─────────────────────────────────────────────────────────
@@ -28,31 +28,34 @@ export class GeneratePlanResponseDto {
 // ─────────────────────────────────────────────────────────
 export class MealSlotResponseDto {
   @ApiProperty({ example: 'slot-uuid' })
-  id: string;
+  id!: string;
 
   @ApiProperty({ example: 1, description: '0=CN, 1=T2, ..., 6=T7' })
-  dayOfWeek: number;
+  dayOfWeek!: number;
 
   @ApiProperty({ enum: ['breakfast', 'lunch', 'dinner', 'snack', 'dessert'] })
-  mealType: string;
+  mealType!: string;
 
   @ApiPropertyOptional({ example: 'recipe-uuid' })
-  recipeId: string | null;
+  recipeId!: string | null;
 
   @ApiPropertyOptional({ description: 'Tên công thức' })
-  recipeName: string | null;
+  recipeName!: string | null;
+
+  @ApiPropertyOptional({ description: 'Thumbnail công thức', example: '/public/recipes/pho-bo.jpg' })
+  recipeThumbnail!: string | null;
 
   @ApiProperty({ example: 2 })
-  servings: number;
+  servings!: number;
 
   @ApiPropertyOptional({ example: 150000 })
-  estimatedCost: number | null;
+  estimatedCost!: number | null;
 
   @ApiPropertyOptional({ example: 'Nấu thêm gia vị' })
-  note: string | null;
+  note!: string | null;
 
   @ApiPropertyOptional({ example: null })
-  completedAt: string | null;
+  completedAt!: string | null;
 }
 
 // ─────────────────────────────────────────────────────────
@@ -60,19 +63,19 @@ export class MealSlotResponseDto {
 // ─────────────────────────────────────────────────────────
 export class DailyPlanResponseDto {
   @ApiProperty({ example: 'daily-uuid' })
-  id: string;
+  id!: string;
 
   @ApiProperty({ example: 1 })
-  dayOfWeek: number;
+  dayOfWeek!: number;
 
   @ApiProperty({ example: '2026-09-15' })
-  date: string;
+  date!: string;
 
   @ApiPropertyOptional({ example: 100000 })
-  dailyBudget: number | null;
+  dailyBudget!: number | null;
 
   @ApiProperty({ type: [MealSlotResponseDto] })
-  mealSlots: MealSlotResponseDto[];
+  mealSlots!: MealSlotResponseDto[];
 }
 
 // ─────────────────────────────────────────────────────────
@@ -80,25 +83,25 @@ export class DailyPlanResponseDto {
 // ─────────────────────────────────────────────────────────
 export class WeeklyPlanSummaryResponseDto {
   @ApiProperty({ example: 'plan-uuid' })
-  id: string;
+  id!: string;
 
   @ApiProperty({ example: '2026-09-15' })
-  weekStartDate: string;
+  weekStartDate!: string;
 
   @ApiProperty({ example: 700000 })
-  totalBudget: number;
+  totalBudget!: number;
 
   @ApiPropertyOptional({ example: 650000 })
-  actualCost: number | null;
+  actualCost!: number | null;
 
   @ApiProperty({ enum: ['draft', 'confirmed', 'active', 'completed'] })
-  status: string;
+  status!: string;
 
   @ApiProperty({ example: true })
-  generatedByAi: boolean;
+  generatedByAi!: boolean;
 
   @ApiProperty({ example: '2026-09-14T10:00:00Z' })
-  createdAt: string;
+  createdAt!: string;
 
   @ApiPropertyOptional({ description: 'true nếu list đã lọc nguyên liệu thiếu theo tủ lạnh', example: true })
   isSmartFiltered?: boolean;
@@ -109,7 +112,7 @@ export class WeeklyPlanSummaryResponseDto {
 // ─────────────────────────────────────────────────────────
 export class WeeklyPlanDetailResponseDto extends WeeklyPlanSummaryResponseDto {
   @ApiProperty({ type: [DailyPlanResponseDto] })
-  dailyPlans: DailyPlanResponseDto[];
+  dailyPlans!: DailyPlanResponseDto[];
 }
 
 // ─────────────────────────────────────────────────────────
@@ -117,31 +120,25 @@ export class WeeklyPlanDetailResponseDto extends WeeklyPlanSummaryResponseDto {
 // ─────────────────────────────────────────────────────────
 export class ShoppingListItemResponseDto {
   @ApiProperty({ example: 1 })
-  id: number;
-
-  @ApiProperty({
-    example: 9,
-    description: 'ID nguyên liệu trong catalog — FE cần id này để thêm/xoá món lẻ',
-  })
-  ingredientId: number;
+  id!: number;
 
   @ApiProperty({ example: 'Thịt bò' })
-  ingredientName: string;
+  ingredientName!: string;
 
   @ApiProperty({ example: 500 })
-  quantity: number;
+  quantity!: number;
 
   @ApiProperty({ example: 'g' })
-  unit: string;
+  unit!: string;
 
   @ApiPropertyOptional({ example: 120000 })
-  estimatedPrice: number | null;
+  estimatedPrice!: number | null;
 
   @ApiProperty({ example: false })
-  isPurchased: boolean;
+  isPurchased!: boolean;
 
   @ApiPropertyOptional({ example: null })
-  purchasedAt: string | null;
+  purchasedAt!: string | null;
 }
 
 // ─────────────────────────────────────────────────────────
@@ -149,25 +146,25 @@ export class ShoppingListItemResponseDto {
 // ─────────────────────────────────────────────────────────
 export class ShoppingListResponseDto {
   @ApiProperty({ example: 'list-uuid' })
-  id: string;
+  id!: string;
 
   @ApiProperty({ example: 'Danh sách mua tuần 37' })
-  title: string;
+  title!: string;
 
   @ApiProperty({ enum: ['draft', 'active', 'completed'] })
-  status: string;
+  status!: string;
 
   @ApiPropertyOptional({ example: 350000 })
-  totalEstimatedCost: number | null;
+  totalEstimatedCost!: number | null;
 
   @ApiPropertyOptional({ example: 'plan-uuid' })
-  weeklyPlanId: string | null;
+  weeklyPlanId!: string | null;
 
   @ApiProperty({ type: [ShoppingListItemResponseDto] })
-  items: ShoppingListItemResponseDto[];
+  items!: ShoppingListItemResponseDto[];
 
   @ApiProperty({ example: '2026-09-14T10:00:00Z' })
-  createdAt: string;
+  createdAt!: string;
 }
 
 // ─────────────────────────────────────────────────────────
@@ -176,230 +173,98 @@ export class ShoppingListResponseDto {
 
 export class RecipeStepDto {
   @ApiProperty({ example: 1 })
-  stepNumber: number;
+  stepNumber!: number;
 
   @ApiProperty({ example: 'Ướp thịt với gia vị 15 phút trước khi nấu' })
-  instruction: string;
+  instruction!: string;
 
   @ApiPropertyOptional({ example: 15 })
-  durationMinutes: number | null;
+  durationMinutes!: number | null;
 
   @ApiPropertyOptional({ example: null })
-  imagePath: string | null;
+  imagePath!: string | null;
 }
 
 export class IngredientAvailabilityDto {
   @ApiProperty({ example: 42 })
-  ingredientId: number;
+  ingredientId!: number;
 
   @ApiProperty({ example: 'Thịt bò' })
-  name: string;
+  name!: string;
 
   @ApiProperty({ example: 200, description: 'Số lượng cần (đã scale theo servings, về base unit)' })
-  quantityNeeded: number;
+  quantityNeeded!: number;
 
   @ApiProperty({ example: 'g', description: "Base unit sau normalize: 'g', 'ml', hoặc unit gốc" })
-  baseUnit: string;
+  baseUnit!: string;
 
   @ApiProperty({ example: 200, description: 'Số lượng gốc theo đơn vị của công thức' })
-  originalQuantity: number;
+  originalQuantity!: number;
 
   @ApiProperty({ example: 'g', description: 'Đơn vị gốc trong công thức' })
-  originalUnit: string;
+  originalUnit!: string;
 
   @ApiProperty({ example: false })
-  isOptional: boolean;
+  isOptional!: boolean;
 
   @ApiProperty({ enum: ['have', 'partial', 'missing'] })
-  fridgeStatus: 'have' | 'partial' | 'missing';
+  fridgeStatus!: 'have' | 'partial' | 'missing';
 
   @ApiProperty({ example: 150, description: 'Số lượng đang có trong tủ (base unit)' })
-  fridgeQuantity: number;
+  fridgeQuantity!: number;
 
   @ApiProperty({ example: 50, description: 'Số lượng còn thiếu (base unit, 0 nếu have)' })
-  missingQuantity: number;
+  missingQuantity!: number;
 }
 
 export class IngredientSummaryDto {
   @ApiProperty({ example: 8 })
-  totalIngredients: number;
+  totalIngredients!: number;
 
   @ApiProperty({ example: 5 })
-  haveCount: number;
+  haveCount!: number;
 
   @ApiProperty({ example: 1 })
-  partialCount: number;
+  partialCount!: number;
 
   @ApiProperty({ example: 2 })
-  missingCount: number;
+  missingCount!: number;
 
   @ApiProperty({ example: 62, description: 'Phần trăm nguyên liệu đã đủ (0-100)' })
-  fridgeReadyPercent: number;
+  fridgeReadyPercent!: number;
 
   @ApiProperty({ type: [IngredientAvailabilityDto], description: 'Danh sách nguyên liệu thiếu/thiếu một phần' })
-  missingItems: IngredientAvailabilityDto[];
+  missingItems!: IngredientAvailabilityDto[];
 }
 
 export class SlotDetailRecipeDto {
-  @ApiProperty() id: string;
-  @ApiProperty() title: string;
-  @ApiPropertyOptional() description: string | null;
-  @ApiPropertyOptional() thumbnailPath: string | null;
-  @ApiProperty() cookTimeMinutes: number;
-  @ApiProperty() difficultyLevel: string;
-  @ApiPropertyOptional() estimatedCost: number | null;
-  @ApiProperty({
-    example: 4,
-    description:
-      'Khẩu phần GỐC của công thức. Cần để client scale lại `ingredients` ' +
-      'khi user đổi khẩu phần (offline client tự trừ tủ lạnh theo công thức).',
-  })
-  servings: number;
-  @ApiProperty({ type: [RecipeStepDto] }) steps: RecipeStepDto[];
-  @ApiProperty({ type: [IngredientAvailabilityDto] }) ingredients: IngredientAvailabilityDto[];
+  @ApiProperty() id!: string;
+  @ApiProperty() title!: string;
+  @ApiPropertyOptional() description!: string | null;
+  @ApiPropertyOptional() thumbnailPath!: string | null;
+  @ApiProperty() cookTimeMinutes!: number;
+  @ApiProperty() difficultyLevel!: string;
+  @ApiPropertyOptional() estimatedCost!: number | null;
+  @ApiProperty({ type: [RecipeStepDto] }) steps!: RecipeStepDto[];
+  @ApiProperty({ type: [IngredientAvailabilityDto] }) ingredients!: IngredientAvailabilityDto[];
 }
 
 export class SlotDetailResponseDto {
   @ApiProperty({ example: 'slot-uuid' })
-  id: string;
+  id!: string;
 
   @ApiProperty({ enum: ['breakfast', 'lunch', 'dinner', 'snack'] })
-  mealType: string;
+  mealType!: string;
 
   @ApiProperty({ example: 2 })
-  servings: number;
+  servings!: number;
 
   @ApiPropertyOptional({ example: null })
-  completedAt: string | null;
+  completedAt!: string | null;
 
   @ApiPropertyOptional({ type: SlotDetailRecipeDto, nullable: true })
-  recipe: SlotDetailRecipeDto | null;
+  recipe!: SlotDetailRecipeDto | null;
 
   @ApiProperty({ type: IngredientSummaryDto })
-  summary: IngredientSummaryDto;
-}
-
-// ─────────────────────────────────────────────────────────
-// PATCH /meal-planning/slots/:id — kết quả trừ nguyên liệu
-//
-// ⚠️ BACKWARD COMPATIBLE:
-//   `ConsumedIngredientDto` GIỮ NGUYÊN 3 field cũ (`name`, `quantity`, `unit`)
-//   và chỉ THÊM field mới -> client cũ (RN cũ, Flutter `Mobile/`) không vỡ.
-// ─────────────────────────────────────────────────────────
-
-export class ConsumedIngredientDto {
-  @ApiProperty({ example: 42 })
-  ingredientId: number;
-
-  @ApiProperty({ example: 'Thịt bò' })
-  name: string;
-
-  @ApiProperty({
-    example: 200,
-    description:
-      'Số lượng theo đơn vị gốc của công thức (đã scale theo servings). ' +
-      'Giữ nguyên semantics cũ để backward compatible.',
-  })
-  quantity: number;
-
-  @ApiProperty({ example: 'g', description: 'Đơn vị gốc trong công thức' })
-  unit: string;
-
-  @ApiProperty({
-    example: 200,
-    description: 'Số lượng công thức yêu cầu (đơn vị gốc của công thức)',
-  })
-  requiredQuantity: number;
-
-  @ApiProperty({ example: 'g', description: 'Đơn vị gốc của công thức' })
-  requiredUnit: string;
-
-  @ApiProperty({
-    example: 150,
-    description: 'Số lượng THỰC SỰ bị trừ khỏi tủ lạnh (đã quy về base unit)',
-  })
-  deductedQuantity: number;
-
-  @ApiProperty({
-    example: 'g',
-    description:
-      "Base unit sau normalize: 'g', 'ml', hoặc unit gốc (đơn vị đếm)",
-  })
-  deductedUnit: string;
-
-  @ApiProperty({
-    example: 50,
-    description: 'Lượng còn thiếu = required - deducted (base unit, >= 0)',
-  })
-  shortage: number;
-
-  @ApiProperty({ example: false, description: 'Nguyên liệu không bắt buộc' })
-  isOptional: boolean;
-}
-
-export class MissingIngredientDto {
-  @ApiProperty({ example: 42 })
-  ingredientId: number;
-
-  @ApiProperty({ example: 'Hành lá' })
-  name: string;
-
-  @ApiProperty({
-    example: 2,
-    description: 'Lượng còn thiếu (đã quy về base unit)',
-  })
-  quantity: number;
-
-  @ApiProperty({
-    example: 'cọng',
-    description:
-      "Base unit sau normalize: 'g', 'ml', hoặc unit gốc (đơn vị đếm)",
-  })
-  unit: string;
-
-  @ApiProperty({
-    example: 3,
-    description: 'Số lượng công thức yêu cầu (đơn vị gốc của công thức)',
-  })
-  requiredQuantity: number;
-
-  @ApiProperty({ example: 'cọng', description: 'Đơn vị gốc của công thức' })
-  requiredUnit: string;
-
-  @ApiProperty({ example: false, description: 'Nguyên liệu không bắt buộc' })
-  isOptional: boolean;
-}
-
-export class UpdateMealSlotResponseDto {
-  @ApiProperty({ example: 'slot-uuid' })
-  id: string;
-
-  @ApiProperty({ enum: ['breakfast', 'lunch', 'dinner', 'snack', 'dessert'] })
-  mealType: string;
-
-  @ApiPropertyOptional({ example: 'recipe-uuid', nullable: true })
-  recipeId: string | null;
-
-  @ApiProperty({ example: 2 })
-  servings: number;
-
-  @ApiPropertyOptional({ example: null })
-  note: string | null;
-
-  @ApiPropertyOptional({ example: null })
-  completedAt: string | null;
-
-  @ApiProperty({
-    type: [ConsumedIngredientDto],
-    description:
-      'Nguyên liệu ĐÃ trừ khỏi tủ lạnh (chỉ có ở lần tick đầu tiên). ' +
-      'Rỗng nếu slot đã được đánh dấu hoàn thành trước đó (idempotent).',
-  })
-  consumedIngredients: ConsumedIngredientDto[];
-
-  @ApiProperty({
-    type: [MissingIngredientDto],
-    description: 'Nguyên liệu còn THIẾU trong tủ lạnh (đã quy về base unit)',
-  })
-  missingIngredients: MissingIngredientDto[];
+  summary!: IngredientSummaryDto;
 }

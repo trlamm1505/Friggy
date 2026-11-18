@@ -6,6 +6,7 @@ import {
   IsString,
   MaxLength,
   IsUrl,
+  Matches,
 } from 'class-validator';
 
 export class CreateSupplierApplicationDto {
@@ -17,6 +18,18 @@ export class CreateSupplierApplicationDto {
   @IsNotEmpty()
   @MaxLength(150)
   companyName!: string;
+
+  @ApiProperty({
+    example: '0101234567',
+    description: 'Mã số thuế doanh nghiệp (10 chữ số hoặc 10 chữ số kèm mã chi nhánh -xxx)',
+  })
+  @IsString()
+  @IsNotEmpty({ message: 'Mã số thuế doanh nghiệp không được để trống' })
+  @MaxLength(20)
+  @Matches(/^\d{10}(-\d{3})?$/, {
+    message: 'Mã số thuế không hợp lệ (gồm 10 chữ số hoặc định dạng 10-3 chữ số, VD: 0101234567 hoặc 0101234567-001)',
+  })
+  taxCode!: string;
 
   @ApiProperty({ example: 'Nguyễn Văn A', description: 'Tên người đại diện' })
   @IsString()
@@ -64,6 +77,7 @@ export class CreateSupplierApplicationDto {
 export class SupplierApplicationResponseDto {
   @ApiProperty() id!: string;
   @ApiProperty() companyName!: string;
+  @ApiPropertyOptional() taxCode!: string | null;
   @ApiProperty() contactName!: string;
   @ApiProperty() email!: string;
   @ApiPropertyOptional() phone!: string | null;

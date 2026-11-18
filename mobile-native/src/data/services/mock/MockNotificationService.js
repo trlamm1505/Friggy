@@ -68,7 +68,9 @@ export class MockNotificationService extends INotificationService {
     return { token, platform };
   }
 
-  async removeFcmToken() {
+  async removeFcmToken(token) {
     await sleep(MOCK_DELAY / 4);
+    // Khớp Real: không có token -> no-op (BE cần body `{ token }` -> 400 nếu thiếu).
+    return { removed: Boolean(token) };
   }
 }

@@ -307,11 +307,34 @@ describe('FCM token', () => {
     );
   });
 
-  it('removeFcmToken gọi DELETE', () => {
+  // ⚠️ BE `RemoveFcmTokenDto` BẮT BUỘC có body `{ token }` -> thiếu body
+  //   là HTTP 400 (ValidationPipe). Vì vậy DELETE phải kèm body.
+  it('removeFcmToken gọi DELETE kèm body { token }', () => {
     ApiClient.delete.mockResolvedValue({});
 
-    return svc.removeFcmToken().then(() => {
-      expect(ApiClient.delete).toHaveBeenCalledWith('/notifications/fcm-token');
+    return svc.removeFcmToken('tok-abc').then(() => {
+      expect(ApiClient.delete).toHaveBeenCalledWith('/notifications/fcm-token', {
+        token: 'tok-abc',
+      });
     });
+  });
+
+  it('removeFcmToken không có token nào đăng ký -> no-op, KHÔNG gọi API', () => {
+    return svc.removeFcmToken().then(() => {
+      expect(ApiClient.delete).not.toHaveBeenCalled();
+    });
+  });
+
+  it('removeFcmToken dùng token đã đăng ký trước đó khi không truyền token', () => {
+    ApiClient.delete.mockResolvedValue({});
+
+    return svc
+      .registerFcmToken('tok-remembered', 'android')
+      .then(() => svc.removeFcmToken())
+      .then(() => {
+        expect(ApiClient.delete).toHaveBeenCalledWith('/notifications/fcm-token', {
+          token: 'tok-remembered',
+        });
+      });
   });
 });

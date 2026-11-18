@@ -236,6 +236,7 @@ export class SupplierProfileService {
       id: p.id,
       userId: p.userId,
       companyName: p.companyName,
+      taxCode: p.taxCode ?? null,
       contactPhone: p.contactPhone ?? null,
       address: p.address ?? null,
       logoPath: p.logoPath ?? null,

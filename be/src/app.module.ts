@@ -27,6 +27,7 @@ import { SupplierModule } from './modules-api/supplier/supplier.module';
 
 // Global guards
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
+import { MaintenanceGuard } from './common/guards/maintenance.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 
 // Global interceptors
@@ -87,10 +88,14 @@ import { TokensModule } from './modules-system/tokens/tokens.module';
     },
 
     // ── Global Guards ─────────────────────────────────────────────────
-    // JwtAuthGuard chạy trước RolesGuard (thứ tự khai báo)
+    // JwtAuthGuard → MaintenanceGuard → RolesGuard (thứ tự khai báo)
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: MaintenanceGuard,
     },
     {
       provide: APP_GUARD,

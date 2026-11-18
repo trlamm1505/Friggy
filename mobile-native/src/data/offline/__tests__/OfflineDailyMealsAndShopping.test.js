@@ -87,10 +87,16 @@ describe('Fix offline - thêm nguyên liệu thiếu vào giỏ mua', () => {
     await outboxQueue.clear();
   });
 
-  it('queue addSlotMissingToShoppingList -> ghi cache pending + đẩy hàng đợi', async () => {
+  // ⚠️ CHUẨN HOÁ THEO BE:
+  //   BE KHÔNG có `POST /meal-planning/slots/{slotId}/missing-to-shopping-list`
+  //   -> thao tác này làm ở CLIENT (SQLite, `sync_status='local_only'`).
+  //   Vì vậy KHÔNG có op nào trong hàng đợi (nếu queue -> sync sẽ gọi
+  //   endpoint không tồn tại -> 404 lặp vô hạn).
+  it('queue addSlotMissingToShoppingList -> ghi cache local_only + KHÔNG đẩy hàng đợi', async () => {
     // Cache chi tiết slot (đã tải về trước đó) -> có `summary.missingItems`.
     await offlineCache.saveRecipeDetail('slot-1', 'slot', {
       id: 'slot-1',
+      servings: 2,
       summary: {
         missingItems: [
           { ingredientId: 3, name: 'Thịt bò', missingQuantity: 2, unit: 'kg' },
@@ -105,20 +111,18 @@ describe('Fix offline - thêm nguyên liệu thiếu vào giỏ mua', () => {
 
     expect(handled).toBe(true);
 
-    // Cache local hiện 2 món pending (optimistic) -> user thấy ngay.
+    // Cache local hiện 2 món (optimistic) -> user thấy ngay.
     const items = await offlineCache.getShoppingItems();
     expect(items).toHaveLength(2);
-    expect(items.every((i) => i._syncStatus === SYNC_STATUS.PENDING)).toBe(true);
+    expect(items.every((i) => i._syncStatus === SYNC_STATUS.LOCAL_ONLY)).toBe(true);
     expect(items.map((i) => i.name).sort()).toEqual(['Hành', 'Thịt bò']);
 
-    // Hàng đợi có op đúng loại.
+    // ⚠️ KHÔNG queue op (BE không có endpoint tương ứng).
     const ops = await outboxQueue.list();
-    expect(ops).toHaveLength(1);
-    expect(ops[0].op_type).toBe(OP_TYPES.SHOPPING_MISSING_ADD);
-    expect(ops[0].payload.slotId).toBe('slot-1');
+    expect(ops).toHaveLength(0);
   });
 
-  it('slot không có cache chi tiết -> vẫn queue (không chết), nhưng không thêm món', async () => {
+  it('slot không có cache chi tiết -> không chết, không thêm món, không queue', async () => {
     const handled = await queueMutation('recipeService', 'addSlotMissingToShoppingList', [
       'slot-khong-co-cache',
     ]);
@@ -129,16 +133,18 @@ describe('Fix offline - thêm nguyên liệu thiếu vào giỏ mua', () => {
     expect(items).toHaveLength(0);
 
     const ops = await outboxQueue.list();
-    expect(ops).toHaveLength(1);
+    expect(ops).toHaveLength(0);
   });
 
   it('removePendingShoppingItemsBySlot xoá đúng các món optimistic của slot', async () => {
     await offlineCache.saveRecipeDetail('slot-1', 'slot', {
+      servings: 2,
       summary: {
         missingItems: [{ ingredientId: 3, name: 'Thịt bò', missingQuantity: 2, unit: 'kg' }],
       },
     });
     await offlineCache.saveRecipeDetail('slot-2', 'slot', {
+      servings: 2,
       summary: {
         missingItems: [{ ingredientId: 9, name: 'Cá', missingQuantity: 1, unit: 'con' }],
       },

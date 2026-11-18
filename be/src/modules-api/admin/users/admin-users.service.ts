@@ -61,15 +61,27 @@ export class AdminUsersService {
               endDate: true,
             },
           },
+          supplierProfile: {
+            select: {
+              subscription: {
+                select: {
+                  status: true,
+                  plan: { select: { name: true, displayName: true } },
+                  endDate: true,
+                },
+              },
+            },
+          },
         },
       }),
       this.prisma.user.count({ where }),
     ]);
 
     return {
-      data: users.map((u) => ({
+      data: users.map(({ supplierProfile, ...u }) => ({
         ...u,
         role: u.role?.name,
+        subscription: u.subscription ?? supplierProfile?.subscription ?? null,
       })),
       total,
       page,
@@ -112,6 +124,18 @@ export class AdminUsersService {
             plan: { select: { name: true, displayName: true, priceVnd: true, aiUsagePerWeek: true } },
           },
         },
+        supplierProfile: {
+          select: {
+            subscription: {
+              select: {
+                status: true,
+                startDate: true,
+                endDate: true,
+                plan: { select: { name: true, displayName: true, priceVnd: true, maxIngredients: true } },
+              },
+            },
+          },
+        },
       },
     });
 
@@ -124,9 +148,12 @@ export class AdminUsersService {
       where: { userId: id, usedAt: { gte: weekAgo } },
     });
 
+    const { supplierProfile, ...rest } = user;
+
     return {
-      ...user,
+      ...rest,
       role: user.role?.name,
+      subscription: user.subscription ?? supplierProfile?.subscription ?? null,
       aiUsageThisWeek: aiUsageCount,
     };
   }

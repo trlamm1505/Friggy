@@ -20,6 +20,10 @@
  *      - 'pending'      : thao tác offline chờ upload
  *      - 'shopping_tick': món mua đã tick offline (chỉ để hiển thị)
  *      - 'conflict'     : upload bị 409, cần user xử lý
+ *      - 'local_only'   : món CHỈ tồn tại ở máy. BE KHÔNG có endpoint tạo /
+ *                         sửa lượng / xoá món lẻ -> không thể đẩy lên server.
+ *      - 'local_deleted': tombstone — user đã xoá món này ở máy -> ẩn khỏi UI
+ *                         và KHÔNG bị "hồi sinh" khi pull dữ liệu server về.
  *   4. Khi pull dữ liệu mới từ server, KHÔNG xoá các row 'pending' (giống
  *      `IngredientLocalService.saveIngredientsCache` của Flutter).
  *
@@ -40,6 +44,27 @@ export const SYNC_STATUS = {
    * Đồng bộ với Flutter `markPendingDelete` (`AllergyLocalService`).
    */
   PENDING_DELETE: 'pending_delete',
+  /**
+   * Món mua CHỈ có ở máy (user tự thêm / tự sửa lượng).
+   *
+   * ⚠️ VÌ SAO CẦN (chuẩn hoá theo BE):
+   *   BE chỉ có 3 endpoint shopping list:
+   *     - `GET    /meal-planning/shopping-lists`
+   *     - `POST   /meal-planning/shopping-lists`
+   *     - `PATCH  /meal-planning/shopping-lists/:listId/items/:itemId` (TOGGLE)
+   *   KHÔNG có endpoint thêm / sửa lượng / xoá món lẻ.
+   *   => Thao tác của user với món lẻ PHẢI lưu ở máy (giống Flutter:
+   *      `shopping_reminder_screen.dart` `_addNewItem` / `_deleteItem` chỉ
+   *      cập nhật state local, KHÔNG gọi API).
+   */
+  LOCAL_ONLY: 'local_only',
+  /**
+   * Tombstone: user đã xoá món này ở máy.
+   *
+   * ⚠️ Row này được GIỮ lại (không DELETE) để khi pull danh sách từ server,
+   *   món đã xoá KHÔNG bị thêm lại vào danh sách.
+   */
+  LOCAL_DELETED: 'local_deleted',
 };
 
 const now = () => Date.now();
@@ -221,6 +246,35 @@ class OfflineCache {
       // Cờ nội bộ: UI có thể hiển thị "đang chờ đồng bộ".
       _syncStatus: row.sync_status ?? SYNC_STATUS.SYNCED,
     }));
+  }
+
+  /**
+   * Đọc `version` (optimistic locking) của 1 món tủ lạnh trong cache.
+   *
+   * ⚠️ VÌ SAO CẦN:
+   *   BE `UpdateFridgeItemDto.version` là `@IsInt() @Min(0)` -> thiếu -> 400.
+   *   Khi UI gọi `updateItem` mà không truyền `version` (vd từ luồng offline
+   *   hoặc từ item vừa load nhiều ngày trước) -> 400.
+   *   => Fallback đọc version đã cache -> PATCH vẫn đúng contract.
+   *
+   * @param {string} id
+   * @returns {Promise<number|null>}
+   */
+  async getFridgeItemVersion(id) {
+    if (!id) return null;
+    try {
+      const db = await this._ensureDb();
+      const row = await db.getFirstAsync(
+        `SELECT version FROM local_ingredients WHERE id = ? LIMIT 1;`,
+        [String(id)]
+      );
+      const version = row?.version;
+      if (version === null || version === undefined) return null;
+      const asNumber = Number(version);
+      return Number.isFinite(asNumber) ? asNumber : null;
+    } catch (_e) {
+      return null;
+    }
   }
 
   /**
@@ -465,6 +519,11 @@ class OfflineCache {
    *   Trường hợp user tick món đã có trên server khi offline -> row đó có
    *   `sync_status='pending'` -> phải giữ trạng thái tick của user.
    *
+   * ⚠️ MÓN ĐÃ XOÁ Ở MÁY ('local_deleted') — KHÔNG được "hồi sinh":
+   *   BE KHÔNG có endpoint xoá món lẻ -> user xoá ở máy -> server vẫn còn.
+   *   Nếu insert lại row từ server -> món đã xoá hiện lại trong danh sách
+   *   (bug user báo). => Giữ tombstone, bỏ qua item server trùng id.
+   *
    * @param {Array<object>} items - shape UI `ShoppingItem` (+ `listId`)
    */
   async saveShoppingItems(items) {
@@ -478,21 +537,29 @@ class OfflineCache {
         SYNC_STATUS.SYNCED,
       ]);
 
-      // Id của các row đang chờ đồng bộ -> KHÔNG được ghi đè bằng dữ liệu
+      // Id của các row CHƯA đồng bộ -> KHÔNG được ghi đè bằng dữ liệu
       // server (xem JSDoc).
-      const pendingRows = await tx.getAllAsync(
-        `SELECT id, backend_item_id FROM local_shopping_items WHERE sync_status = ?;`,
-        [SYNC_STATUS.PENDING]
+      //
+      // ⚠️ Gồm cả 'pending', 'local_only' (món user tự thêm / tự sửa lượng)
+      //   và 'local_deleted' (tombstone) -> mọi row này đều phải được giữ.
+      const protectedRows = await tx.getAllAsync(
+        `SELECT id, backend_item_id FROM local_shopping_items WHERE sync_status != ?;`,
+        [SYNC_STATUS.SYNCED]
       );
-      const pendingIds = new Set(
-        (pendingRows ?? []).flatMap((r) =>
+      const protectedIds = new Set(
+        (protectedRows ?? []).flatMap((r) =>
           [r.id, r.backend_item_id].filter((v) => v !== null && v !== undefined).map(String)
         )
       );
 
       for (const item of items) {
         if (!item?.id) continue;
-        if (pendingIds.has(String(item.id))) continue;
+        if (protectedIds.has(String(item.id))) continue;
+        // Server trả id SỐ (`ShoppingListItemResponseDto.id`) -> so sánh cả
+        // `backend_item_id` để chặn trường hợp id local khác id server.
+        if (item.backendItemId !== undefined && protectedIds.has(String(item.backendItemId))) {
+          continue;
+        }
 
         await tx.runAsync(
           `INSERT OR REPLACE INTO local_shopping_items
@@ -530,18 +597,26 @@ class OfflineCache {
   async getUnpurchasedShoppingCount() {
     const db = await this._ensureDb();
     const row = await db.getFirstAsync(
-      `SELECT COUNT(*) as count FROM local_shopping_items WHERE is_purchased = 0;`
+      `SELECT COUNT(*) as count FROM local_shopping_items
+       WHERE is_purchased = 0 AND sync_status != ?;`,
+      [SYNC_STATUS.LOCAL_DELETED]
     );
     return row?.count ?? 0;
   }
 
   /**
    * Đọc cache danh sách mua.
+   *
+   * ⚠️ Loại bỏ row 'local_deleted' (tombstone — user đã xoá ở máy).
+   *
    * @returns {Promise<Array<object>>}
    */
   async getShoppingItems() {
     const db = await this._ensureDb();
-    const rows = await db.getAllAsync(`SELECT * FROM local_shopping_items;`);
+    const rows = await db.getAllAsync(
+      `SELECT * FROM local_shopping_items WHERE sync_status != ?;`,
+      [SYNC_STATUS.LOCAL_DELETED]
+    );
 
     return (rows ?? []).map((row) => ({
       id: row.backend_item_id ?? row.id,
@@ -559,7 +634,118 @@ class OfflineCache {
   }
 
   /**
+   * Thêm 1 món mua CHỈ ở máy (không đẩy lên server).
+   *
+   * ⚠️ VÌ SAO KHÔNG GỌI API:
+   *   BE KHÔNG có `POST /meal-planning/shopping-lists/:listId/items` -> gọi là
+   *   404. Flutter cũng chỉ thêm ở state local
+   *   (`shopping_reminder_screen.dart` -> `_addNewItem`).
+   *
+   * @param {object} item - `{ id, name, quantity, unit, ingredientId, listId }`
+   * @returns {Promise<string|null>} id local của row vừa tạo
+   */
+  async addLocalShoppingItem(item) {
+    if (!item?.id) return null;
+    const db = await this._ensureDb();
+
+    await db.runAsync(
+      `INSERT OR REPLACE INTO local_shopping_items
+         (id, ingredient_id, ingredient_name, quantity, unit, is_purchased,
+          updated_at, sync_status, list_id, backend_item_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+      [
+        String(item.id),
+        item.ingredientId ?? null,
+        item.name ?? '',
+        item.quantity ?? 0,
+        item.unit ?? '',
+        item.done ? 1 : 0,
+        now(),
+        SYNC_STATUS.LOCAL_ONLY,
+        item.listId ?? null,
+        item.backendItemId ?? null,
+      ]
+    );
+    return String(item.id);
+  }
+
+  /**
+   * Sửa số lượng của 1 món mua ở máy (BE không có endpoint sửa lượng).
+   *
+   * ⚠️ Row giữ nguyên `sync_status` nếu đang là 'local_only' / 'pending'
+   *   -> không đánh dấu 'synced' (sẽ bị pull server ghi đè mất).
+   *
+   * @param {string|number} itemId
+   * @param {number} quantity
+   * @returns {Promise<number>} số row đã cập nhật
+   */
+  async updateShoppingItemQuantityLocal(itemId, quantity) {
+    if (itemId === null || itemId === undefined) return 0;
+    const db = await this._ensureDb();
+
+    // ⚠️ GIỮ NGUYÊN trạng thái đang chờ đồng bộ:
+    //   - Row 'pending' (tick đang chờ upload) -> giữ 'pending', nếu không op
+    //     tick sẽ bị mất trạng thái.
+    //   - Món CHỈ có ở máy (không có id server) -> 'local_only' (BE không có
+    //     endpoint sửa lượng -> không thể đẩy lên server).
+    //   - Món có id server, chưa tick -> 'local_only' (sửa lượng không có
+    //     endpoint -> không được ghi đè lượng của server khi pull).
+    const row = await db.getFirstAsync(
+      `SELECT sync_status FROM local_shopping_items
+        WHERE id = ? OR backend_item_id = ? LIMIT 1;`,
+      [String(itemId), itemId]
+    );
+    const nextStatus =
+      row?.sync_status === SYNC_STATUS.PENDING
+        ? SYNC_STATUS.PENDING
+        : SYNC_STATUS.LOCAL_ONLY;
+
+    const res = await db.runAsync(
+      `UPDATE local_shopping_items
+         SET quantity = ?, updated_at = ?, sync_status = ?
+       WHERE id = ? OR backend_item_id = ?;`,
+      [
+        Number(quantity) || 0,
+        now(),
+        nextStatus,
+        String(itemId),
+        itemId,
+      ]
+    );
+    return res?.changes ?? 0;
+  }
+
+  /**
+   * Đánh dấu 1 món mua đã bị xoá ở máy (tombstone).
+   *
+   * ⚠️ KHÔNG DELETE row:
+   *   BE không có endpoint xoá món lẻ -> server vẫn trả món đó ở
+   *   `GET /shopping-lists`. Nếu xoá hẳn row -> lần pull sau món "hồi sinh".
+   *   => Giữ row với `sync_status='local_deleted'` -> `getShoppingItems()` bỏ qua
+   *      và `saveShoppingItems()` không insert lại item server trùng id.
+   *
+   * @param {string|number} itemId
+   * @returns {Promise<boolean>} true nếu đã đánh dấu
+   */
+  async markShoppingItemLocallyDeleted(itemId) {
+    if (itemId === null || itemId === undefined) return false;
+    const db = await this._ensureDb();
+
+    const res = await db.runAsync(
+      `UPDATE local_shopping_items
+         SET sync_status = ?, updated_at = ?
+       WHERE id = ? OR backend_item_id = ?;`,
+      [SYNC_STATUS.LOCAL_DELETED, now(), String(itemId), itemId]
+    );
+    return (res?.changes ?? 0) > 0;
+  }
+
+  /**
    * Tick / untick 1 món mua trong cache (optimistic offline).
+   *
+   * ⚠️ Món CHỈ có ở máy (`local_only`) -> KHÔNG được đổi sang `pending`:
+   *   món đó không có id server -> không có endpoint để tick -> giữ nguyên
+   *   `local_only` (xem `toggleLocalShoppingItem`).
    *
    * @param {string|number} itemId
    * @param {boolean} isPurchased
@@ -568,12 +754,27 @@ class OfflineCache {
   async setShoppingItemPurchased(itemId, isPurchased, listId = null) {
     const db = await this._ensureDb();
 
+    // ⚠️ Món CHỈ có ở máy (không có `backend_item_id`) -> KHÔNG được đổi
+    //   sang `pending`: món đó không có id server -> không có endpoint để tick
+    //   -> giữ nguyên `local_only` (xem `toggleLocalShoppingItem`).
+    //
+    // ⚠️ Món CÓ id server -> PHẢI đặt `pending` để op tick được upload lên
+    //   BE, kể cả khi trước đó user đã sửa lượng ở máy (row bị đánh dấu
+    //   `local_only`). Nếu giữ `local_only` -> tick KHÔNG BAO GIỜ đồng bộ.
+    const row = await db.getFirstAsync(
+      `SELECT sync_status, backend_item_id FROM local_shopping_items
+        WHERE id = ? OR backend_item_id = ? LIMIT 1;`,
+      [String(itemId), itemId]
+    );
+    const hasBackendId = row?.backend_item_id !== null && row?.backend_item_id !== undefined;
+    const nextStatus = hasBackendId ? SYNC_STATUS.PENDING : SYNC_STATUS.LOCAL_ONLY;
+
     // `backend_item_id` là số (BE dùng ParseIntPipe) -> so sánh cả dạng string.
     await db.runAsync(
       `UPDATE local_shopping_items
          SET is_purchased = ?, updated_at = ?, sync_status = ?
        WHERE id = ? OR backend_item_id = ?;`,
-      [isPurchased ? 1 : 0, now(), SYNC_STATUS.PENDING, String(itemId), itemId]
+      [isPurchased ? 1 : 0, now(), nextStatus, String(itemId), itemId]
     );
 
     if (listId) {
@@ -582,6 +783,86 @@ class OfflineCache {
         [listId, String(itemId), itemId]
       );
     }
+  }
+
+  /**
+   * Tick / untick 1 món mua CHỈ CÓ Ở MÁY (không có id server).
+   *
+   * ⚠️ VÌ SAO CẦN:
+   *   Món user tự thêm (id `local_*`) không tồn tại trên server -> gọi
+   *   `PATCH /meal-planning/shopping-lists/{listId}/items/{itemId}` sẽ bị
+   *   `ParseIntPipe` từ chối -> HTTP 400. Vì vậy tick món local phải làm
+   *   100% ở client và GIỮ nguyên `sync_status = 'local_only'`.
+   *
+   * @param {string|number} itemId
+   * @returns {Promise<boolean>} trạng thái sau khi toggle
+   */
+  async toggleLocalShoppingItem(itemId) {
+    if (itemId === null || itemId === undefined) return false;
+    const db = await this._ensureDb();
+
+    const row = await db.getFirstAsync(
+      `SELECT is_purchased FROM local_shopping_items
+        WHERE id = ? OR backend_item_id = ? LIMIT 1;`,
+      [String(itemId), itemId]
+    );
+    if (!row) return false;
+
+    const next = row.is_purchased === 1 ? 0 : 1;
+    await db.runAsync(
+      `UPDATE local_shopping_items
+         SET is_purchased = ?, updated_at = ?, sync_status = ?
+       WHERE id = ? OR backend_item_id = ?;`,
+      [next, now(), SYNC_STATUS.LOCAL_ONLY, String(itemId), itemId]
+    );
+    return next === 1;
+  }
+
+  /**
+   * Đọc `sync_status` của 1 món mua trong cache.
+   *
+   * @param {string|number} itemId
+   * @returns {Promise<string|null>}
+   */
+  async getShoppingItemSyncStatus(itemId) {
+    if (itemId === null || itemId === undefined) return null;
+    const db = await this._ensureDb();
+    const row = await db.getFirstAsync(
+      `SELECT sync_status FROM local_shopping_items
+        WHERE id = ? OR backend_item_id = ? LIMIT 1;`,
+      [String(itemId), itemId]
+    );
+    return row?.sync_status ?? null;
+  }
+
+  /**
+   * 1 món mua có CHỈ tồn tại ở máy (KHÔNG có id server) hay không?
+   *
+   * ⚠️ PHÂN BIỆT QUAN TRỌNG:
+   *   - Món user TỰ THÊM (id `local_*`, `backend_item_id = NULL`) -> BE KHÔNG có
+   *     endpoint thêm món lẻ -> tick 100% ở client, KHÔNG gọi API.
+   *   - Món CÓ id server (`backend_item_id` khác NULL) -> dù user đã sửa lượng
+   *     ở máy (row bị đánh dấu `local_only`) thì BE VẪN có endpoint tick
+   *     (`PATCH .../items/{itemId}`) -> vẫn PHẢI đồng bộ, chỉ là sửa lượng
+   *     thì không có endpoint.
+   *
+   * @param {string|number} itemId
+   * @returns {Promise<boolean>}
+   */
+  async isShoppingItemLocalOnly(itemId) {
+    if (itemId === null || itemId === undefined) return false;
+    const db = await this._ensureDb();
+    const row = await db.getFirstAsync(
+      `SELECT sync_status, backend_item_id FROM local_shopping_items
+        WHERE id = ? OR backend_item_id = ? LIMIT 1;`,
+      [String(itemId), itemId]
+    );
+    if (!row) return false;
+
+    // Có id server -> KHÔNG phải món chỉ có ở máy.
+    if (row.backend_item_id !== null && row.backend_item_id !== undefined) return false;
+
+    return row.sync_status === SYNC_STATUS.LOCAL_ONLY;
   }
 
   /**
@@ -773,6 +1054,64 @@ class OfflineCache {
   }
 
   /**
+   * Đọc các món mua CHỈ có ở máy (`sync_status = 'local_only'`).
+   *
+   * ⚠️ VÌ SAO CẦN:
+   *   BE không có endpoint thêm món lẻ -> món user tự thêm KHÔNG BAO GIỜ có
+   *   trên server -> đường đọc online (`GET /shopping-lists`) không trả về nó
+   *   -> nếu không gộp, món đó BIẾN MẤT khỏi UI mỗi lần bật mạng.
+   *   => Gộp row 'local_only' vào kết quả server giống row 'pending'.
+   *
+   * @returns {Promise<Array<object>>}
+   */
+  async getLocalOnlyShoppingItems() {
+    const db = await this._ensureDb();
+    const rows = await db.getAllAsync(
+      `SELECT * FROM local_shopping_items WHERE sync_status = ?;`,
+      [SYNC_STATUS.LOCAL_ONLY]
+    );
+
+    return (rows ?? []).map((row) => ({
+      id: row.backend_item_id ?? row.id,
+      ingredientId: row.ingredient_id ?? null,
+      name: row.ingredient_name ?? '',
+      quantity: row.quantity ?? 0,
+      unit: row.unit ?? '',
+      done: row.is_purchased === 1,
+      estimatedPrice: null,
+      purchasedAt: null,
+      supplierSuggestions: [],
+      listId: row.list_id ?? null,
+      _syncStatus: row.sync_status ?? SYNC_STATUS.LOCAL_ONLY,
+    }));
+  }
+
+  /**
+   * Đọc id các món mua đã bị XOÁ ở máy (tombstone `local_deleted`).
+   *
+   * ⚠️ VÌ SAO CẦN:
+   *   BE KHÔNG có endpoint xoá món lẻ -> user xoá ở máy -> server VẪN trả món
+   *   đó ở `GET /meal-planning/shopping-lists`. Nếu không lọc, món đã xoá sẽ
+   *   "hồi sinh" mỗi lần user mở màn danh sách mua (đúng bug user báo).
+   *   => Lọc các id này khỏi kết quả server ở tầng service.
+   *
+   * @returns {Promise<Array<string>>}
+   */
+  async getLocallyDeletedShoppingItemIds() {
+    const db = await this._ensureDb();
+    const rows = await db.getAllAsync(
+      `SELECT id, backend_item_id FROM local_shopping_items WHERE sync_status = ?;`,
+      [SYNC_STATUS.LOCAL_DELETED]
+    );
+
+    return (rows ?? []).flatMap((row) =>
+      [row.id, row.backend_item_id]
+        .filter((v) => v !== null && v !== undefined && v !== '')
+        .map(String)
+    );
+  }
+
+  /**
    * Xoá nhiều món mua theo danh sách id (dùng sau khi sync thành công).
    *
    * @param {Array<string|number>} ids
@@ -793,11 +1132,18 @@ class OfflineCache {
   }
 
   /**
-   * Xoá các món mua "pending" tạo từ 1 slot meal plan.
+   * Xoá các món mua "optimistic" tạo từ 1 slot meal plan.
    *
-   * ⚠️ Dùng sau khi `shopping_missing_add` upload thành công: các row
-   *   optimistic (id `pending_missing_<slotId>_*`) phải bị xoá, nếu không
-   *   danh sách mua sẽ hiện TRÙNG món (bản optimistic + bản thật từ server).
+   * ⚠️ VÌ SAO CẦN:
+   *   Các món thêm từ slot (thiếu nguyên liệu) được lưu ở máy với id
+   *   `local_missing_<slotId>_<index>` (hoặc `pending_missing_<slotId>_*` ở
+   *   bản cũ) -> cần xoá đúng nhóm món của 1 slot.
+   *
+   * ⚠️ CHUẨN HOÁ THEO BE:
+   *   Vì các thao tác món mua giờ làm ở CLIENT (BE không có endpoint tạo /
+   *   xoá món lẻ) nên id prefix là `local_missing_` + `sync_status =
+   *   'local_only'`. Bản cũ dùng `pending_missing_` + `pending` -> vẫn hỗ trợ
+   *   để dọn dẹp dữ liệu cũ.
    *
    * @param {string} slotId
    * @returns {Promise<number>}
@@ -810,13 +1156,14 @@ class OfflineCache {
     //   wildcard "1 ký tự bất kỳ" -> có thể xoá nhầm row khác.
     //   => Lọc bằng JS rồi xoá theo id chính xác.
     const rows = await db.getAllAsync(
-      `SELECT id FROM local_shopping_items WHERE sync_status = ?;`,
-      [SYNC_STATUS.PENDING]
+      `SELECT id, sync_status FROM local_shopping_items
+        WHERE sync_status IN (?, ?);`,
+      [SYNC_STATUS.PENDING, SYNC_STATUS.LOCAL_ONLY]
     );
-    const prefix = `pending_missing_${slotId}_`;
+    const prefixes = [`pending_missing_${slotId}_`, `local_missing_${slotId}_`];
     const targets = (rows ?? [])
       .map((r) => String(r.id ?? ''))
-      .filter((id) => id.startsWith(prefix));
+      .filter((id) => prefixes.some((p) => id.startsWith(p)));
 
     if (targets.length === 0) return 0;
     return this.removeShoppingItems(targets);

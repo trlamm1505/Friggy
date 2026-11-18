@@ -230,15 +230,6 @@ export const ContentType = {
 export type ContentType = (typeof ContentType)[keyof typeof ContentType]
 
 
-export const EvaluationResult = {
-  pass: 'pass',
-  fail: 'fail',
-  max_retries_exceeded: 'max_retries_exceeded'
-} as const
-
-export type EvaluationResult = (typeof EvaluationResult)[keyof typeof EvaluationResult]
-
-
 export const AiProvider = {
   gemini: 'gemini',
   openai: 'openai',
@@ -246,45 +237,6 @@ export const AiProvider = {
 } as const
 
 export type AiProvider = (typeof AiProvider)[keyof typeof AiProvider]
-
-
-export const SponsorStatus = {
-  active: 'active',
-  paused: 'paused',
-  terminated: 'terminated'
-} as const
-
-export type SponsorStatus = (typeof SponsorStatus)[keyof typeof SponsorStatus]
-
-
-export const CampaignType = {
-  banner: 'banner',
-  recipe_highlight: 'recipe_highlight',
-  ingredient_promo: 'ingredient_promo'
-} as const
-
-export type CampaignType = (typeof CampaignType)[keyof typeof CampaignType]
-
-
-export const CampaignStatus = {
-  scheduled: 'scheduled',
-  active: 'active',
-  ended: 'ended'
-} as const
-
-export type CampaignStatus = (typeof CampaignStatus)[keyof typeof CampaignStatus]
-
-
-export const EcommercePlatform = {
-  shopee: 'shopee',
-  lazada: 'lazada',
-  tiki: 'tiki',
-  sendo: 'sendo',
-  bachhoaxanh: 'bachhoaxanh',
-  other: 'other'
-} as const
-
-export type EcommercePlatform = (typeof EcommercePlatform)[keyof typeof EcommercePlatform]
 
 
 export const NotificationType = {

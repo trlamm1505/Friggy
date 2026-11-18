@@ -422,13 +422,8 @@ export const ModelName = {
   AiSystemPrompt: 'AiSystemPrompt',
   ChatSession: 'ChatSession',
   ChatMessage: 'ChatMessage',
-  AiEvaluationLog: 'AiEvaluationLog',
   AiProviderConfig: 'AiProviderConfig',
   AiUsageLog: 'AiUsageLog',
-  Sponsor: 'Sponsor',
-  SponsorCampaign: 'SponsorCampaign',
-  CampaignRecipe: 'CampaignRecipe',
-  IngredientPurchaseLink: 'IngredientPurchaseLink',
   AdminActivityLog: 'AdminActivityLog',
   Notification: 'Notification',
   UserDevice: 'UserDevice',
@@ -460,7 +455,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "role" | "user" | "emailOtp" | "userProfile" | "userPreference" | "refreshToken" | "ingredientCategory" | "ingredient" | "tag" | "recipe" | "recipeIngredient" | "recipeStep" | "recipeTag" | "userSavedRecipe" | "fridgeItem" | "ingredientScanLog" | "userAllergy" | "weeklyPlan" | "dailyPlan" | "mealSlot" | "shoppingList" | "shoppingListItem" | "aiSystemPrompt" | "chatSession" | "chatMessage" | "aiEvaluationLog" | "aiProviderConfig" | "aiUsageLog" | "sponsor" | "sponsorCampaign" | "campaignRecipe" | "ingredientPurchaseLink" | "adminActivityLog" | "notification" | "userDevice" | "cronJobConfig" | "subscriptionPlan" | "userSubscription" | "paymentTransaction" | "familyGroup" | "familyMember" | "systemConfig" | "supplierProfile" | "supplierPlan" | "supplierSubscription" | "supplierIngredient" | "supplierPaymentTransaction" | "supplierApplication"
+    modelProps: "role" | "user" | "emailOtp" | "userProfile" | "userPreference" | "refreshToken" | "ingredientCategory" | "ingredient" | "tag" | "recipe" | "recipeIngredient" | "recipeStep" | "recipeTag" | "userSavedRecipe" | "fridgeItem" | "ingredientScanLog" | "userAllergy" | "weeklyPlan" | "dailyPlan" | "mealSlot" | "shoppingList" | "shoppingListItem" | "aiSystemPrompt" | "chatSession" | "chatMessage" | "aiProviderConfig" | "aiUsageLog" | "adminActivityLog" | "notification" | "userDevice" | "cronJobConfig" | "subscriptionPlan" | "userSubscription" | "paymentTransaction" | "familyGroup" | "familyMember" | "systemConfig" | "supplierProfile" | "supplierPlan" | "supplierSubscription" | "supplierIngredient" | "supplierPaymentTransaction" | "supplierApplication"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -2114,72 +2109,6 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
-    AiEvaluationLog: {
-      payload: Prisma.$AiEvaluationLogPayload<ExtArgs>
-      fields: Prisma.AiEvaluationLogFieldRefs
-      operations: {
-        findUnique: {
-          args: Prisma.AiEvaluationLogFindUniqueArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$AiEvaluationLogPayload> | null
-        }
-        findUniqueOrThrow: {
-          args: Prisma.AiEvaluationLogFindUniqueOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$AiEvaluationLogPayload>
-        }
-        findFirst: {
-          args: Prisma.AiEvaluationLogFindFirstArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$AiEvaluationLogPayload> | null
-        }
-        findFirstOrThrow: {
-          args: Prisma.AiEvaluationLogFindFirstOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$AiEvaluationLogPayload>
-        }
-        findMany: {
-          args: Prisma.AiEvaluationLogFindManyArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$AiEvaluationLogPayload>[]
-        }
-        create: {
-          args: Prisma.AiEvaluationLogCreateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$AiEvaluationLogPayload>
-        }
-        createMany: {
-          args: Prisma.AiEvaluationLogCreateManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        delete: {
-          args: Prisma.AiEvaluationLogDeleteArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$AiEvaluationLogPayload>
-        }
-        update: {
-          args: Prisma.AiEvaluationLogUpdateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$AiEvaluationLogPayload>
-        }
-        deleteMany: {
-          args: Prisma.AiEvaluationLogDeleteManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        updateMany: {
-          args: Prisma.AiEvaluationLogUpdateManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        upsert: {
-          args: Prisma.AiEvaluationLogUpsertArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$AiEvaluationLogPayload>
-        }
-        aggregate: {
-          args: Prisma.AiEvaluationLogAggregateArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.AggregateAiEvaluationLog>
-        }
-        groupBy: {
-          args: Prisma.AiEvaluationLogGroupByArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.AiEvaluationLogGroupByOutputType>[]
-        }
-        count: {
-          args: Prisma.AiEvaluationLogCountArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.AiEvaluationLogCountAggregateOutputType> | number
-        }
-      }
-    }
     AiProviderConfig: {
       payload: Prisma.$AiProviderConfigPayload<ExtArgs>
       fields: Prisma.AiProviderConfigFieldRefs
@@ -2309,270 +2238,6 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.AiUsageLogCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.AiUsageLogCountAggregateOutputType> | number
-        }
-      }
-    }
-    Sponsor: {
-      payload: Prisma.$SponsorPayload<ExtArgs>
-      fields: Prisma.SponsorFieldRefs
-      operations: {
-        findUnique: {
-          args: Prisma.SponsorFindUniqueArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$SponsorPayload> | null
-        }
-        findUniqueOrThrow: {
-          args: Prisma.SponsorFindUniqueOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$SponsorPayload>
-        }
-        findFirst: {
-          args: Prisma.SponsorFindFirstArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$SponsorPayload> | null
-        }
-        findFirstOrThrow: {
-          args: Prisma.SponsorFindFirstOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$SponsorPayload>
-        }
-        findMany: {
-          args: Prisma.SponsorFindManyArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$SponsorPayload>[]
-        }
-        create: {
-          args: Prisma.SponsorCreateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$SponsorPayload>
-        }
-        createMany: {
-          args: Prisma.SponsorCreateManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        delete: {
-          args: Prisma.SponsorDeleteArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$SponsorPayload>
-        }
-        update: {
-          args: Prisma.SponsorUpdateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$SponsorPayload>
-        }
-        deleteMany: {
-          args: Prisma.SponsorDeleteManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        updateMany: {
-          args: Prisma.SponsorUpdateManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        upsert: {
-          args: Prisma.SponsorUpsertArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$SponsorPayload>
-        }
-        aggregate: {
-          args: Prisma.SponsorAggregateArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.AggregateSponsor>
-        }
-        groupBy: {
-          args: Prisma.SponsorGroupByArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.SponsorGroupByOutputType>[]
-        }
-        count: {
-          args: Prisma.SponsorCountArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.SponsorCountAggregateOutputType> | number
-        }
-      }
-    }
-    SponsorCampaign: {
-      payload: Prisma.$SponsorCampaignPayload<ExtArgs>
-      fields: Prisma.SponsorCampaignFieldRefs
-      operations: {
-        findUnique: {
-          args: Prisma.SponsorCampaignFindUniqueArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$SponsorCampaignPayload> | null
-        }
-        findUniqueOrThrow: {
-          args: Prisma.SponsorCampaignFindUniqueOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$SponsorCampaignPayload>
-        }
-        findFirst: {
-          args: Prisma.SponsorCampaignFindFirstArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$SponsorCampaignPayload> | null
-        }
-        findFirstOrThrow: {
-          args: Prisma.SponsorCampaignFindFirstOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$SponsorCampaignPayload>
-        }
-        findMany: {
-          args: Prisma.SponsorCampaignFindManyArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$SponsorCampaignPayload>[]
-        }
-        create: {
-          args: Prisma.SponsorCampaignCreateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$SponsorCampaignPayload>
-        }
-        createMany: {
-          args: Prisma.SponsorCampaignCreateManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        delete: {
-          args: Prisma.SponsorCampaignDeleteArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$SponsorCampaignPayload>
-        }
-        update: {
-          args: Prisma.SponsorCampaignUpdateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$SponsorCampaignPayload>
-        }
-        deleteMany: {
-          args: Prisma.SponsorCampaignDeleteManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        updateMany: {
-          args: Prisma.SponsorCampaignUpdateManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        upsert: {
-          args: Prisma.SponsorCampaignUpsertArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$SponsorCampaignPayload>
-        }
-        aggregate: {
-          args: Prisma.SponsorCampaignAggregateArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.AggregateSponsorCampaign>
-        }
-        groupBy: {
-          args: Prisma.SponsorCampaignGroupByArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.SponsorCampaignGroupByOutputType>[]
-        }
-        count: {
-          args: Prisma.SponsorCampaignCountArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.SponsorCampaignCountAggregateOutputType> | number
-        }
-      }
-    }
-    CampaignRecipe: {
-      payload: Prisma.$CampaignRecipePayload<ExtArgs>
-      fields: Prisma.CampaignRecipeFieldRefs
-      operations: {
-        findUnique: {
-          args: Prisma.CampaignRecipeFindUniqueArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$CampaignRecipePayload> | null
-        }
-        findUniqueOrThrow: {
-          args: Prisma.CampaignRecipeFindUniqueOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$CampaignRecipePayload>
-        }
-        findFirst: {
-          args: Prisma.CampaignRecipeFindFirstArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$CampaignRecipePayload> | null
-        }
-        findFirstOrThrow: {
-          args: Prisma.CampaignRecipeFindFirstOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$CampaignRecipePayload>
-        }
-        findMany: {
-          args: Prisma.CampaignRecipeFindManyArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$CampaignRecipePayload>[]
-        }
-        create: {
-          args: Prisma.CampaignRecipeCreateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$CampaignRecipePayload>
-        }
-        createMany: {
-          args: Prisma.CampaignRecipeCreateManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        delete: {
-          args: Prisma.CampaignRecipeDeleteArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$CampaignRecipePayload>
-        }
-        update: {
-          args: Prisma.CampaignRecipeUpdateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$CampaignRecipePayload>
-        }
-        deleteMany: {
-          args: Prisma.CampaignRecipeDeleteManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        updateMany: {
-          args: Prisma.CampaignRecipeUpdateManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        upsert: {
-          args: Prisma.CampaignRecipeUpsertArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$CampaignRecipePayload>
-        }
-        aggregate: {
-          args: Prisma.CampaignRecipeAggregateArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.AggregateCampaignRecipe>
-        }
-        groupBy: {
-          args: Prisma.CampaignRecipeGroupByArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.CampaignRecipeGroupByOutputType>[]
-        }
-        count: {
-          args: Prisma.CampaignRecipeCountArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.CampaignRecipeCountAggregateOutputType> | number
-        }
-      }
-    }
-    IngredientPurchaseLink: {
-      payload: Prisma.$IngredientPurchaseLinkPayload<ExtArgs>
-      fields: Prisma.IngredientPurchaseLinkFieldRefs
-      operations: {
-        findUnique: {
-          args: Prisma.IngredientPurchaseLinkFindUniqueArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$IngredientPurchaseLinkPayload> | null
-        }
-        findUniqueOrThrow: {
-          args: Prisma.IngredientPurchaseLinkFindUniqueOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$IngredientPurchaseLinkPayload>
-        }
-        findFirst: {
-          args: Prisma.IngredientPurchaseLinkFindFirstArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$IngredientPurchaseLinkPayload> | null
-        }
-        findFirstOrThrow: {
-          args: Prisma.IngredientPurchaseLinkFindFirstOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$IngredientPurchaseLinkPayload>
-        }
-        findMany: {
-          args: Prisma.IngredientPurchaseLinkFindManyArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$IngredientPurchaseLinkPayload>[]
-        }
-        create: {
-          args: Prisma.IngredientPurchaseLinkCreateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$IngredientPurchaseLinkPayload>
-        }
-        createMany: {
-          args: Prisma.IngredientPurchaseLinkCreateManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        delete: {
-          args: Prisma.IngredientPurchaseLinkDeleteArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$IngredientPurchaseLinkPayload>
-        }
-        update: {
-          args: Prisma.IngredientPurchaseLinkUpdateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$IngredientPurchaseLinkPayload>
-        }
-        deleteMany: {
-          args: Prisma.IngredientPurchaseLinkDeleteManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        updateMany: {
-          args: Prisma.IngredientPurchaseLinkUpdateManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        upsert: {
-          args: Prisma.IngredientPurchaseLinkUpsertArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$IngredientPurchaseLinkPayload>
-        }
-        aggregate: {
-          args: Prisma.IngredientPurchaseLinkAggregateArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.AggregateIngredientPurchaseLink>
-        }
-        groupBy: {
-          args: Prisma.IngredientPurchaseLinkGroupByArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.IngredientPurchaseLinkGroupByOutputType>[]
-        }
-        count: {
-          args: Prisma.IngredientPurchaseLinkCountArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.IngredientPurchaseLinkCountAggregateOutputType> | number
         }
       }
     }
@@ -4060,22 +3725,6 @@ export const ChatMessageScalarFieldEnum = {
 export type ChatMessageScalarFieldEnum = (typeof ChatMessageScalarFieldEnum)[keyof typeof ChatMessageScalarFieldEnum]
 
 
-export const AiEvaluationLogScalarFieldEnum = {
-  id: 'id',
-  sessionId: 'sessionId',
-  weeklyPlanId: 'weeklyPlanId',
-  attemptNumber: 'attemptNumber',
-  evaluationResult: 'evaluationResult',
-  failureReasons: 'failureReasons',
-  budgetAllocated: 'budgetAllocated',
-  budgetCalculated: 'budgetCalculated',
-  createdAt: 'createdAt',
-  deletedAt: 'deletedAt'
-} as const
-
-export type AiEvaluationLogScalarFieldEnum = (typeof AiEvaluationLogScalarFieldEnum)[keyof typeof AiEvaluationLogScalarFieldEnum]
-
-
 export const AiProviderConfigScalarFieldEnum = {
   id: 'id',
   provider: 'provider',
@@ -4104,67 +3753,6 @@ export const AiUsageLogScalarFieldEnum = {
 } as const
 
 export type AiUsageLogScalarFieldEnum = (typeof AiUsageLogScalarFieldEnum)[keyof typeof AiUsageLogScalarFieldEnum]
-
-
-export const SponsorScalarFieldEnum = {
-  id: 'id',
-  name: 'name',
-  logoPath: 'logoPath',
-  websiteUrl: 'websiteUrl',
-  contactEmail: 'contactEmail',
-  status: 'status',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt',
-  deletedAt: 'deletedAt'
-} as const
-
-export type SponsorScalarFieldEnum = (typeof SponsorScalarFieldEnum)[keyof typeof SponsorScalarFieldEnum]
-
-
-export const SponsorCampaignScalarFieldEnum = {
-  id: 'id',
-  sponsorId: 'sponsorId',
-  title: 'title',
-  description: 'description',
-  campaignType: 'campaignType',
-  targetAudience: 'targetAudience',
-  startDate: 'startDate',
-  endDate: 'endDate',
-  status: 'status',
-  createdAt: 'createdAt',
-  deletedAt: 'deletedAt'
-} as const
-
-export type SponsorCampaignScalarFieldEnum = (typeof SponsorCampaignScalarFieldEnum)[keyof typeof SponsorCampaignScalarFieldEnum]
-
-
-export const CampaignRecipeScalarFieldEnum = {
-  campaignId: 'campaignId',
-  recipeId: 'recipeId',
-  priority: 'priority'
-} as const
-
-export type CampaignRecipeScalarFieldEnum = (typeof CampaignRecipeScalarFieldEnum)[keyof typeof CampaignRecipeScalarFieldEnum]
-
-
-export const IngredientPurchaseLinkScalarFieldEnum = {
-  id: 'id',
-  ingredientId: 'ingredientId',
-  sponsorId: 'sponsorId',
-  platform: 'platform',
-  productName: 'productName',
-  purchaseUrl: 'purchaseUrl',
-  priceVnd: 'priceVnd',
-  unitDescription: 'unitDescription',
-  thumbnailPath: 'thumbnailPath',
-  isActive: 'isActive',
-  priority: 'priority',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt',
-  deletedAt: 'deletedAt'
-} as const
-
-export type IngredientPurchaseLinkScalarFieldEnum = (typeof IngredientPurchaseLinkScalarFieldEnum)[keyof typeof IngredientPurchaseLinkScalarFieldEnum]
 
 
 export const AdminActivityLogScalarFieldEnum = {
@@ -4328,6 +3916,7 @@ export const SupplierProfileScalarFieldEnum = {
   id: 'id',
   userId: 'userId',
   companyName: 'companyName',
+  taxCode: 'taxCode',
   contactPhone: 'contactPhone',
   address: 'address',
   logoPath: 'logoPath',
@@ -4426,6 +4015,7 @@ export type SupplierPaymentTransactionScalarFieldEnum = (typeof SupplierPaymentT
 export const SupplierApplicationScalarFieldEnum = {
   id: 'id',
   companyName: 'companyName',
+  taxCode: 'taxCode',
   contactName: 'contactName',
   email: 'email',
   phone: 'phone',
@@ -4730,15 +4320,6 @@ export const ChatMessageOrderByRelevanceFieldEnum = {
 export type ChatMessageOrderByRelevanceFieldEnum = (typeof ChatMessageOrderByRelevanceFieldEnum)[keyof typeof ChatMessageOrderByRelevanceFieldEnum]
 
 
-export const AiEvaluationLogOrderByRelevanceFieldEnum = {
-  id: 'id',
-  sessionId: 'sessionId',
-  weeklyPlanId: 'weeklyPlanId'
-} as const
-
-export type AiEvaluationLogOrderByRelevanceFieldEnum = (typeof AiEvaluationLogOrderByRelevanceFieldEnum)[keyof typeof AiEvaluationLogOrderByRelevanceFieldEnum]
-
-
 export const AiProviderConfigOrderByRelevanceFieldEnum = {
   modelName: 'modelName',
   encryptedApiKey: 'encryptedApiKey',
@@ -4756,43 +4337,6 @@ export const AiUsageLogOrderByRelevanceFieldEnum = {
 } as const
 
 export type AiUsageLogOrderByRelevanceFieldEnum = (typeof AiUsageLogOrderByRelevanceFieldEnum)[keyof typeof AiUsageLogOrderByRelevanceFieldEnum]
-
-
-export const SponsorOrderByRelevanceFieldEnum = {
-  name: 'name',
-  logoPath: 'logoPath',
-  websiteUrl: 'websiteUrl',
-  contactEmail: 'contactEmail'
-} as const
-
-export type SponsorOrderByRelevanceFieldEnum = (typeof SponsorOrderByRelevanceFieldEnum)[keyof typeof SponsorOrderByRelevanceFieldEnum]
-
-
-export const SponsorCampaignOrderByRelevanceFieldEnum = {
-  id: 'id',
-  title: 'title',
-  description: 'description'
-} as const
-
-export type SponsorCampaignOrderByRelevanceFieldEnum = (typeof SponsorCampaignOrderByRelevanceFieldEnum)[keyof typeof SponsorCampaignOrderByRelevanceFieldEnum]
-
-
-export const CampaignRecipeOrderByRelevanceFieldEnum = {
-  campaignId: 'campaignId',
-  recipeId: 'recipeId'
-} as const
-
-export type CampaignRecipeOrderByRelevanceFieldEnum = (typeof CampaignRecipeOrderByRelevanceFieldEnum)[keyof typeof CampaignRecipeOrderByRelevanceFieldEnum]
-
-
-export const IngredientPurchaseLinkOrderByRelevanceFieldEnum = {
-  productName: 'productName',
-  purchaseUrl: 'purchaseUrl',
-  unitDescription: 'unitDescription',
-  thumbnailPath: 'thumbnailPath'
-} as const
-
-export type IngredientPurchaseLinkOrderByRelevanceFieldEnum = (typeof IngredientPurchaseLinkOrderByRelevanceFieldEnum)[keyof typeof IngredientPurchaseLinkOrderByRelevanceFieldEnum]
 
 
 export const AdminActivityLogOrderByRelevanceFieldEnum = {
@@ -4908,6 +4452,7 @@ export const SupplierProfileOrderByRelevanceFieldEnum = {
   id: 'id',
   userId: 'userId',
   companyName: 'companyName',
+  taxCode: 'taxCode',
   contactPhone: 'contactPhone',
   address: 'address',
   logoPath: 'logoPath',
@@ -4971,6 +4516,7 @@ export type SupplierPaymentTransactionOrderByRelevanceFieldEnum = (typeof Suppli
 export const SupplierApplicationOrderByRelevanceFieldEnum = {
   id: 'id',
   companyName: 'companyName',
+  taxCode: 'taxCode',
   contactName: 'contactName',
   email: 'email',
   phone: 'phone',
@@ -5196,44 +4742,9 @@ export type EnumContentTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$Pris
 
 
 /**
- * Reference to a field of type 'EvaluationResult'
- */
-export type EnumEvaluationResultFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'EvaluationResult'>
-    
-
-
-/**
  * Reference to a field of type 'AiProvider'
  */
 export type EnumAiProviderFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'AiProvider'>
-    
-
-
-/**
- * Reference to a field of type 'SponsorStatus'
- */
-export type EnumSponsorStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'SponsorStatus'>
-    
-
-
-/**
- * Reference to a field of type 'CampaignType'
- */
-export type EnumCampaignTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'CampaignType'>
-    
-
-
-/**
- * Reference to a field of type 'CampaignStatus'
- */
-export type EnumCampaignStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'CampaignStatus'>
-    
-
-
-/**
- * Reference to a field of type 'EcommercePlatform'
- */
-export type EnumEcommercePlatformFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'EcommercePlatform'>
     
 
 
@@ -5433,13 +4944,8 @@ export type GlobalOmitConfig = {
   aiSystemPrompt?: Prisma.AiSystemPromptOmit
   chatSession?: Prisma.ChatSessionOmit
   chatMessage?: Prisma.ChatMessageOmit
-  aiEvaluationLog?: Prisma.AiEvaluationLogOmit
   aiProviderConfig?: Prisma.AiProviderConfigOmit
   aiUsageLog?: Prisma.AiUsageLogOmit
-  sponsor?: Prisma.SponsorOmit
-  sponsorCampaign?: Prisma.SponsorCampaignOmit
-  campaignRecipe?: Prisma.CampaignRecipeOmit
-  ingredientPurchaseLink?: Prisma.IngredientPurchaseLinkOmit
   adminActivityLog?: Prisma.AdminActivityLogOmit
   notification?: Prisma.NotificationOmit
   userDevice?: Prisma.UserDeviceOmit

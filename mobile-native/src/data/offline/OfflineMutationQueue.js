@@ -35,8 +35,13 @@ export const queueMutation = async (serviceKey, methodName, args = []) => {
   if (!handler) return false;
 
   // Method này không phải thao tác offline được -> để lỗi ném lên UI.
-  if (typeof handler.canQueue === 'function' && !handler.canQueue(args)) {
-    return false;
+  //
+  // ⚠️ `canQueue` có thể là hàm BẤT ĐỒNG BỘ (vd handler toggle món mua cần
+  //   tra cache để biết món đó có tồn tại trên server hay không) -> phải
+  //   `await` kết quả.
+  if (typeof handler.canQueue === 'function') {
+    const canQueue = await handler.canQueue(args);
+    if (!canQueue) return false;
   }
 
   const entityId =
@@ -73,8 +78,12 @@ export const queueMutation = async (serviceKey, methodName, args = []) => {
   //   Vì vậy thay đổi trên item pending được GỘP vào payload op `FRIDGE_ADD`
   //   đang chờ (xem handler `updateItem`) -> KHÔNG tạo op `FRIDGE_UPDATE` mới.
   //   Handler báo qua `suppressEnqueue(args, ctx) === true`.
+  // ⚠️ `suppressEnqueue` có thể là hàm BẤT ĐỒNG BỘ (vd handler toggle món mua
+  //   cần tra cache để biết món đó có id server hay không) -> phải `await`.
   const suppress =
-    typeof handler.suppressEnqueue === 'function' && handler.suppressEnqueue(args, { entityId });
+    typeof handler.suppressEnqueue === 'function'
+      ? await handler.suppressEnqueue(args, { entityId })
+      : false;
 
   if (!suppress) {
     await outboxQueue.enqueue(handler.opType, payload, entityId, handler.enqueueOptions ?? {});

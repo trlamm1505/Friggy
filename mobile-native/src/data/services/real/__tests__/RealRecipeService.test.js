@@ -955,106 +955,134 @@ describe('11. B4 — Shopping list', () => {
   // Shopping list CRUD mới — dùng cho nút "+ Thêm vào DS"
   // ─────────────────────────────────────────────────────────
 
-  it('getActiveShoppingList -> GET /shopping-lists/active, map items', async () => {
-    api.get.mockResolvedValue(beList());
+  // ⚠️ CHUẨN HOÁ THEO BE — các endpoint sau KHÔNG TỒN TẠI ở BE:
+  //   POST   /meal-planning/shopping-lists/{listId}/items
+  //   DELETE /meal-planning/shopping-lists/{listId}/items/{itemId}
+  //   POST   /meal-planning/slots/{slotId}/missing-to-shopping-list
+  //   GET    /meal-planning/shopping-lists/active
+  // => Các thao tác này được làm ở CLIENT (SQLite), giống Flutter.
+  // ─────────────────────────────────────────────────────────
+
+  it('getActiveShoppingList -> GET /shopping-lists (KHÔNG có route /active)', async () => {
+    api.get.mockResolvedValue([beList()]);
 
     const list = await svc.getActiveShoppingList();
 
-    expect(api.get).toHaveBeenCalledWith('/meal-planning/shopping-lists/active');
+    expect(api.get).toHaveBeenCalledWith('/meal-planning/shopping-lists');
+    expect(api.get).not.toHaveBeenCalledWith('/meal-planning/shopping-lists/active');
     expect(list.id).toBe('list-1');
     expect(list.items[0].name).toBe('Thịt bò');
   });
 
-  it('addShoppingListItem -> POST đúng URL + body, trả item đã map', async () => {
-    api.post.mockResolvedValue({
-      id: 5,
-      ingredientId: 9,
-      ingredientName: 'Cà chua',
-      quantity: 2,
-      unit: 'kg',
-      isPurchased: false,
-    });
+  it('getActiveShoppingList ưu tiên list "active", rồi "draft", rồi list đầu tiên', async () => {
+    api.get.mockResolvedValue([
+      beList({ id: 'list-draft', status: 'draft' }),
+      beList({ id: 'list-active', status: 'active' }),
+    ]);
 
-    const item = await svc.addShoppingListItem('list-1', {
-      ingredientId: 9,
-      quantity: 2,
-      unit: 'kg',
-    });
+    const list = await svc.getActiveShoppingList();
 
-    expect(api.post).toHaveBeenCalledWith('/meal-planning/shopping-lists/list-1/items', {
-      ingredientId: 9,
-      quantity: 2,
-      unit: 'kg',
-    });
-    expect(item.id).toBe(5);
-    expect(item.name).toBe('Cà chua');
-    expect(item.done).toBe(false);
+    expect(list.id).toBe('list-active');
   });
 
-  it('addShoppingListItem thiếu ingredientId -> KHÔNG gọi API', async () => {
+  it('getActiveShoppingList không có list nào -> trả null', async () => {
+    api.get.mockResolvedValue([]);
+
+    await expect(svc.getActiveShoppingList()).resolves.toBeNull();
+  });
+
+  it('addShoppingListItem -> LÀM Ở CLIENT, KHÔNG gọi API (BE không có endpoint)', async () => {
+    const item = await svc.addShoppingListItem('list-1', {
+      ingredientId: 9,
+      name: 'Cà chua',
+      quantity: 2,
+      unit: 'kg',
+    });
+
+    expect(api.post).not.toHaveBeenCalled();
+    expect(api.patch).not.toHaveBeenCalled();
+    expect(api.delete).not.toHaveBeenCalled();
+    expect(item.id).toMatch(/^local_/);
+    expect(item.name).toBe('Cà chua');
+    expect(item.quantity).toBe(2);
+    expect(item.done).toBe(false);
+    expect(item.listId).toBe('list-1');
+  });
+
+  it('addShoppingListItem thiếu ingredientId VÀ name -> KHÔNG gọi API, trả null', async () => {
     const result = await svc.addShoppingListItem('list-1', {});
 
     expect(result).toBeNull();
     expect(api.post).not.toHaveBeenCalled();
   });
 
-  it('addSlotMissingToShoppingList -> POST /slots/:id/missing-to-shopping-list', async () => {
-    api.post.mockResolvedValue({
-      listId: 'list-1',
-      addedCount: 2,
-      addedItems: [{ id: 1, name: 'Thịt bò' }],
+  it('addSlotMissingToShoppingList -> tính ở CLIENT từ GET /slots/:id, KHÔNG POST', async () => {
+    api.get.mockResolvedValue({
+      id: 'slot-1',
+      servings: 2,
+      summary: {
+        missingItems: [
+          { ingredientId: 3, name: 'Thịt bò', missingQuantity: 2, unit: 'kg' },
+          { ingredientId: 4, name: 'Hành', missingQuantity: 1, unit: 'củ' },
+        ],
+      },
+    });
+    api.get.mockImplementation(async (url) => {
+      if (String(url).includes('/shopping-lists')) return [beList()];
+      return {
+        id: 'slot-1',
+        servings: 2,
+        summary: {
+          missingItems: [
+            { ingredientId: 3, name: 'Thịt bò', missingQuantity: 2, unit: 'kg' },
+            { ingredientId: 4, name: 'Hành', missingQuantity: 1, unit: 'củ' },
+          ],
+        },
+      };
     });
 
     const result = await svc.addSlotMissingToShoppingList('slot-1');
 
-    expect(api.post).toHaveBeenCalledWith(
+    // ⚠️ KHÔNG được gọi route không tồn tại.
+    expect(api.post).not.toHaveBeenCalledWith(
       '/meal-planning/slots/slot-1/missing-to-shopping-list',
-      {}
+      expect.anything()
     );
     expect(result.addedCount).toBe(2);
     expect(result.listId).toBe('list-1');
   });
 
-  // ⚠️ P0 — khẩu phần: BE scale lượng mua theo `servings` user chọn.
-  it('addSlotMissingToShoppingList GỬI `servings` (BE scale lượng theo khẩu phần)', async () => {
-    api.post.mockResolvedValue({
-      listId: 'list-1',
-      addedCount: 1,
-      addedItems: [],
-      servings: 4,
+  // ⚠️ P0 — khẩu phần: lượng mua phải scale theo `servings` user chọn.
+  it('addSlotMissingToShoppingList scale lượng theo `servings` user chọn', async () => {
+    api.get.mockImplementation(async (url) => {
+      if (String(url).includes('/shopping-lists')) return [beList()];
+      return {
+        id: 'slot-1',
+        servings: 2,
+        summary: {
+          missingItems: [{ ingredientId: 3, name: 'Thịt bò', missingQuantity: 2, unit: 'kg' }],
+        },
+      };
     });
 
     const result = await svc.addSlotMissingToShoppingList('slot-1', { servings: 4 });
 
-    expect(api.post).toHaveBeenCalledWith(
-      '/meal-planning/slots/slot-1/missing-to-shopping-list',
-      { servings: 4 }
-    );
     expect(result.servings).toBe(4);
+    // servings gấp đôi -> lượng mua gấp đôi.
+    expect(result.addedItems[0].quantity).toBe(4);
   });
 
   it('addSlotMissingToShoppingList thiếu slotId -> trả về 0 món, KHÔNG gọi API', async () => {
     const result = await svc.addSlotMissingToShoppingList(null);
 
-    expect(result).toEqual({ listId: null, addedCount: 0, addedItems: [] });
+    expect(result).toEqual({ listId: null, addedCount: 0, addedItems: [], servings: null });
     expect(api.post).not.toHaveBeenCalled();
   });
 
-  it('updateShoppingListItem -> PATCH kèm quantity', async () => {
-    api.patch.mockResolvedValue({
-      id: 1,
-      ingredientId: 9,
-      ingredientName: 'Thịt bò',
-      quantity: 3,
-      unit: 'g',
-      isPurchased: false,
-    });
-
+  it('updateShoppingListItem -> sửa lượng ở CLIENT, KHÔNG gọi PATCH (BE toggle, không có body)', async () => {
     const item = await svc.updateShoppingListItem('list-1', 1, { quantity: 3 });
 
-    expect(api.patch).toHaveBeenCalledWith('/meal-planning/shopping-lists/list-1/items/1', {
-      quantity: 3,
-    });
+    expect(api.patch).not.toHaveBeenCalled();
     expect(item.quantity).toBe(3);
   });
 
@@ -1065,12 +1093,10 @@ describe('11. B4 — Shopping list', () => {
     expect(api.patch).not.toHaveBeenCalled();
   });
 
-  it('removeShoppingListItem -> DELETE đúng URL', async () => {
-    api.delete.mockResolvedValue(null);
-
+  it('removeShoppingListItem -> đánh dấu xoá ở CLIENT, KHÔNG gọi DELETE', async () => {
     await svc.removeShoppingListItem('list-1', 1);
 
-    expect(api.delete).toHaveBeenCalledWith('/meal-planning/shopping-lists/list-1/items/1');
+    expect(api.delete).not.toHaveBeenCalled();
   });
 
   it('removeShoppingListItem thiếu id -> KHÔNG gọi API', async () => {

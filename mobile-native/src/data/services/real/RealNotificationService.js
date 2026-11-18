@@ -89,6 +89,15 @@ export const toNotification = (dto) => {
 export class RealNotificationService {
   constructor() {
     this.client = ApiClient;
+    /**
+     * Token FCM đăng ký gần nhất (giữ trong RAM).
+     *
+     * ⚠️ VÌ SAO CẦN:
+     *   BE `DELETE /notifications/fcm-token` BẮT BUỘC body `{ token }`.
+     *   Nếu không nhớ token đã đăng ký -> không biết gỡ cái gì -> bỏ qua
+     *   request (thay vì gửi body rỗng -> 400).
+     */
+    this._lastRegisteredToken = null;
   }
 
   /**
@@ -194,16 +203,32 @@ export class RealNotificationService {
     if (!token) {
       throw new Error('Thiếu FCM token');
     }
+    this._lastRegisteredToken = token;
     return this.client.post('/notifications/fcm-token', { token, platform });
   }
 
   /**
    * DELETE /notifications/fcm-token — gỡ token (gọi khi logout).
    *
+   * ⚠️ BE BẮT BUỘC có body: `RemoveFcmTokenDto.token` là `@IsString()
+   *   @IsNotEmpty()` -> thiếu body -> HTTP 400 (ValidationPipe).
+   *   => PHẢI gửi `{ token }` kèm body cho request DELETE.
+   *
+   * ⚠️ Nếu không có token nào đăng ký -> KHÔNG gọi API (tránh 400 vô ích),
+   *   coi như đã gỡ xong.
+   *
+   * @param {string} [token] - FCM token cần gỡ (bỏ trống -> dùng token đã lưu)
    * @returns {Promise<void>}
    */
-  async removeFcmToken() {
-    await this.client.delete('/notifications/fcm-token');
+  async removeFcmToken(token) {
+    const target = token ?? this._lastRegisteredToken;
+
+    if (!target) {
+      // Chưa từng đăng ký token nào -> không có gì để gỡ -> no-op.
+      return;
+    }
+
+    await this.client.delete('/notifications/fcm-token', { token: target });
   }
 }
 

@@ -304,7 +304,6 @@ export type RecipeWhereInput = {
   createdAt?: Prisma.DateTimeFilter<"Recipe"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Recipe"> | Date | string
   deletedAt?: Prisma.DateTimeNullableFilter<"Recipe"> | Date | string | null
-  campaigns?: Prisma.CampaignRecipeListRelationFilter
   mealSlots?: Prisma.MealSlotListRelationFilter
   ingredients?: Prisma.RecipeIngredientListRelationFilter
   steps?: Prisma.RecipeStepListRelationFilter
@@ -329,7 +328,6 @@ export type RecipeOrderByWithRelationInput = {
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrderInput | Prisma.SortOrder
-  campaigns?: Prisma.CampaignRecipeOrderByRelationAggregateInput
   mealSlots?: Prisma.MealSlotOrderByRelationAggregateInput
   ingredients?: Prisma.RecipeIngredientOrderByRelationAggregateInput
   steps?: Prisma.RecipeStepOrderByRelationAggregateInput
@@ -358,7 +356,6 @@ export type RecipeWhereUniqueInput = Prisma.AtLeast<{
   createdAt?: Prisma.DateTimeFilter<"Recipe"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Recipe"> | Date | string
   deletedAt?: Prisma.DateTimeNullableFilter<"Recipe"> | Date | string | null
-  campaigns?: Prisma.CampaignRecipeListRelationFilter
   mealSlots?: Prisma.MealSlotListRelationFilter
   ingredients?: Prisma.RecipeIngredientListRelationFilter
   steps?: Prisma.RecipeStepListRelationFilter
@@ -426,7 +423,6 @@ export type RecipeCreateInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
-  campaigns?: Prisma.CampaignRecipeCreateNestedManyWithoutRecipeInput
   mealSlots?: Prisma.MealSlotCreateNestedManyWithoutRecipeInput
   ingredients?: Prisma.RecipeIngredientCreateNestedManyWithoutRecipeInput
   steps?: Prisma.RecipeStepCreateNestedManyWithoutRecipeInput
@@ -451,7 +447,6 @@ export type RecipeUncheckedCreateInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
-  campaigns?: Prisma.CampaignRecipeUncheckedCreateNestedManyWithoutRecipeInput
   mealSlots?: Prisma.MealSlotUncheckedCreateNestedManyWithoutRecipeInput
   ingredients?: Prisma.RecipeIngredientUncheckedCreateNestedManyWithoutRecipeInput
   steps?: Prisma.RecipeStepUncheckedCreateNestedManyWithoutRecipeInput
@@ -474,7 +469,6 @@ export type RecipeUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  campaigns?: Prisma.CampaignRecipeUpdateManyWithoutRecipeNestedInput
   mealSlots?: Prisma.MealSlotUpdateManyWithoutRecipeNestedInput
   ingredients?: Prisma.RecipeIngredientUpdateManyWithoutRecipeNestedInput
   steps?: Prisma.RecipeStepUpdateManyWithoutRecipeNestedInput
@@ -499,7 +493,6 @@ export type RecipeUncheckedUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  campaigns?: Prisma.CampaignRecipeUncheckedUpdateManyWithoutRecipeNestedInput
   mealSlots?: Prisma.MealSlotUncheckedUpdateManyWithoutRecipeNestedInput
   ingredients?: Prisma.RecipeIngredientUncheckedUpdateManyWithoutRecipeNestedInput
   steps?: Prisma.RecipeStepUncheckedUpdateManyWithoutRecipeNestedInput
@@ -778,20 +771,6 @@ export type RecipeUpdateOneWithoutMealSlotsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.RecipeUpdateToOneWithWhereWithoutMealSlotsInput, Prisma.RecipeUpdateWithoutMealSlotsInput>, Prisma.RecipeUncheckedUpdateWithoutMealSlotsInput>
 }
 
-export type RecipeCreateNestedOneWithoutCampaignsInput = {
-  create?: Prisma.XOR<Prisma.RecipeCreateWithoutCampaignsInput, Prisma.RecipeUncheckedCreateWithoutCampaignsInput>
-  connectOrCreate?: Prisma.RecipeCreateOrConnectWithoutCampaignsInput
-  connect?: Prisma.RecipeWhereUniqueInput
-}
-
-export type RecipeUpdateOneRequiredWithoutCampaignsNestedInput = {
-  create?: Prisma.XOR<Prisma.RecipeCreateWithoutCampaignsInput, Prisma.RecipeUncheckedCreateWithoutCampaignsInput>
-  connectOrCreate?: Prisma.RecipeCreateOrConnectWithoutCampaignsInput
-  upsert?: Prisma.RecipeUpsertWithoutCampaignsInput
-  connect?: Prisma.RecipeWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.RecipeUpdateToOneWithWhereWithoutCampaignsInput, Prisma.RecipeUpdateWithoutCampaignsInput>, Prisma.RecipeUncheckedUpdateWithoutCampaignsInput>
-}
-
 export type RecipeCreateWithoutAuthorInput = {
   id?: string
   title: string
@@ -807,7 +786,6 @@ export type RecipeCreateWithoutAuthorInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
-  campaigns?: Prisma.CampaignRecipeCreateNestedManyWithoutRecipeInput
   mealSlots?: Prisma.MealSlotCreateNestedManyWithoutRecipeInput
   ingredients?: Prisma.RecipeIngredientCreateNestedManyWithoutRecipeInput
   steps?: Prisma.RecipeStepCreateNestedManyWithoutRecipeInput
@@ -830,7 +808,6 @@ export type RecipeUncheckedCreateWithoutAuthorInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
-  campaigns?: Prisma.CampaignRecipeUncheckedCreateNestedManyWithoutRecipeInput
   mealSlots?: Prisma.MealSlotUncheckedCreateNestedManyWithoutRecipeInput
   ingredients?: Prisma.RecipeIngredientUncheckedCreateNestedManyWithoutRecipeInput
   steps?: Prisma.RecipeStepUncheckedCreateNestedManyWithoutRecipeInput
@@ -900,7 +877,6 @@ export type RecipeCreateWithoutIngredientsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
-  campaigns?: Prisma.CampaignRecipeCreateNestedManyWithoutRecipeInput
   mealSlots?: Prisma.MealSlotCreateNestedManyWithoutRecipeInput
   steps?: Prisma.RecipeStepCreateNestedManyWithoutRecipeInput
   tags?: Prisma.RecipeTagCreateNestedManyWithoutRecipeInput
@@ -924,7 +900,6 @@ export type RecipeUncheckedCreateWithoutIngredientsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
-  campaigns?: Prisma.CampaignRecipeUncheckedCreateNestedManyWithoutRecipeInput
   mealSlots?: Prisma.MealSlotUncheckedCreateNestedManyWithoutRecipeInput
   steps?: Prisma.RecipeStepUncheckedCreateNestedManyWithoutRecipeInput
   tags?: Prisma.RecipeTagUncheckedCreateNestedManyWithoutRecipeInput
@@ -962,7 +937,6 @@ export type RecipeUpdateWithoutIngredientsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  campaigns?: Prisma.CampaignRecipeUpdateManyWithoutRecipeNestedInput
   mealSlots?: Prisma.MealSlotUpdateManyWithoutRecipeNestedInput
   steps?: Prisma.RecipeStepUpdateManyWithoutRecipeNestedInput
   tags?: Prisma.RecipeTagUpdateManyWithoutRecipeNestedInput
@@ -986,7 +960,6 @@ export type RecipeUncheckedUpdateWithoutIngredientsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  campaigns?: Prisma.CampaignRecipeUncheckedUpdateManyWithoutRecipeNestedInput
   mealSlots?: Prisma.MealSlotUncheckedUpdateManyWithoutRecipeNestedInput
   steps?: Prisma.RecipeStepUncheckedUpdateManyWithoutRecipeNestedInput
   tags?: Prisma.RecipeTagUncheckedUpdateManyWithoutRecipeNestedInput
@@ -1008,7 +981,6 @@ export type RecipeCreateWithoutStepsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
-  campaigns?: Prisma.CampaignRecipeCreateNestedManyWithoutRecipeInput
   mealSlots?: Prisma.MealSlotCreateNestedManyWithoutRecipeInput
   ingredients?: Prisma.RecipeIngredientCreateNestedManyWithoutRecipeInput
   tags?: Prisma.RecipeTagCreateNestedManyWithoutRecipeInput
@@ -1032,7 +1004,6 @@ export type RecipeUncheckedCreateWithoutStepsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
-  campaigns?: Prisma.CampaignRecipeUncheckedCreateNestedManyWithoutRecipeInput
   mealSlots?: Prisma.MealSlotUncheckedCreateNestedManyWithoutRecipeInput
   ingredients?: Prisma.RecipeIngredientUncheckedCreateNestedManyWithoutRecipeInput
   tags?: Prisma.RecipeTagUncheckedCreateNestedManyWithoutRecipeInput
@@ -1070,7 +1041,6 @@ export type RecipeUpdateWithoutStepsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  campaigns?: Prisma.CampaignRecipeUpdateManyWithoutRecipeNestedInput
   mealSlots?: Prisma.MealSlotUpdateManyWithoutRecipeNestedInput
   ingredients?: Prisma.RecipeIngredientUpdateManyWithoutRecipeNestedInput
   tags?: Prisma.RecipeTagUpdateManyWithoutRecipeNestedInput
@@ -1094,7 +1064,6 @@ export type RecipeUncheckedUpdateWithoutStepsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  campaigns?: Prisma.CampaignRecipeUncheckedUpdateManyWithoutRecipeNestedInput
   mealSlots?: Prisma.MealSlotUncheckedUpdateManyWithoutRecipeNestedInput
   ingredients?: Prisma.RecipeIngredientUncheckedUpdateManyWithoutRecipeNestedInput
   tags?: Prisma.RecipeTagUncheckedUpdateManyWithoutRecipeNestedInput
@@ -1116,7 +1085,6 @@ export type RecipeCreateWithoutTagsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
-  campaigns?: Prisma.CampaignRecipeCreateNestedManyWithoutRecipeInput
   mealSlots?: Prisma.MealSlotCreateNestedManyWithoutRecipeInput
   ingredients?: Prisma.RecipeIngredientCreateNestedManyWithoutRecipeInput
   steps?: Prisma.RecipeStepCreateNestedManyWithoutRecipeInput
@@ -1140,7 +1108,6 @@ export type RecipeUncheckedCreateWithoutTagsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
-  campaigns?: Prisma.CampaignRecipeUncheckedCreateNestedManyWithoutRecipeInput
   mealSlots?: Prisma.MealSlotUncheckedCreateNestedManyWithoutRecipeInput
   ingredients?: Prisma.RecipeIngredientUncheckedCreateNestedManyWithoutRecipeInput
   steps?: Prisma.RecipeStepUncheckedCreateNestedManyWithoutRecipeInput
@@ -1178,7 +1145,6 @@ export type RecipeUpdateWithoutTagsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  campaigns?: Prisma.CampaignRecipeUpdateManyWithoutRecipeNestedInput
   mealSlots?: Prisma.MealSlotUpdateManyWithoutRecipeNestedInput
   ingredients?: Prisma.RecipeIngredientUpdateManyWithoutRecipeNestedInput
   steps?: Prisma.RecipeStepUpdateManyWithoutRecipeNestedInput
@@ -1202,7 +1168,6 @@ export type RecipeUncheckedUpdateWithoutTagsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  campaigns?: Prisma.CampaignRecipeUncheckedUpdateManyWithoutRecipeNestedInput
   mealSlots?: Prisma.MealSlotUncheckedUpdateManyWithoutRecipeNestedInput
   ingredients?: Prisma.RecipeIngredientUncheckedUpdateManyWithoutRecipeNestedInput
   steps?: Prisma.RecipeStepUncheckedUpdateManyWithoutRecipeNestedInput
@@ -1224,7 +1189,6 @@ export type RecipeCreateWithoutSavedByInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
-  campaigns?: Prisma.CampaignRecipeCreateNestedManyWithoutRecipeInput
   mealSlots?: Prisma.MealSlotCreateNestedManyWithoutRecipeInput
   ingredients?: Prisma.RecipeIngredientCreateNestedManyWithoutRecipeInput
   steps?: Prisma.RecipeStepCreateNestedManyWithoutRecipeInput
@@ -1248,7 +1212,6 @@ export type RecipeUncheckedCreateWithoutSavedByInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
-  campaigns?: Prisma.CampaignRecipeUncheckedCreateNestedManyWithoutRecipeInput
   mealSlots?: Prisma.MealSlotUncheckedCreateNestedManyWithoutRecipeInput
   ingredients?: Prisma.RecipeIngredientUncheckedCreateNestedManyWithoutRecipeInput
   steps?: Prisma.RecipeStepUncheckedCreateNestedManyWithoutRecipeInput
@@ -1286,7 +1249,6 @@ export type RecipeUpdateWithoutSavedByInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  campaigns?: Prisma.CampaignRecipeUpdateManyWithoutRecipeNestedInput
   mealSlots?: Prisma.MealSlotUpdateManyWithoutRecipeNestedInput
   ingredients?: Prisma.RecipeIngredientUpdateManyWithoutRecipeNestedInput
   steps?: Prisma.RecipeStepUpdateManyWithoutRecipeNestedInput
@@ -1310,7 +1272,6 @@ export type RecipeUncheckedUpdateWithoutSavedByInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  campaigns?: Prisma.CampaignRecipeUncheckedUpdateManyWithoutRecipeNestedInput
   mealSlots?: Prisma.MealSlotUncheckedUpdateManyWithoutRecipeNestedInput
   ingredients?: Prisma.RecipeIngredientUncheckedUpdateManyWithoutRecipeNestedInput
   steps?: Prisma.RecipeStepUncheckedUpdateManyWithoutRecipeNestedInput
@@ -1332,7 +1293,6 @@ export type RecipeCreateWithoutMealSlotsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
-  campaigns?: Prisma.CampaignRecipeCreateNestedManyWithoutRecipeInput
   ingredients?: Prisma.RecipeIngredientCreateNestedManyWithoutRecipeInput
   steps?: Prisma.RecipeStepCreateNestedManyWithoutRecipeInput
   tags?: Prisma.RecipeTagCreateNestedManyWithoutRecipeInput
@@ -1356,7 +1316,6 @@ export type RecipeUncheckedCreateWithoutMealSlotsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
-  campaigns?: Prisma.CampaignRecipeUncheckedCreateNestedManyWithoutRecipeInput
   ingredients?: Prisma.RecipeIngredientUncheckedCreateNestedManyWithoutRecipeInput
   steps?: Prisma.RecipeStepUncheckedCreateNestedManyWithoutRecipeInput
   tags?: Prisma.RecipeTagUncheckedCreateNestedManyWithoutRecipeInput
@@ -1394,7 +1353,6 @@ export type RecipeUpdateWithoutMealSlotsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  campaigns?: Prisma.CampaignRecipeUpdateManyWithoutRecipeNestedInput
   ingredients?: Prisma.RecipeIngredientUpdateManyWithoutRecipeNestedInput
   steps?: Prisma.RecipeStepUpdateManyWithoutRecipeNestedInput
   tags?: Prisma.RecipeTagUpdateManyWithoutRecipeNestedInput
@@ -1418,115 +1376,6 @@ export type RecipeUncheckedUpdateWithoutMealSlotsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  campaigns?: Prisma.CampaignRecipeUncheckedUpdateManyWithoutRecipeNestedInput
-  ingredients?: Prisma.RecipeIngredientUncheckedUpdateManyWithoutRecipeNestedInput
-  steps?: Prisma.RecipeStepUncheckedUpdateManyWithoutRecipeNestedInput
-  tags?: Prisma.RecipeTagUncheckedUpdateManyWithoutRecipeNestedInput
-  savedBy?: Prisma.UserSavedRecipeUncheckedUpdateManyWithoutRecipeNestedInput
-}
-
-export type RecipeCreateWithoutCampaignsInput = {
-  id?: string
-  title: string
-  description?: string | null
-  thumbnailPath?: string | null
-  mealType: $Enums.MealType
-  cookTimeMinutes: number
-  servings: number
-  difficultyLevel: $Enums.DifficultyLevel
-  estimatedCost?: number | null
-  isAiGenerated?: boolean
-  status?: $Enums.RecipeStatus
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  deletedAt?: Date | string | null
-  mealSlots?: Prisma.MealSlotCreateNestedManyWithoutRecipeInput
-  ingredients?: Prisma.RecipeIngredientCreateNestedManyWithoutRecipeInput
-  steps?: Prisma.RecipeStepCreateNestedManyWithoutRecipeInput
-  tags?: Prisma.RecipeTagCreateNestedManyWithoutRecipeInput
-  author?: Prisma.UserCreateNestedOneWithoutAuthoredRecipesInput
-  savedBy?: Prisma.UserSavedRecipeCreateNestedManyWithoutRecipeInput
-}
-
-export type RecipeUncheckedCreateWithoutCampaignsInput = {
-  id?: string
-  title: string
-  description?: string | null
-  thumbnailPath?: string | null
-  mealType: $Enums.MealType
-  cookTimeMinutes: number
-  servings: number
-  difficultyLevel: $Enums.DifficultyLevel
-  estimatedCost?: number | null
-  isAiGenerated?: boolean
-  authorId?: string | null
-  status?: $Enums.RecipeStatus
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  deletedAt?: Date | string | null
-  mealSlots?: Prisma.MealSlotUncheckedCreateNestedManyWithoutRecipeInput
-  ingredients?: Prisma.RecipeIngredientUncheckedCreateNestedManyWithoutRecipeInput
-  steps?: Prisma.RecipeStepUncheckedCreateNestedManyWithoutRecipeInput
-  tags?: Prisma.RecipeTagUncheckedCreateNestedManyWithoutRecipeInput
-  savedBy?: Prisma.UserSavedRecipeUncheckedCreateNestedManyWithoutRecipeInput
-}
-
-export type RecipeCreateOrConnectWithoutCampaignsInput = {
-  where: Prisma.RecipeWhereUniqueInput
-  create: Prisma.XOR<Prisma.RecipeCreateWithoutCampaignsInput, Prisma.RecipeUncheckedCreateWithoutCampaignsInput>
-}
-
-export type RecipeUpsertWithoutCampaignsInput = {
-  update: Prisma.XOR<Prisma.RecipeUpdateWithoutCampaignsInput, Prisma.RecipeUncheckedUpdateWithoutCampaignsInput>
-  create: Prisma.XOR<Prisma.RecipeCreateWithoutCampaignsInput, Prisma.RecipeUncheckedCreateWithoutCampaignsInput>
-  where?: Prisma.RecipeWhereInput
-}
-
-export type RecipeUpdateToOneWithWhereWithoutCampaignsInput = {
-  where?: Prisma.RecipeWhereInput
-  data: Prisma.XOR<Prisma.RecipeUpdateWithoutCampaignsInput, Prisma.RecipeUncheckedUpdateWithoutCampaignsInput>
-}
-
-export type RecipeUpdateWithoutCampaignsInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  title?: Prisma.StringFieldUpdateOperationsInput | string
-  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  thumbnailPath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  mealType?: Prisma.EnumMealTypeFieldUpdateOperationsInput | $Enums.MealType
-  cookTimeMinutes?: Prisma.IntFieldUpdateOperationsInput | number
-  servings?: Prisma.IntFieldUpdateOperationsInput | number
-  difficultyLevel?: Prisma.EnumDifficultyLevelFieldUpdateOperationsInput | $Enums.DifficultyLevel
-  estimatedCost?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  isAiGenerated?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  status?: Prisma.EnumRecipeStatusFieldUpdateOperationsInput | $Enums.RecipeStatus
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  mealSlots?: Prisma.MealSlotUpdateManyWithoutRecipeNestedInput
-  ingredients?: Prisma.RecipeIngredientUpdateManyWithoutRecipeNestedInput
-  steps?: Prisma.RecipeStepUpdateManyWithoutRecipeNestedInput
-  tags?: Prisma.RecipeTagUpdateManyWithoutRecipeNestedInput
-  author?: Prisma.UserUpdateOneWithoutAuthoredRecipesNestedInput
-  savedBy?: Prisma.UserSavedRecipeUpdateManyWithoutRecipeNestedInput
-}
-
-export type RecipeUncheckedUpdateWithoutCampaignsInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  title?: Prisma.StringFieldUpdateOperationsInput | string
-  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  thumbnailPath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  mealType?: Prisma.EnumMealTypeFieldUpdateOperationsInput | $Enums.MealType
-  cookTimeMinutes?: Prisma.IntFieldUpdateOperationsInput | number
-  servings?: Prisma.IntFieldUpdateOperationsInput | number
-  difficultyLevel?: Prisma.EnumDifficultyLevelFieldUpdateOperationsInput | $Enums.DifficultyLevel
-  estimatedCost?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  isAiGenerated?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  authorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  status?: Prisma.EnumRecipeStatusFieldUpdateOperationsInput | $Enums.RecipeStatus
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  mealSlots?: Prisma.MealSlotUncheckedUpdateManyWithoutRecipeNestedInput
   ingredients?: Prisma.RecipeIngredientUncheckedUpdateManyWithoutRecipeNestedInput
   steps?: Prisma.RecipeStepUncheckedUpdateManyWithoutRecipeNestedInput
   tags?: Prisma.RecipeTagUncheckedUpdateManyWithoutRecipeNestedInput
@@ -1565,7 +1414,6 @@ export type RecipeUpdateWithoutAuthorInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  campaigns?: Prisma.CampaignRecipeUpdateManyWithoutRecipeNestedInput
   mealSlots?: Prisma.MealSlotUpdateManyWithoutRecipeNestedInput
   ingredients?: Prisma.RecipeIngredientUpdateManyWithoutRecipeNestedInput
   steps?: Prisma.RecipeStepUpdateManyWithoutRecipeNestedInput
@@ -1588,7 +1436,6 @@ export type RecipeUncheckedUpdateWithoutAuthorInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  campaigns?: Prisma.CampaignRecipeUncheckedUpdateManyWithoutRecipeNestedInput
   mealSlots?: Prisma.MealSlotUncheckedUpdateManyWithoutRecipeNestedInput
   ingredients?: Prisma.RecipeIngredientUncheckedUpdateManyWithoutRecipeNestedInput
   steps?: Prisma.RecipeStepUncheckedUpdateManyWithoutRecipeNestedInput
@@ -1619,7 +1466,6 @@ export type RecipeUncheckedUpdateManyWithoutAuthorInput = {
  */
 
 export type RecipeCountOutputType = {
-  campaigns: number
   mealSlots: number
   ingredients: number
   steps: number
@@ -1628,7 +1474,6 @@ export type RecipeCountOutputType = {
 }
 
 export type RecipeCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  campaigns?: boolean | RecipeCountOutputTypeCountCampaignsArgs
   mealSlots?: boolean | RecipeCountOutputTypeCountMealSlotsArgs
   ingredients?: boolean | RecipeCountOutputTypeCountIngredientsArgs
   steps?: boolean | RecipeCountOutputTypeCountStepsArgs
@@ -1644,13 +1489,6 @@ export type RecipeCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Exten
    * Select specific fields to fetch from the RecipeCountOutputType
    */
   select?: Prisma.RecipeCountOutputTypeSelect<ExtArgs> | null
-}
-
-/**
- * RecipeCountOutputType without action
- */
-export type RecipeCountOutputTypeCountCampaignsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.CampaignRecipeWhereInput
 }
 
 /**
@@ -1705,7 +1543,6 @@ export type RecipeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   createdAt?: boolean
   updatedAt?: boolean
   deletedAt?: boolean
-  campaigns?: boolean | Prisma.Recipe$campaignsArgs<ExtArgs>
   mealSlots?: boolean | Prisma.Recipe$mealSlotsArgs<ExtArgs>
   ingredients?: boolean | Prisma.Recipe$ingredientsArgs<ExtArgs>
   steps?: boolean | Prisma.Recipe$stepsArgs<ExtArgs>
@@ -1737,7 +1574,6 @@ export type RecipeSelectScalar = {
 
 export type RecipeOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "title" | "description" | "thumbnailPath" | "mealType" | "cookTimeMinutes" | "servings" | "difficultyLevel" | "estimatedCost" | "isAiGenerated" | "authorId" | "status" | "createdAt" | "updatedAt" | "deletedAt", ExtArgs["result"]["recipe"]>
 export type RecipeInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  campaigns?: boolean | Prisma.Recipe$campaignsArgs<ExtArgs>
   mealSlots?: boolean | Prisma.Recipe$mealSlotsArgs<ExtArgs>
   ingredients?: boolean | Prisma.Recipe$ingredientsArgs<ExtArgs>
   steps?: boolean | Prisma.Recipe$stepsArgs<ExtArgs>
@@ -1750,7 +1586,6 @@ export type RecipeInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs 
 export type $RecipePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "Recipe"
   objects: {
-    campaigns: Prisma.$CampaignRecipePayload<ExtArgs>[]
     mealSlots: Prisma.$MealSlotPayload<ExtArgs>[]
     ingredients: Prisma.$RecipeIngredientPayload<ExtArgs>[]
     steps: Prisma.$RecipeStepPayload<ExtArgs>[]
@@ -2114,7 +1949,6 @@ readonly fields: RecipeFieldRefs;
  */
 export interface Prisma__RecipeClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
-  campaigns<T extends Prisma.Recipe$campaignsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Recipe$campaignsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CampaignRecipePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   mealSlots<T extends Prisma.Recipe$mealSlotsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Recipe$mealSlotsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$MealSlotPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   ingredients<T extends Prisma.Recipe$ingredientsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Recipe$ingredientsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$RecipeIngredientPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   steps<T extends Prisma.Recipe$stepsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Recipe$stepsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$RecipeStepPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
@@ -2510,30 +2344,6 @@ export type RecipeDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.Intern
    * Limit how many Recipes to delete.
    */
   limit?: number
-}
-
-/**
- * Recipe.campaigns
- */
-export type Recipe$campaignsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the CampaignRecipe
-   */
-  select?: Prisma.CampaignRecipeSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the CampaignRecipe
-   */
-  omit?: Prisma.CampaignRecipeOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.CampaignRecipeInclude<ExtArgs> | null
-  where?: Prisma.CampaignRecipeWhereInput
-  orderBy?: Prisma.CampaignRecipeOrderByWithRelationInput | Prisma.CampaignRecipeOrderByWithRelationInput[]
-  cursor?: Prisma.CampaignRecipeWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.CampaignRecipeScalarFieldEnum | Prisma.CampaignRecipeScalarFieldEnum[]
 }
 
 /**

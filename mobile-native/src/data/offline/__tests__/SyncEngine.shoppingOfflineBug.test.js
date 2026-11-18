@@ -209,7 +209,11 @@ describe('Bug shopping offline — remap id món pending khi sync', () => {
   beforeEach(resetAll);
   afterEach(clearRegistry);
 
-  it('op toggle đang chờ -> payload.itemId được remap sang id server', async () => {
+  // ⚠️ CHUẨN HOÁ THEO BE:
+  //   Món user tự thêm giờ là món CHỈ CÓ Ở MÁY (`local_only`) -> KHÔNG có
+  //   id server -> không thể remap. Vì vậy tick món local phải được xử lý
+  //   ở client (không gọi endpoint `ParseIntPipe` với id local -> 400).
+  it('op toggle trỏ id LOCAL -> KHÔNG gọi API (BE ParseIntPipe sẽ 400)', async () => {
     const addShoppingListItem = jest.fn().mockResolvedValue({
       id: 42,
       name: 'Sữa',
@@ -220,30 +224,44 @@ describe('Bug shopping offline — remap id món pending khi sync', () => {
     registerService('recipeService', { addShoppingListItem, toggleShoppingItemInList });
     registerPullStubs({ addShoppingListItem, toggleShoppingItemInList });
 
-    await offlineCache.addPendingShoppingItem({
-      id: 'pending_shop_1',
+    await offlineCache.addLocalShoppingItem({
+      id: 'local_shop_1',
       name: 'Sữa',
       quantity: 2,
       unit: 'hộp',
       ingredientId: 9,
       listId: 'list-1',
     });
-    await outboxQueue.enqueue(
-      OP_TYPES.SHOPPING_ITEM_ADD,
-      { listId: 'list-1', item: { name: 'Sữa', quantity: 2, unit: 'hộp' } },
-      'pending_shop_1'
-    );
     // User tick món đó offline -> op toggle trỏ id local.
     await outboxQueue.enqueue(
       OP_TYPES.SHOPPING_TOGGLE,
-      { listId: 'list-1', itemId: 'pending_shop_1' },
-      'pending_shop_1'
+      { listId: 'list-1', itemId: 'local_shop_1' },
+      'local_shop_1'
     );
 
     const result = await syncEngine.syncAll({ force: true, prefetchRecipes: false });
-    expect(result.uploaded).toBe(2);
+    expect(result.uploaded).toBe(1);
 
-    // ⚠️ Phải dùng id SERVER (42) chứ không phải id local.
+    // ⚠️ KHÔNG được gọi API với id local.
+    expect(toggleShoppingItemInList).not.toHaveBeenCalled();
+  });
+
+  it('op toggle trỏ id SERVER -> gọi đúng endpoint toggle', async () => {
+    const toggleShoppingItemInList = jest.fn().mockResolvedValue({ ok: true });
+    registerService('recipeService', { toggleShoppingItemInList });
+    registerPullStubs({ toggleShoppingItemInList });
+
+    await offlineCache.saveShoppingItems([
+      { id: 42, name: 'Sữa', quantity: 2, unit: 'hộp', listId: 'list-1' },
+    ]);
+    await outboxQueue.enqueue(
+      OP_TYPES.SHOPPING_TOGGLE,
+      { listId: 'list-1', itemId: 42 },
+      '42'
+    );
+
+    const result = await syncEngine.syncAll({ force: true, prefetchRecipes: false });
+    expect(result.uploaded).toBe(1);
     expect(toggleShoppingItemInList).toHaveBeenCalledWith('list-1', 42);
   });
 });

@@ -62,13 +62,32 @@
  *     GET    /meal-planning/shopping-lists            -> danh sách mua + items
  *     POST   /meal-planning/shopping-lists            -> tạo list từ kế hoạch tuần
  *     PATCH  /meal-planning/shopping-lists/{listId}/items/{itemId} -> tick đã mua
+ *
+ * ⚠️ SHOPPING LIST — CHỈ 3 ENDPOINT (chuẩn hoá theo BE):
+ *   BE KHÔNG có:
+ *     - `POST   /meal-planning/shopping-lists/{listId}/items`   (thêm món lẻ)
+ *     - `PATCH  /meal-planning/shopping-lists/{listId}/items/{itemId}` với body
+ *             (sửa số lượng) — endpoint này KHÔNG có `@Body()`, nó TOGGLE
+ *             `isPurchased` và khi tick `true` sẽ TỰ THÊM món vào tủ lạnh.
+ *     - `DELETE /meal-planning/shopping-lists/{listId}/items/{itemId}`
+ *     - `POST   /meal-planning/slots/{slotId}/missing-to-shopping-list`
+ *     - `GET    /meal-planning/shopping-lists/active`
+ *   => Thêm / sửa lượng / xoá món lẻ được làm ở CLIENT (SQLite), đúng như
+ *      Flutter (`shopping_reminder_screen.dart` -> `_addNewItem` / `_deleteItem`
+ *      chỉ cập nhật state local, KHÔNG gọi API).
+ *   => "Thêm nguyên liệu thiếu vào giỏ" được tính ở CLIENT từ
+ *      `GET /meal-planning/slots/{id}` (`summary.missingItems`).
  */
 
 import { ApiClient } from '../../api/ApiClient';
 import { registerService } from '../../api/ServiceRegistry';
 import { streamSse } from '../../api/SseClient';
 import { appConfig } from '../../../shared/config/appConfig';
-import { offlineCache, toLocalDateStr } from '../../offline/OfflineCache';
+import { offlineCache, toLocalDateStr, SYNC_STATUS } from '../../offline/OfflineCache';
+import {
+  computeMissingPurchaseQuantity,
+  computeServingsScale,
+} from '../../utils/shoppingMissing';
 
 /**
  * Thứ tự bữa ăn — giống Flutter (`cooking_suggestions_section.dart:194`).
@@ -81,6 +100,13 @@ const MEAL_TYPE_ORDER = {
   dinner: 2,
   snack: 3,
 };
+
+/**
+ * Enum status hợp lệ của `PATCH /meal-planning/plans/{id}`.
+ * Nguồn: `be/src/modules-api/meal-planning/dto/meal-planning.dto.ts`
+ * -> `UpdateMealPlanDto.status` (`@IsEnum`).
+ */
+const PLAN_STATUS_VALUES = ['draft', 'confirmed', 'active', 'completed'];
 
 /**
  * Thời gian nấu mặc định theo bữa — KHÔNG có trong slot của BE.
@@ -227,14 +253,20 @@ export class RealRecipeService {
     const recipeTitle =
       slot.recipeName ?? slot.recipe?.title ?? slot.dishName ?? slot.recipeNameLegacy ?? '';
 
+    // ⚠️ ẢNH — PHẢI đọc `recipeThumbnail` (field BE FLATTEN trong
+    //   `MealSlotResponseDto`), KHÔNG phải `slot.recipe.thumbnailPath`
+    //   (BE không join `recipe` trong response -> luôn undefined -> mọi
+    //   slot hiện ảnh trống).
+    //   Vẫn giữ fallback `slot.recipe?.thumbnailPath` cho BE cũ.
+    const thumbnail =
+      slot.recipeThumbnail ?? slot.recipe?.thumbnailPath ?? slot.thumbnailPath ?? null;
+
     return {
       // `id` của slot là định danh bản ghi meal plan, KHÔNG phải id recipe.
       id: slot.id,
       recipeId: slot.recipeId,
       name: recipeTitle ?? '',
-      image: slot.recipe?.thumbnailPath
-        ? appConfig.getImageUrl(slot.recipe.thumbnailPath)
-        : null,
+      image: thumbnail ? appConfig.getImageUrl(thumbnail) : null,
       // Ưu tiên thời gian nấu thật của công thức, không có thì lấy theo bữa.
       cookTime: slot.recipe?.cookTimeMinutes ?? DEFAULT_COOK_TIME_BY_MEAL[mealType] ?? 20,
       difficulty: 'easy',
@@ -644,8 +676,15 @@ export class RealRecipeService {
         missingItems: (summary?.missingItems ?? []).map((item) => ({
           ingredientId: item.ingredientId,
           name: item.name,
-          quantityNeeded: item.quantityNeeded ?? 0,
-          unit: item.baseUnit ?? item.originalUnit ?? null,
+          // ⚠️ PHẢI giữ `undefined` khi BE không trả (KHÔNG ép 0):
+          //   `computeMissingPurchaseQuantity` dùng `Number(quantityNeeded)`,
+          //   nếu là 0 -> `needed` hữu hạn -> kết quả luôn = 0 -> MẤT món.
+          //   Giữ `undefined` -> fallback về `missingQuantity` (đúng công thức).
+          quantityNeeded: item.quantityNeeded,
+          // ⚠️ Giữ cả `baseUnit` (đơn vị quy chuẩn) + `originalUnit`.
+          baseUnit: item.baseUnit ?? null,
+          originalUnit: item.originalUnit ?? null,
+          unit: item.baseUnit ?? item.originalUnit ?? item.unit ?? null,
           isOptional: item.isOptional ?? false,
           fridgeStatus: item.fridgeStatus ?? 'missing',
           // ⚠️ PHẢI giữ `fridgeQuantity` — offline tính lại lượng thiếu theo
@@ -753,6 +792,9 @@ export class RealRecipeService {
    * BE `UpdateMealPlanDto` chỉ nhận `status`:
    * 'draft' | 'confirmed' | 'active' | 'completed'.
    *
+   * ⚠️ Gửi status ngoài enum -> BE trả 400 (`@IsEnum`). Ta chặn ở client để
+   *   không bắn request chắc chắn lỗi.
+   *
    * @param {string} planId
    * @param {{status?:string}} payload
    * @returns {Promise<void>}
@@ -760,7 +802,10 @@ export class RealRecipeService {
   async updatePlan(planId, payload = {}) {
     if (!planId) return;
     const body = {};
-    if (payload.status !== undefined) body.status = payload.status;
+    if (payload.status !== undefined) {
+      if (!PLAN_STATUS_VALUES.includes(payload.status)) return;
+      body.status = payload.status;
+    }
     if (!Object.keys(body).length) return;
 
     await this.client.patch(`/meal-planning/plans/${planId}`, body);
@@ -815,6 +860,16 @@ export class RealRecipeService {
       missingIngredients: Array.isArray(result?.missingIngredients)
         ? result.missingIngredients
         : [],
+      // ⚠️ BE `PATCH /meal-planning/slots/:id` chỉ trả
+      //   `{ id, mealType, recipeId, servings, note, completedAt }`
+      //   -> KHÔNG có `consumedIngredients` / `missingIngredients`.
+      //   CỜ này = true khi cả 2 mảng rỗng -> UI biết dữ liệu CHƯA có
+      //   (fallback sang `getSlotDetail` để tự suy ra) thay vì hiện toast
+      //   "đã dùng 0 nguyên liệu".
+      missingDetailFields:
+        (Array.isArray(result?.consumedIngredients) ? result.consumedIngredients : []).length ===
+          0 &&
+        (Array.isArray(result?.missingIngredients) ? result.missingIngredients : []).length === 0,
     };
   }
 
@@ -998,14 +1053,31 @@ export class RealRecipeService {
     const payload = await this.client.get('/meal-planning/shopping-lists');
     const list = Array.isArray(payload) ? payload : (payload?.data ?? []);
 
+    // ⚠️ MÓN ĐÃ XOÁ Ở MÁY (tombstone `local_deleted`):
+    //   BE KHÔNG có endpoint xoá món lẻ -> server VẪN trả món đó. Nếu không
+    //   lọc, món đã xoá sẽ "hồi sinh" mỗi lần user mở màn danh sách mua.
+    let deletedIds = [];
+    try {
+      deletedIds = await offlineCache.getLocallyDeletedShoppingItemIds();
+    } catch (e) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[RealRecipeService] Không đọc được tombstone món mua:', e?.message);
+      }
+    }
+    const deletedSet = new Set((deletedIds ?? []).map(String));
+
     const mapped = list.filter(Boolean).map((dto) => ({
       id: dto.id,
       title: dto.title ?? '',
-      status: dto.status ?? 'active',
+      // ⚠️ BE tạo list với `status = 'draft'` -> default phải khớp.
+      status: dto.status ?? 'draft',
       totalEstimatedCost: dto.totalEstimatedCost ?? null,
       weeklyPlanId: dto.weeklyPlanId ?? null,
       createdAt: dto.createdAt ?? null,
-      items: (dto.items ?? []).map((item) => this._toShoppingItem(item)).filter(Boolean),
+      items: (dto.items ?? [])
+        .map((item) => this._toShoppingItem(item))
+        .filter(Boolean)
+        .filter((item) => !deletedSet.has(String(item.id))),
     }));
 
     // P1 (offline) — cache danh sách mua (gộp phẳng) để đọc được khi offline.
@@ -1033,13 +1105,17 @@ export class RealRecipeService {
   }
 
   /**
-   * Gộp các món mua đang chờ đồng bộ (`sync_status = 'pending'`) vào list server.
+   * Gộp các món mua CHỈ có ở máy vào list server.
    *
    * ⚠️ VÌ SAO 2 NGUỒN DỮ LIỆU PHẢI HỘI TỤ:
-   *   - Server: nguồn sự thật, nhưng CHƯA có món user vừa thêm offline
-   *     (op `shopping_item_add` còn nằm trong hàng đợi).
-   *   - SQLite (`local_shopping_items`): có món pending (id `pending_*`) ->
-   *     chính là món đang chờ upload.
+   *   - Server: nguồn sự thật cho những món BE quản lý (tạo list từ kế hoạch).
+   *   - SQLite (`local_shopping_items`): có món 'pending' (tick offline chờ
+   *     upload) và món 'local_only' (user tự thêm / tự sửa lượng — BE KHÔNG
+   *     có endpoint cho các thao tác này -> món đó KHÔNG BAO GIỜ có trên server).
+   *   => Gộp cả 2 loại vào kết quả để 2 đường đọc (online/offline) khớp nhau.
+   *
+   * ⚠️ Món đã bị XOÁ ở máy ('local_deleted') -> KHÔNG xuất hiện nữa, kể cả khi
+   *   server vẫn còn món đó (BE không có endpoint xoá món lẻ).
    *
    * ⚠️ Món pending KHÔNG có `listId` thật (offline không biết list id) ->
    *   gán vào list đầu tiên của server (thường là list active) để UI hiển thị
@@ -1051,26 +1127,41 @@ export class RealRecipeService {
    */
   async _mergePendingShoppingItems(serverLists) {
     let pending = [];
+    let localOnly = [];
+
     try {
       pending = await offlineCache.getPendingShoppingItems();
+      localOnly = await offlineCache.getLocalOnlyShoppingItems();
     } catch (e) {
       if (typeof __DEV__ !== 'undefined' && __DEV__) {
         console.warn('[RealRecipeService] Không đọc được món mua pending:', e?.message);
       }
       return serverLists;
     }
-    if (!Array.isArray(pending) || pending.length === 0) return serverLists;
+
+    const localItems = [...(pending ?? []), ...(localOnly ?? [])];
+    if (!Array.isArray(localItems) || localItems.length === 0) return serverLists;
 
     const lists = serverLists.map((l) => ({ ...l, items: [...(l.items ?? [])] }));
     const fallbackListId = lists[0]?.id ?? null;
 
-    // Id món server đã có -> không thêm lại bản pending (tránh trùng).
-    const serverItemIds = new Set(
-      lists.flatMap((l) => (l.items ?? []).map((i) => String(i.id)))
-    );
-
-    for (const p of pending) {
-      if (serverItemIds.has(String(p.id))) continue;
+    for (const p of localItems) {
+      // ⚠️ Món server đã bị user SỬA LƯỢNG ở máy:
+      //   BE không có endpoint sửa lượng -> bản local là mới nhất -> PHẢI ghi đè
+      //   lượng của server (nếu không -> user thấy lượng cũ sau mỗi lần bật mạng).
+      const serverItem = lists
+        .flatMap((l) => l.items ?? [])
+        .find((i) => String(i.id) === String(p.id));
+      if (serverItem) {
+        if (p._syncStatus === SYNC_STATUS.PENDING) {
+          // Tick offline đang chờ upload -> giữ trạng thái tick của user.
+          serverItem.done = p.done;
+        } else {
+          serverItem.quantity = p.quantity;
+          serverItem.unit = p.unit ?? serverItem.unit;
+        }
+        continue;
+      }
 
       const listId = p.listId ?? fallbackListId;
       if (!listId) continue;
@@ -1102,6 +1193,10 @@ export class RealRecipeService {
   /**
    * `POST /meal-planning/shopping-lists` — tạo danh sách mua từ kế hoạch tuần.
    *
+   * ⚠️ BE tự lọc nguyên liệu thiếu so với tủ lạnh và tạo list với
+   *   `status = 'draft'` (xem `meal-planning.service.ts` -> `createShoppingList`).
+   *   Vì vậy default status khi map phải là `'draft'`, KHÔNG phải `'active'`.
+   *
    * @param {string} weeklyPlanId
    * @param {string} [title]
    * @returns {Promise<object>} shopping list đã tạo
@@ -1119,7 +1214,7 @@ export class RealRecipeService {
     return {
       id: payload.id,
       title: payload.title ?? '',
-      status: payload.status ?? 'active',
+      status: payload.status ?? 'draft',
       totalEstimatedCost: payload.totalEstimatedCost ?? null,
       weeklyPlanId: payload.weeklyPlanId ?? null,
       createdAt: payload.createdAt ?? null,
@@ -1132,13 +1227,49 @@ export class RealRecipeService {
    *
    * ⚠️ BE tự TOGGLE (không nhận `isPurchased` trong body) -> chỉ cần gọi.
    *
+   * ⚠️ MÓN CHỈ CÓ Ở MÁY (`local_*`):
+   *   BE dùng `ParseIntPipe` cho `itemId` -> id local sẽ bị 400.
+   *   Vì vậy món user tự thêm được tick 100% ở client (giống Flutter).
+   *
    * @param {string} listId
    * @param {string|number} itemId
    * @returns {Promise<void>}
    */
   async toggleShoppingItemInList(listId, itemId) {
     if (!listId || itemId === null || itemId === undefined) return;
+
+    // Món chỉ có ở máy -> KHÔNG gọi API (BE không có id cho nó).
+    const isLocalOnly = await this._isLocalOnlyShoppingItem(itemId);
+    if (isLocalOnly) {
+      await offlineCache.toggleLocalShoppingItem(itemId);
+      return;
+    }
+
     await this.client.patch(`/meal-planning/shopping-lists/${listId}/items/${itemId}`);
+  }
+
+  /**
+   * 1 món mua có CHỈ tồn tại ở máy (không có id server) hay không?
+   *
+   * ⚠️ Món CÓ id server -> vẫn tick qua API được (BE có endpoint toggle),
+   *   kể cả khi user đã sửa lượng ở máy (row bị đánh dấu `local_only`).
+   *
+   * @private
+   * @param {string|number} itemId
+   * @returns {Promise<boolean>}
+   */
+  async _isLocalOnlyShoppingItem(itemId) {
+    try {
+      // Trường hợp rõ ràng: trong cache và KHÔNG có id server.
+      const localOnly = await offlineCache.isShoppingItemLocalOnly(itemId);
+      if (localOnly) return true;
+
+      // Không có trong cache -> mặc định coi như món của server (id số).
+      const backendId = await offlineCache.getShoppingItemBackendId(itemId);
+      return backendId === null && typeof itemId === 'string' && itemId.startsWith('local_');
+    } catch (_e) {
+      return false;
+    }
   }
 
   /**
@@ -1162,119 +1293,233 @@ export class RealRecipeService {
   }
 
   /**
-   * `GET /meal-planning/shopping-lists/active` — giỏ mua đang dùng.
+   * Giỏ mua đang dùng.
    *
-   * ⚠️ BE tự tạo list rỗng nếu user chưa có list nào -> luôn trả về 1 list.
+   * ⚠️ BE KHÔNG có route `GET /meal-planning/shopping-lists/active` -> 404.
+   *   Route thật duy nhất là `GET /meal-planning/shopping-lists` (trả MẢNG list).
+   *   => Chọn list "đang dùng" ở CLIENT theo thứ tự ưu tiên:
+   *      1. `status === 'active'`
+   *      2. `status === 'draft'`  (list mới tạo, chưa kích hoạt)
+   *      3. list đầu tiên (BE sắp xếp `createdAt desc` -> list mới nhất)
+   *
+   * ⚠️ Status hợp lệ của BE (`ShoppingListStatus`): 'draft' | 'active' | 'completed'.
+   *   List 'completed' KHÔNG dùng làm giỏ hiện tại.
    *
    * @returns {Promise<object|null>}
    */
   async getActiveShoppingList() {
-    const payload = await this.client.get('/meal-planning/shopping-lists/active');
-    if (!payload) return null;
+    const lists = await this.getShoppingLists();
+    if (!Array.isArray(lists) || lists.length === 0) return null;
+
+    const active =
+      lists.find((l) => l.status === 'active') ??
+      lists.find((l) => l.status === 'draft') ??
+      lists[0];
+
+    if (!active) return null;
 
     // ⚠️ BUG ĐÃ SỬA (user báo: "thêm nguyên liệu offline bị kẹt"):
     //   Ghi id list THẬT vào cache -> khi offline, `CacheFallback` dùng id này
     //   (thay vì id giả `'offline'`) -> op đã queue gọi đúng list khi sync
     //   -> server KHÔNG trả 404 -> món không bị mất.
-    offlineCache.saveActiveShoppingListId(payload.id).catch(() => {});
+    offlineCache.saveActiveShoppingListId(active.id).catch(() => {});
+
+    return active;
+  }
+
+  /**
+   * Thêm 1 mặt hàng vào danh sách mua — LÀM Ở CLIENT (không gọi API).
+   *
+   * ⚠️ VÌ SAO KHÔNG GỌI API:
+   *   BE KHÔNG có `POST /meal-planning/shopping-lists/{listId}/items` -> gọi
+   *   sẽ trả 404. Flutter cũng chỉ thêm ở state local
+   *   (`Mobile/lib/screens/shopping_reminder_screen.dart` -> `_addNewItem`).
+   *   => Món được lưu vào SQLite (`local_shopping_items`, `sync_status =
+   *      'local_only'`) và được gộp lại vào kết quả đọc server.
+   *
+   * @param {string} listId
+   * @param {{ingredientId?:number, name?:string, quantity?:number, unit?:string}} item
+   * @returns {Promise<object|null>} item vừa thêm (shape UI)
+   */
+  async addShoppingListItem(listId, item) {
+    if (!listId || (!item?.ingredientId && !item?.name)) return null;
+
+    const localId = `local_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+
+    await offlineCache.addLocalShoppingItem({
+      id: localId,
+      ingredientId: item.ingredientId ?? null,
+      name: item.name ?? item.ingredientName ?? '',
+      quantity: Number(item.quantity) || 0,
+      unit: item.unit ?? '',
+      listId,
+      done: false,
+    });
 
     return {
-      id: payload.id,
-      title: payload.title ?? '',
-      status: payload.status ?? 'active',
-      totalEstimatedCost: payload.totalEstimatedCost ?? null,
-      weeklyPlanId: payload.weeklyPlanId ?? null,
-      createdAt: payload.createdAt ?? null,
-      items: (payload.items ?? []).map((item) => this._toShoppingItem(item)).filter(Boolean),
+      id: localId,
+      ingredientId: item.ingredientId ?? null,
+      name: item.name ?? item.ingredientName ?? '',
+      quantity: Number(item.quantity) || 0,
+      unit: item.unit ?? '',
+      done: false,
+      estimatedPrice: null,
+      purchasedAt: null,
+      supplierSuggestions: [],
+      listId,
+      _syncStatus: SYNC_STATUS.LOCAL_ONLY,
     };
   }
 
   /**
-   * `POST /meal-planning/shopping-lists/{listId}/items` — thêm 1 mặt hàng.
+   * Thêm mọi nguyên liệu CÒN THIẾU của 1 slot vào giỏ mua — LÀM Ở CLIENT.
    *
-   * ⚠️ BE tự GỘP lượng nếu list đã có cùng nguyên liệu.
-   *
-   * @param {string} listId
-   * @param {{ingredientId:number, quantity?:number, unit?:string}} item
-   * @returns {Promise<object|null>} item vừa thêm (đã map sang shape UI)
-   */
-  async addShoppingListItem(listId, item) {
-    if (!listId || !item?.ingredientId) return null;
-
-    const body = { ingredientId: item.ingredientId };
-    if (item.quantity !== undefined && item.quantity !== null) body.quantity = item.quantity;
-    if (item.unit) body.unit = item.unit;
-
-    const payload = await this.client.post(`/meal-planning/shopping-lists/${listId}/items`, body);
-    return this._toShoppingItem(payload);
-  }
-
-  /**
-   * `POST /meal-planning/slots/{slotId}/missing-to-shopping-list`
-   * — thêm mọi nguyên liệu CÒN THIẾU của 1 slot vào giỏ mua.
-   *
-   * ⚠️ Đây là API cho nút "+ Thêm vào DS" ở màn chi tiết công thức.
-   *   Trước đây nút này chỉ hiện toast giả (không gọi API, không điều hướng).
+   * ⚠️ VÌ SAO KHÔNG GỌI API:
+   *   BE KHÔNG có `POST /meal-planning/slots/{slotId}/missing-to-shopping-list`
+   *   -> gọi sẽ trả 404. Thay vào đó ta ĐỌC `GET /meal-planning/slots/{id}`
+   *   (endpoint CÓ THẬT) -> `summary.missingItems` (BE đã tính sẵn phần thiếu
+   *   so với tủ lạnh) -> tự tính lượng theo khẩu phần user chọn -> lưu local.
    *
    * ⚠️ `servings` (KHẨU PHẦN):
-   *   Mặc định BE dùng `slot.servings` (khẩu phần trong kế hoạch). Truyền
-   *   `servings` để mua theo đúng khẩu phần user vừa chỉnh ở Stepper.
+   *   BE scale lượng theo `slot.servings` (khẩu phần trong kế hoạch). Ta tự
+   *   tính: `computeMissingPurchaseQuantity(item, scale)` với
+   *   `scale = servingsUserChon / slotServings` (giống hệt công thức BE —
+   *   xem `src/data/utils/shoppingMissing.js`).
    *
    * @param {string} slotId
    * @param {object} [options]
    * @param {number} [options.servings] - khẩu phần user chọn
-   * @returns {Promise<{listId:string|null, addedCount:number, addedItems:object[], servings?:number}>}
+   * @returns {Promise<{listId:string|null, addedCount:number, addedItems:object[], servings:number|null}>}
    */
   async addSlotMissingToShoppingList(slotId, options = {}) {
-    if (!slotId) return { listId: null, addedCount: 0, addedItems: [] };
+    if (!slotId) return { listId: null, addedCount: 0, addedItems: [], servings: null };
 
-    const body = {};
-    const servings = Number(options.servings);
-    if (Number.isFinite(servings) && servings > 0) body.servings = Math.round(servings);
+    // 1) Lấy chi tiết slot (BE có endpoint này). Nếu offline -> đọc cache.
+    let detail = null;
+    try {
+      detail = await this.getSlotDetail(slotId);
+    } catch (_e) {
+      detail = null;
+    }
+    if (!detail) {
+      try {
+        detail = await offlineCache.getRecipeDetail(String(slotId), 'slot');
+      } catch (_e) {
+        detail = null;
+      }
+    }
 
-    const payload = await this.client.post(
-      `/meal-planning/slots/${slotId}/missing-to-shopping-list`,
-      body
-    );
+    const missingItems = detail?.summary?.missingItems ?? [];
+    if (!Array.isArray(missingItems) || missingItems.length === 0) {
+      return { listId: null, addedCount: 0, addedItems: [], servings: options.servings ?? null };
+    }
+
+    // 2) Giỏ mua đang dùng (id list THẬT trên server).
+    const list = await this.getActiveShoppingList();
+    const listId = list?.id ?? null;
+    if (!listId) {
+      return { listId: null, addedCount: 0, addedItems: [], servings: options.servings ?? null };
+    }
+
+    // 3) Tính lượng mua theo khẩu phần user chọn.
+    const targetServings = Number(options.servings) || null;
+    const slotServings = Math.max(1, detail?.servings ?? 1);
+    const scale = computeServingsScale(targetServings, slotServings);
+
+    const addedItems = [];
+    for (const missing of missingItems) {
+      const name = missing?.name ?? '';
+      if (!name) continue;
+
+      const quantity = Math.max(0.01, Math.round(computeMissingPurchaseQuantity(missing, scale) * 100) / 100);
+      if (quantity <= 0) continue;
+
+      const ingredientId = missing?.ingredientId ?? null;
+      // ⚠️ `baseUnit` là đơn vị QUY CHUẨN (vd "g") -> dùng để hiển thị
+      //   (nếu dùng `originalUnit` (vd "kg") -> "0.5 kg" trong khi thực tế
+      //   là 500g -> user mua sai lượng).
+      const unit = missing?.baseUnit ?? missing?.unit ?? missing?.originalUnit ?? '';
+
+      // Gộp theo nguyên liệu: nếu list đã có cùng nguyên liệu thì CỘNG lượng
+      // (BE cũng tự gộp lượng khi tạo list từ kế hoạch).
+      const existing = addedItems.find((i) => i.ingredientId === ingredientId && i.name === name);
+      if (existing) {
+        existing.quantity = Math.round((existing.quantity + quantity) * 100) / 100;
+        continue;
+      }
+
+      const localId = `local_missing_${slotId}_${addedItems.length}`;
+      await offlineCache.addLocalShoppingItem({
+        id: localId,
+        ingredientId,
+        name,
+        quantity,
+        unit,
+        listId,
+        done: false,
+      });
+
+      addedItems.push({ id: localId, ingredientId, name, quantity, unit });
+    }
+
     return {
-      listId: payload?.listId ?? null,
-      addedCount: payload?.addedCount ?? 0,
-      addedItems: payload?.addedItems ?? [],
-      servings: payload?.servings ?? options.servings ?? null,
+      listId,
+      addedCount: addedItems.length,
+      addedItems,
+      servings: targetServings ?? slotServings,
     };
   }
 
   /**
-   * `PATCH /meal-planning/shopping-lists/{listId}/items/{itemId}` — sửa lượng.
+   * Sửa số lượng của 1 mặt hàng — LÀM Ở CLIENT (không gọi API).
    *
-   * ⚠️ KHÁC với `toggleShoppingItemInList`: endpoint này KHÔNG tự thêm
-   *   vào tủ lạnh khi tick (chỉ `toggle` cũ mới làm vậy).
+   * ⚠️ VÌ SAO KHÔNG GỌI API:
+   *   `PATCH /meal-planning/shopping-lists/{listId}/items/{itemId}` KHÔNG có
+   *   `@Body()` -> nó TOGGLE `isPurchased`, và khi toggle sang `true` sẽ TỰ THÊM
+   *   1 món vào tủ lạnh. Gửi `{ quantity }` đi sẽ vô tình đánh dấu "đã mua"
+   *   và thêm món vào tủ -> sai hoàn toàn.
+   *   => Sửa lượng chỉ lưu ở SQLite.
    *
    * @param {string} listId
    * @param {string|number} itemId
    * @param {{quantity?:number}} payload
-   * @returns {Promise<object|null>}
+   * @returns {Promise<object|null>} item sau khi sửa (shape UI)
    */
   async updateShoppingListItem(listId, itemId, payload = {}) {
     if (!listId || itemId === null || itemId === undefined) return null;
 
-    const body = {};
-    if (payload.quantity !== undefined && payload.quantity !== null) {
-      body.quantity = payload.quantity;
-    }
-    if (payload.isPurchased !== undefined) body.isPurchased = payload.isPurchased;
+    const quantity = Number(payload.quantity);
+    if (!Number.isFinite(quantity) || quantity <= 0) return null;
 
-    if (!Object.keys(body).length) return null;
+    await offlineCache.updateShoppingItemQuantityLocal(itemId, quantity);
 
-    const result = await this.client.patch(
-      `/meal-planning/shopping-lists/${listId}/items/${itemId}`,
-      body
-    );
-    return this._toShoppingItem(result);
+    const items = await offlineCache.getShoppingItems();
+    const current = items.find((i) => String(i.id) === String(itemId));
+
+    return {
+      id: current?.id ?? itemId,
+      ingredientId: current?.ingredientId ?? null,
+      name: current?.name ?? '',
+      quantity,
+      unit: current?.unit ?? '',
+      done: current?.done ?? false,
+      estimatedPrice: current?.estimatedPrice ?? null,
+      purchasedAt: current?.purchasedAt ?? null,
+      supplierSuggestions: current?.supplierSuggestions ?? [],
+      listId,
+      _syncStatus: current?._syncStatus ?? SYNC_STATUS.LOCAL_ONLY,
+    };
   }
 
   /**
-   * `DELETE /meal-planning/shopping-lists/{listId}/items/{itemId}` — xoá mặt hàng.
+   * Xoá 1 mặt hàng khỏi danh sách mua — LÀM Ở CLIENT (không gọi API).
+   *
+   * ⚠️ VÌ SAO KHÔNG GỌI API:
+   *   BE KHÔNG có `DELETE /meal-planning/shopping-lists/{listId}/items/{itemId}`
+   *   -> gọi sẽ trả 404. Flutter cũng chỉ xoá ở state local
+   *   (`shopping_reminder_screen.dart` -> `_deleteItem`).
+   *   => Đánh dấu tombstone trong SQLite (`sync_status = 'local_deleted'`) để
+   *      món KHÔNG bị "hồi sinh" khi pull danh sách từ server.
    *
    * @param {string} listId
    * @param {string|number} itemId
@@ -1282,7 +1527,7 @@ export class RealRecipeService {
    */
   async removeShoppingListItem(listId, itemId) {
     if (!listId || itemId === null || itemId === undefined) return;
-    await this.client.delete(`/meal-planning/shopping-lists/${listId}/items/${itemId}`);
+    await offlineCache.markShoppingItemLocallyDeleted(itemId);
   }
 
   // ═══════════════ Weekly stats ═══════════════
