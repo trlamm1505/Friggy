@@ -4,7 +4,7 @@
  * Header cho các màn hình profile: avatar + name + email + edit button.
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, Image, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
 import { useTheme } from '../../theme/ThemeContext';
 import { AppColors } from '../../theme/colors';
@@ -36,6 +36,18 @@ export const ProfileHeader = ({
 
   const initial = (name || 'T').charAt(0).toUpperCase();
 
+  // ⚠️ VÌ SAO CẦN `failedUrl`:
+  //   Nếu URL ảnh hỏng (404, sai host, mất mạng), `<Image>` render ra ô
+  //   TRỐNG mà KHÔNG báo lỗi -> user tưởng app bị lỗi. Fallback về chữ cái
+  //   đầu để vẫn thấy "có avatar" (đúng như Flutter `CircleAvatar`
+  //   có `backgroundImage` + `onBackgroundImageError`).
+  //
+  //   Lưu URL LỖI (thay vì boolean) để khi user đổi ảnh mới, ảnh mới được
+  //   thử load lại — không cần effect để reset state.
+  const [failedUrl, setFailedUrl] = useState(null);
+
+  const showImage = Boolean(avatarUrl) && failedUrl !== avatarUrl;
+
   return (
     <View style={[styles.container, style]}>
       <View style={styles.avatarWrap}>
@@ -57,10 +69,11 @@ export const ProfileHeader = ({
               },
             ]}
           >
-            {avatarUrl ? (
+            {showImage ? (
               <Image
                 source={{ uri: avatarUrl }}
                 style={{ width: s.avatar, height: s.avatar, borderRadius: s.avatar / 2 }}
+                onError={() => setFailedUrl(avatarUrl)}
               />
             ) : (
               <Text

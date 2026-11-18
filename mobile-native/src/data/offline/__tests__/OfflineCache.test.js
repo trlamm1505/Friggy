@@ -79,6 +79,30 @@ describe('OfflineCache - tủ lạnh', () => {
     expect(ids).toContain('new_1');
   });
 
+  // ⚠️ BUG ĐÃ GẶP: user SỬA món đã có trên server khi offline -> row có id
+  //   thật (vd `srv_1`) + `sync_status='pending'`. Nếu `INSERT OR REPLACE`
+  //   ghi đè -> MẤT chỉnh sửa offline (vd ngày hết hạn mới) + mất trạng
+  //   thái "đang chờ đồng bộ" -> món quay về bản cũ trên server.
+  it('KHÔNG ghi đè row pending có CÙNG id với item từ server', async () => {
+    await offlineCache.saveFridgeItems([{ id: 'srv_1', name: 'Táo', quantity: 1 }]);
+    // User sửa offline -> row chuyển sang 'pending' với giá trị mới.
+    await offlineCache.updateFridgeItem('srv_1', { quantity: 9, expiryDate: '2026-12-05' });
+    await offlineCache.markFridgeItemPending('srv_1');
+
+    // Pull dữ liệu mới từ server (bản server CHƯA có chỉnh sửa của user).
+    await offlineCache.saveFridgeItems([
+      { id: 'srv_1', name: 'Táo', quantity: 1, expiryDate: '2026-11-01' },
+    ]);
+
+    const items = await offlineCache.getFridgeItems();
+    expect(items).toHaveLength(1);
+    expect(items[0].id).toBe('srv_1');
+    // Vẫn giữ bản LOCAL (chỉnh sửa offline) + trạng thái chờ đồng bộ.
+    expect(items[0].quantity).toBe(9);
+    expect(items[0].expiryDate).toBe('2026-12-05');
+    expect(items[0]._syncStatus).toBe(SYNC_STATUS.PENDING);
+  });
+
   it('savePendingFridgeItem đánh dấu sync_status = pending', async () => {
     await offlineCache.savePendingFridgeItem({ id: 'p1', name: 'X', quantity: 1 });
     const items = await offlineCache.getFridgeItems();
@@ -261,6 +285,10 @@ describe('OfflineCache - kế hoạch tuần / công thức', () => {
     await offlineCache.cleanOldRecipeDetails(7);
 
     // Cache vừa ghi nên còn -> xoá với maxAgeDays = 0 mới mất.
+    //
+    // ⚠️ Chờ 1 tick để `updated_at` khác `cutoff` (Date.now() có độ phân giải
+    //   1ms -> gọi liên tiếp có thể ra cùng 1 mốc thời gian).
+    await new Promise((resolve) => setTimeout(resolve, 5));
     await offlineCache.cleanOldRecipeDetails(0);
     expect(await offlineCache.getRecipeDetail('r1', 'recipe')).toBeNull();
   });

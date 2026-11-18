@@ -69,6 +69,16 @@ export const OP_TYPES = {
   NOTIFICATION_DELETE: 'notification_delete',
   SLOT_UPDATE: 'slot_update',
   ONBOARDING_SUBMIT: 'onboarding_submit',
+  /**
+   * Thêm nguyên liệu CÒN THIẾU của 1 slot meal plan vào giỏ mua (offline).
+   *
+   * ⚠️ VÌ SAO CẦN:
+   *   `POST /meal-planning/slots/{id}/missing-to-shopping-list` là method GHI
+   *   (có trong `WriteMethods.recipeService`) nhưng trước đây KHÔNG có
+   *   mutation handler -> offline gọi sẽ ném `OfflineRequiresNetworkError`
+   *   -> nút "+ Thêm vào DS" không hoạt động khi mất mạng.
+   */
+  SHOPPING_MISSING_ADD: 'shopping_missing_add',
 };
 
 /** Số lần thử tối đa trước khi bỏ op (tránh retry vô hạn). */
@@ -213,6 +223,47 @@ class OutboxQueue {
         `UPDATE local_pending_ops SET entity_id = ?, payload = ? WHERE id = ?;`,
         [newId, JSON.stringify(nextPayload), row.id]
       );
+      count += 1;
+    }
+    return count;
+  }
+
+  /**
+   * Remap `itemId` trong payload của các op món mua (khi id local `pending_*`
+   * được đổi thành id server thật).
+   *
+   * ⚠️ VÌ SAO CẦN (bug user báo: "món thêm offline bị kẹt"):
+   *   User thêm món offline -> id local `pending_xxx`. Sau đó user TICK món đó
+   *   offline -> op `shopping_toggle` có `payload.itemId = 'pending_xxx'`.
+   *   Khi sync, op ADD chạy trước (FIFO) -> server tạo item id thật (vd `42`).
+   *   Nếu không remap, op toggle gửi `itemId='pending_xxx'` -> BE 404 -> tick
+   *   bị mất. => Remap `payload.itemId` sang id server.
+   *
+   * @param {string} oldId - id local (vd 'pending_xxx')
+   * @param {string|number} newId - id server (vd '42')
+   * @returns {Promise<number>} số op đã remap
+   */
+  async remapShoppingItemId(oldId, newId) {
+    if (oldId === null || oldId === undefined) return 0;
+    if (String(oldId) === String(newId)) return 0;
+
+    const db = await this._ensureDb();
+    const rows = await db.getAllAsync(
+      `SELECT id, payload FROM local_pending_ops
+       WHERE op_type IN (?, ?, ?) AND entity_id = ?;`,
+      [OP_TYPES.SHOPPING_TOGGLE, OP_TYPES.SHOPPING_ITEM_UPDATE, OP_TYPES.SHOPPING_ITEM_REMOVE],
+      String(oldId)
+    );
+    if (!rows || rows.length === 0) return 0;
+
+    let count = 0;
+    for (const row of rows) {
+      const payload = OutboxQueue._parsePayload(row.payload);
+      const nextPayload = { ...payload, itemId: newId };
+      await db.runAsync(`UPDATE local_pending_ops SET payload = ? WHERE id = ?;`, [
+        JSON.stringify(nextPayload),
+        row.id,
+      ]);
       count += 1;
     }
     return count;

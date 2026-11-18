@@ -45,6 +45,7 @@ import { ErrorState } from '../../components/common/ErrorState';
 import { Skeleton } from '../../components/common/Skeleton';
 import { ScreenBackground } from '../../components/common/ScreenBackground';
 import { useFridgeItems } from '../../hooks/useServiceHooks';
+import { useSyncEngine } from '../../hooks/useSyncEngine';
 import { sortFridgeItems } from '../../utils/fridgeItems';
 import { COMPARTMENT_LABEL } from '../../../data/services/real/RealFridgeService';
 import { Routes } from '../../../shared/constants/routes';
@@ -139,6 +140,29 @@ export const FridgeInventoryScreen = ({ fridge, isEmbedded = false, onRename }) 
   const serviceFilters = useMemo(() => ({}), []);
 
   const { data: items, loading, error, refetch } = useFridgeItems(serviceFilters);
+
+  /**
+   * Refetch list sau khi một vòng sync vừa kết thúc.
+   *
+   * ⚠️ VÌ SAO CẦN:
+   *   Khi mạng khôi phục, `SyncEngine` upload các op đang chờ (vd `fridge_add`)
+   *   rồi món trong SQLite được thay bằng item thật từ server (id UUID + version).
+   *   List trong RAM của màn này vẫn là bản CŨ (id `pending_*`) -> nếu không
+   *   refetch, UI hiển thị id cũ cho tới lần focus/refetch kế tiếp.
+   *
+   *   `useSyncEngine` với `autoSyncOnMount: false` + `syncOnReconnect: false`
+   *   -> chỉ dùng để LẮNG NGHE trạng thái, KHÔNG tự sync (tránh sync trùng
+   *   với listener tầng module trong `App.jsx`).
+   */
+  const { isSyncing } = useSyncEngine({ autoSyncOnMount: false, syncOnReconnect: false });
+  const wasSyncingRef = useRef(false);
+  useEffect(() => {
+    // Chỉ refetch khi chuyển từ "đang sync" -> "đã xong".
+    if (wasSyncingRef.current && !isSyncing) {
+      refetch();
+    }
+    wasSyncingRef.current = isSyncing;
+  }, [isSyncing, refetch]);
 
   /**
    * Lọc + sắp xếp CLIENT-SIDE trên list đã tải.

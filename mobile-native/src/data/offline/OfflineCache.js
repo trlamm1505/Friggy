@@ -27,6 +27,7 @@
  */
 
 import { databaseService } from '../storage/DatabaseService';
+import { normalizeToBaseUnit, canCompare, fromBaseUnit } from './unitNormalize';
 
 /** Quy ước `sync_status`. */
 export const SYNC_STATUS = {
@@ -42,6 +43,50 @@ export const SYNC_STATUS = {
 };
 
 const now = () => Date.now();
+
+/**
+ * Id GIẢ của giỏ mua khi offline (không có id server thật).
+ *
+ * ⚠️ VÌ SAO PHẢI BIẾT:
+ *   `CacheFallback.getActiveShoppingList()` trả `id = 'offline'` khi offline.
+ *   Id này KHÔNG tồn tại trên server -> dùng để gọi API sẽ 404.
+ *   => Mọi chỗ cần id list THẬT phải dùng `getActiveShoppingListId()`.
+ */
+export const OFFLINE_LIST_ID = 'offline';
+
+/** Key cache JSON lưu id giỏ mua đang dùng (list thật trên server). */
+export const ACTIVE_SHOPPING_LIST_KEY = 'active_shopping_list_id';
+
+/**
+ * Ngày hôm nay theo GIỜ ĐỊA PHƯƠNG -> chuỗi `YYYY-MM-DD`.
+ *
+ * ⚠️ VÌ SAO KHÔNG DÙNG `new Date().toISOString().slice(0, 10)`:
+ *   `toISOString()` trả theo giờ UTC -> ở Việt Nam (UTC+7), lúc 03:00 ngày
+ *   hôm nay thì UTC vẫn là HÔM QUA -> lệch 1 ngày -> cache "thực đơn ngày"
+ *   không khớp ngày user đang xem.
+ *
+ * @param {Date} [date]
+ * @returns {string} `YYYY-MM-DD`
+ */
+export const toLocalDateStr = (date = new Date()) => {
+  const d = date instanceof Date ? date : new Date(date);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+/**
+ * `dayOfWeek` của BE = 1=T2 ... 7=CN. `Date.getDay()` của JS = 0=CN ... 6=T7.
+ * Quy đổi JS -> BE.
+ *
+ * @param {Date} [date]
+ * @returns {number} 1..7 theo quy ước BE
+ */
+export const toBeDayOfWeek = (date = new Date()) => {
+  const jsDay = date.getDay(); // 0=CN, 1=T2, ..., 6=T7
+  return jsDay === 0 ? 7 : jsDay;
+};
 
 /** Parse JSON an toàn - row hỏng không được làm sập cả cache. */
 const safeParse = (raw, fallback = null) => {
@@ -87,6 +132,15 @@ class OfflineCache {
    * ⚠️ `items` RỖNG vẫn phải xoá row 'synced': server đã xoá hết item ->
    *   cache phải phản ánh "tủ trống", nếu không user sẽ thấy món cũ offline.
    *
+   * ⚠️ KHÔNG ghi đè row 'pending' có CÙNG id với item từ server:
+   *   Đây là trường hợp user SỬA món đã có trên server khi offline -> row đó
+   *   có id thật (vd `srv-1`) + `sync_status='pending'`.
+   *   Nếu `INSERT OR REPLACE` ghi đè -> mất chỉnh sửa offline của user
+   *   (vd ngày hết hạn mới) + mất trạng thái "đang chờ đồng bộ" -> món quay
+   *   về bản cũ trên server và biến mất khỏi hàng đợi trong UI.
+   *   => BỎ QUA các item có id trùng row 'pending'; row pending được giữ
+   *      nguyên cho tới khi `SyncEngine` upload xong (`markFridgeItemSynced`).
+   *
    * @param {Array<object>} items - shape UI `FridgeItem`
    * @returns {Promise<number>} số row đã ghi
    */
@@ -102,8 +156,17 @@ class OfflineCache {
         SYNC_STATUS.SYNCED,
       ]);
 
+      // Id của các row đang chờ đồng bộ -> KHÔNG được ghi đè bằng dữ liệu
+      // server (xem giải thích ở JSDoc).
+      const pendingRows = await tx.getAllAsync(
+        `SELECT id FROM local_ingredients WHERE sync_status = ?;`,
+        [SYNC_STATUS.PENDING]
+      );
+      const pendingIds = new Set((pendingRows ?? []).map((r) => String(r.id)));
+
       for (const item of items) {
         if (!item?.id) continue;
+        if (pendingIds.has(String(item.id))) continue;
 
         await tx.runAsync(
           `INSERT OR REPLACE INTO local_ingredients
@@ -389,6 +452,19 @@ class OfflineCache {
 
   /**
    * Thay cache danh sách mua bằng dữ liệu mới từ server.
+   *
+   * ⚠️ GIỮ LẠI row 'pending' (tick/thêm/xoá offline chưa upload):
+   *   Giống `saveFridgeItems`, nếu ghi đè row 'pending' thì:
+   *     - user tick n món khi offline -> bật mạng -> server chưa có nhãn
+   *       "đã mua" -> cache bị ghi đè -> màn Home lại hiện N món CHƯA MUA
+   *       (đúng bug user báo).
+   *     - món thêm offline biến mất khỏi danh sách.
+   *   => Chỉ xoá/ghi đè row 'synced', giữ nguyên row 'pending'.
+   *
+   * ⚠️ KHÔNG ghi đè row 'pending' có CÙNG id với item từ server:
+   *   Trường hợp user tick món đã có trên server khi offline -> row đó có
+   *   `sync_status='pending'` -> phải giữ trạng thái tick của user.
+   *
    * @param {Array<object>} items - shape UI `ShoppingItem` (+ `listId`)
    */
   async saveShoppingItems(items) {
@@ -402,8 +478,21 @@ class OfflineCache {
         SYNC_STATUS.SYNCED,
       ]);
 
+      // Id của các row đang chờ đồng bộ -> KHÔNG được ghi đè bằng dữ liệu
+      // server (xem JSDoc).
+      const pendingRows = await tx.getAllAsync(
+        `SELECT id, backend_item_id FROM local_shopping_items WHERE sync_status = ?;`,
+        [SYNC_STATUS.PENDING]
+      );
+      const pendingIds = new Set(
+        (pendingRows ?? []).flatMap((r) =>
+          [r.id, r.backend_item_id].filter((v) => v !== null && v !== undefined).map(String)
+        )
+      );
+
       for (const item of items) {
         if (!item?.id) continue;
+        if (pendingIds.has(String(item.id))) continue;
 
         await tx.runAsync(
           `INSERT OR REPLACE INTO local_shopping_items
@@ -427,6 +516,23 @@ class OfflineCache {
     });
 
     return items.length;
+  }
+
+  /**
+   * Đếm số món CHƯA MUA trong cache danh sách mua.
+   *
+   * ⚠️ Dùng cho nút tắt ở Home: đếm trực tiếp cache để số liệu KHỚP với
+   *   những gì user vừa tick offline (row 'pending') -> không bị "reset về
+   *   số cũ" khi server chưa kịp nhận.
+   *
+   * @returns {Promise<number>}
+   */
+  async getUnpurchasedShoppingCount() {
+    const db = await this._ensureDb();
+    const row = await db.getFirstAsync(
+      `SELECT COUNT(*) as count FROM local_shopping_items WHERE is_purchased = 0;`
+    );
+    return row?.count ?? 0;
   }
 
   /**
@@ -533,6 +639,190 @@ class OfflineCache {
   }
 
   /**
+   * Lưu id của giỏ mua đang dùng (list thật trên server).
+   *
+   * ⚠️ VÌ SAO CẦN (bug user báo: "thêm nguyên liệu offline bị kẹt"):
+   *   Khi offline, `getActiveShoppingList()` fallback trả list GIẢ có
+   *   `id = 'offline'`. Nếu op đã queue mang `listId = 'offline'` -> lúc sync
+   *   server trả 404 (không có list đó) -> món bị mất vĩnh viễn.
+   *   => Ghi id list THẬT vào cache mỗi khi đọc được từ server -> khi offline
+   *      dùng luôn id đó -> sync thành công.
+   *
+   * @param {string} listId - uuid của list thật trên server
+   */
+  async saveActiveShoppingListId(listId) {
+    if (!listId || listId === OFFLINE_LIST_ID) return;
+    await this.saveJsonCache(ACTIVE_SHOPPING_LIST_KEY, String(listId));
+  }
+
+  /**
+   * Đọc id giỏ mua đang dùng đã cache (có thể `null` nếu chưa từng online).
+   *
+   * @returns {Promise<string|null>}
+   */
+  async getActiveShoppingListId() {
+    const cached = await this.getJsonCache(ACTIVE_SHOPPING_LIST_KEY, null);
+    if (cached && cached !== OFFLINE_LIST_ID) return String(cached);
+
+    // ⚠️ FALLBACK: chưa từng đọc `getActiveShoppingList()` (BE) -> lấy list id
+    //   từ bất kỳ row món mua nào đã cache. Danh sách mua thường chỉ có 1 list
+    //   active -> dùng list id đó là hợp lý.
+    const db = await this._ensureDb();
+    const row = await db.getFirstAsync(
+      `SELECT list_id FROM local_shopping_items
+       WHERE list_id IS NOT NULL AND list_id != '' ORDER BY updated_at DESC LIMIT 1;`
+    );
+    if (row?.list_id && row.list_id !== OFFLINE_LIST_ID) return String(row.list_id);
+
+    return null;
+  }
+
+  /**
+   * Ghi đè 1 món mua (không xoá các món khác).
+   *
+   * ⚠️ VÌ SAO KHÔNG DÙNG `saveShoppingItems`:
+   *   `saveShoppingItems` XOÁ SẠCH mọi row `synced` rồi insert lại danh sách
+   *   mới. Nếu gọi nó với 1 item duy nhất (sau khi sync 1 món offline) ->
+   *   toàn bộ danh sách mua còn lại bị xoá khỏi cache -> user mất dữ liệu.
+   *   => Hàm này upsert đúng 1 row, không đụng tới row khác.
+   *
+   * @param {object} item - `{ id, name, quantity, unit, ingredientId, listId, done }`
+   */
+  async upsertShoppingItem(item) {
+    if (!item?.id) return null;
+    const db = await this._ensureDb();
+
+    await db.runAsync(
+      `INSERT OR REPLACE INTO local_shopping_items
+         (id, ingredient_id, ingredient_name, quantity, unit, is_purchased,
+          updated_at, sync_status, list_id, backend_item_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+      [
+        String(item.id),
+        item.ingredientId ?? null,
+        item.name ?? '',
+        item.quantity ?? 0,
+        item.unit ?? '',
+        item.done ? 1 : 0,
+        now(),
+        item.syncStatus ?? SYNC_STATUS.SYNCED,
+        item.listId ?? null,
+        item.backendItemId ?? null,
+      ]
+    );
+    return String(item.id);
+  }
+
+  /**
+   * Lấy id server (`backend_item_id`) của 1 món mua trong cache.
+   *
+   * ⚠️ Dùng khi sync: món tạo offline có id local `pending_*` -> cần map sang
+   *   id server thật trước khi gọi PATCH/DELETE (BE dùng `ParseIntPipe`).
+   *
+   * ⚠️ Trả về SỐ nếu id server là số (BE dùng `ParseIntPipe`) -> giữ đúng
+   *   kiểu mà endpoint mong đợi.
+   *
+   * @param {string|number} itemId
+   * @returns {Promise<string|number|null>}
+   */
+  async getShoppingItemBackendId(itemId) {
+    if (itemId === null || itemId === undefined) return null;
+    const db = await this._ensureDb();
+    const row = await db.getFirstAsync(
+      `SELECT backend_item_id FROM local_shopping_items WHERE id = ? OR backend_item_id = ? LIMIT 1;`,
+      [String(itemId), itemId]
+    );
+    if (!row?.backend_item_id) return null;
+
+    const backendId = row.backend_item_id;
+    const asNumber = Number(backendId);
+    return Number.isFinite(asNumber) ? asNumber : String(backendId);
+  }
+
+  /**
+   * Đọc các món mua đang chờ đồng bộ (`sync_status = 'pending'`).
+   *
+   * ⚠️ VÌ SAO CẦN:
+   *   Đường đọc ONLINE (`RealRecipeService.getShoppingLists`) trả CHỈ list
+   *   server -> món user vừa thêm offline BIẾN MẤT khỏi UI khi bật mạng
+   *   (đúng bug user báo). Đường đọc OFFLINE trả TẤT CẢ row.
+   *   => Gộp row pending vào kết quả online cho 2 đường đọc KHỚP NHAU.
+   *
+   * @returns {Promise<Array<object>>}
+   */
+  async getPendingShoppingItems() {
+    const db = await this._ensureDb();
+    const rows = await db.getAllAsync(
+      `SELECT * FROM local_shopping_items WHERE sync_status = ?;`,
+      [SYNC_STATUS.PENDING]
+    );
+
+    return (rows ?? []).map((row) => ({
+      id: row.backend_item_id ?? row.id,
+      ingredientId: row.ingredient_id ?? null,
+      name: row.ingredient_name ?? '',
+      quantity: row.quantity ?? 0,
+      unit: row.unit ?? '',
+      done: row.is_purchased === 1,
+      estimatedPrice: null,
+      purchasedAt: null,
+      supplierSuggestions: [],
+      listId: row.list_id ?? null,
+      _syncStatus: row.sync_status ?? SYNC_STATUS.PENDING,
+    }));
+  }
+
+  /**
+   * Xoá nhiều món mua theo danh sách id (dùng sau khi sync thành công).
+   *
+   * @param {Array<string|number>} ids
+   * @returns {Promise<number>} số row đã xoá
+   */
+  async removeShoppingItems(ids) {
+    const list = (ids ?? []).filter((v) => v !== null && v !== undefined);
+    if (list.length === 0) return 0;
+
+    const db = await this._ensureDb();
+    for (const id of list) {
+      await db.runAsync(`DELETE FROM local_shopping_items WHERE id = ? OR backend_item_id = ?;`, [
+        String(id),
+        id,
+      ]);
+    }
+    return list.length;
+  }
+
+  /**
+   * Xoá các món mua "pending" tạo từ 1 slot meal plan.
+   *
+   * ⚠️ Dùng sau khi `shopping_missing_add` upload thành công: các row
+   *   optimistic (id `pending_missing_<slotId>_*`) phải bị xoá, nếu không
+   *   danh sách mua sẽ hiện TRÙNG món (bản optimistic + bản thật từ server).
+   *
+   * @param {string} slotId
+   * @returns {Promise<number>}
+   */
+  async removePendingShoppingItemsBySlot(slotId) {
+    if (!slotId) return 0;
+    const db = await this._ensureDb();
+
+    // ⚠️ Không dùng `LIKE 'pending_missing_%'` vì `_` trong SQL LIKE là
+    //   wildcard "1 ký tự bất kỳ" -> có thể xoá nhầm row khác.
+    //   => Lọc bằng JS rồi xoá theo id chính xác.
+    const rows = await db.getAllAsync(
+      `SELECT id FROM local_shopping_items WHERE sync_status = ?;`,
+      [SYNC_STATUS.PENDING]
+    );
+    const prefix = `pending_missing_${slotId}_`;
+    const targets = (rows ?? [])
+      .map((r) => String(r.id ?? ''))
+      .filter((id) => id.startsWith(prefix));
+
+    if (targets.length === 0) return 0;
+    return this.removeShoppingItems(targets);
+  }
+
+  /**
    * Xoá 1 món khỏi danh sách mua (offline).
    *
    * ⚠️ F3: xoá hẳn khỏi cache local (row biến mất khỏi UI ngay) + đẩy op
@@ -584,6 +874,54 @@ class OfflineCache {
   }
 
   /**
+   * Lưu THỰC ĐƠN NGÀY (bữa ăn hôm nay) vào cache.
+   *
+   * ⚠️ VÌ SAO CẦN (ngoài cache kế hoạch tuần):
+   *   `getSuggestions()` (màn "Bữa ăn hôm nay" ở Home) lấy slot từ
+   *   `GET /meal-planning/plans/{id}` -> `dailyPlans[]` -> lọc `dayOfWeek`.
+   *   Nếu offline mà CHỈ có cache kế hoạch tuần thì:
+   *     - kế hoạch cache có thể là tuần KHÁC (tuần tới) -> không có
+   *       `dayOfWeek` của hôm nay -> Home hiện "Chưa có món".
+   *     - dùng có match thì tên/ảnh lấy sai field -> hiện món trống tên.
+   *   => Cache riêng theo NGÀY là nguồn đúng cho "hôm nay".
+   *
+   * @param {string} dateStr - `YYYY-MM-DD` (giờ địa phương)
+   * @param {Array<object>} slots - shape UI `RecipeSuggestion` (đã map qua
+   *   `_toMealSlot` -> có `id`, `recipeId`, `name`, `image`, `mealType`, ...)
+   */
+  async saveDailyMeals(dateStr, slots) {
+    if (!dateStr || !Array.isArray(slots)) return 0;
+
+    await this._ensureDb();
+    await databaseService.withTransaction(async (tx) => {
+      await tx.runAsync(`DELETE FROM local_json_cache WHERE key = ?;`, [
+        `daily_meals:${dateStr}`,
+      ]);
+
+      await tx.runAsync(
+        `INSERT OR REPLACE INTO local_json_cache (key, payload, updated_at)
+         VALUES (?, ?, ?);`,
+        [`daily_meals:${dateStr}`, JSON.stringify(slots), now()]
+      );
+    });
+
+    return slots.length;
+  }
+
+  /**
+   * Đọc THỰC ĐƠN NGÀY từ cache.
+   *
+   * @param {string} [dateStr] - `YYYY-MM-DD` (mặc định = hôm nay, giờ địa phương)
+   * @returns {Promise<Array<object>|null>} null nếu chưa có cache
+   */
+  async getDailyMeals(dateStr = null) {
+    const key = `daily_meals:${dateStr ?? toLocalDateStr()}`;
+    const cached = await this.getJsonCache(key, null);
+    if (!Array.isArray(cached) || cached.length === 0) return null;
+    return cached;
+  }
+
+  /**
    * Đọc kế hoạch tuần mới nhất từ cache.
    * @returns {Promise<object|null>}
    */
@@ -616,14 +954,18 @@ class OfflineCache {
     if (!plan) return [];
 
     const days = Array.isArray(plan.days) ? plan.days : [];
-    const target = dateStr ?? new Date().toISOString().slice(0, 10);
+    // ⚠️ Dùng giờ ĐỊA PHƯƠNG (không phải UTC) -> tránh lệch 1 ngày.
+    const target = dateStr ?? toLocalDateStr();
 
     const matched = days.filter((day) => {
       if (!day) return false;
       // Slot có thể nằm trong `day.date` hoặc `day.dayOfWeek`.
       if (day.date && String(day.date).slice(0, 10) === target) return true;
       if (!day.date && day.dayOfWeek !== undefined && day.dayOfWeek !== null) {
-        return String(day.dayOfWeek) === String(new Date(target).getDay());
+        // ⚠️ `dayOfWeek` của BE = 1=T2 ... 7=CN, còn `Date.getDay()` của JS
+        //    = 0=CN ... 6=T7 -> so sánh thẳng là SAI LỆCH 1 (off-by-one).
+        //    Dùng `toBeDayOfWeek` để quy đổi cùng quy ước BE.
+        return String(day.dayOfWeek) === String(toBeDayOfWeek(new Date(`${target}T00:00:00`)));
       }
       return false;
     });
@@ -759,6 +1101,24 @@ class OfflineCache {
     const db = await this._ensureDb();
     if (!profile) return;
 
+    // ⚠️ F1 (offline avatar): `avatar_local_path` trỏ tới FILE ẢNH trên máy.
+    //   - Nếu caller truyền `avatarLocalPath` (kể cả `null`) -> LÀM THEO
+    //     đúng giá trị đó (null = đã upload xong, xoá file local).
+    //   - Nếu caller KHÔNG nhắc tới -> giữ giá trị đang có, vì nếu ghi đè
+    //     bằng `null` thì op `AVATAR_UPLOAD` đang chờ mất file để upload
+    //     -> avatar mất trắng vĩnh viễn.
+    const hasExplicitLocalPath =
+      Object.prototype.hasOwnProperty.call(profile, 'avatarLocalPath') ||
+      Object.prototype.hasOwnProperty.call(profile, 'avatar_local_path');
+
+    let pendingLocalPath = null;
+    if (hasExplicitLocalPath) {
+      pendingLocalPath = profile.avatarLocalPath ?? profile.avatar_local_path ?? null;
+    } else {
+      const existing = await this.getUserProfile();
+      pendingLocalPath = existing?.avatarLocalPath ?? null;
+    }
+
     await db.runAsync(
       `INSERT OR REPLACE INTO local_user_profile
          (id, name, email, phone, avatar_url, avatar_local_path, date_of_birth, gender, bio,
@@ -769,7 +1129,7 @@ class OfflineCache {
         profile.email ?? null,
         profile.phone ?? null,
         profile.avatar ?? null,
-        profile.avatarLocalPath ?? profile.avatar_local_path ?? null,
+        pendingLocalPath,
         profile.birthday ?? null,
         profile.gender ?? null,
         profile.bio ?? null,
@@ -1323,6 +1683,14 @@ class OfflineCache {
   /**
    * Cập nhật trạng thái cooked của 1 slot trong cache.
    *
+   * ⚠️ VÌ SAO SỬA (ngoài việc lưu `cooked`):
+   *   `detail` từ `getSlotDetail()` có shape:
+   *     `{ id, mealType, servings, completedAt, cooked, recipe, summary }`
+   *   Nhưng code cũ ghi vào `detail.slot.cooked` -> tạo field `slot` KHÔNG tồn tại,
+   *   còn `detail.cooked` (field thật) KHÔNG được cập nhật -> UI offline vẫn
+   *   hiện "Chưa nấu" sau khi user tick "đã nấu" offline.
+   *   => Ghi đúng field `cooked` + `completedAt` (BE set completedAt khi nấu).
+   *
    * @param {string} slotId
    * @param {boolean} cooked
    */
@@ -1334,9 +1702,323 @@ class OfflineCache {
 
     await this.saveRecipeDetail(String(slotId), 'slot', {
       ...detail,
-      slot: { ...(detail.slot ?? {}), cooked },
-      cooked,
+      cooked: Boolean(cooked),
+      completedAt: cooked ? detail.completedAt ?? Date.now() : null,
+      slot: { ...(detail.slot ?? {}), cooked: Boolean(cooked) },
     });
+  }
+
+  /**
+   * Lưu chi tiết các slot của 1 ngày (thực đơn ngày) vào cache.
+   *
+   * ⚠️ VÌ SAO CẦN:
+   *   Màn "Thực đơn ngày" (Home) hiện DANH SÁCH món hôm nay. Nếu offline,
+   *   user vẫn muốn MỞ chi tiết từng món (nguyên liệu + cách nấu) để nấu.
+   *   Cache `daily_meals:<date>` chỉ giữ shape RÚT GỌN (id, tên, ảnh) ->
+   *   không đủ để mở chi tiết offline.
+   *   => Cache thêm chi tiết đầy đủ của từng slot theo NGÀY.
+   *
+   * @param {string} dateStr - `YYYY-MM-DD` (giờ địa phương)
+   * @param {Array<object>} details - shape UI `MealSlotDetail` (từ `getSlotDetail`)
+   * @returns {Promise<number>} số slot đã lưu
+   */
+  async saveDailyMealDetails(dateStr, details) {
+    if (!dateStr || !Array.isArray(details)) return 0;
+
+    await this._ensureDb();
+    const count = details.length;
+
+    for (const detail of details) {
+      if (!detail?.id) continue;
+      // `getRecipeDetail(id, 'slot')` dùng chung bảng với chi tiết công thức.
+      await this.saveRecipeDetail(String(detail.id), 'slot', detail);
+    }
+
+    // Danh sách id slot của ngày -> tra cứu nhanh, không phải quét cả bảng.
+    await this.saveJsonCache(`daily_meal_details:${dateStr}`, details.map((d) => ({ id: d.id })));
+
+    return count;
+  }
+
+  /**
+   * Đọc danh sách id slot của ngày từ cache.
+   *
+   * @param {string} [dateStr]
+   * @returns {Promise<Array<{id:string}>>}
+   */
+  async getDailyMealDetailIds(dateStr = null) {
+    const key = `daily_meal_details:${dateStr ?? toLocalDateStr()}`;
+    const cached = await this.getJsonCache(key, []);
+    return Array.isArray(cached) ? cached : [];
+  }
+
+  /**
+   * Trừ nguyên liệu khỏi tủ lạnh khi user tick "đã nấu" OFFLINE.
+   *
+   * ⚠️ VÌ SAO CẦN (yêu cầu của user):
+   *   BE chỉ trừ nguyên liệu khi `PATCH /meal-planning/slots/{id}` được gọi.
+   *   Offline thì không có BE -> nếu không tự trừ ở client, tủ lạnh hiển thị
+   *   vẫn nguyên trạng cho tới khi có mạng -> user tưởng app hỏng.
+   *   => Mô phỏng y hệt `consumeIngredientsForSlot` của BE:
+   *      1. Scale lượng cần dùng theo `servings`.
+   *      2. Quy về base unit (g / ml) để so sánh với tủ.
+   *      3. Trừ FIFO theo hạn dùng (món sắp hết hạn trừ trước).
+   *      4. Trừ hết -> xoá row (tương đương `consumedAt` + `quantity=0` của BE).
+   *
+   * ⚠️ VÌ SAO ĐỂ `sync_status = 'pending'`:
+   *   Khi có mạng, BE sẽ trừ LẠI (idempotent guard chỉ trừ lần đầu, nhưng
+   *   request offline đã set `completedAt` chưa từng lên server) -> có nguy cơ
+   *   trừ 2 lần. Vì vậy các row bị trừ offline được đánh dấu 'pending' ->
+   *   `saveFridgeItems` (pull dữ liệu server) KHÔNG ghi đè -> giữ lượng đã trừ.
+   *   Khi op `slot_complete` upload thành công, BE đã trừ trên server ->
+   *   lượng local phải được đồng bộ lại (xem `SyncEngine._uploadOne`).
+   *
+   * @param {string} slotId
+   * @param {number} [servings] - khẩu phần user chọn
+   * @param {object} [slotDetail] - shape UI `MealSlotDetail` (nếu có sẵn)
+   * @returns {Promise<{consumed:Array, missing:Array}>}
+   */
+  async consumeIngredientsForSlot(slotId, servings = null, slotDetail = null) {
+    const empty = { consumed: [], missing: [] };
+    if (!slotId) return empty;
+
+    // 1) Lấy chi tiết slot (để biết nguyên liệu + lượng cần dùng).
+    const detail = slotDetail ?? (await this.getRecipeDetail(String(slotId), 'slot'));
+    if (!detail) return empty;
+
+    const recipe = detail.recipe ?? null;
+    const ingredients = Array.isArray(recipe?.ingredients) ? recipe.ingredients : [];
+    if (ingredients.length === 0) return empty;
+
+    // 2) Scale theo khẩu phần.
+    //
+    // ⚠️ `quantityNeeded` của BE ĐÃ được scale sẵn theo `slot.servings`:
+    //   BE: `scaledQty = ri.quantity * slot.servings / recipe.servings`.
+    //   Nếu user chỉnh khẩu phần ở màn chi tiết (`servings` khác) thì phải
+    //   scale LẠI theo công thức GỐC của công thức:
+    //       qtyGoc = quantityNeeded * recipe.servings / slot.servings
+    //       qtyMoi = qtyGoc * servingsMoi / recipe.servings
+    //   => Gộp lại: `qtyMoi = quantityNeeded * servingsMoi / slot.servings`.
+    //
+    // ⚠️ `baseServings` = khẩu phần của SLOT (mốc đã scale sẵn trong cache).
+    const baseServings = Math.max(1, detail.servings ?? 1);
+    const actualServings = Math.max(1, servings ?? baseServings);
+    const scale = actualServings / baseServings;
+
+    const db = await this._ensureDb();
+
+    const consumed = [];
+    const missing = [];
+    // Các row trong tủ đã bị trừ (theo từng nguyên liệu) -> dùng để đồng bộ
+    // lại khi BE xác nhận.
+    const touched = [];
+
+    for (const ing of ingredients) {
+      // Lượng cần dùng (đã scale theo slot) -> base unit.
+      //
+      // ⚠️ FALLBACK: cache cũ / BE cũ không có `quantityNeeded` -> dùng
+      //   `originalQuantity` + `originalUnit` (lượng gốc của công thức).
+      const hasNeeded = ing.quantityNeeded !== undefined && ing.quantityNeeded !== null;
+      const neededRaw = hasNeeded
+        ? Number(ing.quantityNeeded) || 0
+        : Number(ing.originalQuantity) || 0;
+      if (neededRaw <= 0) continue;
+
+      const neededUnit = hasNeeded
+        ? ing.baseUnit ?? ing.originalUnit ?? ''
+        : ing.originalUnit ?? ing.baseUnit ?? '';
+      const neededNorm = normalizeToBaseUnit(neededRaw, neededUnit);
+      if (neededNorm.quantity <= 0) continue;
+
+      // Scale lại nếu user đổi khẩu phần.
+      const finalNeeded = neededNorm.quantity * scale;
+      if (finalNeeded <= 0) continue;
+
+      // 3) Các món trong tủ có cùng ingredientId.
+      //
+      // ⚠️ Lọc `sync_status` + `quantity > 0` bằng JS (không để trong SQL):
+      //   - `sync_status NOT IN (...)` phức tạp hơn mức fake SQLite test hỗ trợ.
+      //   - Điều kiện lọc phải GIỐNG HỆT logic BE: BE chỉ xét item
+      //     `consumedAt: null` + `quantity: { gt: 0 }`.
+      const rows = await db.getAllAsync(
+        `SELECT id, ingredient_id, name, quantity, unit, expires_at
+           FROM local_ingredients
+          WHERE ingredient_id = ?
+          ORDER BY expires_at ASC, updated_at ASC;`,
+        [ing.ingredientId ?? -1]
+      );
+
+      const usableRows = (rows ?? []).filter((row) => {
+        const status = row.sync_status ?? SYNC_STATUS.SYNCED;
+        if (status === SYNC_STATUS.CONFLICT || status === SYNC_STATUS.PENDING_DELETE) return false;
+        return (Number(row.quantity) || 0) > 0;
+      });
+
+      let remaining = finalNeeded;
+      let deducted = 0;
+      let deductedRows = [];
+
+      for (const row of usableRows) {
+        if (remaining <= 0) break;
+
+        const availNorm = normalizeToBaseUnit(row.quantity, row.unit);
+        // Khác loại đơn vị -> không so được -> bỏ qua (giống BE `canCompare`).
+        if (!canCompare(availNorm.baseUnit, neededNorm.baseUnit)) continue;
+
+        if (availNorm.quantity <= remaining) {
+          // Hết món này -> xoá row (tương đương `consumedAt` + `quantity=0`).
+          deducted += availNorm.quantity;
+          deductedRows.push({ row, newQuantity: 0, consumed: true });
+          remaining -= availNorm.quantity;
+        } else {
+          // Còn dư -> trừ 1 phần, quy về unit gốc của món trong tủ.
+          const leftNorm = availNorm.quantity - remaining;
+          const leftOriginal = fromBaseUnit(leftNorm, row.unit);
+          const roundedLeft = Math.round(leftOriginal * 100) / 100;
+          deducted += remaining;
+          deductedRows.push({
+            row,
+            newQuantity: roundedLeft > 0 ? roundedLeft : 0,
+            consumed: roundedLeft <= 0,
+          });
+          remaining = 0;
+        }
+      }
+
+      // 4) Ghi lại cache (đánh dấu 'pending' -> không bị pull server ghi đè).
+      //
+      // ⚠️ GHI NHỚ row đã trừ theo slot -> khi BE xác nhận, ta biết chính xác
+      //   row nào cần đánh dấu 'synced' / xoá hẳn (không đoán mò theo
+      //   ingredientId, vì 1 nguyên liệu có thể có nhiều row trong tủ).
+      const touchedRows = [];
+
+      for (const { row, newQuantity, consumed: isConsumed } of deductedRows) {
+        if (isConsumed) {
+          // Xoá hẳn row -> món đã dùng hết (không còn hiện trong tủ).
+          await db.runAsync(`DELETE FROM local_ingredients WHERE id = ?;`, [row.id]);
+          touchedRows.push({ id: row.id, consumed: true });
+        } else {
+          await db.runAsync(
+            `UPDATE local_ingredients
+                SET quantity = ?, updated_at = ?, sync_status = ?
+              WHERE id = ?;`,
+            [newQuantity, now(), SYNC_STATUS.PENDING, row.id]
+          );
+          touchedRows.push({ id: row.id, consumed: false });
+        }
+      }
+
+      if (touchedRows.length > 0) {
+        touched.push({ ingredientId: ing.ingredientId ?? null, rows: touchedRows });
+      }
+
+      if (deducted > 0) {
+        consumed.push({
+          ingredientId: ing.ingredientId ?? null,
+          name: ing.name ?? '',
+          // Lượng công thức yêu cầu (đã scale theo khẩu phần) — cùng
+          // semantics với BE (`quantity` = `requiredQuantity`).
+          quantity: Math.round((neededRaw * scale) * 100) / 100,
+          unit: ing.originalUnit ?? neededUnit,
+          requiredQuantity: Math.round((neededRaw * scale) * 100) / 100,
+          requiredUnit: ing.originalUnit ?? neededUnit,
+          deductedQuantity: Math.round(deducted * 100) / 100,
+          deductedUnit: neededNorm.baseUnit,
+          shortage: Math.round((finalNeeded - deducted) * 100) / 100,
+          isOptional: Boolean(ing.isOptional),
+        });
+      }
+
+      if (remaining > 0) {
+        missing.push({
+          ingredientId: ing.ingredientId ?? null,
+          name: ing.name ?? '',
+          quantity: Math.round(remaining * 100) / 100,
+          unit: neededNorm.baseUnit,
+          requiredQuantity: Math.round((neededRaw * scale) * 100) / 100,
+          requiredUnit: ing.originalUnit ?? neededUnit,
+          isOptional: Boolean(ing.isOptional),
+        });
+      }
+    }
+
+    // Lưu lại các row đã trừ -> `applyServerConsumption` dùng để đồng bộ lại.
+    if (touched.length > 0) {
+      await this.saveJsonCache(`slot_consumed:${slotId}`, touched);
+    }
+
+    return { consumed, missing };
+  }
+
+  /**
+   * Đồng bộ lại lượng tủ lạnh sau khi BE xác nhận đã trừ.
+   *
+   * ⚠️ VÌ SAO CẦN:
+   *   Khi tick "đã nấu" offline, client tự trừ tủ lạnh (optimistic) và đánh
+   *   dấu row 'pending'. Khi có mạng, BE cũng trừ (nếu slot chưa từng được
+   *   tick) -> hai lần trừ có thể khác nhau (FIFO khác nhau, lượng tủ đã đổi).
+   *   => Dùng danh sách row đã trừ offline (lưu ở `slot_consumed:<slotId>`)
+   *      để đánh dấu lại là 'synced' -> lần pull `GET /fridge` sau đó sẽ
+   *      ghi đè bằng dữ liệu server -> không còn lệch lượng.
+   *
+   * ⚠️ Nếu BE KHÔNG trừ (đã tick trước đó -> idempotent guard) thì server
+   *   KHÔNG có phần trừ mới -> ta phải HOÀN LẠI lượng đã trừ offline, nếu
+   *   không tủ lạnh local bị trừ 2 lần so với server.
+   *   => Dựa vào `consumedIngredients` rỗng + slot đã có trong cache.
+   *
+   * @param {string} slotId
+   * @param {Array<object>} consumedIngredients - từ BE
+   * @returns {Promise<number>} số row đã đánh dấu
+   */
+  async applyServerConsumption(slotId, consumedIngredients = []) {
+    const list = Array.isArray(consumedIngredients) ? consumedIngredients : [];
+    if (!slotId) return 0;
+
+    const touched = await this.getJsonCache(`slot_consumed:${String(slotId)}`, []);
+    if (!Array.isArray(touched) || touched.length === 0) return 0;
+
+    const db = await this._ensureDb();
+    let count = 0;
+
+    // BE có trừ không? Nếu có -> đánh dấu 'synced' (server sẽ ghi đè lượng).
+    // Nếu KHÔNG -> hoàn lại lượng đã trừ offline (server không trừ lần này).
+    const serverDeducted = list.length > 0;
+
+    for (const group of touched) {
+      for (const row of group?.rows ?? []) {
+        if (!row?.id) continue;
+
+        if (serverDeducted) {
+          const result = await db.runAsync(
+            `UPDATE local_ingredients
+                SET sync_status = ?, updated_at = ?
+              WHERE id = ?;`,
+            [SYNC_STATUS.SYNCED, now(), row.id]
+          );
+          count += result?.changes ?? 0;
+        } else {
+          // Hoàn lại: xoá row đã ăn hết, hoặc bỏ cờ 'pending' cho row còn dư.
+          if (row.consumed === true) {
+            // Row đã bị xoá lúc trừ offline -> KHÔNG thể hoàn lại (không biết
+            // lượng cũ). Server không có row này -> pull sau sẽ không trả về
+            // -> an toàn: giữ nguyên (xoá rồi).
+            continue;
+          }
+          const result = await db.runAsync(
+            `UPDATE local_ingredients
+                SET sync_status = ?, updated_at = ?
+              WHERE id = ?;`,
+            [SYNC_STATUS.SYNCED, now(), row.id]
+          );
+          count += result?.changes ?? 0;
+        }
+      }
+    }
+
+    // Xoá ghi chú trừ (đã xử lý xong).
+    await this.saveJsonCache(`slot_consumed:${String(slotId)}`, []);
+
+    return count;
   }
 
   /**

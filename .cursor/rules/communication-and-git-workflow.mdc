@@ -23,13 +23,20 @@ alwaysApply: true
 - Quote paths containing spaces.
 - For multi-line commands, write a temporary `.sh` script and run it with `bash <script>`, then delete the script.
 
-## Push is manual
+## Git write operations are manual (add / commit / push)
 
 - **Never run `git push`.** The user pushes manually after reviewing the commit.
-- Commit locally, then hand the user the commit hash and the exact commit message so they can review and push.
+- **Never run `git add` or `git commit`.** Staging and committing are the user's
+  responsibility — the agent only edits files.
 - Do not create PRs unless the user explicitly asks.
+- Instead of committing, hand the user:
+  - The list of files changed (so they can stage selectively).
+  - A suggested commit message in **English** using the repo's Conventional
+    Commit format (`type(scope): short imperative summary`), ready to paste.
+- Read-only Git commands (`git status`, `git diff`, `git log`, `git show`) are
+  fine and encouraged for verification.
 
-## Commit hygiene
+## Commit hygiene (guidance for the user's own commits)
 
 - Stage only files relevant to the change — never blanket `git add .` or `git add -A`.
 - Exclude build artifacts, caches, and dependency folders (for example `node_modules/`, `.expo/`, `.expo-test-export/`).

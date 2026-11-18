@@ -215,7 +215,11 @@ export class RealUserService extends IUserService {
    */
   async uploadAvatar(localUri) {
     const res = await ApiClient.uploadFile('/users/me/avatar', localUri, 'file');
-    return { url: appConfig.getImageUrl(res?.avatarUrl) };
+    const url = appConfig.getImageUrl(res?.avatarUrl);
+    // Lưu avatar mới vào cache offline -> khi mất mạng, app vẫn hiện avatar
+    // mới nhất thay vì avatar cũ (hoặc trống).
+    offlineCache.setAvatarLocal('', url).catch(() => {});
+    return { url };
   }
 
   // ══════════════════════════════════════════════════════════════

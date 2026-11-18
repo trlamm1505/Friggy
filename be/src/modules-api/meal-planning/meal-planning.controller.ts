@@ -49,6 +49,7 @@ import {
   UpdateShoppingListItemDto,
   RegenerateSlotDto,
   GenerateFromExpiringDto,
+  AddSlotMissingToShoppingListDto,
 } from './dto/meal-planning.dto';
 import {
   GeneratePlanResponseDto,
@@ -383,15 +384,18 @@ export class MealPlanningController {
     summary: 'Thêm nguyên liệu còn thiếu của 1 slot vào danh sách mua',
     description:
       'Dùng cho nút "+ Thêm vào DS" ở màn chi tiết công thức / meal plan: ' +
-      'ghi mọi nguyên liệu mà tủ lạnh đang thiếu vào giỏ mua.',
+      'ghi mọi nguyên liệu mà tủ lạnh đang thiếu vào giỏ mua. ' +
+      'Truyền `servings` để scale lượng theo khẩu phần user chọn ' +
+      '(mặc định = servings của slot trong kế hoạch).',
   })
   @ApiParam({ name: 'id', description: 'ID meal slot' })
   @ApiResponse({ status: 201, description: 'Đã thêm vào danh sách mua' })
   async addSlotMissingToShoppingList(
     @CurrentUser() user: JwtPayload,
     @Param('id') slotId: string,
+    @Body() dto: AddSlotMissingToShoppingListDto,
   ) {
-    return this.mealPlanningService.addSlotMissingToShoppingList(user.sub, slotId);
+    return this.mealPlanningService.addSlotMissingToShoppingList(user.sub, slotId, dto);
   }
 
   // ─────────────────────────────────────────────────────────

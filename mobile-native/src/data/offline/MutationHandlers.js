@@ -39,6 +39,7 @@
 
 import { offlineCache, SYNC_STATUS } from './OfflineCache';
 import { OP_TYPES, outboxQueue } from './OutboxQueue';
+import { computeMissingPurchaseQuantity, computeServingsScale } from '../utils/shoppingMissing';
 /**
  * Lỗi ném ra khi thao tác đã được LƯU OFFLINE (không phải lỗi thật).
  *
@@ -261,7 +262,6 @@ export const MUTATION_HANDLERS = {
         );
       },
     },
-
     /**
      * `PATCH /meal-planning/slots/{slotId}` — tick "đã nấu" hoặc đổi công thức.
      *
@@ -299,6 +299,24 @@ export const MUTATION_HANDLERS = {
         // Lưu trạng thái cooked vào cache slot để UI vẫn hiện đúng tick.
         if (payload.completed !== undefined) {
           await offlineCache.setSlotCooked(String(slotId), payload.completed === true);
+        }
+
+        // ⚠️ OFFLINE — TỰ TRỪ TỦ LẠNH khi tick "đã nấu" (yêu cầu của user).
+        //   BE chỉ trừ nguyên liệu khi `PATCH /meal-planning/slots/{id}` tới
+        //   server. Offline không có BE -> nếu không trừ ở client, tủ lạnh
+        //   vẫn nguyên trạng -> user tưởng app hỏng.
+        //   => Mô phỏng y hệt `consumeIngredientsForSlot` của BE (FIFO theo
+        //      hạn dùng, quy về base unit g/ml).
+        //
+        // ⚠️ CHỈ khi `completed === true`:
+        //   Untick (completed=false) KHÔNG được hoàn lại lượng — BE cũng vậy
+        //   (idempotent guard chỉ trừ lần đầu, không hoàn khi untick).
+        if (payload.completed === true) {
+          await offlineCache.consumeIngredientsForSlot(
+            String(slotId),
+            payload.servings ?? null,
+            null
+          );
         }
 
         // F6: đổi công thức -> cập nhật JSON kế hoạch tuần (tên/ảnh lấy từ cache).
@@ -343,6 +361,11 @@ export const MUTATION_HANDLERS = {
 
     /**
      * `POST /meal-planning/shopping-lists/{listId}/items` — thêm món mua (F3).
+     *
+     * ⚠️ `name` PHẢI có trong payload:
+     *   BE chỉ nhận `ingredientId`/`quantity`/`unit` -> không trả lại tên
+     *   nếu request lỗi. Nhưng cache local cần tên để hiển thị ngay khi
+     *   offline (user vừa thêm món phải THẤY tên, không phải dòng rỗng).
      */
     addShoppingListItem: {
       opType: OP_TYPES.SHOPPING_ITEM_ADD,
@@ -407,6 +430,85 @@ export const MUTATION_HANDLERS = {
         const itemId = args[1];
         if (!itemId) return;
         await offlineCache.removeShoppingItem(itemId);
+      },
+    },
+
+    /**
+     * `POST /meal-planning/slots/{slotId}/missing-to-shopping-list`
+     * — thêm mọi nguyên liệu CÒN THIẾU của 1 slot vào giỏ mua.
+     *
+     * ⚠️ VÌ SAO CẦN (bug user báo):
+     *   Method này có trong `WriteMethods.recipeService` (là method GHI) nhưng
+     *   trước đây KHÔNG có handler -> offline gọi sẽ ném
+     *   `OfflineRequiresNetworkError` -> nút "+ Thêm vào DS" chết khi mất mạng.
+     *
+     * ⚠️ CÁCH LÀM OPTIMISTIC:
+     *   BE tính phần thiếu dựa trên TỦ LẠNH THẬT. Offline ta không gọi được
+     *   BE -> dùng cache `local_recipe_details` (slot detail đã cache sẵn từ
+     *   `getSlotDetail`) -> `summary.missingItems` là đúng danh sách thiếu.
+     *   Thêm từng món vào `local_shopping_items` với `sync_status='pending'`
+     *   (id `pending_missing_<slotId>_<index>`) -> UI hiện ngay + không mất
+     *   khi app bị kill.
+     *
+     * ⚠️ KHI SYNC THÀNH CÔNG:
+     *   `SyncEngine` xoá các row optimistic này (tránh hiện trùng món) rồi
+     *   pull dữ liệu thật từ server.
+     *
+     * ⚠️ `servings` (KHẨU PHẦN) — yêu cầu của user:
+     *   Món thêm vào giỏ phải theo đúng khẩu phần user chọn, không phải mặc
+     *   định của slot. `missingQuantity` trong cache đã scale theo
+     *   `slot.servings` -> nhân thêm `servings / slot.servings`.
+     */
+    addSlotMissingToShoppingList: {
+      opType: OP_TYPES.SHOPPING_MISSING_ADD,
+      entityId: (args) => String(args[0] ?? ''),
+      payload: (args) => ({
+        slotId: args[0] ?? null,
+        // ⚠️ PHẢI lưu `servings` -> khi sync, BE scale lại đúng khẩu phần.
+        servings: args[1]?.servings ?? args[1] ?? null,
+      }),
+      enqueueOptions: { replace: true },
+      applyCache: async (args) => {
+        const slotId = args[0];
+        if (!slotId) return;
+
+        const options = args[1] ?? {};
+        const targetServings = Number(options.servings) || null;
+
+        // Đọc chi tiết slot từ cache (đã cache ở `getSlotDetail`).
+        const detail = await offlineCache.getRecipeDetail(String(slotId), 'slot');
+        const missingItems = detail?.summary?.missingItems ?? [];
+        if (!Array.isArray(missingItems) || missingItems.length === 0) return;
+
+        // Khẩu phần của slot trong kế hoạch (mẫu số để scale).
+        const slotServings = Math.max(1, detail?.servings ?? 1);
+        const scale = computeServingsScale(targetServings, slotServings);
+
+        // List id THẬT (để tick/xoá sau khi sync gọi đúng endpoint).
+        const listId = await offlineCache.getActiveShoppingListId();
+
+        for (let i = 0; i < missingItems.length; i += 1) {
+          const item = missingItems[i];
+          if (!item?.name) continue;
+
+          // ⚠️ Tính lại lượng thiếu theo khẩu phần user chọn (giống BE).
+          //   Xem `src/data/utils/shoppingMissing.js` để hiểu vì sao KHÔNG
+          //   dùng `missingQuantity * scale`.
+          const missingNew = computeMissingPurchaseQuantity(item, scale);
+          if (missingNew <= 0) continue;
+
+          await offlineCache.addPendingShoppingItem({
+            id: `pending_missing_${slotId}_${i}`,
+            name: item.name,
+            quantity: Math.max(0.01, Math.round(missingNew * 100) / 100),
+            // ⚠️ `missingQuantity` đã chuẩn hoá về base unit -> dùng
+            //   `baseUnit` (vd "g"), KHÔNG dùng `originalUnit` (vd "kg") ->
+            //   "0.5 kg" trong khi thực tế là 500g -> user mua sai lượng.
+            unit: item.baseUnit ?? item.originalUnit ?? item.unit ?? '',
+            ingredientId: item.ingredientId ?? null,
+            listId,
+          });
+        }
       },
     },
   },
@@ -569,12 +671,17 @@ export const MUTATION_HANDLERS = {
      *
      * ⚠️ applyCache lưu `avatar_local_path` + đặt `avatar` = localUri để UI
      *   hiện ảnh NGAY (file còn nằm trên máy), không phải avatar cũ từ server.
+     *
+     * ⚠️ `replace: true` -> user chọn ảnh nhiều lần khi offline chỉ còn op
+     *   MỚI NHẤT trong hàng đợi (giống bookmark/tick). Upload cả 2 ảnh là
+     *   thừa, và ảnh cũ có thể đã bị user xoá khỏi máy.
      */
     uploadAvatar: {
       opType: OP_TYPES.AVATAR_UPLOAD,
       entityId: () => 'me',
       payload: (args) => ({ localUri: args[0] ?? null }),
       canQueue: (args) => !!args[0],
+      enqueueOptions: { replace: true },
       applyCache: async (args) => {
         const localUri = args[0];
         if (!localUri) return;

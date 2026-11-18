@@ -40,6 +40,7 @@ import { DayPlanCard } from '../../components/recipe/DayPlanCard';
 import { Skeleton } from '../../components/common/Skeleton';
 import { EmptyState } from '../../components/common/EmptyState';
 import { ErrorState } from '../../components/common/ErrorState';
+import { Stepper } from '../../components/common/Stepper';
 import { Sparkles, Info, Wand2, ShoppingCart, X } from 'lucide-react-native';
 import { Routes } from '../../../shared/constants/routes';
 import { showSuccess, showError, showInfo, showMutationError } from '../../utils/helpers';
@@ -67,6 +68,10 @@ export const NextWeekSuggestionsScreen = () => {
   const [aiProgress, setAiProgress] = useState('');
   // Chi tiết slot (modal): `{ loading, data, slot, error }`.
   const [slotDetail, setSlotDetail] = useState(null);
+  // ⚠️ Khẩu phần user chọn khi thêm nguyên liệu vào danh sách mua.
+  //   Mặc định = `slot.servings` (khẩu phần trong kế hoạch) -> user có thể
+  //   tăng/giảm ở modal chi tiết slot -> lượng mua scale theo.
+  const [shoppingServings, setShoppingServings] = useState(1);
 
   // Dùng ref để tránh đóng gói lại callback khi stream SSE đang chạy.
   const mountedRef = useRef(true);
@@ -441,6 +446,8 @@ export const NextWeekSuggestionsScreen = () => {
       if (!slot?.id) return;
 
       setSlotDetail({ loading: true, data: null, slot });
+      // Reset khẩu phần về mặc định của slot (kế hoạch).
+      setShoppingServings(Math.max(1, slot?.servings ?? 1));
       try {
         const detail = await services.recipeService.getSlotDetail(slot.id);
         setSlotDetail({ loading: false, data: detail, slot });
@@ -656,6 +663,8 @@ export const NextWeekSuggestionsScreen = () => {
 
       <SlotDetailModal
         state={slotDetail}
+        servings={shoppingServings}
+        onChangeServings={setShoppingServings}
         onClose={() => setSlotDetail(null)}
         onOpenRecipe={(recipeId) => {
           const slot = slotDetail?.slot ?? null;
@@ -666,13 +675,21 @@ export const NextWeekSuggestionsScreen = () => {
             recipeId,
             slotId: slot?.id ?? undefined,
             cooked: Boolean(slot?.cooked),
+            // ⚠️ Truyền `servings` của SLOT (khẩu phần trong kế hoạch) ->
+            //   màn chi tiết công thức dùng làm giá trị khởi tạo của Stepper
+            //   -> thêm vào danh sách mua đúng lượng.
+            servings: slot?.servings ?? undefined,
           });
         }}
         onAddMissingToList={async () => {
           const slotId = slotDetail?.slot?.id;
           if (!slotId) return;
           try {
-            const result = await services.recipeService.addSlotMissingToShoppingList(slotId);
+            // ⚠️ Truyền `servings` -> BE scale lượng mua theo khẩu phần user
+            //   chọn, thay vì mặc định `slot.servings` của kế hoạch.
+            const result = await services.recipeService.addSlotMissingToShoppingList(slotId, {
+              servings: shoppingServings,
+            });
             const count = result?.addedCount ?? 0;
             showSuccess(
               count > 0
@@ -682,6 +699,17 @@ export const NextWeekSuggestionsScreen = () => {
             setSlotDetail(null);
             navigation.navigate(Routes.ShoppingReminder);
           } catch (e) {
+            // ⚠️ OFFLINE: nếu đã lưu vào hàng đợi -> hiện "đã lưu, sẽ đồng
+            //   bộ" (không phải lỗi đỏ) + vẫn điều hướng sang danh sách mua
+            //   để user thấy món đã thêm (optimistic).
+            const queued = showMutationError(e, t('home.error'), {
+              offlineMessage: t('offline.savedQueued'),
+            });
+            if (queued) {
+              setSlotDetail(null);
+              navigation.navigate(Routes.ShoppingReminder);
+              return;
+            }
             showError(e?.message ?? t('home.error'));
           }
         }}
@@ -696,7 +724,14 @@ export const NextWeekSuggestionsScreen = () => {
  * ⚠️ Được đặt trong file màn hình (không tách file mới) vì plan Mục 1 chỉ
  * cho DEV B tạo đúng danh sách file đã liệt kê.
  */
-const SlotDetailModal = ({ state, onClose, onOpenRecipe, onAddMissingToList }) => {
+const SlotDetailModal = ({
+  state,
+  servings,
+  onChangeServings,
+  onClose,
+  onOpenRecipe,
+  onAddMissingToList,
+}) => {
   const { isDark } = useTheme();
   const { t } = useTranslation();
 
@@ -808,21 +843,41 @@ const SlotDetailModal = ({ state, onClose, onOpenRecipe, onAddMissingToList }) =
                 </View>
               ) : null}
 
-              {/* Khẩu phần */}
-              {data?.servings ? (
-                <Text
-                  style={[
-                    styles.servingsText,
-                    {
-                      color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
-                      fontSize: sp(12),
-                    },
-                  ]}
-                >
-                  {t('home.slotDetailServings')}: {data.servings} • {recipe?.cookTime}{' '}
-                  {t('home.minutes')}
-                </Text>
-              ) : null}
+              {/* Khẩu phần — Stepper để user chọn số khẩu phần mua */}
+              <View style={styles.servingsRow}>
+                <View style={{ flex: 1 }}>
+                  <Text
+                    style={[
+                      styles.servingsText,
+                      {
+                        color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                        fontSize: sp(12),
+                      },
+                    ]}
+                  >
+                    {t('home.slotDetailServings')}: {servings ?? 1} •{' '}
+                    {recipe?.cookTime} {t('home.minutes')}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.servingsHint,
+                      {
+                        color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                        fontSize: sp(11),
+                      },
+                    ]}
+                  >
+                    {t('home.slotDetailServingsHint')}
+                  </Text>
+                </View>
+                <Stepper
+                  value={servings ?? 1}
+                  onChange={onChangeServings}
+                  min={1}
+                  max={20}
+                  style={styles.servingsStepper}
+                />
+              </View>
 
               {/* Các bước nấu */}
               {recipe?.steps?.length ? (
@@ -1050,6 +1105,20 @@ const styles = StyleSheet.create({
   servingsText: {
     fontFamily: FontFamily.regular,
     marginBottom: sp(12),
+  },
+  servingsHint: {
+    fontFamily: FontFamily.regular,
+    marginBottom: sp(12),
+    opacity: 0.75,
+  },
+  servingsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: sp(12),
+    marginBottom: sp(4),
+  },
+  servingsStepper: {
+    paddingVertical: sp(4),
   },
   stepRow: {
     flexDirection: 'row',

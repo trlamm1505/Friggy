@@ -37,4 +37,10 @@ export const FontFamily = {
   bold: 'PlusJakartaSans_700Bold',
   extrabold: 'PlusJakartaSans_800ExtraBold',
   black: 'PlusJakartaSans_800ExtraBold', // No 900 variant, use 800
+  // ⚠️ Biến thể ITALIC — dùng cho `MarkdownText` (chat AI) hiển thị `*nghiêng*`.
+  //   Dùng `fontFamily` (biến thể file) thay vì `fontStyle: 'italic'` vì
+  //   `fontStyle` trên custom font Android thường không áp dụng.
+  italic: 'PlusJakartaSans_400Regular_Italic',
+  semiboldItalic: 'PlusJakartaSans_600SemiBold_Italic',
+  boldItalic: 'PlusJakartaSans_700Bold_Italic',
 };

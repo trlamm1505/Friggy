@@ -238,9 +238,22 @@ export const FridgeItemActions = ({ item, visible, onClose, onChanged }) => {
     } catch (e) {
       // 4xx KHÔNG fallback -> hiện lỗi thật cho user.
       // P2 (offline): đã lưu vào hàng đợi -> hiện "đã lưu, sẽ đồng bộ" (không phải lỗi).
-      showMutationError(e, t('fridge.updateFailed'), {
+      //
+      // ⚠️ VÌ SAO PHẢI DÙNG GIÁ TRỊ TRẢ VỀ:
+      //   `showMutationError` trả `true` khi lỗi là `OfflineQueuedError`
+      //   (nghĩa là thao tác ĐÃ được lưu vào SQLite + hàng đợi).
+      //   Lúc đó dữ liệu ĐÃ có trong cache local -> PHẢI refresh list
+      //   (`onChanged`) + đóng sheet. Nếu không, user thấy sheet vẫn mở và
+      //   list không đổi -> tưởng thao tác thất bại (bug đã gặp: "không cập
+      //   nhật được ngày hết hạn" khi offline).
+      //   Lỗi 4xx/5xx thật -> `queued === false` -> GIỮ sheet mở (như cũ).
+      const queued = showMutationError(e, t('fridge.updateFailed'), {
         offlineMessage: t('offline.savedQueued'),
       });
+      if (queued) {
+        onChanged?.();
+        closeSheet();
+      }
     } finally {
       savingRef.current = false;
       setSaving(false);
@@ -282,9 +295,14 @@ export const FridgeItemActions = ({ item, visible, onClose, onChanged }) => {
             closeSheet();
           } catch (e) {
             // P2 (offline): đã lưu -> không phải lỗi.
-            showMutationError(e, t('fridge.consumeFailed'), {
+            // Đã lưu offline -> refresh list + đóng sheet (xem `handleSave`).
+            const queued = showMutationError(e, t('fridge.consumeFailed'), {
               offlineMessage: t('offline.savedQueued'),
             });
+            if (queued) {
+              onChanged?.();
+              closeSheet();
+            }
             busyRef.current = null;
             setBusy(null);
           }
@@ -317,9 +335,14 @@ export const FridgeItemActions = ({ item, visible, onClose, onChanged }) => {
             closeSheet();
           } catch (e) {
             // P2 (offline): đã lưu -> không phải lỗi.
-            showMutationError(e, t('fridge.deleteFailed'), {
+            // Đã lưu offline -> refresh list + đóng sheet (xem `handleSave`).
+            const queued = showMutationError(e, t('fridge.deleteFailed'), {
               offlineMessage: t('offline.savedQueued'),
             });
+            if (queued) {
+              onChanged?.();
+              closeSheet();
+            }
             busyRef.current = null;
             setBusy(null);
           }

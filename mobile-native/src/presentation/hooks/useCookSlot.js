@@ -169,6 +169,25 @@ export const useCookSlot = (options = {}) => {
         onSuccess?.(shaped);
         return shaped;
       } catch (e) {
+        // ⚠️ OFFLINE — thao tác đã được LƯU vào hàng đợi + tủ lạnh đã được
+        //   trừ cục bộ (xem `MutationHandlers.recipeService.updateSlot`).
+        //   Đây KHÔNG phải lỗi -> hiện thông báo "đã lưu, sẽ đồng bộ" để user
+        //   không bấm lại (bấm lại sẽ trừ tủ lạnh 2 lần!).
+        if (e?.isOfflineQueued === true) {
+          showInfo(t('offline.savedQueued'));
+          // Vẫn coi như THÀNH CÔNG -> UI cập nhật chip "Đã nấu" ngay.
+          const offlineShaped = {
+            id: slotId,
+            completedAt: Date.now(),
+            consumedIngredients: [],
+            missingIngredients: [],
+            isOfflineQueued: true,
+          };
+          setResult(offlineShaped);
+          onSuccess?.(offlineShaped);
+          return offlineShaped;
+        }
+
         setError(e);
         showError(e?.message ?? t('home.startCookingFailed'));
         return null;

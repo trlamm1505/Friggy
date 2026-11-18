@@ -25,6 +25,11 @@ import {
   PlusJakartaSans_600SemiBold,
   PlusJakartaSans_700Bold,
   PlusJakartaSans_800ExtraBold,
+  // ⚠️ Biến thể ITALIC — cần cho `MarkdownText` (chat AI) hiển thị `*nghiêng*`.
+  //   Font .ttf có sẵn trong @expo-google-fonts/plus-jakarta-sans.
+  PlusJakartaSans_400Regular_Italic,
+  PlusJakartaSans_600SemiBold_Italic,
+  PlusJakartaSans_700Bold_Italic,
 } from '@expo-google-fonts/plus-jakarta-sans';
 import Toast from 'react-native-toast-message';
 import { AppProviders } from './src/providers/AppProviders';
@@ -121,6 +126,10 @@ export default function App() {
     PlusJakartaSans_600SemiBold,
     PlusJakartaSans_700Bold,
     PlusJakartaSans_800ExtraBold,
+    // Bản italic — dùng cho `MarkdownText` (chat AI): `*nghiêng*`, `***đậm nghiêng***`.
+    PlusJakartaSans_400Regular_Italic,
+    PlusJakartaSans_600SemiBold_Italic,
+    PlusJakartaSans_700Bold_Italic,
   });
 
   const [isDbReady, setIsDbReady] = useState(false);
@@ -150,6 +159,13 @@ export default function App() {
   //
   // ⚠️ `networkMonitor.init()` bắt đầu listener -> khi mạng vừa khôi phục
   //   sẽ báo event 'online' -> `syncEngine` tự đồng bộ (xem useSyncEngine).
+  //
+  // ⚠️ `syncEngine.startAutoSync()` — listener ở TẦNG MODULE, KHÔNG nằm
+  //   trong `useSyncEngine`:
+  //     `useSyncEngine` chỉ được gọi ở `HomeScreen`, mà `MainTabs` render
+  //     tab có điều kiện -> sang tab Tủ lạnh là `HomeScreen` bị unmount ->
+  //     listener trong hook mất theo -> bật mạng ở tab Tủ lạnh KHÔNG sync.
+  //     Listener ở tầng module sống suốt vòng đời app -> không phụ thuộc tab.
   // ──────────────────────────────────────────────────────────────────
   useEffect(() => {
     let cancelled = false;
@@ -158,6 +174,9 @@ export default function App() {
       try {
         await networkMonitor.init();
         if (cancelled) return;
+
+        // Bật listener "mạng khôi phục -> sync" TRƯỚC khi sync lần đầu.
+        syncEngine.startAutoSync();
 
         const isOnline = networkMonitor.isOnline;
         if (isOnline) {
@@ -173,6 +192,7 @@ export default function App() {
 
     return () => {
       cancelled = true;
+      syncEngine.stopAutoSync();
     };
   }, []);
 

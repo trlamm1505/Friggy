@@ -17,14 +17,49 @@ const rawApiBaseUrl = process.env.EXPO_PUBLIC_API_BASE_URL || DEFAULT_API_BASE_U
 const rawFileBaseUrl = process.env.EXPO_PUBLIC_FILE_BASE_URL || '';
 
 /**
+ * API base URL có trỏ về máy local / LAN không?
+ *
+ * ⚠️ VÌ SAO CẦN:
+ *   BE phục vụ ảnh (avatar, ảnh món ăn) từ CHÍNH server của API:
+ *   `app.useStaticAssets(join(process.cwd(), 'public'))` được gọi TRƯỚC
+ *   `app.setGlobalPrefix('api')` -> file tĩnh nằm ở ROOT (`/avatars/x.jpg`),
+ *   KHÔNG phải `/api/v1/avatars/x.jpg`.
+ *
+ *   Khi đang dev (API = `http://192.168.x.x:6969` hoặc `localhost`), file base
+ *   URL PHẢI suy ra từ chính API base URL. Nếu còn giữ override cũ
+ *   (`EXPO_PUBLIC_FILE_BASE_URL` trỏ ngrok đã hết hạn) thì ảnh sẽ hỏng
+ *   trong khi API vẫn chạy -> user thấy avatar "không hiển thị".
+ */
+const isLocalApiUrl = (url) =>
+  /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\]|0\.0\.0\.0|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/i.test(
+    String(url ?? '').trim()
+  );
+
+/**
+ * File base URL đang trỏ về host PRODUCTION không?
+ *
+ * ⚠️ VÌ SAO CẦN:
+ *   Production dùng CDN `file.friggy.io.vn` -> path `/public/x.jpg` là ĐÚNG
+ *   (giữ nguyên). Mọi host khác (localhost / LAN / ngrok / staging) đều trỏ
+ *   thẳng về BE (Express) -> BE serve `public/` ở ROOT -> `/public/x.jpg` 404.
+ *
+ *   => Chỉ giữ prefix `/public/` khi đang ở production.
+ */
+const isProductionFileHost = () => {
+  const host = getFileBaseUrl();
+  return /(^|\.)friggy\.io\.vn$/i.test(host.replace(/^https?:\/\//, '').replace(/\/.*$/, ''));
+};
+
+/**
  * Cắt `/api/v1` khỏi cuối base URL để lấy server root.
  * Flutter: AppConstants.serverBaseUrl
  */
 export const getServerBaseUrl = () => {
-  if (rawApiBaseUrl.endsWith('/api/v1')) {
-    return rawApiBaseUrl.substring(0, rawApiBaseUrl.length - '/api/v1'.length);
+  const trimmed = rawApiBaseUrl.replace(/\/+$/, '');
+  if (trimmed.endsWith('/api/v1')) {
+    return trimmed.substring(0, trimmed.length - '/api/v1'.length);
   }
-  return rawApiBaseUrl;
+  return trimmed;
 };
 
 /**
@@ -35,7 +70,14 @@ export const getServerBaseUrl = () => {
  * Flutter: AppConstants.fileBaseUrl
  */
 export const getFileBaseUrl = () => {
-  if (rawFileBaseUrl) return rawFileBaseUrl;
+  // ⚠️ API đang trỏ về máy local/LAN -> file tĩnh cũng nằm trên máy đó.
+  //   BỎ QUA override `EXPO_PUBLIC_FILE_BASE_URL` (thường là URL ngrok đã
+  //   hết hạn) để ảnh không bị hỏng trong khi API vẫn chạy bình thường.
+  if (isLocalApiUrl(rawApiBaseUrl)) {
+    return getServerBaseUrl();
+  }
+
+  if (rawFileBaseUrl) return rawFileBaseUrl.replace(/\/+$/, '');
   if (rawApiBaseUrl.includes('api.friggy.io.vn')) {
     return DEFAULT_FILE_BASE_URL;
   }
@@ -65,8 +107,31 @@ export const getImageUrl = (url) => {
     return formatted;
   }
 
+  // URI file LOCAL (avatar offline, ảnh nháp trong máy) -> giữ nguyên.
+  // Nếu prefix base URL vào, `<Image>` sẽ không load được (offline).
+  if (
+    formatted.startsWith('file://') ||
+    formatted.startsWith('content://') ||
+    formatted.startsWith('ph://') ||
+    formatted.startsWith('data:') ||
+    formatted.startsWith('assets-library://')
+  ) {
+    return formatted;
+  }
+
   if (formatted.startsWith('file.friggy.io.vn')) {
     return `https://${formatted}`;
+  }
+
+  // ⚠️ BE (và seed SQL cũ) có thể lưu path kèm prefix `/public/`.
+  //   - Ở MỌI môi trường dev (localhost / LAN / ngrok): Express serve thư mục
+  //     `public/` ở ROOT -> `/public/x.jpg` bị 404 -> phải bỏ prefix.
+  //   - Ở PRODUCTION: `file.friggy.io.vn` tự xử lý -> GIỮ NGUYÊN path
+  //     để không đổi hành vi của app đang chạy.
+  //
+  //   Quy tắc: bỏ prefix khi file base URL KHÔNG phải host production.
+  if (formatted.startsWith('/public/') && !isProductionFileHost()) {
+    formatted = formatted.substring('/public'.length);
   }
 
   const leadingSlash = formatted.startsWith('/') ? '' : '/';

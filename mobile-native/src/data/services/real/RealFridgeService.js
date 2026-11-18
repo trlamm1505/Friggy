@@ -40,7 +40,7 @@ import { ApiClient } from '../../api/ApiClient';
 import { ApiException } from '../../api/ApiException';
 import { registerService } from '../../api/ServiceRegistry';
 import { appConfig } from '../../../shared/config/appConfig';
-import { offlineCache } from '../../offline/OfflineCache';
+import { offlineCache, SYNC_STATUS } from '../../offline/OfflineCache';
 
 /**
  * Nhãn tiếng Việt cho `storageLocation` của BE.
@@ -244,6 +244,28 @@ export class RealFridgeService {
 
     const mapped = list.map((dto) => this._toFridgeItem(dto)).filter(Boolean);
 
+    // P2 (offline) — GỘP món đang chờ đồng bộ vào kết quả.
+    //
+    // ⚠️ VÌ SAO CẦN (bug đã gặp):
+    //   Đường đọc OFFLINE (`CacheFallback` -> `OfflineCache.getFridgeItems`)
+    //   trả về TẤT CẢ row, kể cả `sync_status = 'pending'`.
+    //   Đường đọc ONLINE (hàm này) trả CHỈ list server -> món vừa thêm
+    //   offline BIẾN MẤT khỏi UI khi refetch, và hiện lại khi tắt mạng.
+    //   => Gộp món pending vào để 2 đường đọc cho ra CÙNG kết quả.
+    //
+    // ⚠️ ĐỌC TRƯỚC KHI GHI CACHE:
+    //   `saveFridgeItems` INSERT OR REPLACE với `sync_status='synced'` -> nếu
+    //   món pending TRÙNG id với món server, row pending bị ghi đè và mất
+    //   trạng thái chờ đồng bộ (kéo theo mất luôn chỉnh sửa offline của user).
+    //   Đọc pending TRƯỚC khi ghi cache -> giữ được bản local để merge.
+    //
+    // ⚠️ KHÔNG merge khi `options.skipCacheWrite === true`:
+    //   `SyncEngine._pullFridgeItems()` gọi `getItems({}, { skipCacheWrite: true })`
+    //   rồi tự `offlineCache.saveFridgeItems(items)` -> nếu merge trong lúc đó,
+    //   món pending sẽ bị ghi lại với `sync_status='synced'` -> MẤT trạng thái
+    //   chờ đồng bộ.
+    const pendingItems = options.skipCacheWrite ? [] : await this._readPendingItems();
+
     // P1 (offline) — write-through cache: lưu bản server xuống SQLite để
     // khi offline app vẫn hiện TỦ LẠNH THẬT (không phải mock ảo).
     // Lỗi cache không được làm hỏng luồng chính -> nuốt + log.
@@ -254,11 +276,108 @@ export class RealFridgeService {
       this._writeCache(mapped);
     }
 
-    let result = mapped;
+    let result = this._mergePendingItems(mapped, pendingItems, filters);
+
     result = this._applySearch(result, filters.search);
     result = this._applyStatus(result, filters.status);
     result = this._applySort(result, filters.sortBy, filters.sortDir);
     return result;
+  }
+
+  /**
+   * Đọc các món đang chờ đồng bộ (`sync_status = 'pending'`) trong SQLite.
+   *
+   * ⚠️ Lỗi cache không được làm hỏng luồng chính -> trả về mảng rỗng.
+   *
+   * @private
+   * @returns {Promise<object[]>}
+   */
+  async _readPendingItems() {
+    try {
+      const local = (await offlineCache.getFridgeItems()) ?? [];
+      return local.filter((i) => i?._syncStatus === SYNC_STATUS.PENDING);
+    } catch (e) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[RealFridgeService] Không đọc được cache tủ lạnh:', e?.message);
+      }
+      return [];
+    }
+  }
+
+  /**
+   * Gộp các món đang chờ đồng bộ (`sync_status = 'pending'`) vào list server.
+   *
+   * ⚠️ VÌ SAO 2 NGUỒN DỮ LIỆU PHẢI HỘI TỤ:
+   *   - Server: nguồn sự thật, nhưng CHƯA có món user vừa thêm offline
+   *     (op `fridge_add` còn nằm trong hàng đợi).
+   *   - SQLite (`local_ingredients`): có món pending (id `pending_*`, version
+   *     null) -> chính là món đang chờ upload.
+   *   => Hợp nhất 2 nguồn để UI không bị "mất món" khi đang online.
+   *
+   * ⚠️ QUY TẮC ƯU TIÊN KHI TRÙNG ID:
+   *   Món đã có trên server NHƯNG user sửa offline -> bản LOCAL thắng cho
+   *   các field user đã đổi (quantity/unit/hạn dùng/ngăn), còn các field
+   *   danh tính (id/name/image/version) lấy từ server. Lý do: server chưa
+   *   nhận thay đổi của user, nếu lấy bản server thì sửa offline bị "bay mất".
+   *
+   * ⚠️ FILTER SERVER-SIDE:
+   *   Khi có filter server-side (`compartment` / `status=expiring`), server
+   *   chỉ trả TẬP CON -> món pending phải được lọc tương ứng, nếu không sẽ
+   *   hiện món không thuộc filter đang chọn.
+   *
+   * @private
+   * @param {object[]} serverItems - list đã map từ BE
+   * @param {object[]} pendingItems - món đang chờ đồng bộ (đã đọc từ cache)
+   * @param {object} [filters] - filter đang dùng (để lọc món pending)
+   * @returns {object[]}
+   */
+  _mergePendingItems(serverItems, pendingItems, filters = {}) {
+    if (!Array.isArray(pendingItems) || pendingItems.length === 0) return serverItems;
+
+    // Món pending phải khớp filter server-side (nếu có).
+    const filteredPending = pendingItems.filter((i) => this._matchesServerFilter(i, filters));
+    if (filteredPending.length === 0) return serverItems;
+
+    const byId = new Map(filteredPending.map((i) => [String(i.id), i]));
+
+    const merged = serverItems.map((s) => {
+      const p = byId.get(String(s.id));
+      if (!p) return s;
+      byId.delete(String(s.id));
+      return {
+        ...s,
+        quantity: p.quantity ?? s.quantity,
+        unit: p.unit ?? s.unit,
+        expiryDate: p.expiryDate ?? s.expiryDate,
+        daysUntilExpiry: p.daysUntilExpiry ?? s.daysUntilExpiry,
+        compartment: p.compartment ?? s.compartment,
+      };
+    });
+
+    // Món chưa từng lên server (id `pending_*`) -> thêm vào cuối list.
+    for (const p of byId.values()) merged.push(p);
+
+    return merged;
+  }
+
+  /**
+   * Món pending có khớp filter server-side đang dùng không?
+   *
+   * @private
+   * @param {object} item - shape UI `FridgeItem`
+   * @param {object} filters
+   * @returns {boolean}
+   */
+  _matchesServerFilter(item, filters = {}) {
+    // `compartment` (UI) -> `storageLocation` (BE).
+    if (filters.compartment && item?.compartment !== filters.compartment) return false;
+    // `status=expiring` -> BE `expiringSoon` = còn <= 3 ngày.
+    if (filters.status === 'expiring') {
+      const days = item?.daysUntilExpiry;
+      if (days === null || days === undefined) return false;
+      if (days > EXPIRING_SOON_DAYS) return false;
+    }
+    return true;
   }
 
   /**

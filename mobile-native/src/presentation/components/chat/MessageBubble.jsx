@@ -21,6 +21,7 @@ import { useTheme } from '../../theme/ThemeContext';
 import { AppColors } from '../../theme/colors';
 import { sp } from '../../utils/responsive';
 import { FontFamily } from '../../theme/typography';
+import { MarkdownText } from './MarkdownText';
 
 export const MessageBubble = ({ message, avatar: AvatarComponent, showAvatar = true }) => {
   const { isDark } = useTheme();
@@ -57,19 +58,32 @@ export const MessageBubble = ({ message, avatar: AvatarComponent, showAvatar = t
           },
         ]}
       >
-        <Text
-          style={[
-            styles.bubbleText,
-            {
-              color: isUser ? '#FFFFFF' : isDark ? '#FFFFFF' : AppColors.textPrimary,
-              fontSize: sp(14),
-            },
-          ]}
-        >
-          {message.text}
-          {/* Token đang đến -> con trỏ nhấp nháy để user biết AI còn đang nói. */}
-          {status === 'streaming' ? <Text style={styles.cursor}>▍</Text> : null}
-        </Text>
+        {isUser ? (
+          <Text
+            style={[
+              styles.bubbleText,
+              {
+                color: '#FFFFFF',
+                fontSize: sp(14),
+              },
+            ]}
+          >
+            {message.text}
+          </Text>
+        ) : (
+          // ⚠️ Bubble AI: render MARKDOWN (AI trả `**bold**`, `*italic*`,
+          //   `## heading`, `- list`...). Trước đây render text thuần -> user
+          //   thấy nguyên ký tự `**`.
+          //   `streaming` -> ẩn marker chưa đóng để không nhấp nháy ký tự thô.
+          <MarkdownText
+            text={message.text}
+            color={isDark ? '#FFFFFF' : AppColors.textPrimary}
+            fontSize={sp(14)}
+            isDark={isDark}
+            streaming={status === 'streaming'}
+            cursor={status === 'streaming' ? '▍' : null}
+          />
+        )}
         {message.time ? (
           <Text
             style={[
@@ -117,10 +131,6 @@ const styles = StyleSheet.create({
   bubbleText: {
     fontFamily: FontFamily.regular,
     lineHeight: sp(20),
-  },
-  cursor: {
-    fontFamily: FontFamily.regular,
-    color: AppColors.primary,
   },
   timeText: {
     fontFamily: FontFamily.regular,

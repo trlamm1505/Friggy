@@ -37,7 +37,8 @@
 import { getRegisteredService } from '../api/ServiceRegistry';
 import { extractStatus } from '../api/SafeService';
 import { outboxQueue, OP_TYPES, SYNC_STATES } from './OutboxQueue';
-import { offlineCache, SYNC_STATUS } from './OfflineCache';
+import { offlineCache, SYNC_STATUS, toLocalDateStr, OFFLINE_LIST_ID } from './OfflineCache';
+import { onNetworkEvent } from './NetworkMonitor';
 
 /**
  * Kết quả 1 lần đồng bộ.
@@ -80,6 +81,49 @@ class SyncEngine {
     this._listeners = new Set();
     this._lastResult = null;
     this._lastRunAt = null;
+    // Unsubscribe của listener "mạng khôi phục -> sync" (xem `startAutoSync`).
+    this._autoSyncUnsub = null;
+  }
+
+  // ══════════════════════════════════════════════════════════════════
+  // AUTO SYNC — đồng bộ khi mạng khôi phục
+  // ══════════════════════════════════════════════════════════════════
+
+  /**
+   * Bật tự đồng bộ khi mạng khôi phục.
+   *
+   * ⚠️ VÌ SAO Ở TẦNG MODULE (KHÔNG phải trong `useSyncEngine`):
+   *   Listener trước đây nằm trong `useSyncEngine` -> hook này chỉ được
+   *   gọi ở `HomeScreen`. Mà `MainTabs` render tab có điều kiện
+   *   (`{activeTab === 0 && <HomeScreen />}`) -> sang tab Tủ lạnh là
+   *   `HomeScreen` bị UNMOUNT -> listener bị unsubscribe -> MẤT listener.
+   *   => Bật mạng khi đang ở tab Tủ lạnh: KHÔNG BAO GIỜ sync -> món thêm
+   *      offline nằm im trong hàng đợi và biến mất khỏi UI.
+   *   Đặt ở tầng module (singleton) -> listener sống suốt vòng đời app,
+   *   không phụ thuộc user đang ở tab nào.
+   *
+   * Gọi an toàn nhiều lần (chỉ đăng ký 1 listener).
+   *
+   * @returns {void}
+   */
+  startAutoSync() {
+    if (this._autoSyncUnsub) return;
+
+    this._autoSyncUnsub = onNetworkEvent('online', () => {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.log('[SyncEngine] Mạng khôi phục -> đồng bộ');
+      }
+      this.syncAll({ force: true }).catch(() => {});
+    });
+  }
+
+  /**
+   * Tắt tự đồng bộ (dùng khi logout / test).
+   * @returns {void}
+   */
+  stopAutoSync() {
+    this._autoSyncUnsub?.();
+    this._autoSyncUnsub = null;
   }
 
   /**
@@ -245,6 +289,49 @@ class SyncEngine {
   }
 
   /**
+   * Xác định `listId` + `itemId` THẬT (trên server) cho 1 op món mua.
+   *
+   * ⚠️ VÌ SAO CẦN (bug user báo: "thêm nguyên liệu offline bị kẹt"):
+   *   - `listId` trong payload có thể là id GIẢ `'offline'` (đọc từ cache
+   *     fallback) -> server 404 -> món mất vĩnh viễn.
+   *   - `itemId` có thể là id LOCAL `pending_*` (món tạo offline) -> BE dùng
+   *     `ParseIntPipe` nên id local sẽ 404 -> tick/xoá bị mất.
+   *   => Luôn tra cache để lấy id thật; nếu chưa có thì lấy từ server.
+   *
+   * @param {object} payload - payload của op (shopping_*)
+   * @returns {Promise<{listId: string|null, itemId: string|number|null}>}
+   * @private
+   */
+  async _resolveShoppingContext(payload = {}) {
+    // ── listId ──
+    let listId = payload.listId;
+    if (!listId || listId === OFFLINE_LIST_ID) {
+      listId = (await offlineCache.getActiveShoppingListId()) ?? null;
+    }
+    if (!listId) {
+      const recipe = realService('recipeService');
+      if (recipe) {
+        try {
+          const active = await recipe.getActiveShoppingList();
+          listId = active?.id ?? null;
+          if (listId) await offlineCache.saveActiveShoppingListId(listId);
+        } catch (_e) {
+          // Không lấy được -> để null, caller sẽ ném lỗi rõ ràng.
+        }
+      }
+    }
+
+    // ── itemId ──
+    let itemId = payload.itemId ?? null;
+    if (itemId !== null && itemId !== undefined) {
+      const backendId = await offlineCache.getShoppingItemBackendId(itemId);
+      if (backendId) itemId = backendId;
+    }
+
+    return { listId, itemId };
+  }
+
+  /**
    * Upload 1 op cụ thể.
    *
    * @param {object} op
@@ -319,7 +406,9 @@ class SyncEngine {
       case OP_TYPES.SHOPPING_TOGGLE: {
         const recipe = realService('recipeService');
         if (!recipe) throw new Error('recipeService chưa sẵn sàng');
-        await recipe.toggleShoppingItemInList(payload.listId, payload.itemId);
+        const ctx = await this._resolveShoppingContext(payload);
+        if (!ctx.listId) throw new Error('Không tìm thấy danh sách mua để đồng bộ');
+        await recipe.toggleShoppingItemInList(ctx.listId, ctx.itemId ?? payload.itemId);
         await offlineCache.clearShoppingPending(payload.itemId);
         return;
       }
@@ -329,10 +418,21 @@ class SyncEngine {
         if (!recipe) throw new Error('recipeService chưa sẵn sàng');
         // ⚠️ Truyền lại `servings` để BE trừ đúng lượng như lúc user bấm nấu.
         //    `undefined` -> BE dùng `slot.servings`.
-        await recipe.updateSlot(payload.slotId, {
+        const res = await recipe.updateSlot(payload.slotId, {
           completed: payload.completed,
           servings: payload.servings,
         });
+
+        // ⚠️ BE ĐÃ TRỪ TỦ LẠNH trên server -> cache local (đã trừ offline) phải
+        //   khớp với server, nếu không tủ lạnh hiện sai lượng cho tới lần
+        //   pull sau.
+        //   => Ghi lại lượng thật từ BE (`consumedIngredients`).
+        if (payload.completed === true) {
+          await offlineCache.applyServerConsumption(
+            payload.slotId,
+            res?.consumedIngredients ?? []
+          );
+        }
         return;
       }
 
@@ -418,21 +518,54 @@ class SyncEngine {
       case OP_TYPES.SHOPPING_ITEM_ADD: {
         const recipe = realService('recipeService');
         if (!recipe) throw new Error('recipeService chưa sẵn sàng');
-        const created = await recipe.addShoppingListItem(payload.listId, payload.item ?? {});
+
+        // ⚠️ BUG ĐÃ SỬA (user báo: "món thêm offline bị kẹt"):
+        //   `listId` trong payload có thể là id GIẢ `'offline'` (đọc từ cache
+        //   fallback cũ) -> server trả 404 -> món mất vĩnh viễn.
+        //   => Dùng id list THẬT đã cache; nếu không có thì lấy list active
+        //      từ server (BE tự tạo list rỗng nếu chưa có).
+        let listId = payload.listId;
+        if (!listId || listId === OFFLINE_LIST_ID) {
+          const cachedListId = await offlineCache.getActiveShoppingListId();
+          listId = cachedListId ?? null;
+          if (!listId) {
+            const activeList = await recipe.getActiveShoppingList();
+            listId = activeList?.id ?? null;
+            if (listId) await offlineCache.saveActiveShoppingListId(listId);
+          }
+        }
+        if (!listId) {
+          throw new Error('Không tìm thấy danh sách mua để đồng bộ món đã thêm offline');
+        }
+
+        const created = await recipe.addShoppingListItem(listId, payload.item ?? {});
+
         // Server đã tạo item thật -> thay row pending bằng item thật.
+        //
+        // ⚠️ KHÔNG dùng `saveShoppingItems([...])`:
+        //   Hàm đó XOÁ SẠCH mọi row `synced` rồi insert lại danh sách mới ->
+        //   gọi với 1 item duy nhất sẽ xoá toàn bộ danh sách mua còn lại khỏi
+        //   cache -> user mất dữ liệu. => Dùng `upsertShoppingItem` (1 row).
         if (created?.id) {
           await offlineCache.removeShoppingItem(op.entity_id);
-          await offlineCache.saveShoppingItems([
-            {
-              id: created.id,
-              name: created.name ?? payload.item?.name ?? '',
-              quantity: created.quantity ?? payload.item?.quantity ?? 0,
-              unit: created.unit ?? payload.item?.unit ?? '',
-              ingredientId: created.ingredientId ?? payload.item?.ingredientId ?? null,
-              done: false,
-              listId: payload.listId ?? null,
-            },
-          ]);
+          await offlineCache.upsertShoppingItem({
+            id: String(created.id),
+            name: created.name ?? payload.item?.name ?? '',
+            quantity: created.quantity ?? payload.item?.quantity ?? 0,
+            unit: created.unit ?? payload.item?.unit ?? '',
+            ingredientId: created.ingredientId ?? payload.item?.ingredientId ?? null,
+            done: false,
+            listId,
+            backendItemId: created.id,
+            syncStatus: SYNC_STATUS.SYNCED,
+          });
+          // ⚠️ Remap `payload.itemId` của các op toggle/update/remove đang chờ
+          //   (user có thể đã tick món ngay sau khi thêm offline) -> nếu không,
+          //   op đó gửi `itemId = 'pending_xxx'` -> BE 404 -> tick bị mất.
+          //   ⚠️ PHẢI gọi TRƯỚC `reassignEntity`:
+          //   `reassignEntity` đổi `entity_id` sang id server -> `remapShoppingItemId`
+          //   tìm theo `entity_id` cũ sẽ không còn match.
+          await outboxQueue.remapShoppingItemId(op.entity_id, created.id);
           await outboxQueue.reassignEntity(op.entity_id, String(created.id));
         }
         return;
@@ -441,7 +574,9 @@ class SyncEngine {
       case OP_TYPES.SHOPPING_ITEM_UPDATE: {
         const recipe = realService('recipeService');
         if (!recipe) throw new Error('recipeService chưa sẵn sàng');
-        await recipe.updateShoppingListItem(payload.listId, payload.itemId, {
+        const ctx = await this._resolveShoppingContext(payload);
+        if (!ctx.listId) throw new Error('Không tìm thấy danh sách mua để đồng bộ');
+        await recipe.updateShoppingListItem(ctx.listId, ctx.itemId, {
           quantity: payload.quantity ?? undefined,
         });
         await offlineCache.clearShoppingPending(payload.itemId);
@@ -451,8 +586,30 @@ class SyncEngine {
       case OP_TYPES.SHOPPING_ITEM_REMOVE: {
         const recipe = realService('recipeService');
         if (!recipe) throw new Error('recipeService chưa sẵn sàng');
-        await recipe.removeShoppingListItem(payload.listId, payload.itemId);
+
+        // ⚠️ Món tạo offline có id local `pending_*` -> BE dùng `ParseIntPipe`
+        //   nên id local sẽ 404. Nếu món đã được sync (đã có id server) ->
+        //   dùng id server; nếu chưa -> bỏ qua op DELETE (op ADD sẽ tạo món
+        //   dư thừa, nhưng đây là trường hợp hiếm và an toàn hơn 404).
+        const ctx = await this._resolveShoppingContext(payload);
+        if (ctx.itemId) {
+          await recipe.removeShoppingListItem(ctx.listId, ctx.itemId);
+        }
         await offlineCache.removeShoppingItem(payload.itemId);
+        return;
+      }
+
+      // ── Thêm nguyên liệu thiếu (theo slot) vào giỏ mua offline ──
+      case OP_TYPES.SHOPPING_MISSING_ADD: {
+        const recipe = realService('recipeService');
+        if (!recipe) throw new Error('recipeService chưa sẵn sàng');
+        // ⚠️ Truyền `servings` -> BE scale lượng mua theo khẩu phần user chọn
+        //   (mặc định = `slot.servings` nếu không truyền).
+        await recipe.addSlotMissingToShoppingList(payload.slotId, {
+          servings: payload.servings ?? undefined,
+        });
+        // Xoá các row optimistic -> tránh hiện TRÙNG món (optimistic + thật).
+        await offlineCache.removePendingShoppingItemsBySlot(payload.slotId);
         return;
       }
 
@@ -525,6 +682,9 @@ class SyncEngine {
       { name: 'fridgeStats', run: () => this._pullFridgeStats() },
       { name: 'shoppingLists', run: () => this._pullShoppingLists() },
       { name: 'weeklyPlan', run: () => this._pullWeeklyPlan() },
+      // ⚠️ Cache "thực đơn ngày" (bữa ăn hôm nay) -> offline màn Home vẫn
+      //   hiện đúng món hôm nay (kế hoạch tuần cache có thể là tuần khác).
+      { name: 'dailyMeals', run: () => this._pullDailyMeals() },
       { name: 'userData', run: () => this._pullUserData() },
       { name: 'ingredientCatalog', run: () => this._pullIngredientCatalog() },
       { name: 'recipeList', run: () => this._pullRecipeList() },
@@ -601,6 +761,27 @@ class SyncEngine {
   }
 
   /**
+   * Tải "thực đơn ngày" (bữa ăn hôm nay) về cache.
+   *
+   * ⚠️ VÌ SAO CẦN:
+   *   `getSuggestions()` đã tự ghi cache khi online, nhưng nếu user mở app
+   *   khi offline từ đầu (chưa từng mở Home) thì cache có thể cũ.
+   *   Gọi lại ở đây để cache luôn mới nhất sau mỗi vòng sync.
+   *
+   * @private
+   */
+  async _pullDailyMeals() {
+    const recipe = realService('recipeService');
+    if (!recipe) return;
+    const meals = await recipe.getSuggestions();
+    if (!Array.isArray(meals) || meals.length === 0) return;
+
+    // ⚠️ Tự ghi cache ở đây (không trông chờ vào write-through của service)
+    //   -> hành vi luôn đúng kể cả khi service được thay thế / mock.
+    await offlineCache.saveDailyMeals(toLocalDateStr(), meals);
+  }
+
+  /**
    * Tải hồ sơ / sở thích / dị ứng về cache.
    *
    * ⚠️ QUAN TRỌNG — KHÔNG ghi đè thay đổi chưa đồng bộ:
@@ -622,8 +803,27 @@ class SyncEngine {
     if (profile) {
       const cached = await offlineCache.getUserProfile();
       const isPending = cached?._syncStatus === SYNC_STATUS.PENDING;
+      // ⚠️ F1 (avatar offline): khi đang PENDING, `stripSyncStatus(cached)` được
+      //   spread SAU `profile` -> field `avatar`/`avatarLocalPath` của cache đè
+      //   lên dữ liệu server. Điều đó đúng cho field user tự sửa (name, bio)
+      //   nhưng SAI cho avatar: server có thể đã trả URL avatar MỚI (sau khi
+      //   op `AVATAR_UPLOAD` vừa sync xong) -> cache lại quay về avatar cũ.
+      //   => Giữ `avatar` của SERVER, chỉ giữ `avatarLocalPath` của cache
+      //      (file local còn cần cho tới khi op upload xong).
+      const cachedRest = stripSyncStatus(cached);
       await offlineCache.saveUserProfile(
-        isPending ? { ...profile, ...stripSyncStatus(cached) } : profile,
+        isPending
+          ? {
+              ...profile,
+              ...cachedRest,
+              avatar: profile.avatar ?? cachedRest.avatar ?? null,
+              avatarLocalPath: cachedRest.avatarLocalPath ?? null,
+            }
+          : {
+              ...profile,
+              // Đã sync xong -> không còn file local nào chờ -> xoá đường dẫn.
+              avatarLocalPath: null,
+            },
         isPending ? SYNC_STATUS.PENDING : SYNC_STATUS.SYNCED
       );
     }
@@ -803,9 +1003,17 @@ class SyncEngine {
   // ══════════════════════════════════════════════════════════════════
 
   /**
-   * Tải trước chi tiết công thức của các slot trong plan tuần.
+   * Tải trước chi tiết công thức của các slot trong plan tuần + thực đơn ngày.
    *
    * Chạy nền, KHÔNG await -> không chặn UI. Lỗi bị bỏ qua.
+   *
+   * ⚠️ VÌ SAO CẦN (yêu cầu của user):
+   *   Offline user muốn MỞ được chi tiết công thức của các món trong
+   *   thực đơn ngày / tuần (nguyên liệu + cách nấu) để nấu theo.
+   *   Ngoài ra, khi tick "đã nấu" offline, client cần biết CHÍNH XÁC cần
+   *   nguyên liệu gì để tự trừ tủ lạnh (xem `OfflineCache.consumeIngredientsForSlot`).
+   *   => Cache `GET /meal-planning/slots/{id}` cho MỌI slot của tuần + ngày.
+   *
    * @private
    */
   async _prefetchRecipes() {
@@ -814,18 +1022,96 @@ class SyncEngine {
 
     const plan = await recipe.getNextWeekPlan();
     const slots = (plan?.days ?? []).flatMap((day) => day.slots ?? []);
-    if (slots.length === 0) return;
 
-    for (const slot of slots) {
-      if (!slot?.id) continue;
-      try {
-        const detail = await recipe.getSlotDetail(slot.id);
-        if (detail) {
-          await offlineCache.saveRecipeDetail(slot.id, 'slot', detail);
-        }
-      } catch (_e) {
-        // Bỏ qua lỗi 1 slot.
+    // ⚠️ Dùng Set để không tải trùng 1 slot (slot có thể lặp giữa ngày hôm
+    //   nay và plan tuần).
+    const slotIds = new Set();
+    slots.forEach((slot) => {
+      if (slot?.id) slotIds.add(String(slot.id));
+    });
+
+    // 1) Các slot của THỰC ĐƠN NGÀY (bữa ăn hôm nay).
+    //
+    // ⚠️ `getSuggestions()` trả slot HÔM NAY -> cache theo ngày để offline
+    //   mở màn "Thực đơn ngày" được.
+    let dailySlotIds = new Set();
+    try {
+      const meals = await recipe.getSuggestions();
+      for (const meal of meals ?? []) {
+        if (!meal?.id) continue;
+        const mealId = String(meal.id);
+        dailySlotIds.add(mealId);
+        slotIds.add(mealId);
       }
+    } catch (_e) {
+      // Bỏ qua — không có slot hôm nay thì không cache.
+    }
+
+    // 2) Tải chi tiết từng slot (song song, giới hạn 4 để không spam server).
+    const ids = Array.from(slotIds);
+    const detailsById = new Map();
+    const batchSize = 4;
+
+    for (let i = 0; i < ids.length; i += batchSize) {
+      const batch = ids.slice(i, i + batchSize);
+      const results = await Promise.all(
+        batch.map(async (slotId) => {
+          try {
+            const detail = await recipe.getSlotDetail(slotId);
+            if (detail) {
+              await offlineCache.saveRecipeDetail(slotId, 'slot', detail);
+            }
+            return [slotId, detail];
+          } catch (_e) {
+            // Bỏ qua lỗi 1 slot.
+            return [slotId, null];
+          }
+        })
+      );
+      results.forEach(([slotId, detail]) => {
+        if (detail) detailsById.set(slotId, detail);
+      });
+    }
+
+    // 3) Lưu danh sách chi tiết theo NGÀY (để offline tra cứu nhanh).
+    if (dailySlotIds.size > 0) {
+      const dailyDetails = Array.from(dailySlotIds)
+        .map((id) => detailsById.get(id))
+        .filter(Boolean);
+      if (dailyDetails.length > 0) {
+        await offlineCache.saveDailyMealDetails(toLocalDateStr(), dailyDetails);
+      }
+    }
+
+    // 4) Cache CHI TIẾT CÔNG THỨC (theo `recipeId`) của các slot trong plan.
+    //
+    // ⚠️ VÌ SAO CẦN:
+    //   Màn "Chi tiết công thức" (`RecipeDetailScreen`) fetch theo `recipeId`
+    //   (không phải slot id) -> `getRecipeById(recipeId)` -> cache key
+    //   `local_recipe_details(id, 'recipe')`.
+    //   Nếu chỉ cache slot detail thì offline vẫn KHÔNG mở được màn chi tiết
+    //   công thức từ thực đơn ngày / tuần.
+    //
+    // ⚠️ `getRecipeById` tự ghi cache (`saveRecipeDetail(id, 'recipe', detail)`)
+    //   -> ta chỉ cần gọi nó, không phải tự ghi.
+    const recipeIds = new Set();
+    detailsById.forEach((detail) => {
+      const rid = detail?.recipe?.id;
+      if (rid) recipeIds.add(String(rid));
+    });
+
+    const recipeIdList = Array.from(recipeIds);
+    for (let i = 0; i < recipeIdList.length; i += 4) {
+      const batch = recipeIdList.slice(i, i + 4);
+      await Promise.all(
+        batch.map(async (recipeId) => {
+          try {
+            await recipe.getRecipeById(recipeId);
+          } catch (_e) {
+            // Bỏ qua lỗi 1 công thức.
+          }
+        })
+      );
     }
 
     // Dọn cache cũ (> 7 ngày) - giống Flutter `cleanOldCache`.

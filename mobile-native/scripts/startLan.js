@@ -86,15 +86,23 @@ async function main() {
 
   const apiBaseUrl = `http://${ip}:${port}${API_PATH}`;
 
+  // ⚠️ PHẢI inject FILE base URL luôn:
+  //   BE phục vụ ảnh (avatar...) từ ROOT server (`/avatars/x.jpg`), KHÔNG phải
+  //   dưới `/api/v1`. Nếu `.env` còn giữ `EXPO_PUBLIC_FILE_BASE_URL` trỏ về
+  //   ngrok đã hết hạn -> API chạy được nhưng avatar KHÔNG hiển thị.
+  const fileBaseUrl = `http://${ip}:${port}`;
+
   // Inject env cho tiến trình con. @expo/env sẽ bỏ qua giá trị trong file
   // .env nếu biến đã có sẵn trong process.env.
   const env = {
     ...process.env,
     EXPO_PUBLIC_API_BASE_URL: apiBaseUrl,
+    EXPO_PUBLIC_FILE_BASE_URL: fileBaseUrl,
   };
 
   console.log('\x1b[32m[friggy]\x1b[0m IP LAN phát hiện: \x1b[1m%s\x1b[0m', ip);
   console.log('\x1b[32m[friggy]\x1b[0m API base URL:    \x1b[1m%s\x1b[0m', apiBaseUrl);
+  console.log('\x1b[32m[friggy]\x1b[0m File base URL:   \x1b[1m%s\x1b[0m', fileBaseUrl);
   console.log(
     '\x1b[90m[friggy] Điện thoại phải dùng CHUNG Wi-Fi với máy host để gọi được BE.\x1b[0m\n'
   );

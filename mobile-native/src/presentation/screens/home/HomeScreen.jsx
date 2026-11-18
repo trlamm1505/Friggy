@@ -27,6 +27,7 @@ import {
   useNotifications,
 } from '../../hooks/useServiceHooks';
 import { useSyncEngine } from '../../hooks/useSyncEngine';
+import { syncEngine } from '../../../data/offline/SyncEngine';
 import { useNetworkStatus } from '../../hooks/useNetworkStatus';
 import { OfflineBanner } from '../../components/common/OfflineBanner';
 import { SyncStatusBadge } from '../../components/common/SyncStatusBadge';
@@ -46,7 +47,17 @@ export const HomeScreen = () => {
 
   // ── OFFLINE ──
   // `useSyncEngine` tự sync khi mount Home + khi mạng khôi phục.
-  const { pendingCount, syncNow } = useSyncEngine({ autoSyncOnMount: true });
+  //
+  // ⚠️ `syncOnReconnect: false` — listener "mạng khôi phục -> sync" đã chuyển
+  //   lên TẦNG MODULE (`syncEngine.startAutoSync()` gọi trong `App.jsx`).
+  //   Lý do: listener trong hook này sống cùng vòng đời `HomeScreen`, mà
+  //   `MainTabs` unmount `HomeScreen` khi user sang tab khác (vd Tủ lạnh)
+  //   -> bật mạng lúc đó không ai nghe -> không sync.
+  //   Giữ `syncOnReconnect` ở hook sẽ chạy TRÙNG với listener tầng module.
+  const { pendingCount, syncNow } = useSyncEngine({
+    autoSyncOnMount: true,
+    syncOnReconnect: false,
+  });
   const { isOffline } = useNetworkStatus();
 
   const [searchValue, setSearchValue] = useState('');
@@ -138,9 +149,29 @@ export const HomeScreen = () => {
       refetchStats();
       refetchSuggestions();
       refetchSummary();
+      // ⚠️ Bug user báo: số "món chưa mua" ở nút tắt danh sách mua không
+      //   cập nhật sau khi user tick món ở màn danh sách mua.
+      //   -> Báo tín hiệu refresh cho các component con (ShoppingListShortcut).
+      setRefreshKey((k) => k + 1);
       return undefined;
     }, [refetchStats, refetchSuggestions, refetchSummary])
   );
+
+  // ⚠️ Sync xong (bật mạng lại) -> các số liệu cache local đã thay đổi
+  //   (VD tick món mua offline vừa được upload) -> báo refresh cho component con.
+  //
+  //   Dùng `subscribe` của `syncEngine` (setState trong CALLBACK, không phải
+  //   trong thân effect -> không gây cascading render).
+  useEffect(() => {
+    const unsubscribe = syncEngine.subscribe((state) => {
+      if (state?.isSyncing) return;
+      // Chỉ refresh khi vừa kết thúc 1 vòng sync.
+      if (state?.lastResult) {
+        setRefreshKey((k) => k + 1);
+      }
+    });
+    return unsubscribe;
+  }, []);
 
   // Animation values
   const animController = useRef(new Animated.Value(0)).current;
@@ -225,6 +256,7 @@ export const HomeScreen = () => {
           <View style={{ marginTop: sp(16) }}>
             <ShoppingListShortcut
               onPress={() => navigation.navigate(Routes.ShoppingReminder)}
+              refreshKey={refreshKey}
             />
           </View>
 
@@ -283,6 +315,9 @@ export const HomeScreen = () => {
                 // (BE cần slot id mới trừ nguyên liệu + đánh dấu đã nấu).
                 slotId: recipe.id,
                 cooked: recipe.cooked,
+                // ⚠️ Khẩu phần của SLOT (kế hoạch) -> màn chi tiết dùng làm
+                //   giá trị khởi tạo Stepper -> thêm vào DS mua đúng lượng.
+                servings: recipe.servings ?? undefined,
               })
             }
             onSwapTap={() => showInfo(t('home.swapNotReady'))}

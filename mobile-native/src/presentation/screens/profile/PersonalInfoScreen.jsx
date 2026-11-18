@@ -9,7 +9,7 @@
  * - Address field có prefix icon MapPin
  */
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -33,9 +33,10 @@ import { CustomButton } from '../../components/common/CustomButton';
 import { SegmentedControl } from '../../components/common/SegmentedControl';
 import { useAuthStore } from '../../../shared/stores/useAuthStore';
 import { useServices } from '../../../data/ServiceProvider';
-import { showSuccess, showError, showMutationError } from '../../utils/helpers';
+import { showSuccess, showError, showInfo, showMutationError } from '../../utils/helpers';
 import { Mail, Phone, User, Calendar } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
+import { persistLocalImage } from '../../../data/storage/localImageStore';
 
 /**
  * Ô ngày sinh nhập theo DD/MM/YYYY (đúng thiết kế) nhưng BE validate
@@ -65,17 +66,22 @@ export const PersonalInfoScreen = () => {
   // Nạp profile thật từ BE (GET /users/me). Fallback về store khi lỗi mạng.
   // isLoading chặn lưu: bấm lưu lúc đang tải sẽ ghi đè dữ liệu BE bằng giá trị mặc định.
   const [isLoading, setIsLoading] = useState(true);
-  const [name, setName] = useState(user?.name || 'Trần Quốc Lâm');
-  const [email, setEmail] = useState(user?.email || 'lam@example.com');
-  const [phone, setPhone] = useState('0901234567');
+  // ⚠️ KHÔNG hardcode giá trị giả ('Trần Quốc Lâm', '0901234567'...).
+  //   Nếu offline mà chưa có cache, user sẽ LƯU ĐÈ dữ liệu thật bằng dữ liệu bịa.
+  const [name, setName] = useState(user?.name || '');
+  const [email, setEmail] = useState(user?.email || '');
+  // BE `UserProfile` KHÔNG có cột `phone` -> không sửa được, hiển thị readonly.
+  const phone = user?.phone || '';
   // State giữ định dạng hiển thị DD/MM/yyyy; convert sang ISO ngay khi lưu.
-  const [birthday, setBirthday] = useState('01/01/1995');
+  const [birthday, setBirthday] = useState('');
   const [gender, setGender] = useState('male');
-  const [bio, setBio] = useState('Yêu nấu ăn và chia sẻ công thức với gia đình.');
+  const [bio, setBio] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   // Avatar: URL đã qua appConfig.getImageUrl() trong service, hiển thị thẳng.
   const [avatarUrl, setAvatarUrl] = useState(user?.avatar || null);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  // Giữ URI ảnh vừa chọn -> dùng khi offline (để hiện ảnh local ngay).
+  const lastPickedUriRef = useRef(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -105,8 +111,13 @@ export const PersonalInfoScreen = () => {
    * Giống hệt Flutter `personal_info_screen.dart:191-203`.
    * Resize 512x512 / quality 85 để khớp, BE giới hạn 5MB.
    *
-   * RN không có offline queue như Flutter (mục 9 backlog) -> lỗi thì báo
-   * thật, KHÔNG hiện ảnh giả cho user tưởng đã lưu.
+   * ⚠️ OFFLINE (F1) — thao tác KHÔNG bị mất:
+   *   `SafeService` bắt lỗi mạng -> `MutationHandlers.userService.uploadAvatar`
+   *   lưu `avatar_local_path` + đẩy op `AVATAR_UPLOAD` vào hàng đợi -> ném
+   *   `OfflineQueuedError`. Lúc này phải:
+   *     1. hiện ảnh LOCAL ngay (file vẫn nằm trên máy),
+   *     2. báo "đã lưu offline" (KHÔNG báo lỗi đỏ),
+   *     3. KHÔNG chặn người dùng tiếp tục dùng app.
    */
   const handlePickAvatar = useCallback(async () => {
     try {
@@ -126,14 +137,32 @@ export const PersonalInfoScreen = () => {
       const asset = picked?.canceled ? null : picked?.assets?.[0];
       if (!asset?.uri) return;
 
+      // ⚠️ Copy ảnh vào thư mục persistent của app TRƯỚC khi upload.
+      //   URI của ImagePicker nằm trong cache của OS -> có thể bị xoá bất cứ
+      //   lúc nào. Nếu offline (đã vào hàng đợi), file cache biến mất thì op
+      //   `AVATAR_UPLOAD` không upload được nữa -> avatar mất trắng.
+      const localUri = await persistLocalImage(asset.uri);
+      lastPickedUriRef.current = localUri;
+
       setIsUploadingAvatar(true);
-      const res = await userService.uploadAvatar(asset.uri);
+      const res = await userService.uploadAvatar(localUri);
       const newUrl = res?.url ?? null;
       setAvatarUrl(newUrl);
       // Đồng bộ store để UserProfileScreen hiện avatar mới ngay khi quay lại.
       setUser({ ...user, ...(newUrl ? { avatar: newUrl } : {}) });
       showSuccess(t('profile.avatarUpdated'));
     } catch (e) {
+      // ⚠️ Offline: thao tác đã được lưu vào hàng đợi -> KHÔNG phải lỗi.
+      //   Hiện ảnh local ngay + báo "đã lưu offline, sẽ đồng bộ khi có mạng".
+      if (e?.isOfflineQueued === true) {
+        const localUri = lastPickedUriRef.current;
+        if (localUri) {
+          setAvatarUrl(localUri);
+          setUser({ ...user, avatar: localUri });
+        }
+        showInfo(t('offline.savedQueued'));
+        return;
+      }
       showError(e?.message || 'Không thể tải ảnh đại diện');
     } finally {
       setIsUploadingAvatar(false);
@@ -167,7 +196,18 @@ export const PersonalInfoScreen = () => {
       const queued = showMutationError(e, 'Không thể lưu thông tin', {
         offlineMessage: t('offline.savedQueued'),
       });
-      if (queued) return;
+      if (queued) {
+        // Cập nhật store luôn để UserProfileScreen hiện thông tin mới ngay khi
+        // quay lại (cache đã lưu, nhưng store là nguồn UI của màn profile).
+        setUser({
+          ...user,
+          name,
+          ...(displayToIso(birthday) ? { dateOfBirth: displayToIso(birthday) } : {}),
+          gender,
+          bio,
+        });
+        return;
+      }
 
       showError(e?.message || 'Không thể lưu thông tin');
     } finally {
@@ -240,10 +280,13 @@ export const PersonalInfoScreen = () => {
             keyboardType="email-address"
             prefixIcon={(props) => <Mail {...props} color={iconColor} size={20} />}
           />
+          {/* Số điện thoại KHÔNG sửa được: BE `UserProfile` không có cột `phone`
+              và `UpdateProfileDto` không nhận field này -> sửa xong cũng bị bỏ qua.
+              Hiện readonly cho đúng thực tế. */}
           <CustomTextField
             label={t('home.phone')}
             value={phone}
-            onChangeText={setPhone}
+            editable={false}
             keyboardType="phone-pad"
             prefixIcon={(props) => <Phone {...props} color={iconColor} size={20} />}
           />

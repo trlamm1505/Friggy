@@ -718,11 +718,20 @@ export class MockRecipeService extends IRecipeService {
    *
    * Mock không có dữ liệu tủ lạnh chi tiết theo slot -> trả 0 món, đúng
    * với hành vi "không xác định được nguyên liệu thiếu".
+   *
+   * @param {string} slotId
+   * @param {object} [options]
+   * @param {number} [options.servings] - khẩu phần user chọn
    */
-  async addSlotMissingToShoppingList(slotId) {
+  async addSlotMissingToShoppingList(slotId, options = {}) {
     await sleep(MOCK_DELAY);
     if (!slotId) return { listId: null, addedCount: 0, addedItems: [] };
-    return { listId: 'shopping-list-mock', addedCount: 0, addedItems: [] };
+    return {
+      listId: 'shopping-list-mock',
+      addedCount: 0,
+      addedItems: [],
+      servings: options.servings ?? null,
+    };
   }
 
   /**

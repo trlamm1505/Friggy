@@ -8,10 +8,24 @@
  *   Đếm từ `GET /meal-planning/shopping-lists` (mọi list, gộp lại) — dùng
  *   đúng service `getShoppingList()` mà ShoppingReminderScreen đang dùng để
  *   hai màn luôn hiển thị cùng số liệu.
+ *
+ * ⚠️ VÌ SAO CẦN GỘP VỚI CACHE LOCAL (bug user báo):
+ *   User tick N món khi OFFLINE -> thao tác nằm trong hàng đợi + cache local
+ *   đánh dấu 'pending'. Khi bật mạng lại, server CHƯA kịp nhận (hoặc mới
+ *   nhận xong) -> `getShoppingList()` trả về danh sách CHƯA tick -> Home hiện
+ *   "N món chưa mua" (số cũ) dù user đã tick.
+ *   => Với món có row 'pending' trong cache, lấy trạng thái tick TỪ CACHE
+ *      (đây là ý định mới nhất của user), ngược lại lấy từ server.
+ *
+ * ⚠️ VÌ SAO `useFocusEffect` + `refreshKey`:
+ *   Chỉ load 1 lần lúc mount -> quay lại Home từ màn "Danh sách mua"
+ *   (vừa tick món) số liệu không đổi. `useFocusEffect` load lại mỗi lần
+ *   màn có focus; `refreshKey` báo Home refresh sau khi sync xong.
  */
 
 import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { useTheme } from '../../theme/ThemeContext';
 import { AppColors } from '../../theme/colors';
 import { sp } from '../../utils/responsive';
@@ -19,8 +33,9 @@ import { FontFamily, FontWeights } from '../../theme/typography';
 import { useTranslation } from 'react-i18next';
 import { ShoppingCart, ChevronRight } from 'lucide-react-native';
 import { useServices } from '../../../data/ServiceProvider';
+import { offlineCache } from '../../../data/offline/OfflineCache';
 
-export const ShoppingListShortcut = ({ onPress }) => {
+export const ShoppingListShortcut = ({ onPress, refreshKey = 0 }) => {
   const { isDark } = useTheme();
   const { t } = useTranslation();
   const services = useServices();
@@ -28,21 +43,59 @@ export const ShoppingListShortcut = ({ onPress }) => {
   const [pendingCount, setPendingCount] = useState(0);
 
   const loadCount = useCallback(async () => {
+    // Đọc cache local TRƯỚC -> biết món nào user vừa tick/thêm offline.
+    let localItems = [];
+    try {
+      localItems = await offlineCache.getShoppingItems();
+    } catch {
+      localItems = [];
+    }
+
     try {
       const items = await services.recipeService.getShoppingList();
-      const list = Array.isArray(items) ? items : [];
-      setPendingCount(list.filter((i) => !i.done).length);
+      const serverList = Array.isArray(items) ? items : [];
+
+      // Map cache theo id (ưu tiên row 'pending' = ý định mới nhất của user).
+      const localById = new Map(localItems.map((i) => [String(i.id), i]));
+
+      // 1) Món có trên server: lấy `done` từ cache nếu row đó đang 'pending'.
+      const merged = serverList.map((item) => {
+        const local = localById.get(String(item.id));
+        if (!local) return item;
+        if (local._syncStatus !== 'pending') return item;
+        return { ...item, done: local.done };
+      });
+
+      // 2) Món CHỈ có trong cache (thêm offline -> chưa lên server) -> phải tính
+      //    vào, nếu không số "món chưa mua" bị thiếu.
+      const serverIds = new Set(serverList.map((i) => String(i.id)));
+      localItems.forEach((local) => {
+        if (serverIds.has(String(local.id))) return;
+        if (local._syncStatus !== 'pending') return;
+        merged.push(local);
+      });
+
+      setPendingCount(merged.filter((i) => !i.done).length);
     } catch {
-      // Không chặn Home: đếm lỗi thì để 0, user vẫn bấm vào được.
-      setPendingCount(0);
+      // Offline (hoặc lỗi) -> dùng cache local.
+      setPendingCount(localItems.filter((i) => !i.done).length);
     }
   }, [services]);
 
+  // Load lại mỗi lần màn có focus (quay lại Home từ màn danh sách mua...).
+  useFocusEffect(
+    useCallback(() => {
+      // `loadCount` async -> setState chỉ chạy sau `await`.
+      loadCount();
+      return undefined;
+    }, [loadCount])
+  );
+
+  // Home báo refresh (sau pull-to-refresh / sau khi sync xong).
   useEffect(() => {
-    // `loadCount` async -> setState chỉ chạy sau `await`.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     loadCount();
-  }, [loadCount]);
+  }, [loadCount, refreshKey]);
 
   return (
     <Pressable

@@ -35,8 +35,9 @@ import { EmptyState } from '../../components/common/EmptyState';
 import { ErrorState } from '../../components/common/ErrorState';
 import { Skeleton } from '../../components/common/Skeleton';
 import { CatalogPickerModal } from '../../components/scan/CatalogPickerModal';
+import { ShoppingAddItemModal } from '../../components/recipe/ShoppingAddItemModal';
 import { Check, Plus, Trash2, X, Minus, Store } from 'lucide-react-native';
-import { showError, showSuccess, showMutationError } from '../../utils/helpers';
+import { showError, showSuccess, showInfo, showMutationError } from '../../utils/helpers';
 import { useServices } from '../../../data/ServiceProvider';
 
 const FILTER_KEYS = {
@@ -63,6 +64,8 @@ export const ShoppingReminderScreen = () => {
 
   // ── Modal thêm món ──
   const [pickerVisible, setPickerVisible] = useState(false);
+  const [addModalVisible, setAddModalVisible] = useState(false);
+  const [selectedIngredient, setSelectedIngredient] = useState(null);
   const [addingItem, setAddingItem] = useState(false);
 
   // ── Modal sửa số lượng ──
@@ -208,33 +211,66 @@ export const ShoppingReminderScreen = () => {
    *
    * @param {{id:number,name:string,defaultUnit?:string|null}} option
    */
-  const handlePickIngredient = useCallback(
-    async (option) => {
+  const handlePickIngredient = useCallback((option) => {
+    if (!option?.id) {
+      showError(t('home.error'));
+      return;
+    }
+  
+    setPickerVisible(false);
+    setSelectedIngredient(option);
+    setAddModalVisible(true);
+  }, [t]);
+
+  const handleSubmitShoppingItem = useCallback(
+    async ({ quantity, unit }) => {
+      if (!selectedIngredient?.id || addingItem) return;
+
       setAddingItem(true);
+
       try {
-        // Ưu tiên giỏ active; BE tự tạo list rỗng nếu chưa có.
         const list = await services.recipeService.getActiveShoppingList();
         const listId = list?.id ?? null;
+
         if (!listId) {
           showError(t('home.shoppingNoList'));
           return;
         }
 
+        // ⚠️ PHẢI gửi `name`:
+        //   BE chỉ nhận `ingredientId`/`quantity`/`unit`, nhưng cache local cần
+        //   tên để hiển thị ngay khi offline (món vừa thêm phải THẤY tên,
+        //   không phải 1 dòng trống). `MutationHandlers` đọc `item.name`.
         await services.recipeService.addShoppingListItem(listId, {
-          ingredientId: option.id,
-          quantity: 1,
-          unit: option.defaultUnit ?? '',
+          ingredientId: selectedIngredient.id,
+          name: selectedIngredient.name ?? '',
+          quantity,
+          unit,
         });
 
         showSuccess(t('home.shoppingAddedCount', { count: 1 }));
+
+        setAddModalVisible(false);
+        setSelectedIngredient(null);
+
         await loadItems();
       } catch (e) {
-        showError(e?.message ?? t('home.error'));
+        // P2 (offline): đã lưu vào hàng đợi -> KHÔNG báo lỗi, chỉ nhắc user
+        // rằng thao tác đã được ghi nhớ và sẽ đồng bộ khi có mạng.
+        const queued = e?.isOfflineQueued === true;
+        if (queued) {
+          showInfo(t('offline.savedQueued'));
+          setAddModalVisible(false);
+          setSelectedIngredient(null);
+          await loadItems();
+        } else {
+          showError(e?.message ?? t('home.error'));
+        }
       } finally {
         setAddingItem(false);
       }
     },
-    [services, t, loadItems]
+    [selectedIngredient, addingItem, services, t, loadItems]
   );
 
   /** Mở modal sửa số lượng. */
@@ -449,6 +485,21 @@ export const ShoppingReminderScreen = () => {
         onClose={() => setPickerVisible(false)}
         onSelect={handlePickIngredient}
       />
+
+      {/* Modal nhập số lượng và đơn vị */}
+      <ShoppingAddItemModal
+        key={selectedIngredient?.id ?? 'no-ingredient'}
+        visible={addModalVisible}
+        ingredient={selectedIngredient}
+        defaultQuantity={1}
+        saving={addingItem}
+        onSubmit={handleSubmitShoppingItem}
+        onClose={() => {
+          setAddModalVisible(false);
+          setSelectedIngredient(null);
+        }}
+      />
+
 
       {/* ── Modal sửa số lượng ── */}
       <QuantityModal

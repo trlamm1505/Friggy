@@ -36,7 +36,12 @@ import type {
   UpdateShoppingListItemDto,
   RegenerateSlotDto,
   GenerateFromExpiringDto,
+  AddSlotMissingToShoppingListDto,
 } from './dto/meal-planning.dto';
+import {
+  computeMissingPurchaseQuantity,
+  computeServingsScale,
+} from './shopping-missing.util';
 
 // ─────────────────────────────────────────────────────────
 // Types nội bộ — kết quả trừ nguyên liệu
@@ -872,7 +877,22 @@ export class MealPlanningService {
   //
   // ⚠️ Đây là endpoint cho nút "+ Thêm vào DS" ở màn chi tiết công thức:
   //    user bấm -> mọi nguyên liệu thiếu trong tủ lạnh được ghi vào list mua.
-  async addSlotMissingToShoppingList(userId: string, slotId: string) {
+  //
+  // ⚠️ `servings` (KHẨU PHẦN) — yêu cầu của user:
+  //    Mặc định endpoint dùng `slot.servings` (khẩu phần trong kế hoạch).
+  //    Nhưng user có thể chỉnh khẩu phần ở Stepper (màn chi tiết công thức
+  //    / modal chi tiết slot) -> muốn mua theo đúng số khẩu phần đó.
+  //    => `detail.summary.missingItems[]` đã được scale theo `slot.servings`
+  //       -> phải tính LẠI lượng thiếu theo `servings` user chọn:
+  //          lượngCầnMới  = quantityNeeded * (servingsUser / slot.servings)
+  //          lượngThiếuMới = max(0, lượngCầnMới - fridgeQuantity)
+  //       (xem `shopping-missing.util.ts` để hiểu vì sao KHÔNG dùng
+  //        `missingQuantity * scale`).
+  async addSlotMissingToShoppingList(
+    userId: string,
+    slotId: string,
+    dto?: AddSlotMissingToShoppingListDto,
+  ) {
     const slot = await this.prisma.mealSlot.findFirst({
       where: {
         id: slotId,
@@ -897,8 +917,14 @@ export class MealPlanningService {
     const missing = detail.summary.missingItems ?? [];
 
     if (missing.length === 0) {
-      return { listId: null, addedCount: 0, addedItems: [] };
+      return { listId: null, addedCount: 0, addedItems: [], servings: slot.servings };
     }
+
+    // Hệ số scale: `servings` user chọn / `servings` của slot trong kế hoạch.
+    // ⚠️ `slot.servings` có thể null/0 -> dùng 1 để tránh chia 0.
+    const slotServings = Math.max(1, slot.servings || 1);
+    const targetServings = Math.max(1, dto?.servings ?? slotServings);
+    const scale = computeServingsScale(targetServings, slotServings);
 
     const list = await this.getOrCreateActiveShoppingList(userId);
 
@@ -911,9 +937,24 @@ export class MealPlanningService {
         where: { shoppingListId: list.id, ingredientId, deletedAt: null },
       });
 
-      const quantity = item.missingQuantity && item.missingQuantity > 0
-        ? Math.round(item.missingQuantity * 100) / 100
-        : 1;
+      // ⚠️ TÍNH LẠI lượng thiếu theo khẩu phần user chọn.
+      //
+      //   Công thức ĐÚNG (xử lý được cả 2 trường hợp):
+      //     lượngCầnMới = quantityNeeded * scale      (lượng cần dùng, đã scale)
+      //     lượngThiếuMới = max(0, lượngCầnMới - fridgeQuantity)
+      //
+      //   ⚠️ KHÔNG được làm `missingQuantity * scale`:
+      //     `missingQuantity = quantityNeeded - fridgeQuantity`.
+      //     Khi tủ đã có sẵn một phần (trạng thái 'partial'), `fridgeQuantity`
+      //     KHÔNG đổi khi đổi khẩu phần -> nhân cả `fridgeQuantity` vào sẽ
+      //     tính sai (ví dụ cần 200g có sẵn 150g thiếu 50g; đổi khẩu phần x2 ->
+      //     cần 400g vẫn có sẵn 150g -> thiếu 250g, KHÔNG phải 100g).
+      const missingNew = computeMissingPurchaseQuantity(item, scale);
+
+      // Trạng thái 'have' -> không cần mua (dư để tránh lỗi làm tròn).
+      if (missingNew <= 0) continue;
+
+      const quantity = Math.max(0.01, Math.round(missingNew * 100) / 100);
       // ⚠️ `missingQuantity` đã được CHUẨN HOÁ về base unit (g/ml/kg) trong
       //   `getSlotDetail` -> phải dùng `baseUnit` làm đơn vị.
       //   Dùng `originalUnit` (vd "kg") với số lượng đã chuẩn hoá sẽ ra
@@ -956,10 +997,15 @@ export class MealPlanningService {
     }
 
     this.logger.log(
-      `🛒 [MealPlanning] Thêm ng.liệu thiếu của slot ${slotId} vào list ${list.id}: ${addedItems.length} món`,
+      `🛒 [MealPlanning] Thêm ng.liệu thiếu của slot ${slotId} vào list ${list.id}: ${addedItems.length} món (servings=${targetServings})`,
     );
 
-    return { listId: list.id, addedCount: addedItems.length, addedItems };
+    return {
+      listId: list.id,
+      addedCount: addedItems.length,
+      addedItems,
+      servings: targetServings,
+    };
   }
 
   // ─────────────────────────────────────────────────────────
@@ -1148,6 +1194,10 @@ export class MealPlanningService {
         cookTimeMinutes: slot.recipe.cookTimeMinutes,
         difficultyLevel: slot.recipe.difficultyLevel,
         estimatedCost: slot.recipe.estimatedCost,
+        // ⚠️ Khẩu phần GỐC của công thức — client cần để scale lại
+        //   `ingredients` khi user đổi khẩu phần (offline client tự trừ tủ
+        //   lạnh theo công thức).
+        servings: slot.recipe.servings || 1,
         steps: slot.recipe.steps.map((s) => ({
           stepNumber: s.stepNumber,
           instruction: s.instruction,

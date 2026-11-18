@@ -207,6 +207,40 @@ const matchesWhere = (row, whereClause, params = []) => {
         continue;
       }
 
+      // `col < ?` / `col > ?` / `col <= ?` / `col >= ?` — so sánh số.
+      //
+      // ⚠️ CẦN cho `cleanOldRecipeDetails` (`updated_at < ?`): nếu không hỗ trợ
+      //   thì "không hiểu điều kiện" -> coi như không lọc -> XOÁ HẾT bảng.
+      const cmpMatch = trimmed.match(/^(\w+)\s*(<=|>=|<|>)\s*(\?|'[^']*'|"[^"]*"|\d+)$/);
+      if (cmpMatch) {
+        const column = cmpMatch[1];
+        const operator = cmpMatch[2];
+        const raw = cmpMatch[3];
+        let expected;
+        if (raw === '?') {
+          expected = params[paramIndex];
+          paramIndex += 1;
+        } else if (raw.startsWith("'")) {
+          expected = raw.slice(1, -1);
+        } else if (raw.startsWith('"')) {
+          expected = raw.slice(1, -1);
+        } else {
+          expected = Number(raw);
+        }
+
+        const actualNum = Number(row[column]);
+        const expectedNum = Number(expected);
+        if (Number.isNaN(actualNum) || Number.isNaN(expectedNum)) {
+          // Không so được số -> coi như không thỏa điều kiện lọc.
+          return false;
+        }
+        if (operator === '<' && !(actualNum < expectedNum)) return false;
+        if (operator === '<=' && !(actualNum <= expectedNum)) return false;
+        if (operator === '>' && !(actualNum > expectedNum)) return false;
+        if (operator === '>=' && !(actualNum >= expectedNum)) return false;
+        continue;
+      }
+
       // `col LIKE ?` (SQLite LIKE: `%` = 0..n ký tự, `_` = 1 ký tự)
       const likeMatch = trimmed.match(/^(\w+)\s+LIKE\s+(\?|'[^']*'|"[^"]*")$/i);
       if (likeMatch) {

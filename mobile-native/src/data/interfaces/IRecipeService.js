@@ -462,9 +462,11 @@ export class IRecipeService {
    * `POST /meal-planning/slots/{slotId}/missing-to-shopping-list`.
    *
    * @param {string} slotId
-   * @returns {Promise<{listId:string|null, addedCount:number, addedItems:object[]}>}
+   * @param {object} [options]
+   * @param {number} [options.servings] - khẩu phần user chọn (BE scale lượng)
+   * @returns {Promise<{listId:string|null, addedCount:number, addedItems:object[], servings?:number}>}
    */
-  async addSlotMissingToShoppingList(slotId) {
+  async addSlotMissingToShoppingList(slotId, options = {}) {
     throw new Error('IRecipeService.addSlotMissingToShoppingList() must be implemented');
   }
 

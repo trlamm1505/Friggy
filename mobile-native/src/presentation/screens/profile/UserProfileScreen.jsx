@@ -25,7 +25,7 @@ import { AppColors } from '../../theme/colors';
 import { sp } from '../../utils/responsive';
 import { FontWeights, FontFamily } from '../../theme/typography';
 import { useTranslation } from 'react-i18next';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore } from '../../../shared/stores/useAuthStore';
 import { useServices } from '../../../data/ServiceProvider';
@@ -60,20 +60,24 @@ export const UserProfileScreen = () => {
   // Fallback về store để không mất ảnh khi offline.
   const [avatarUrl, setAvatarUrl] = useState(user?.avatar || null);
 
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const p = await userService.getProfile();
-        if (!cancelled && p?.avatar) setAvatarUrl(p.avatar);
-      } catch (_e) {
-        // Offline -> giữ avatar từ store.
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
+  const loadAvatar = useCallback(async () => {
+    try {
+      const p = await userService.getProfile();
+      if (p?.avatar) setAvatarUrl(p.avatar);
+    } catch (_e) {
+      // Offline -> giữ avatar từ store.
+    }
   }, [userService]);
+
+  // ⚠️ `useFocusEffect` (không phải `useEffect`):
+  //   User sửa avatar ở `PersonalInfoScreen` rồi QUAY LẠI -> màn này vẫn hiện
+  //   avatar cũ vì chỉ load 1 lần lúc mount. `useFocusEffect` chạy lại mỗi lần
+  //   màn hình được focus -> avatar mới hiện ngay.
+  useFocusEffect(
+    useCallback(() => {
+      loadAvatar();
+    }, [loadAvatar])
+  );
 
   const handleLogout = useCallback(() => {
     Alert.alert(t('profile.logout'), t('home.logoutConfirm'), [

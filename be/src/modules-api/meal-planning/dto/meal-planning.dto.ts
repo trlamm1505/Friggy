@@ -171,6 +171,26 @@ export class UpdateShoppingListItemDto {
 }
 
 // ─────────────────────────────────────────────────────────
+// POST /meal-planning/slots/:id/missing-to-shopping-list
+// ─────────────────────────────────────────────────────────
+export class AddSlotMissingToShoppingListDto {
+  @ApiPropertyOptional({
+    description:
+      'Khẩu phần user muốn mua (mặc định = servings của slot trong kế hoạch). ' +
+      'Dùng để scale lượng nguyên liệu khi thêm vào danh sách mua.',
+    example: 4,
+    minimum: 1,
+    maximum: 20,
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(20)
+  @Type(() => Number)
+  servings?: number;
+}
+
+// ─────────────────────────────────────────────────────────
 // POST /meal-planning/slots/:id/regenerate  (Phase 10.1)
 // ─────────────────────────────────────────────────────────
 export class RegenerateSlotDto {

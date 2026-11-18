@@ -406,6 +406,46 @@ describe('FridgeItemActions: lưu thay đổi', () => {
     expect(mockShowError).toHaveBeenCalledWith('fridge.updateFailed');
   });
 
+  // ════════════════════════════════════════════════════════════════
+  // OFFLINE — thao tác đã LƯU vào hàng đợi (OfflineQueuedError)
+  //
+  // ⚠️ BUG ĐÃ GẬP:
+  //   Offline, `updateItem` ném `OfflineQueuedError` (không phải lỗi thật).
+  //   `showMutationError` trả `true` cho trường hợp này, nhưng UI bỏ qua
+  //   -> không `onChanged()` (list không refresh) + không `closeSheet()`
+  //   -> user tưởng "không cập nhật được ngày hết hạn".
+  // ════════════════════════════════════════════════════════════════
+
+  it('OFFLINE (đã queue) -> gọi onChanged + đóng sheet (dữ liệu ĐÃ lưu)', async () => {
+    const offlineErr = new Error('Đã lưu offline, sẽ đồng bộ khi có mạng');
+    offlineErr.isOfflineQueued = true;
+    mockService.updateItem.mockRejectedValue(offlineErr);
+
+    const onChanged = jest.fn();
+    const onClose = jest.fn();
+    const view = await renderSheet({ onChanged, onClose });
+
+    await press(view.getByTestId('fridge-actions-save'));
+
+    await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
+    expect(onChanged).toHaveBeenCalledTimes(1);
+    // KHÔNG hiện toast lỗi đỏ (đây không phải lỗi thật).
+    expect(mockShowError).not.toHaveBeenCalled();
+  });
+
+  it('OFFLINE (đã queue) -> KHÔNG hiện toast lỗi thật', async () => {
+    const offlineErr = new Error('Đã lưu offline');
+    offlineErr.isOfflineQueued = true;
+    mockService.updateItem.mockRejectedValue(offlineErr);
+
+    const view = await renderSheet();
+
+    await press(view.getByTestId('fridge-actions-save'));
+
+    await waitFor(() => expect(mockService.updateItem).toHaveBeenCalled());
+    expect(mockShowError).not.toHaveBeenCalled();
+  });
+
   it('bấm Lưu 2 lần liên tiếp -> chỉ gọi API 1 lần (chống double submit)', async () => {
     let resolveFn;
     mockService.updateItem.mockImplementation(
@@ -497,6 +537,24 @@ describe('FridgeItemActions: đánh dấu đã dùng hết', () => {
     expect(mockShowError).toHaveBeenCalledWith('Không tìm thấy món');
     expect(onClose).not.toHaveBeenCalled();
   });
+
+  it('OFFLINE (đã queue) -> gọi onChanged + đóng sheet', async () => {
+    const offlineErr = new Error('Đã lưu offline');
+    offlineErr.isOfflineQueued = true;
+    mockService.markConsumed.mockRejectedValue(offlineErr);
+
+    const alertSpy = captureAlert();
+    const onChanged = jest.fn();
+    const onClose = jest.fn();
+    const view = await renderSheet({ onChanged, onClose });
+
+    await press(view.getByTestId('fridge-actions-consume'));
+    await clickAlertButton(alertSpy, 'fridge.usedAll');
+
+    await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
+    expect(onChanged).toHaveBeenCalledTimes(1);
+    expect(mockShowError).not.toHaveBeenCalled();
+  });
 });
 
 describe('FridgeItemActions: xóa khỏi tủ', () => {
@@ -548,6 +606,24 @@ describe('FridgeItemActions: xóa khỏi tủ', () => {
     await waitFor(() => expect(mockShowError).toHaveBeenCalled());
     expect(mockShowError).toHaveBeenCalledWith('Quyền bị từ chối');
     expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('OFFLINE (đã queue) -> gọi onChanged + đóng sheet', async () => {
+    const offlineErr = new Error('Đã lưu offline');
+    offlineErr.isOfflineQueued = true;
+    mockService.deleteItem.mockRejectedValue(offlineErr);
+
+    const alertSpy = captureAlert();
+    const onChanged = jest.fn();
+    const onClose = jest.fn();
+    const view = await renderSheet({ onChanged, onClose });
+
+    await press(view.getByTestId('fridge-actions-delete'));
+    await clickAlertButton(alertSpy, 'fridge.deleteFromFridge');
+
+    await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
+    expect(onChanged).toHaveBeenCalledTimes(1);
+    expect(mockShowError).not.toHaveBeenCalled();
   });
 });
 

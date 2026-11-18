@@ -172,16 +172,48 @@ const readBookmarkedRecipes = async () => {
 };
 
 /**
- * Đọc cache gợi ý món ăn hôm nay từ kế hoạch tuần (B2).
+ * Đọc cache gợi ý món ăn HÔM NAY (thực đơn ngày).
  *
  * ⚠️ B2 - `recipeService.getSuggestions()`:
  *   Offline mà không có cache -> UI hiện `ErrorState` (đúng), nhưng nếu ĐÃ
- *   có kế hoạch tuần trong cache thì đó là dữ liệu THẬT -> nên dùng.
- *   Shape phải khớp `RealRecipeService.getSuggestions()`.
+ *   có dữ liệu thật thì nên dùng.
+ *
+ * ⚠️ ƯU TIÊN NGUỒN (theo thứ tự):
+ *   1. Cache "thực đơn ngày" (`daily_meals:<YYYY-MM-DD>`) — chính xác nhất,
+ *      vì đây là dữ liệu `getSuggestions()` đã ghi khi online (đúng ngày
+ *      user đang xem, đúng tên/ảnh).
+ *   2. Cache kế hoạch tuần -> lọc slot theo ngày -> dùng làm fallback.
+ *
+ * ⚠️ VÌ SAO FALLBACK CŨ SAI (đã sửa):
+ *   - Đọc `slot.recipeName` / `slot.recipeImage` trong khi slot từ
+ *     `_toPlanDay` -> `_toMealSlot` có field `name` / `image` -> tên & ảnh
+ *     luôn `null` -> Home hiện món trống tên.
+ *   - `getWeeklyPlanSlotsForDate` so `dayOfWeek` (BE 1=T2..7=CN) với
+ *     `Date.getDay()` (JS 0=CN..6=T7) -> lệch 1 ngày.
  *
  * @returns {Promise<Array|null>}
  */
 const readSuggestions = async () => {
+  // 1) Cache thực đơn ngày (đã map qua `_toMealSlot` -> đúng shape UI).
+  const daily = await offlineCache.getDailyMeals();
+  if (daily && daily.length > 0) {
+    return daily.map((slot) => ({
+      id: slot.id,
+      recipeId: slot.recipeId ?? null,
+      name: slot.name ?? slot.recipe?.title ?? null,
+      title: slot.name ?? slot.recipe?.title ?? null,
+      image: slot.image ?? slot.recipe?.image ?? null,
+      mealType: slot.mealType ?? null,
+      cooked: Boolean(slot.completedAt ?? slot.cooked ?? false),
+      servings: slot.servings ?? null,
+      cookTime: slot.cookTime ?? null,
+      difficulty: slot.difficulty ?? 'easy',
+      estimatedCost: slot.estimatedCost ?? null,
+      note: slot.note ?? null,
+    }));
+  }
+
+  // 2) Fallback: cache kế hoạch tuần.
   const slots = await offlineCache.getWeeklyPlanSlotsForDate();
   if (!slots || slots.length === 0) return null;
 
@@ -191,9 +223,13 @@ const readSuggestions = async () => {
     mealType: slot.mealType ?? null,
     cooked: Boolean(slot.completedAt ?? slot.cooked ?? false),
     servings: slot.servings ?? null,
-    image: slot.recipeImage ?? slot.recipe?.image ?? null,
-    title: slot.recipeName ?? slot.recipe?.title ?? null,
-    name: slot.recipeName ?? slot.recipe?.title ?? null,
+    image: slot.image ?? slot.recipe?.image ?? null,
+    title: slot.name ?? slot.recipeName ?? slot.recipe?.title ?? null,
+    name: slot.name ?? slot.recipeName ?? slot.recipe?.title ?? null,
+    cookTime: slot.cookTime ?? null,
+    difficulty: slot.difficulty ?? 'easy',
+    estimatedCost: slot.estimatedCost ?? null,
+    note: slot.note ?? null,
   }));
 };
 
@@ -273,10 +309,22 @@ export const CACHE_FALLBACKS = {
       ];
     },
     getActiveShoppingList: async () => {
-      const items = await readShoppingItems();
-      if (!items) return null;
+      // ⚠️ BUG ĐÃ SỬA (user báo: "thêm nguyên liệu offline bị kẹt"):
+      //   Trả `id = 'offline'` (giả) -> op `shopping_item_add` đã queue mang
+      //   `listId = 'offline'` -> lúc sync server trả 404 -> món MẤT VĨNH VIỄN.
+      //   => Dùng id list THẬT đã cache (lúc user còn online).
+      //      Chưa từng online -> trả `null` -> UI báo "chưa có danh sách mua"
+      //      (đúng thực tế) thay vì tạo op chắc chắn hỏng.
+      const listId = await offlineCache.getActiveShoppingListId();
+      if (!listId) return null;
+
+      // ⚠️ KHÔNG dùng `readShoppingItems()`:
+      //   Hàm đó trả `null` khi danh sách RỖNG -> UI báo "chưa có danh sách
+      //   mua" dù list thật đã tồn tại -> user KHÔNG THỂ thêm món offline.
+      const items = await offlineCache.getShoppingItems();
+
       return {
-        id: 'offline',
+        id: listId,
         title: '',
         status: 'active',
         totalEstimatedCost: null,

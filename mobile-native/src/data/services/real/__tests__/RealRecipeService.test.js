@@ -1008,10 +1008,29 @@ describe('11. B4 — Shopping list', () => {
     const result = await svc.addSlotMissingToShoppingList('slot-1');
 
     expect(api.post).toHaveBeenCalledWith(
-      '/meal-planning/slots/slot-1/missing-to-shopping-list'
+      '/meal-planning/slots/slot-1/missing-to-shopping-list',
+      {}
     );
     expect(result.addedCount).toBe(2);
     expect(result.listId).toBe('list-1');
+  });
+
+  // ⚠️ P0 — khẩu phần: BE scale lượng mua theo `servings` user chọn.
+  it('addSlotMissingToShoppingList GỬI `servings` (BE scale lượng theo khẩu phần)', async () => {
+    api.post.mockResolvedValue({
+      listId: 'list-1',
+      addedCount: 1,
+      addedItems: [],
+      servings: 4,
+    });
+
+    const result = await svc.addSlotMissingToShoppingList('slot-1', { servings: 4 });
+
+    expect(api.post).toHaveBeenCalledWith(
+      '/meal-planning/slots/slot-1/missing-to-shopping-list',
+      { servings: 4 }
+    );
+    expect(result.servings).toBe(4);
   });
 
   it('addSlotMissingToShoppingList thiếu slotId -> trả về 0 món, KHÔNG gọi API', async () => {

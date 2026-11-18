@@ -72,6 +72,28 @@ const SKIP_AUTH_REFRESH_ENDPOINTS = [
 
 const isAuthEndpoint = (url = '') => SKIP_AUTH_REFRESH_ENDPOINTS.some((path) => url.includes(path));
 
+/**
+ * Đoán MIME type từ phần mở rộng file.
+ *
+ * ⚠️ VÌ SAO CẦN:
+ *   BE `imageFileFilter` chỉ cho phép `image/jpeg | image/png | image/webp`.
+ *   Nếu gửi `image/jpeg` cho file `.png`/`.webp` -> BE từ chối (400) dù
+ *   file là ảnh hợp lệ -> user thấy "đổi ảnh thất bại" dù không có lý do.
+ */
+const MIME_BY_EXT = {
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  png: 'image/png',
+  webp: 'image/webp',
+};
+
+const guessMimeType = (uri = '') => {
+  const clean = String(uri).split('?')[0];
+  const match = /\.([a-z0-9]+)$/i.exec(clean);
+  const ext = match ? match[1].toLowerCase() : '';
+  return MIME_BY_EXT[ext] ?? 'image/jpeg';
+};
+
 // ─────────────────────── BẮT BUỘC 4: single-flight ───────────────────────
 
 let isRefreshing = false;
@@ -391,7 +413,11 @@ export const ApiClient = {
     formData.append(fieldName, {
       uri,
       name: uri.split('/').pop() || 'upload',
-      type: 'image/jpeg',
+      // ⚠️ MIME type phải khớp phần mở rộng file thật. BE `imageFileFilter`
+      //   chỉ cho phép `image/jpeg | image/png | image/webp` -> gửi sai
+      //   Content-Type sẽ bị từ chối (415/400) dù file là ảnh hợp lệ.
+      //   (Avatar được copy sang thư mục persistent nên giữ nguyên extension.)
+      type: guessMimeType(uri),
     });
     Object.entries(formFields).forEach(([key, value]) => {
       if (value !== undefined && value !== null) formData.append(key, String(value));

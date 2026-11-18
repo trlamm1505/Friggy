@@ -4,6 +4,7 @@
 
 import { registerService, clearRegistry } from '../../api/ServiceRegistry';
 import { syncEngine } from '../SyncEngine';
+import { networkMonitor } from '../NetworkMonitor';
 import { outboxQueue, OP_TYPES } from '../OutboxQueue';
 import { offlineCache } from '../OfflineCache';
 import { __resetFakeDb } from './helpers/fakeSqlite';
@@ -246,5 +247,97 @@ describe('SyncEngine - chống chạy trùng + trạng thái', () => {
 
     expect(await offlineCache.getFridgeItems()).toHaveLength(0);
     expect(await outboxQueue.count()).toBe(0);
+  });
+});
+
+// ══════════════════════════════════════════════════════════════════
+// AUTO SYNC — mạng khôi phục -> syncAll (listener ở TẦNG MODULE)
+//
+// ⚠️ BUG ĐÃ GẬP:
+//   Listener "online -> syncAll" nằm trong `useSyncEngine` -> hook này chỉ
+//   được gọi ở `HomeScreen`. `MainTabs` render tab có điều kiện -> sang tab
+//   Tủ lạnh là `HomeScreen` bị unmount -> listener mất theo -> bật mạng ở tab
+//   Tủ lạnh KHÔNG BAO GIỜ sync -> món thêm offline nằm im trong hàng đợi.
+//   => Listener phải sống ở tầng module (`SyncEngine.startAutoSync`).
+// ══════════════════════════════════════════════════════════════════
+
+describe('SyncEngine - auto sync khi mạng khôi phục', () => {
+  beforeEach(async () => {
+    __resetFakeDb();
+    await offlineCache.clearCache();
+    await outboxQueue.clear();
+    clearRegistry();
+    syncEngine._isSyncing = false;
+    syncEngine._lastResult = null;
+    syncEngine.stopAutoSync();
+  });
+
+  afterEach(() => {
+    syncEngine.stopAutoSync();
+    clearRegistry();
+  });
+
+  it('startAutoSync -> bắn event "online" -> syncAll được gọi', async () => {
+    const spy = jest.spyOn(syncEngine, 'syncAll').mockResolvedValue({
+      success: true,
+      uploaded: 0,
+      failed: 0,
+      conflicts: 0,
+      pulled: 0,
+      errors: [],
+    });
+
+    syncEngine.startAutoSync();
+    networkMonitor.__setOnlineForTest(false);
+    networkMonitor.__setOnlineForTest(true);
+
+    await new Promise((r) => setTimeout(r, 0));
+
+    expect(spy).toHaveBeenCalledWith({ force: true });
+    spy.mockRestore();
+  });
+
+  it('startAutoSync gọi 2 lần -> chỉ đăng ký 1 listener', async () => {
+    const spy = jest.spyOn(syncEngine, 'syncAll').mockResolvedValue({
+      success: true,
+      uploaded: 0,
+      failed: 0,
+      conflicts: 0,
+      pulled: 0,
+      errors: [],
+    });
+
+    syncEngine.startAutoSync();
+    syncEngine.startAutoSync();
+
+    networkMonitor.__setOnlineForTest(false);
+    networkMonitor.__setOnlineForTest(true);
+
+    await new Promise((r) => setTimeout(r, 0));
+
+    expect(spy).toHaveBeenCalledTimes(1);
+    spy.mockRestore();
+  });
+
+  it('stopAutoSync -> KHÔNG còn sync khi mạng khôi phục', async () => {
+    const spy = jest.spyOn(syncEngine, 'syncAll').mockResolvedValue({
+      success: true,
+      uploaded: 0,
+      failed: 0,
+      conflicts: 0,
+      pulled: 0,
+      errors: [],
+    });
+
+    syncEngine.startAutoSync();
+    syncEngine.stopAutoSync();
+
+    networkMonitor.__setOnlineForTest(false);
+    networkMonitor.__setOnlineForTest(true);
+
+    await new Promise((r) => setTimeout(r, 0));
+
+    expect(spy).not.toHaveBeenCalled();
+    spy.mockRestore();
   });
 });

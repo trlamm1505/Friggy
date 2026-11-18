@@ -248,6 +248,13 @@ export class SlotDetailRecipeDto {
   @ApiProperty() cookTimeMinutes: number;
   @ApiProperty() difficultyLevel: string;
   @ApiPropertyOptional() estimatedCost: number | null;
+  @ApiProperty({
+    example: 4,
+    description:
+      'Khẩu phần GỐC của công thức. Cần để client scale lại `ingredients` ' +
+      'khi user đổi khẩu phần (offline client tự trừ tủ lạnh theo công thức).',
+  })
+  servings: number;
   @ApiProperty({ type: [RecipeStepDto] }) steps: RecipeStepDto[];
   @ApiProperty({ type: [IngredientAvailabilityDto] }) ingredients: IngredientAvailabilityDto[];
 }

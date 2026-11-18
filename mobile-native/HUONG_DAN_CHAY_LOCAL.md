@@ -272,6 +272,25 @@ EXPO_PUBLIC_SAFE_FALLBACK=false
 GOOGLE_CLIENT_ID=717739810642-4neqbd4q4v3i65hup78shtn557u80d3s.apps.googleusercontent.com
 ```
 
+> ⚠️ `EXPO_PUBLIC_FILE_BASE_URL` để TRỐNG khi chạy local.
+> BE phục vụ file tĩnh ở **ROOT** server (`app.useStaticAssets(public)` được gọi
+> TRƯỚC `app.setGlobalPrefix('api')`) → avatar nằm ở `/avatars/x.jpg`, KHÔNG
+> phải `/api/v1/avatars/x.jpg`.
+>
+> `appConfig.getFileBaseUrl()` tự suy ra file base URL từ API base URL khi API
+> trỏ về `localhost` / `192.168.*` / `10.*` → **bỏ qua** giá trị override trong
+> `.env` (thường là URL ngrok đã hết hạn, làm ảnh hỏng trong khi API vẫn chạy).
+> `npm run start:lan` cũng tự inject `EXPO_PUBLIC_FILE_BASE_URL` cho đúng IP LAN.
+>
+> ⚠️ Nếu dùng **ngrok** (expose BE ra internet) thì đặt CẢ HAI biến cùng host:
+> ```env
+> EXPO_PUBLIC_API_BASE_URL=https://<subdomain>.ngrok-free.dev/api/v1
+> EXPO_PUBLIC_FILE_BASE_URL=https://<subdomain>.ngrok-free.dev
+> ```
+> Vì BE (Express) serve `public/` ở ROOT ở **mọi** môi trường dev (kể cả
+> ngrok), `appConfig.getImageUrl()` sẽ bỏ prefix `/public/` cũ do seed SQL lưu.
+> Prefix này chỉ được giữ khi dùng CDN production `file.friggy.io.vn`.
+
 ### 4.3. Chọn `HOST` theo cách chạy RN (khi KHÔNG dùng `npm run start:lan`)
 
 | Cách chạy | `EXPO_PUBLIC_API_BASE_URL` | Ghi chú |

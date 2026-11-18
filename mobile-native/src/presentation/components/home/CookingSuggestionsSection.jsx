@@ -123,6 +123,15 @@ export const CookingSuggestionsSection = ({
         // (những component con có state hook RIÊNG nên không tự update được).
         if (onCooked) onCooked();
       } catch (e) {
+        // ⚠️ OFFLINE — đã lưu vào hàng đợi + tủ lạnh đã được trừ cục bộ.
+        //   Không phải lỗi -> hiện "đã lưu, sẽ đồng bộ" + refresh để chip
+        //   "Đã nấu" hiện đúng.
+        if (e?.isOfflineQueued === true) {
+          showInfo(t('offline.savedQueued'));
+          await refetch();
+          if (onCooked) onCooked();
+          return;
+        }
         showError(e?.message ?? t('home.startCookingFailed'));
       } finally {
         setCookingSlotIds((prev) => prev.filter((id) => id !== slotId));

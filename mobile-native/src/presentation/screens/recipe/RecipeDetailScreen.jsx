@@ -41,7 +41,7 @@ import { useRecipeById, useFridgeItems } from '../../hooks/useServiceHooks';
 import { useCookSlot } from '../../hooks/useCookSlot';
 import { useServices } from '../../../data/ServiceProvider';
 import { Routes } from '../../../shared/constants/routes';
-import { showSuccess, showError } from '../../utils/helpers';
+import { showSuccess, showError, showMutationError } from '../../utils/helpers';
 
 const FALLBACK_RECIPE = {
   id: 'r1',
@@ -108,7 +108,6 @@ export const RecipeDetailScreen = () => {
   const [expandedStep, setExpandedStep] = useState(null);
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [bookmarkBusy, setBookmarkBusy] = useState(false);
-  const [servings, setServings] = useState(2);
 
   // Mock suggestions chỉ có id/name/cookTime/matchPercent, KHÔNG có
   // ingredients/steps. Khi bấm "Xem công thức" từ Home, route params truyền
@@ -117,13 +116,30 @@ export const RecipeDetailScreen = () => {
   const recipe =
     fetchedRecipe || (routeRecipe?.ingredients ? routeRecipe : null) || FALLBACK_RECIPE;
 
+  // ⚠️ Khẩu phần ban đầu:
+  //   1. `route.params.servings` — khẩu phần của SLOT trong kế hoạch (mở từ
+  //      màn thực đơn tuần/ngày). ĐÂY là giá trị đúng: kế hoạch đã scale sẵn.
+  //   2. `recipe.servings` — khẩu phần GỐC của công thức (mở từ danh sách
+  //      công thức / Home -> không có slot).
+  // Ưu tiên (1) vì nếu lấy (2) thì Stepper sẽ hiển thị sai khẩu phần
+  // -> thêm vào danh sách mua theo sai lượng.
+  const routeServings = Number(route.params?.servings);
+  const hasRouteServings = Number.isFinite(routeServings) && routeServings > 0;
+  const initialServings = hasRouteServings ? routeServings : recipe?.servings ?? 2;
+
+  const [servings, setServings] = useState(initialServings);
+
   // servings là "derived state" từ recipe.servings, nhưng người dùng có thể
   // chỉnh bằng Stepper -> cần giữ state cục bộ.
   // Theo pattern "adjust state during render" của React: khi recipe.servings
   // đổi (đổi món / fetch xong) thì đồng bộ lại giá trị đang hiển thị.
   // Trước đây dùng useEffect -> setState trong effect (react-hooks/set-state-in-effect).
-  const [syncedServings, setSyncedServings] = useState(recipe?.servings);
-  if (recipe?.servings && recipe.servings !== syncedServings) {
+  const [syncedServings, setSyncedServings] = useState(initialServings);
+  if (
+    recipe?.servings &&
+    recipe.servings !== syncedServings &&
+    !hasRouteServings
+  ) {
     setSyncedServings(recipe.servings);
     setServings(recipe.servings);
   }
@@ -277,7 +293,12 @@ export const RecipeDetailScreen = () => {
 
       let addedCount = 0;
       if (slotId) {
-        const result = await services.recipeService.addSlotMissingToShoppingList(slotId);
+        // ⚠️ Truyền `servings` (khẩu phần user vừa chỉnh ở Stepper) ->
+        //   BE scale lượng nguyên liệu theo khẩu phần đó, thay vì mặc định
+        //   `slot.servings` của kế hoạch.
+        const result = await services.recipeService.addSlotMissingToShoppingList(slotId, {
+          servings,
+        });
         addedCount = result?.addedCount ?? 0;
       } else if (missing.length > 0) {
         // Không có slot -> thêm từng món vào giỏ mua mặc định.
@@ -289,12 +310,16 @@ export const RecipeDetailScreen = () => {
           return missing.includes(name);
         });
 
+        // ⚠️ Scale lượng theo khẩu phần user chọn (giống hành vi của BE).
+        const ratio = servings / (recipe.servings || 1);
+
         for (const ing of missingIngredients) {
           const ingredientId = ing?.id ?? ing?.ingredientId;
           if (!ingredientId) continue;
           await services.recipeService.addShoppingListItem(list.id, {
             ingredientId,
-            quantity: ing.amount ?? 1,
+            name: ing.name ?? '',
+            quantity: Math.max(0.01, Math.round((ing.amount ?? 1) * ratio * 100) / 100),
             unit: ing.unit ?? undefined,
           });
           addedCount += 1;
@@ -310,11 +335,20 @@ export const RecipeDetailScreen = () => {
       // Điều hướng tới danh sách mua để user thấy kết quả + chỉnh sửa.
       navigation.navigate(Routes.ShoppingReminder);
     } catch (e) {
+      // ⚠️ OFFLINE: đã lưu vào hàng đợi -> hiện "đã lưu, sẽ đồng bộ" (không
+      //   phải lỗi đỏ) + vẫn điều hướng sang danh sách mua (optimistic).
+      const queued = showMutationError(e, t('home.error'), {
+        offlineMessage: t('offline.savedQueued'),
+      });
+      if (queued) {
+        navigation.navigate(Routes.ShoppingReminder);
+        return;
+      }
       showError(e?.message ?? t('home.error'));
     } finally {
       setAddingToList(false);
     }
-  }, [addingToList, matchInfo.missingItems, recipe, route.params, services, navigation, t]);
+  }, [addingToList, matchInfo.missingItems, recipe, route.params, services, navigation, t, servings]);
 
   /**
    * "Bắt đầu nấu" — ĐÁNH DẤU ĐÃ NẤU + TRỪ NGUYÊN LIỆU khỏi tủ lạnh.
