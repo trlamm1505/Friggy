@@ -22,11 +22,12 @@ import { Type } from 'class-transformer';
 // ─────────────────────────────────────────────────────────
 export class GenerateMealPlanDto {
   @ApiProperty({
-    description: 'Ngày bắt đầu tuần (phải là ngày Thứ 2) — định dạng YYYY-MM-DD',
+    description:
+      'Ngày bắt đầu tuần (phải là ngày Thứ 2) — định dạng YYYY-MM-DD',
     example: '2026-09-15',
   })
   @IsDateString()
-  weekStartDate: string;
+  weekStartDate!: string;
 
   @ApiProperty({
     description: 'Ngân sách cả tuần tính bằng VND',
@@ -36,7 +37,7 @@ export class GenerateMealPlanDto {
   @IsInt()
   @Min(0)
   @Type(() => Number)
-  budget: number;
+  budget!: number;
 }
 
 // ─────────────────────────────────────────────────────────
@@ -102,7 +103,7 @@ export class CreateShoppingListDto {
     example: 'abc123',
   })
   @IsString()
-  weeklyPlanId: string;
+  weeklyPlanId!: string;
 
   @ApiPropertyOptional({
     description: 'Tiêu đề danh sách mua',

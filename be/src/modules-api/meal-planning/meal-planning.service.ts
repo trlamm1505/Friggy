@@ -196,6 +196,11 @@ export class MealPlanningService {
           include: {
             mealSlots: {
               orderBy: { mealType: 'asc' },
+              include: {
+                recipe: {
+                  select: { id: true, title: true, thumbnailPath: true },
+                },
+              },
             },
           },
         },
@@ -203,7 +208,26 @@ export class MealPlanningService {
     });
 
     if (!plan) throw new NotFoundException('Khong tim thay ke hoach');
-    return plan;
+
+    // Map: flatten recipe.title → recipeName để FE dùng trực tiếp
+    return {
+      ...plan,
+      dailyPlans: plan.dailyPlans.map((day) => ({
+        ...day,
+        mealSlots: day.mealSlots.map((slot) => ({
+          id: slot.id,
+          dayOfWeek: day.dayOfWeek,
+          mealType: slot.mealType,
+          recipeId: slot.recipeId,
+          recipeName: slot.recipe?.title ?? null,
+          recipeThumbnail: slot.recipe?.thumbnailPath ?? null,
+          servings: slot.servings,
+          estimatedCost: slot.estimatedCost,
+          note: slot.note,
+          completedAt: slot.completedAt,
+        })),
+      })),
+    };
   }
 
   // PATCH /plans/:id — Cập nhật trạng thái kế hoạch
