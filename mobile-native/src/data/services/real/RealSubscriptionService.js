@@ -208,21 +208,64 @@ async getPaymentHistory(page = 1, limit = 20) {
    *
    * BE `GET /payment-transactions/me` trả `PaymentTransactionListResponseDto` -
    * **KHÔNG có field `qrCode`** (chỉ `PaymentTransactionDetailDto` mới có).
-   * => Phải gọi tiếp `GET /payment-transactions/me/:paymentRef` để lấy QR.
-   *
-   * @returns {Promise<object|null>} shape checkout, hoặc null nếu không có.
-   */
-  async findPendingPayment() {
+ * => Phải gọi tiếp `GET /payment-transactions/me/:paymentRef` để lấy QR.
+ *
+ * ⚠️ BUG ĐÃ SỬA (19/11) — "QR SAI GÓI":
+ *   Trước đây hàm này trả về giao dịch pending BẤT KỲ (giao dịch cũ của gói
+ *   khác, ví dụ Family 149.000đ) -> user chọn gói khác (5.000đ) nhưng QR hiển
+ *   thị vẫn là QR 149.000đ (vì QR của PayOS gắn với `orderCode`/`amount` cũ).
+ *   => Nay BẮT BUỘC lọc theo gói đang mua: chỉ khôi phục QR cũ khi giao dịch
+ *   pending đó đúng gói (cùng `planName` + cùng `amount` + cùng `type`).
+ *   Sai gói -> trả `null` để caller tạo giao dịch MỚI.
+ *
+ * @param {object} [filters]
+ * @param {string} [filters.planDisplayName] - displayName gói đang mua (VD 'Gói Cá Nhân').
+ *   BE trả `planName` = `tx.plan.displayName` -> so khớp chính xác.
+ * @param {string} [filters.planName] - tên gói chuẩn hoá ('individual'|'family') — dùng
+ *   khi không có displayName (fallback so khớp "contains").
+ * @param {number} [filters.amount] - số tiền mong đợi (VND).
+ * @param {'subscribe'|'renew'} [filters.type] - loại giao dịch.
+ * @returns {Promise<object|null>} shape checkout, hoặc null nếu không có/không khớp.
+ */
+  async findPendingPayment(filters = {}) {
+    const { planDisplayName = null, planName = null, amount = null, type = null } = filters || {};
+
     const list = await ApiClient.get('/payment-transactions/me', {
       params: { page: 1, limit: 10 },
     });
     const rows = Array.isArray(list) ? list : (list?.data ?? []);
-    const pending = rows.find((tx) => tx?.status === 'pending' && tx?.paymentRef);
+    const pendingRows = rows.filter((tx) => tx?.status === 'pending' && tx?.paymentRef);
+
+    /**
+     * Giao dịch pending này có ĐÚNG gói đang mua không?
+     *
+     * BE trả `planName` = `tx.plan.displayName` (KHÔNG phải slug) nên ưu tiên
+     * so khớp `planDisplayName` chính xác; `planName` chỉ là fallback "contains".
+     * `amount` + `type` là điều kiện bổ sung (giúp phân biệt subscribe/renew).
+     */
+    const matches = (tx) => {
+      if (planDisplayName && tx?.planName !== planDisplayName) return false;
+      if (!planDisplayName && planName) {
+        const txPlan = String(tx?.planName ?? '').toLowerCase();
+        if (!txPlan.includes(String(planName).toLowerCase())) return false;
+      }
+      if (amount !== null && amount !== undefined && Number(tx?.amount) !== Number(amount)) {
+        return false;
+      }
+      if (type && tx?.type !== type) return false;
+      return true;
+    };
+
+    const pending = pendingRows.find(matches);
     if (!pending) return null;
 
     // Lấy chi tiết để có `qrCode` (list DTO không có field này).
     const detail = await ApiClient.get(`/payment-transactions/me/${pending.paymentRef}`);
     if (!detail?.qrCode) return null;
+
+    // Chốt chặn cuối: chi tiết cũng phải khớp gói (phòng trường hợp danh sách
+    // và chi tiết lệch nhau do race condition).
+    if (!matches(detail)) return null;
 
     return {
       checkoutUrl: detail.checkoutUrl ?? null,
@@ -232,6 +275,9 @@ async getPaymentHistory(page = 1, limit = 20) {
       // BE dùng `expiredAt` (không phải `expireAt` như `SubscribeResponseDto`).
       expireAt: detail.expiredAt ?? null,
       status: detail.status ?? 'pending',
+      // Thêm `planName`/`type` để caller biết đây là giao dịch của gói nào.
+      planName: detail.planName ?? pending.planName ?? null,
+      type: detail.type ?? pending.type ?? null,
     };
   }
 }

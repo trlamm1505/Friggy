@@ -526,9 +526,17 @@ export class RealUserService extends IUserService {
     return this.subscriptionService.isSubscribedTo(targetPlanName);
   }
 
-  /** Tìm giao dịch đang chờ thanh toán (khôi phục QR cũ) → shape checkout. */
-  async findPendingPayment() {
-    return this.subscriptionService.findPendingPayment();
+  /**
+   * Tìm giao dịch đang chờ thanh toán (khôi phục QR cũ) → shape checkout.
+   *
+   * ⚠️ 19/11 — LỌC THEO GÓI (fix "QR sai gói"):
+   *   Chỉ khôi phục QR cũ khi giao dịch pending đó ĐÚNG gói đang mua.
+   *   Xem `RealSubscriptionService.findPendingPayment()` để biết chi tiết.
+   *
+   * @param {object} [filters] - `{ planDisplayName, planName, amount, type }`
+   */
+  async findPendingPayment(filters = {}) {
+    return this.subscriptionService.findPendingPayment(filters);
   }
 
   /**

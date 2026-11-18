@@ -15,7 +15,7 @@
  *   moi sprint deu cham vao - tat lint se bien mat lop bao ve o noi can nhat.
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { View, ActivityIndicator, StatusBar, StyleSheet } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import {
@@ -34,6 +34,7 @@ import {
 import Toast from 'react-native-toast-message';
 import { AppProviders } from './src/providers/AppProviders';
 import { RootNavigator } from './src/presentation/navigation/RootNavigator';
+import { PushNotificationBridge } from './src/presentation/components/common/PushNotificationBridge';
 import { useAuthStore } from './src/shared/stores/useAuthStore';
 import { useThemeStore } from './src/shared/stores/useThemeStore';
 import { useLanguageStore } from './src/shared/stores/useLanguageStore';
@@ -119,6 +120,20 @@ import './src/data/services/real/RealNotificationService';
 // ──────────────────────────────────────────────────────────────────
 import './src/data/services/real/RealAiChatService';
 
+// ──────────────────────────────────────────────────────────────────
+// PUSH — đăng ký FCM token + xử lý deep-link khi bấm push
+//
+// ⚠️ VÌ SAO CẦN IMPORT Ở ĐÂY:
+//   `PushNotificationManager` đăng ký vào ServiceRegistry bằng side-effect.
+//   Nó phải được nạp TRƯỚC khi `PushNotificationBridge` (dùng trong
+//   `<NavigationContainer>`) gọi `getRegisteredService('pushNotificationManager')`.
+//
+// ⚠️ KHÔNG ĐĂNG KÝ FCM TOKEN NGAY Ở ĐÂY:
+//   Việc đăng ký cần user ĐÃ đăng nhập + đã bật "thông báo đẩy" ->
+//   `usePushNotifications` lo phần đó (nó tự bỏ qua khi chưa đăng nhập).
+// ──────────────────────────────────────────────────────────────────
+import './src/data/services/real/PushNotificationManager';
+
 export default function App() {
   const [fontsLoaded] = useFonts({
     PlusJakartaSans_400Regular,
@@ -133,6 +148,17 @@ export default function App() {
   });
 
   const [isDbReady, setIsDbReady] = useState(false);
+
+  /**
+   * Ref của `NavigationContainer` — dùng để điều hướng khi user bấm vào push.
+   *
+   * ⚠️ VÌ SAO CẦN REF (không dùng `useNavigation()`):
+   *   `useNavigation()` chỉ hoạt động BÊN TRONG một Navigator (Screen).
+   *   `PushNotificationBridge` nằm trực tiếp dưới `<NavigationContainer>` ->
+   *   `useNavigation()` sẽ ném "Couldn't find a navigation object".
+   *   => `navigationRef` luôn hoạt động bất kể vị trí trong tree.
+   */
+  const navigationRef = useRef(null);
 
   const initAuth = useAuthStore((s) => s.initAuth);
   const initTheme = useThemeStore((s) => s.initTheme);
@@ -206,8 +232,15 @@ export default function App() {
 
   return (
     <AppProviders>
-      <NavigationContainer>
+      <NavigationContainer ref={navigationRef}>
         <RootNavigator />
+        {/*
+          PushNotificationBridge phải nằm BÊN TRONG NavigationContainer
+          (dùng navigationRef) và BÊN TRONG AppProviders (dùng useServices).
+
+          Nó render `null` -> không ảnh hưởng layout.
+        */}
+        <PushNotificationBridge navigationRef={navigationRef} />
         <StatusBar barStyle="dark-content" />
       </NavigationContainer>
       <Toast />

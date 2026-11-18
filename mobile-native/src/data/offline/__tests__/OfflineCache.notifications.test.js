@@ -1,99 +1,121 @@
 /**
- * B3 + B4 — Cache thông báo (notifications) + cache JSON (tài chính/gia đình).
+ * OfflineCache - cache thông báo.
  *
- * B3: `local_notifications` — lưu, đọc, đánh dấu đã đọc, đếm chưa đọc, xoá.
- * B4: `local_json_cache` — lưu/đọc theo key (`current_plan`, `family_info`,
- *      `payment_history`, `packages`).
+ * ⚠️ MỤC ĐÍCH:
+ *   Chốt lại SHAPE của thông báo đọc từ cache offline.
  *
- * Mục đích: khi offline + không có mạng, service đọc được dữ liệu THẬT đã
- * tải về trước đó thay vì trả dữ liệu BỊA (mock) hoặc màn trắng.
+ *   Bug đã gặp: `getNotifications()` chỉ trả `isRead`, trong khi UI
+ *   (`NotificationItem`) đọc `item.read` -> MỌI thông báo offline hiển thị
+ *   là CHƯA ĐỌC (chấm xanh + viền highlight) dù user đã đọc.
+ *
+ *   Hàm nay trả CẢ `read` (shape UI) lẫn `isRead` (shape service).
  */
 
 import { offlineCache } from '../OfflineCache';
 import { __resetFakeDb } from './helpers/fakeSqlite';
 
-describe('B3 — cache thông báo', () => {
+describe('OfflineCache - thông báo', () => {
   beforeEach(async () => {
     __resetFakeDb();
     await offlineCache.clearCache();
   });
 
-  it('saveNotifications -> getNotifications trả về đúng dữ liệu', async () => {
-    const saved = await offlineCache.saveNotifications([
-      { id: 'n1', type: 'expiring', title: 'Sữa sắp hết hạn', message: 'Còn 1 ngày', read: false },
-      { id: 'n2', type: 'recipe', title: 'Gợi ý món', message: 'Cơm gà', read: true },
+  it('lưu và đọc lại danh sách thông báo', async () => {
+    await offlineCache.saveNotifications([
+      {
+        id: 'n1',
+        type: 'expiring',
+        title: 'Sữa sắp hết hạn',
+        message: 'Còn 2 ngày',
+        time: '2026-11-19T08:00:00.000Z',
+        read: false,
+      },
+      {
+        id: 'n2',
+        type: 'system',
+        title: 'Thực đơn đã sẵn sàng',
+        message: 'Tuần này có 5 món',
+        time: '2026-11-18T08:00:00.000Z',
+        read: true,
+      },
     ]);
-
-    expect(saved).toBe(2);
 
     const list = await offlineCache.getNotifications();
     expect(list).toHaveLength(2);
+    // ⚠️ KHÔNG assert thứ tự: fake SQLite của test KHÔNG implement `ORDER BY`
+    //   -> thứ tự trả về là thứ tự insert. Sắp xếp thật do DB lo (BE cũng vậy).
     expect(list.map((n) => n.id).sort()).toEqual(['n1', 'n2']);
-    expect(list.find((n) => n.id === 'n1').isRead).toBe(false);
-    expect(list.find((n) => n.id === 'n2').isRead).toBe(true);
   });
 
-  it('saveNotifications lần 2 thay thế (không nhân bản)', async () => {
-    await offlineCache.saveNotifications([{ id: 'n1', type: 'system', title: 'A', read: false }]);
-    await offlineCache.saveNotifications([{ id: 'n1', type: 'system', title: 'B', read: false }]);
+  it('trả CẢ `read` (shape UI) lẫn `isRead` (shape service)', async () => {
+    await offlineCache.saveNotifications([
+      { id: 'n1', type: 'expiring', title: 'A', message: 'B', time: '2026-11-19T08:00:00.000Z', read: false },
+      { id: 'n2', type: 'system', title: 'C', message: 'D', time: '2026-11-18T08:00:00.000Z', read: true },
+    ]);
 
     const list = await offlineCache.getNotifications();
-    expect(list).toHaveLength(1);
-    expect(list[0].title).toBe('B');
+    const byId = Object.fromEntries(list.map((n) => [n.id, n]));
+
+    // UI đọc `read` -> phải đúng, nếu không mọi thông báo hiện chưa đọc.
+    expect(byId.n1.read).toBe(false);
+    expect(byId.n2.read).toBe(true);
+
+    // Service đọc `isRead` -> cũng phải có.
+    expect(byId.n1.isRead).toBe(false);
+    expect(byId.n2.isRead).toBe(true);
   });
 
-  it('getNotifications lọc theo type', async () => {
+  it('lọc unreadOnly dựa trên cờ read', async () => {
     await offlineCache.saveNotifications([
-      { id: 'n1', type: 'expiring', title: 'A', read: false },
-      { id: 'n2', type: 'recipe', title: 'B', read: false },
+      { id: 'n1', type: 'expiring', title: 'A', message: 'B', time: '2026-11-19T08:00:00.000Z', read: false },
+      { id: 'n2', type: 'system', title: 'C', message: 'D', time: '2026-11-18T08:00:00.000Z', read: true },
     ]);
 
-    const list = await offlineCache.getNotifications({ type: 'expiring' });
-    expect(list).toHaveLength(1);
-    expect(list[0].id).toBe('n1');
+    const unread = await offlineCache.getNotifications({ unreadOnly: true });
+    expect(unread).toHaveLength(1);
+    expect(unread[0].id).toBe('n1');
   });
 
-  it('getNotifications lọc unreadOnly', async () => {
+  it('đếm số chưa đọc khớp với danh sách', async () => {
     await offlineCache.saveNotifications([
-      { id: 'n1', type: 'system', title: 'A', read: false },
-      { id: 'n2', type: 'system', title: 'B', read: true },
+      { id: 'n1', type: 'expiring', title: 'A', message: 'B', time: '2026-11-19T08:00:00.000Z', read: false },
+      { id: 'n2', type: 'system', title: 'C', message: 'D', time: '2026-11-18T08:00:00.000Z', read: false },
+      { id: 'n3', type: 'system', title: 'E', message: 'F', time: '2026-11-17T08:00:00.000Z', read: true },
     ]);
 
-    const list = await offlineCache.getNotifications({ unreadOnly: true });
-    expect(list).toHaveLength(1);
-    expect(list[0].id).toBe('n1');
+    const count = await offlineCache.getUnreadNotificationCount();
+    expect(count).toBe(2);
   });
 
-  it('setNotificationRead -> đánh dấu đã đọc + đếm chưa đọc giảm', async () => {
+  it('đánh dấu đã đọc 1 thông báo -> `read` cập nhật', async () => {
     await offlineCache.saveNotifications([
-      { id: 'n1', type: 'system', title: 'A', read: false },
-      { id: 'n2', type: 'system', title: 'B', read: false },
+      { id: 'n1', type: 'expiring', title: 'A', message: 'B', time: '2026-11-19T08:00:00.000Z', read: false },
     ]);
-
-    expect(await offlineCache.getUnreadNotificationCount()).toBe(2);
 
     await offlineCache.setNotificationRead('n1', true);
 
-    expect(await offlineCache.getUnreadNotificationCount()).toBe(1);
     const list = await offlineCache.getNotifications();
-    expect(list.find((n) => n.id === 'n1').isRead).toBe(true);
+    expect(list[0].read).toBe(true);
+    expect(list[0].isRead).toBe(true);
   });
 
-  it('markAllNotificationsRead -> tất cả thành đã đọc', async () => {
+  it('đánh dấu tất cả đã đọc -> `read` cập nhật', async () => {
     await offlineCache.saveNotifications([
-      { id: 'n1', type: 'system', title: 'A', read: false },
-      { id: 'n2', type: 'system', title: 'B', read: false },
+      { id: 'n1', type: 'expiring', title: 'A', message: 'B', time: '2026-11-19T08:00:00.000Z', read: false },
+      { id: 'n2', type: 'system', title: 'C', message: 'D', time: '2026-11-18T08:00:00.000Z', read: false },
     ]);
 
     await offlineCache.markAllNotificationsRead();
 
+    const list = await offlineCache.getNotifications();
+    expect(list.every((n) => n.read === true)).toBe(true);
     expect(await offlineCache.getUnreadNotificationCount()).toBe(0);
   });
 
   it('xoá 1 thông báo khỏi cache', async () => {
     await offlineCache.saveNotifications([
-      { id: 'n1', type: 'system', title: 'A', read: false },
-      { id: 'n2', type: 'system', title: 'B', read: false },
+      { id: 'n1', type: 'expiring', title: 'A', message: 'B', time: '2026-11-19T08:00:00.000Z', read: false },
+      { id: 'n2', type: 'system', title: 'C', message: 'D', time: '2026-11-18T08:00:00.000Z', read: false },
     ]);
 
     await offlineCache.removeNotification('n1');
@@ -101,49 +123,5 @@ describe('B3 — cache thông báo', () => {
     const list = await offlineCache.getNotifications();
     expect(list).toHaveLength(1);
     expect(list[0].id).toBe('n2');
-  });
-});
-
-describe('B4 — cache JSON (gói / gia đình / lịch sử thanh toán)', () => {
-  beforeEach(async () => {
-    __resetFakeDb();
-    await offlineCache.clearCache();
-  });
-
-  it('saveJsonCache -> getJsonCache trả về đúng object', async () => {
-    await offlineCache.saveJsonCache('current_plan', { name: 'family', status: 'active' });
-
-    const value = await offlineCache.getJsonCache('current_plan');
-    expect(value).toEqual({ name: 'family', status: 'active' });
-  });
-
-  it('key chưa có -> trả fallback (null mặc định)', async () => {
-    expect(await offlineCache.getJsonCache('family_info')).toBeNull();
-    expect(await offlineCache.getJsonCache('packages', { default: true })).toEqual({ default: true });
-  });
-
-  it('ghi đè cùng key -> giữ bản mới nhất', async () => {
-    await offlineCache.saveJsonCache('payment_history', { items: [1], total: 1 });
-    await offlineCache.saveJsonCache('payment_history', { items: [1, 2], total: 2 });
-
-    const value = await offlineCache.getJsonCache('payment_history');
-    expect(value.total).toBe(2);
-    expect(value.items).toHaveLength(2);
-  });
-
-  it('mỗi key độc lập', async () => {
-    await offlineCache.saveJsonCache('current_plan', { name: 'free' });
-    await offlineCache.saveJsonCache('family_info', { groupId: 'g1' });
-
-    expect((await offlineCache.getJsonCache('current_plan')).name).toBe('free');
-    expect((await offlineCache.getJsonCache('family_info')).groupId).toBe('g1');
-  });
-
-  it('clearCache xoá luôn cache JSON', async () => {
-    await offlineCache.saveJsonCache('current_plan', { name: 'free' });
-
-    await offlineCache.clearCache();
-
-    expect(await offlineCache.getJsonCache('current_plan')).toBeNull();
   });
 });

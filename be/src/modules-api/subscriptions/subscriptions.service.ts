@@ -98,8 +98,7 @@ export class SubscriptionsService {
       throw new BadRequestException('Bạn đang sử dụng gói này — không cần đăng ký lại');
     }
 
-    // Kiểm tra pending trùng — chặn nếu còn trong cửa sổ 15 phút
-    // Sau 15 phút (link PayOS hết hạn) → cho phép tạo lại
+    // Kiểm tra pending trùng
     const PAYMENT_EXPIRE_MS = 15 * 60 * 1000;
     const pendingTx = await this.prisma.paymentTransaction.findFirst({
       where: { userId, status: 'pending' },
@@ -108,12 +107,22 @@ export class SubscriptionsService {
     if (pendingTx) {
       const elapsed = Date.now() - new Date(pendingTx.createdAt).getTime();
       if (elapsed < PAYMENT_EXPIRE_MS) {
-        const remainingSec = Math.ceil((PAYMENT_EXPIRE_MS - elapsed) / 1000);
-        throw new ConflictException(
-          `Đã có giao dịch đang chờ thanh toán. Thử lại sau ${remainingSec} giây hoặc hoàn tất thanh toán.`,
+        if (pendingTx.planId === plan.id) {
+          // Cùng gói → chặn, trả link cũ còn hạn
+          const remainingSec = Math.ceil((PAYMENT_EXPIRE_MS - elapsed) / 1000);
+          throw new ConflictException(
+            `Đã có giao dịch đang chờ thanh toán cho gói này. Thử lại sau ${remainingSec} giây hoặc hoàn tất thanh toán.`,
+          );
+        }
+        // Khác gói → cancel link cũ trên PayOS + đánh dấu cancelled trong DB
+        this.logger.log(
+          `[Subscribe] User đổi từ planId=${pendingTx.planId} → planId=${plan.id} — hủy link cũ orderCode=${pendingTx.payosOrderCode}`,
         );
+        await this.payOsService.cancelPaymentLink(Number(pendingTx.payosOrderCode));
+        await this.paymentTxService.markCancelled(pendingTx.id);
+      } else {
+        this.logger.log(`[Subscribe] Payment link hết hạn cho userId=${userId} — tạo lại`);
       }
-      this.logger.log(`[Subscribe] Payment link hết hạn cho userId=${userId} — tạo lại`);
     }
 
     // orderCode: số nguyên unique

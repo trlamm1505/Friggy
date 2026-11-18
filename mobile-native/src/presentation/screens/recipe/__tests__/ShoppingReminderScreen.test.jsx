@@ -41,6 +41,11 @@ jest.mock('react-i18next', () => ({
 
 jest.mock('@react-navigation/native', () => ({
   useNavigation: () => ({ goBack: jest.fn() }),
+  // `FriggyAppBar` dùng `useFocusEffect` để refresh badge thông báo.
+  useFocusEffect: (cb) => {
+    const React = require('react');
+    React.useEffect(() => cb(), [cb]);
+  },
 }));
 
 jest.mock('react-native-safe-area-context', () => ({

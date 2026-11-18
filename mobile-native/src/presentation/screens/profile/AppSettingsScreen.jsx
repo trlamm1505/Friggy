@@ -32,6 +32,7 @@ import { SegmentedControl } from '../../components/common/SegmentedControl';
 import { useThemeStore } from '../../../shared/stores/useThemeStore';
 import { useLanguageStore } from '../../../shared/stores/useLanguageStore';
 import { useServices } from '../../../data/ServiceProvider';
+import { usePushNotifications } from '../../hooks/usePushNotifications';
 import { showError } from '../../utils/helpers';
 import {
   Bell,
@@ -56,6 +57,15 @@ export const AppSettingsScreen = () => {
   const { themeMode, setThemeMode } = useThemeStore();
   const { locale, setLocale } = useLanguageStore();
   const { userService } = useServices();
+
+  /**
+   * Đăng ký / gỡ thiết bị nhận push.
+   *
+   * ⚠️ CHỈ dùng `register` / `unregister` từ hook, KHÔNG dùng luồng
+   *   đăng ký tự động: khi user BẬT "thông báo đẩy" ở màn này, ta cần
+   *   đăng ký NGAY (có xin quyền hệ thống nếu chưa có).
+   */
+  const { register: registerPushDevice, unregister: unregisterPushDevice } = usePushNotifications();
 
   // A2: 3 toggle này có thật ở BE (`GET/PATCH /users/me/notification-settings`),
   // map đúng tên field: pushNotifications / expiryAlert / shoppingReminder.
@@ -104,9 +114,36 @@ export const AppSettingsScreen = () => {
         setExpiryAlert(prev.expiryAlert);
         setShoppingReminder(prev.shoppingReminder);
         showError(e?.message || 'Không thể lưu cài đặt thông báo');
+        return;
+      }
+
+      // ── Đồng bộ thiết bị với cờ "thông báo đẩy" ───────────────────
+      //
+      // ⚠️ VÌ SAO CẦN:
+      //   BE chỉ gửi push tới token đã đăng ký trong bảng `user_devices`.
+      //   User TẮT "thông báo đẩy" -> phải GỠ token khỏi BE, nếu không
+      //   BE vẫn gửi push -> user vẫn nhận -> trái ý user.
+      //   User BẬT -> phải ĐĂNG KÝ lại token (lần trước đã bị gỡ).
+      if (key === 'pushNotifications') {
+        if (value) {
+          const res = await registerPushDevice();
+          if (!res?.registered) {
+            // Đăng ký thất bại (thiếu quyền / Expo Go / lỗi mạng) ->
+            // báo lỗi nhưng KHÔNG rollback cờ đã lưu trên BE.
+            showError(
+              res?.reason === 'permission_denied'
+                ? 'Bạn cần cho phép thông báo để nhận thông báo đẩy'
+                : res?.reason === 'expo_go'
+                  ? 'Expo Go không hỗ trợ thông báo đẩy. Hãy dùng bản build (development build) để nhận thông báo.'
+                  : 'Không thể đăng ký thiết bị nhận thông báo đẩy'
+            );
+          }
+        } else {
+          await unregisterPushDevice();
+        }
       }
     },
-    [userService, pushNotifications, expiryAlert, shoppingReminder]
+    [userService, pushNotifications, expiryAlert, shoppingReminder, registerPushDevice, unregisterPushDevice]
   );
 
   const themeOptions = [

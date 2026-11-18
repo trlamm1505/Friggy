@@ -346,7 +346,7 @@ export class IRecipeService {
    * Cập nhật 1 meal slot — `PATCH /meal-planning/slots/{id}`.
    *
    * @param {string} slotId
-   * @param {{completed?:boolean, recipeId?:string|null, servings?:number, note?:string}} payload
+   * @param {{completed?:boolean, recipeId?:string|null, note?:string}} payload
    * @returns {Promise<void>}
    */
   async updateSlot(slotId, payload) {
@@ -478,7 +478,8 @@ export class IRecipeService {
    *
    * @param {string} slotId
    * @param {object} [options]
-   * @param {number} [options.servings] - khẩu phần user chọn (lượng scale theo)
+   * @param {number} [options.servings] - khẩu phần (lượng scale theo).
+   *   ⚠️ Mặc định KHÔNG truyền -> BE dùng `slot.servings` (đã gỡ Stepper — 19/11).
    * @returns {Promise<{listId:string|null, addedCount:number, addedItems:object[], servings?:number}>}
    */
   async addSlotMissingToShoppingList(slotId, options = {}) {

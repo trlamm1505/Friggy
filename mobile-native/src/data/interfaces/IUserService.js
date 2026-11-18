@@ -321,4 +321,22 @@ export class IUserService {
   async getPaymentHistory(page = 1, limit = 20) {
     throw new Error('IUserService.getPaymentHistory() must be implemented');
   }
+
+  /**
+   * Tìm giao dịch đang chờ thanh toán (khôi phục QR cũ).
+   *
+   * ⚠️ 19/11 — BẮT BUỘC lọc theo gói (fix "QR sai gói"):
+   *   Nếu không lọc, khi user chọn gói 5.000đ mà còn giao dịch pending cũ của
+   *   gói 149.000đ, app sẽ mở QR CŨ (sai số tiền) và KHÔNG tạo giao dịch mới.
+   *
+   * @param {object} [filters]
+   * @param {string} [filters.planDisplayName] - displayName gói đang mua.
+   * @param {string} [filters.planName] - tên gói chuẩn hoá ('individual'|'family').
+   * @param {number} [filters.amount] - số tiền mong đợi (VND).
+   * @param {'subscribe'|'renew'} [filters.type] - loại giao dịch.
+   * @returns {Promise<object|null>}
+   */
+  async findPendingPayment(filters = {}) {
+    throw new Error('IUserService.findPendingPayment() must be implemented');
+  }
 }

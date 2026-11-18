@@ -10,12 +10,12 @@ import { IngredientStatisticsScreen } from '../screens/recipe/IngredientStatisti
 import { NextWeekSuggestionsScreen } from '../screens/recipe/NextWeekSuggestionsScreen';
 import { ShoppingReminderScreen } from '../screens/recipe/ShoppingReminderScreen';
 import { PackageManagementScreen } from '../screens/subscription/PackageManagementScreen';
+import { MyPackagesScreen } from '../screens/subscription/MyPackagesScreen';
 import { RecipeDetailScreen } from '../screens/recipe/RecipeDetailScreen';
 import { MyFridgesScreen } from '../screens/fridge/MyFridgesScreen';
 import { ManualAddIngredientScreen } from '../screens/fridge/ManualAddIngredientScreen';
 import { ScanFoodPhotoScreen } from '../screens/scan/ScanFoodPhotoScreen';
-import { ScanReceiptScreen } from '../screens/scan/ScanReceiptScreen';
-import { ScanBarcodeScreen } from '../screens/scan/ScanBarcodeScreen';
+import { InDevelopmentScreen } from '../screens/scan/InDevelopmentScreen';
 import { CameraPreviewScreen } from '../screens/scan/CameraPreviewScreen';
 import { ScanHistoryScreen } from '../screens/scan/ScanHistoryScreen';
 import { RecipeSuggestionsScreen } from '../screens/recipe/RecipeSuggestionsScreen';
@@ -44,12 +44,25 @@ export const MainScreens = () => (
     <MainStack.Screen name={Routes.NextWeekSuggestions} component={NextWeekSuggestionsScreen} />
     <MainStack.Screen name={Routes.ShoppingReminder} component={ShoppingReminderScreen} />
     <MainStack.Screen name={Routes.PackageManagement} component={PackageManagementScreen} />
+    <MainStack.Screen name={Routes.MyPackages} component={MyPackagesScreen} />
     <MainStack.Screen name={Routes.RecipeDetail} component={RecipeDetailScreen} />
     <MainStack.Screen name={Routes.MyFridges} component={MyFridgesScreen} />
     <MainStack.Screen name={Routes.ManualAddIngredient} component={ManualAddIngredientScreen} />
     <MainStack.Screen name={Routes.ScanFoodPhoto} component={ScanFoodPhotoScreen} />
-    <MainStack.Screen name={Routes.ScanReceipt} component={ScanReceiptScreen} />
-    <MainStack.Screen name={Routes.ScanBarcode} component={ScanBarcodeScreen} />
+    {/* ⚠️ 2 luồng đang phát triển (19/11): "Quét hóa đơn" + "Quét mã vạch / QR".
+        Nút ở `SelectInputMethodScreen` đã khoá, nhưng vẫn cần chặn ở route
+        để tránh dead-end khi deep-link trực tiếp.
+        KHI BẬT LẠI: đổi component về `ScanReceiptScreen` / `ScanBarcodeScreen`. */}
+    <MainStack.Screen
+      name={Routes.ScanReceipt}
+      component={InDevelopmentScreen}
+      initialParams={{ title: 'Quét hóa đơn' }}
+    />
+    <MainStack.Screen
+      name={Routes.ScanBarcode}
+      component={InDevelopmentScreen}
+      initialParams={{ title: 'Quét mã vạch / QR' }}
+    />
     <MainStack.Screen name={Routes.ScanResultReview} component={CameraPreviewScreen} />
     <MainStack.Screen name={Routes.ScanHistory} component={ScanHistoryScreen} />
     <MainStack.Screen name={Routes.RecipeSuggestions} component={RecipeSuggestionsScreen} />

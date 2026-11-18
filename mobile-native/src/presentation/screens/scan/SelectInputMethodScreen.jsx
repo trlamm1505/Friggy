@@ -1,3 +1,15 @@
+/**
+ * SelectInputMethodScreen - bottom sheet chọn cách nhập nguyên liệu.
+ *
+ * ⚠️ 2 PHƯƠNG PHÁP ĐANG PHÁT TRIỂN (19/11):
+ *   - `scan_barcode` (Quét mã vạch / QR)
+ *   - `scan_receipt` (Quét hóa đơn)
+ *   BE hiện CHƯA có luồng hoàn chỉnh cho 2 luồng này (AI scan chưa ổn định,
+ *   kết quả trả về rỗng) -> ta hiện ở trạng thái `disabled` + ghi rõ
+ *   "Đang phát triển" thay vì để user bấm vào rồi gặp lỗi/kết quả rỗng.
+ *   Sẽ bật lại khi BE + ai-service xong (đánh dấu `disabled: false`).
+ */
+
 import React from 'react';
 import { View, Text, StyleSheet, Pressable, StatusBar } from 'react-native';
 import { useTheme } from '../../theme/ThemeContext';
@@ -31,20 +43,24 @@ export const SelectInputMethodScreen = () => {
       target: 'ScanFoodPhoto',
     },
     {
+      // ⚠️ Đang phát triển -> disabled.
       id: 'scan_receipt',
       label: t('scan.scanReceipt'),
-      desc: 'Quét hóa đơn siêu thị',
+      desc: t('scan.inDevelopment'),
       icon: Receipt,
       color: '#2196F3',
       target: 'ScanReceipt',
+      disabled: true,
     },
     {
+      // ⚠️ Đang phát triển -> disabled.
       id: 'scan_barcode',
       label: t('scan.scanBarcode'),
-      desc: 'Quét mã vạch sản phẩm',
+      desc: t('scan.inDevelopment'),
       icon: Barcode,
       color: '#9C27B0',
       target: 'ScanBarcode',
+      disabled: true,
     },
     {
       id: 'scan_history',
@@ -73,10 +89,14 @@ export const SelectInputMethodScreen = () => {
 
         {METHODS.map((m) => {
           const Icon = m.icon;
+          const isDisabled = m.disabled === true;
           return (
             <Pressable
               key={m.id}
+              // Disabled -> KHÔNG điều hướng (bấm không làm gì).
+              disabled={isDisabled}
               onPress={() => {
+                if (isDisabled) return;
                 navigation.replace(m.target);
               }}
               style={({ pressed }) => [
@@ -84,7 +104,8 @@ export const SelectInputMethodScreen = () => {
                 {
                   backgroundColor: isDark ? '#19271E' : '#F4F7F4',
                   borderColor: isDark ? '#2E4D36' : 'transparent',
-                  opacity: pressed ? 0.85 : 1,
+                  // Disabled -> mờ đi cho thấy không dùng được.
+                  opacity: isDisabled ? 0.5 : pressed ? 0.85 : 1,
                 },
               ]}
             >
@@ -99,6 +120,13 @@ export const SelectInputMethodScreen = () => {
                   {m.desc}
                 </Text>
               </View>
+              {isDisabled ? (
+                <View style={[styles.badge, { backgroundColor: isDark ? '#2E4D36' : AppColors.lightCardBorder }]}>
+                  <Text style={[styles.badgeText, { color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary }]}>
+                    {t('scan.inDevelopment')}
+                  </Text>
+                </View>
+              ) : null}
             </Pressable>
           );
         })}
@@ -164,5 +192,16 @@ const styles = StyleSheet.create({
   methodDesc: {
     fontFamily: FontFamily.regular,
     marginTop: 2,
+  },
+  badge: {
+    paddingHorizontal: sp(8),
+    paddingVertical: sp(3),
+    borderRadius: sp(8),
+    marginLeft: sp(8),
+  },
+  badgeText: {
+    fontFamily: FontFamily.bold,
+    fontWeight: FontWeights.bold,
+    fontSize: sp(10),
   },
 });

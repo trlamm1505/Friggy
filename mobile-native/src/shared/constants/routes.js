@@ -61,4 +61,5 @@ export const Routes = {
 
   // Subscription
   PackageManagement: 'PackageManagement',
+  MyPackages: 'MyPackages',
 };

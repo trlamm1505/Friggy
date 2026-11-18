@@ -2504,6 +2504,13 @@ class OfflineCache {
       title: row.title ?? '',
       message: row.message ?? '',
       time: row.time ?? null,
+      // ⚠️ PHẢI trả CẢ `read` lẫn `isRead`:
+      //   - `read`      -> shape UI (`NotificationItem` dùng `item.read`)
+      //   - `isRead`    -> shape service/nội bộ (`RealNotificationService` dùng
+      //                    `isRead`, `saveNotifications` cũng đọc `isRead`)
+      //   Trước đây chỉ trả `isRead` -> mọi thông báo offline hiển thị là
+      //   CHƯA ĐỌC (chấm xanh + viền highlight) dù user đã đọc.
+      read: row.is_read === 1,
       isRead: row.is_read === 1,
       rawType: row.raw_type ?? row.type ?? null,
       metadata: safeParse(row.metadata_json, null),

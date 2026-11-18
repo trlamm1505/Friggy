@@ -123,13 +123,13 @@ describe('OfflineMutationQueue - shopping / slot', () => {
     expect(ops[0].payload.completed).toBe(true);
   });
 
-  // ⚠️ P0 — `servings` phải được LƯU vào outbox.
-  // Nếu không, khi sync lại BE sẽ dùng `slot.servings` (khác lúc user
-  // bấm nấu) -> tủ lạnh bị trừ sai lượng.
-  it('updateSlot LƯU `servings` vào outbox (trừ đúng khẩu phần khi sync lại)', async () => {
+  // ⚠️ ĐÃ GỠ STEPPER KHẨU PHẦN (19/11) -> `servings` KHÔNG còn được gửi
+  // trong payload PATCH slots. BE tự dùng `slot.servings` (mặc định 1) ->
+  // payload phải KHÔNG chứa field `servings` (đúng contract BE).
+  it('updateSlot KHÔNG lưu `servings` vào outbox (BE tự dùng slot.servings)', async () => {
     const handled = await queueMutation('recipeService', 'updateSlot', [
       'slot-1',
-      { completed: true, servings: 4 },
+      { completed: true },
     ]);
 
     expect(handled).toBe(true);
@@ -137,7 +137,8 @@ describe('OfflineMutationQueue - shopping / slot', () => {
     const { outboxQueue } = require('../OutboxQueue');
     const ops = await outboxQueue.list();
     expect(ops[0].op_type).toBe(OP_TYPES.SLOT_COMPLETE);
-    expect(ops[0].payload.servings).toBe(4);
+    expect(ops[0].payload.servings).toBeUndefined();
+    expect(ops[0].payload.completed).toBe(true);
   });
 
   it('updateSlot KHÔNG có completed/recipeId -> KHÔNG queue (canQueue = false)', async () => {

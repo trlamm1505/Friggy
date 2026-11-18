@@ -7,10 +7,27 @@
  * - Settings icon cho notification settings
  * - Mark all read nổi bật hơn
  * - NotificationItem đã có sẵn ở Sprint 4
+ *
+ * ⚠️ ĐỒNG BỘ VỚI BE:
+ *   BE có `GET /notifications` (phân trang), `PATCH /notifications/:id/read`,
+ *   `PATCH /notifications/read-all`, `DELETE /notifications/:id`.
+ *   Màn này dùng đủ 4 endpoint:
+ *     - phân trang  -> `getNotificationsPage({ page })`
+ *     - đánh dấu đọc -> `markAsRead(id)`
+ *     - đánh dấu đọc hết -> `markAllAsRead()`
+ *     - xoá -> `deleteNotification(id)`
  */
 
-import React, { useState, useMemo, useCallback } from 'react';
-import { View, Text, StyleSheet, SectionList, Pressable } from 'react-native';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  SectionList,
+  Pressable,
+  RefreshControl,
+  Alert,
+} from 'react-native';
 import { useTheme } from '../../theme/ThemeContext';
 import { AppColors } from '../../theme/colors';
 import { sp } from '../../utils/responsive';
@@ -19,7 +36,6 @@ import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { FriggyAppBar } from '../../components/navigation/FriggyAppBar';
 import { CheckCheck, Settings as SettingsIcon, BellOff } from 'lucide-react-native';
-import { useNotifications } from '../../hooks/useServiceHooks';
 import { useServices } from '../../../data/ServiceProvider';
 import { NotificationItem } from '../../components/notification/NotificationItem';
 import { SearchBar } from '../../components/common/SearchBar';
@@ -27,7 +43,9 @@ import { FilterChips } from '../../components/common/FilterChips';
 import { EmptyState } from '../../components/common/EmptyState';
 import { ErrorState } from '../../components/common/ErrorState';
 import { Skeleton } from '../../components/common/Skeleton';
-import { showSuccess } from '../../utils/helpers';
+import { showSuccess, showError } from '../../utils/helpers';
+import { Routes } from '../../../shared/constants/routes';
+import { SCREEN_ROUTE_MAP } from '../../../shared/constants/pushRoutes';
 
 const FILTER_KEYS = {
   ALL: 'all',
@@ -35,6 +53,44 @@ const FILTER_KEYS = {
   EXPIRING: 'expiring',
   RECIPES: 'recipe',
   SYSTEM: 'system',
+};
+
+/** Số item BE trả về 1 trang (khớp `DEFAULT_LIMIT` của RealNotificationService). */
+const PAGE_SIZE = 20;
+
+/**
+ * Map loại thông báo BE -> route đích khi user bấm vào.
+ *
+ * ⚠️ BE `NotificationType` có 17 giá trị (xem `prisma/schema.prisma`).
+ *   `PushNotificationManager.SCREEN_ROUTE_MAP` map theo `data.screen` của
+ *   payload PUSH. Ở đây map theo `type` của thông báo TRONG DB (đọc từ
+ *   danh sách) -> bổ sung những route mà danh sách có thể mở tới.
+ */
+const TYPE_ROUTE_MAP = {
+  expiry_warning: Routes.FridgeInventory,
+  plan_ready: Routes.RecipeSuggestions,
+  subscription_reminder: Routes.PackageManagement,
+};
+
+/**
+ * Lấy route đích từ 1 thông báo.
+ *
+ * @param {object} item
+ * @returns {string|null} route hợp lệ hoặc null
+ */
+export const resolveItemRoute = (item) => {
+  if (!item) return null;
+
+  // Ưu tiên route BE gửi kèm trong `metadata` (nếu có).
+  const screen = item?.metadata?.screen ?? item?.metadata?.targetScreen;
+  if (screen) {
+    // Dùng lại map của PushNotificationManager để 1 nguồn sự thật.
+    const mapped = SCREEN_ROUTE_MAP[screen];
+    if (mapped) return mapped;
+  }
+
+  const rawType = item?.rawType ?? item?.type;
+  return TYPE_ROUTE_MAP[rawType] ?? null;
 };
 
 // Group by date helper
@@ -74,10 +130,87 @@ export const NotificationsScreen = () => {
   const { t } = useTranslation();
   const navigation = useNavigation();
   const services = useServices();
-  const { data: items, loading, error, refetch } = useNotifications();
+
+  /**
+   * Danh sách thông báo.
+   *
+   * ⚠️ Dùng `getNotificationsPage` (BE `GET /notifications?page=&limit=`) thay vì
+   *   `useNotifications` để có PHÂN TRANG + `unreadCount` chính xác từ BE
+   *   (thay vì đếm tay từ items đã tải -> thiếu ở trang sau).
+   */
+  const [items, setItems] = useState([]);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState(null);
 
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState(FILTER_KEYS.ALL);
+
+  /**
+   * Tải trang thông báo.
+   *
+   * @param {number} targetPage - trang cần tải
+   * @param {boolean} [append] - true -> nối vào danh sách hiện tại (load more)
+   */
+  const loadPage = useCallback(
+    async (targetPage, append = false) => {
+      try {
+        if (!append) setError(null);
+
+        const result = await services.notificationService.getNotificationsPage({
+          page: targetPage,
+          limit: PAGE_SIZE,
+        });
+
+        const list = Array.isArray(result?.data) ? result.data : [];
+
+        setItems((prev) => (append ? [...prev, ...list] : list));
+        setPage(result?.page ?? targetPage);
+        setTotalPages(result?.totalPages ?? 1);
+        setUnreadCount(result?.unreadCount ?? 0);
+      } catch (e) {
+        if (!append) setError(e);
+      } finally {
+        setLoading(false);
+        setLoadingMore(false);
+        setRefreshing(false);
+      }
+    },
+    [services]
+  );
+
+  // Tải trang đầu khi mount.
+  useEffect(() => {
+    // `loadPage` là async -> setState chỉ chạy SAU `await` -> không setState
+    // đồng bộ trong thân effect (rule `react-hooks/set-state-in-effect`).
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadPage(1);
+  }, [loadPage]);
+
+  /**
+   * Pull-to-refresh -> tải lại trang đầu, bỏ các trang cũ.
+   */
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    loadPage(1);
+  }, [loadPage]);
+
+  /**
+   * Load more -> tải trang kế tiếp khi cuộn tới cuối.
+   *
+   * ⚠️ Chặn gọi trùng: `loadingMore` + so sánh `page >= totalPages`.
+   */
+  const onEndReached = useCallback(() => {
+    if (loadingMore || loading) return;
+    if (page >= totalPages) return;
+
+    setLoadingMore(true);
+    loadPage(page + 1, true);
+  }, [loadingMore, loading, page, totalPages, loadPage]);
 
   // Filter + search
   const filteredItems = useMemo(() => {
@@ -101,39 +234,99 @@ export const NotificationsScreen = () => {
 
   // Counts
   const counts = useMemo(() => {
-    if (!items) return { all: 0, unread: 0, expiring: 0, recipe: 0, system: 0 };
+    const list = items ?? [];
     return {
-      all: items.length,
-      unread: items.filter((it) => !it.read).length,
-      expiring: items.filter((it) => it.type === 'expiring').length,
-      recipe: items.filter((it) => it.type === 'recipe').length,
-      system: items.filter((it) => it.type === 'system').length,
+      all: list.length,
+      // `unreadCount` từ BE là con số CHÍNH XÁC (toàn bộ thông báo chưa
+      // đọc, không phải chỉ trang đang tải) -> dùng số này cho badge.
+      unread: unreadCount || list.filter((it) => !it.read).length,
+      expiring: list.filter((it) => it.type === 'expiring').length,
+      recipe: list.filter((it) => it.type === 'recipe').length,
+      system: list.filter((it) => it.type === 'system').length,
     };
-  }, [items]);
+  }, [items, unreadCount]);
 
   const markAllRead = useCallback(async () => {
-    if (!items) return;
+    if (!items?.length) return;
     try {
       await services.notificationService.markAllAsRead();
-      refetch();
+      // Update cục bộ ngay (không chờ refetch) -> UI phản hồi tức thì.
+      setItems((prev) => prev.map((it) => ({ ...it, read: true, isRead: true })));
+      setUnreadCount(0);
       showSuccess('Đã đánh dấu tất cả là đã đọc');
     } catch (_e) {
-      // silent
+      showError('Không thể đánh dấu tất cả là đã đọc');
     }
-  }, [items, services, refetch]);
+  }, [items, services]);
 
+  /**
+   * Xoá 1 thông báo (`DELETE /notifications/:id` — BE soft-delete).
+   */
+  const deleteItem = useCallback(
+    (item) => {
+      if (!item?.id) return;
+
+      Alert.alert(
+        'Xoá thông báo',
+        'Bạn có chắc muốn xoá thông báo này?',
+        [
+          { text: 'Huỷ', style: 'cancel' },
+          {
+            text: 'Xoá',
+            style: 'destructive',
+            onPress: async () => {
+              // Optimistic: xoá khỏi list ngay, rollback nếu API lỗi.
+              const snapshot = items;
+              setItems((prev) => prev.filter((it) => it.id !== item.id));
+
+              try {
+                await services.notificationService.deleteNotification(item.id);
+                if (!item.read) {
+                  setUnreadCount((c) => Math.max(0, c - 1));
+                }
+              } catch (_e) {
+                setItems(snapshot);
+                showError('Không thể xoá thông báo');
+              }
+            },
+          },
+        ]
+      );
+    },
+    [items, services]
+  );
+
+  /**
+   * Bấm vào 1 thông báo:
+   *   1. Đánh dấu đã đọc (`PATCH /notifications/:id/read`) nếu chưa đọc.
+   *   2. Điều hướng tới màn liên quan (nếu có route).
+   */
   const onNotificationPress = useCallback(
     async (item) => {
-      if (!item.read) {
+      if (!item?.read) {
+        // Optimistic -> badge cập nhật tức thì.
+        setItems((prev) =>
+          prev.map((it) => (it.id === item.id ? { ...it, read: true, isRead: true } : it))
+        );
+        setUnreadCount((c) => Math.max(0, c - 1));
+
         try {
           await services.notificationService.markAsRead(item.id);
-          refetch();
         } catch (_e) {
-          // silent
+          // Rollback trạng thái đọc.
+          setItems((prev) =>
+            prev.map((it) => (it.id === item.id ? { ...it, read: false, isRead: false } : it))
+          );
+          setUnreadCount((c) => c + 1);
         }
       }
+
+      const route = resolveItemRoute(item);
+      if (route) {
+        navigation.navigate(route);
+      }
     },
-    [services, refetch]
+    [services, navigation]
   );
 
   const filterOptions = [
@@ -173,7 +366,11 @@ export const NotificationsScreen = () => {
     return (
       <View style={[styles.container, { backgroundColor: isDark ? '#0E1611' : '#FFFFFF' }]}>
         <FriggyAppBar showBackButton onBackTap={() => navigation.goBack()} />
-        <ErrorState message={t('offline.readFailed')} onRetry={refetch} style={{ marginTop: sp(40) }} />
+        <ErrorState
+          message={t('offline.readFailed')}
+          onRetry={() => loadPage(1)}
+          style={{ marginTop: sp(40) }}
+        />
       </View>
     );
   }
@@ -315,9 +512,42 @@ export const NotificationsScreen = () => {
             </Text>
           </View>
         )}
-        renderItem={({ item }) => <NotificationItem item={item} onPress={onNotificationPress} />}
+        renderItem={({ item }) => (
+          <NotificationItem
+            item={item}
+            onPress={onNotificationPress}
+            onLongPress={deleteItem}
+            onDelete={deleteItem}
+          />
+        )}
         ItemSeparatorComponent={() => <View style={{ height: sp(10) }} />}
         SectionSeparatorComponent={() => <View style={{ height: sp(4) }} />}
+        // ── Pull-to-refresh ──────────────────────────────────────────
+        // Kéo xuống để đồng bộ lại danh sách từ BE (thông báo mới có thể
+        // đã tới từ cron job trong lúc user đang ở màn khác).
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={isDark ? AppColors.primaryLight : AppColors.primary}
+            colors={[isDark ? AppColors.primaryLight : AppColors.primary]}
+          />
+        }
+        // ── Load more ─────────────────────────────────────────────────
+        // BE phân trang (`totalPages`). Khi cuộn gần cuối -> tải trang kế.
+        onEndReached={onEndReached}
+        onEndReachedThreshold={0.4}
+        ListFooterComponent={
+          loadingMore ? (
+            <View style={{ paddingVertical: sp(16) }}>
+              <Skeleton width="100%" height={sp(50)} borderRadius={sp(12)} />
+            </View>
+          ) : page < totalPages && items.length > 0 ? (
+            <Pressable onPress={onEndReached} style={styles.loadMoreBtn}>
+              <Text style={styles.loadMoreText}>Tải thêm</Text>
+            </Pressable>
+          ) : null
+        }
         ListEmptyComponent={
           search || filter !== FILTER_KEYS.ALL ? (
             <EmptyState
@@ -423,5 +653,17 @@ const styles = StyleSheet.create({
   sectionCount: {
     fontFamily: FontFamily.semibold,
     fontWeight: FontWeights.semibold,
+  },
+  loadMoreBtn: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: sp(14),
+    marginTop: sp(8),
+  },
+  loadMoreText: {
+    fontFamily: FontFamily.bold,
+    fontWeight: FontWeights.bold,
+    color: AppColors.primary,
+    fontSize: sp(13),
   },
 });

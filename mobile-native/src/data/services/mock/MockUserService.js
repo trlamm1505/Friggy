@@ -75,6 +75,9 @@ let mockSubscription = {
  * `null` = chưa có giao dịch nào. Được set khi `subscribe()` / `renew()` chạy,
  * và `findPendingPayment()` trả về để UI khôi phục QR cũ (khớp hành vi BE
  * trả 409 khi đã có giao dịch pending).
+ *
+ * ⚠️ 19/11 — thêm `planName` + `type` để `findPendingPayment(filters)` LỌC
+ *   được theo gói (fix "QR sai gói"). BE trả `planName` = `tx.plan.displayName`.
  */
 let mockPendingPayment = null;
 
@@ -484,6 +487,10 @@ export class MockUserService extends IUserService {
       amount: pkg.price ?? 0,
       expireAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
       status: 'pending',
+      // ⚠️ 19/11 — lưu gói + loại giao dịch để `findPendingPayment()` lọc
+      //   được (fix "QR sai gói"). `planName` = displayName (khớp BE).
+      planName: pkg.name,
+      type: 'subscribe',
     };
 
     // Nhớ gói vừa mua để `isSubscribedTo` trả true (poll 2 tầng thoát).
@@ -519,6 +526,9 @@ export class MockUserService extends IUserService {
       amount: mockSubscription.plan.price ?? 0,
       expireAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
       status: 'pending',
+      // ⚠️ 19/11 — lưu gói + loại giao dịch để `findPendingPayment()` lọc được.
+      planName: mockSubscription.plan.displayName,
+      type: 'renew',
     };
     return { ...mockPendingPayment };
   }
@@ -567,10 +577,31 @@ export class MockUserService extends IUserService {
   /**
    * Giao dịch đang chờ thanh toán — dùng khôi phục QR thay vì tạo mới.
    * BE trả 409 khi đã có pending -> Flutter/RN tra cứu lại thay vì báo lỗi.
+   *
+   * ⚠️ 19/11 — LỌC THEO GÓI (fix "QR sai gói"):
+   *   Khớp `RealSubscriptionService.findPendingPayment()`: chỉ trả về giao dịch
+   *   pending đúng gói đang mua (cùng `planDisplayName` / `planName` / `amount` /
+   *   `type`). Sai gói -> `null` để caller tạo giao dịch MỚI.
+   *
+   * @param {object} [filters] - `{ planDisplayName, planName, amount, type }`
    */
-  async findPendingPayment() {
+  async findPendingPayment(filters = {}) {
     await sleep(MOCK_DELAY / 2);
-    return mockPendingPayment ? { ...mockPendingPayment } : null;
+    if (!mockPendingPayment) return null;
+
+    const { planDisplayName = null, planName = null, amount = null, type = null } = filters || {};
+
+    if (planDisplayName && mockPendingPayment.planName !== planDisplayName) return null;
+    if (!planDisplayName && planName) {
+      const txPlan = String(mockPendingPayment.planName ?? '').toLowerCase();
+      if (!txPlan.includes(String(planName).toLowerCase())) return null;
+    }
+    if (amount !== null && amount !== undefined && Number(mockPendingPayment.amount) !== Number(amount)) {
+      return null;
+    }
+    if (type && mockPendingPayment.type !== type) return null;
+
+    return { ...mockPendingPayment };
   }
 
   /**

@@ -41,6 +41,7 @@ import {
   AlertTriangle,
   Sparkles,
   CreditCard,
+  Crown,
 } from 'lucide-react-native';
 import { ProfileHeader } from '../../components/profile/ProfileHeader';
 import { SettingsSection } from '../../components/common/SettingsSection';
@@ -222,6 +223,12 @@ export const UserProfileScreen = () => {
             icon={User}
             label={t('profile.personalInfo')}
             onPress={() => navigation.navigate(Routes.PersonalInfo)}
+          />
+          {/* Gói của tôi — quản lý gói: gia hạn / đổi gói (19/11). */}
+          <SettingsMenuItem
+            icon={Crown}
+            label={t('profile.myPackage')}
+            onPress={() => navigation.navigate(Routes.MyPackages)}
           />
           <SettingsMenuItem
             icon={CreditCard}

@@ -3,10 +3,22 @@
  *
  * Redesigned (Sprint 9):
  * - Segmented tabs: Nguyên liệu / Cách nấu / Mẹo / Dinh dưỡng
- * - Servings adjuster (Stepper component)
  * - Nutrition facts section
  * - Tips & variants
  * - Action bar: Favorite + Cook Now + Share
+ *
+ * ⚠️ ĐÃ GỠ STEPPER KHẨU PHẦN (19/11):
+ *   Không còn cho user tăng/giảm số người ăn. Mọi màn đều dùng CỐ ĐỊNH
+ *   `DEFAULT_SERVINGS = 1` (khớp `meal_slots.servings` mặc định của BE —
+ *   `be/prisma/schema.prisma:385` `@default(1)`).
+ *
+ *   Lý do: BE scale nguyên liệu theo `servings / recipe.servings`. Nếu FE
+ *   cho user chỉnh khẩu phần nhưng không đồng bộ được về `slot.servings`
+ *   thì lượng hiển thị ≠ lượng BE trừ trong tủ lạnh -> sai số liệu.
+ *   Cố định 1 khẩu phần cho cả FE và BE -> luôn khớp.
+ *
+ *   => PATCH /meal-planning/slots/{id} KHÔNG gửi field `servings` nữa
+ *      (BE tự dùng `slot.servings`) -> payload gọn, đúng contract BE.
  */
 
 import React, { useState, useMemo, useCallback } from 'react';
@@ -33,7 +45,6 @@ import {
 } from 'lucide-react-native';
 import { CustomButton } from '../../components/common/CustomButton';
 import { SegmentedControl } from '../../components/common/SegmentedControl';
-import { Stepper } from '../../components/common/Stepper';
 import { ListSection } from '../../components/common/ListSection';
 import { ErrorState } from '../../components/common/ErrorState';
 import { Skeleton } from '../../components/common/Skeleton';
@@ -88,6 +99,18 @@ const TABS = [
   { key: 'tips', label: 'Mẹo' },
 ];
 
+/**
+ * Khẩu phần CỐ ĐỊNH của màn này = 1 người.
+ *
+ * Khớp `meal_slots.servings` mặc định của BE (`be/prisma/schema.prisma:385`
+ * `@default(1)`) và giá trị seed (`be/prisma/Friggy.sql:183` -> `servings = 1`).
+ *
+ * ⚠️ User KHÔNG chỉnh được (đã gỡ Stepper) -> BE cũng dùng `slot.servings`
+ *   khi PATCH (không gửi field `servings`) -> lượng hiển thị ở FE LUÔN BẰNG
+ *   lượng BE trừ trong tủ lạnh.
+ */
+const DEFAULT_SERVINGS = 1;
+
 export const RecipeDetailScreen = () => {
   const { isDark } = useTheme();
   const { t } = useTranslation();
@@ -116,33 +139,13 @@ export const RecipeDetailScreen = () => {
   const recipe =
     fetchedRecipe || (routeRecipe?.ingredients ? routeRecipe : null) || FALLBACK_RECIPE;
 
-  // ⚠️ Khẩu phần ban đầu:
-  //   1. `route.params.servings` — khẩu phần của SLOT trong kế hoạch (mở từ
-  //      màn thực đơn tuần/ngày). ĐÂY là giá trị đúng: kế hoạch đã scale sẵn.
-  //   2. `recipe.servings` — khẩu phần GỐC của công thức (mở từ danh sách
-  //      công thức / Home -> không có slot).
-  // Ưu tiên (1) vì nếu lấy (2) thì Stepper sẽ hiển thị sai khẩu phần
-  // -> thêm vào danh sách mua theo sai lượng.
-  const routeServings = Number(route.params?.servings);
-  const hasRouteServings = Number.isFinite(routeServings) && routeServings > 0;
-  const initialServings = hasRouteServings ? routeServings : recipe?.servings ?? 2;
-
-  const [servings, setServings] = useState(initialServings);
-
-  // servings là "derived state" từ recipe.servings, nhưng người dùng có thể
-  // chỉnh bằng Stepper -> cần giữ state cục bộ.
-  // Theo pattern "adjust state during render" của React: khi recipe.servings
-  // đổi (đổi món / fetch xong) thì đồng bộ lại giá trị đang hiển thị.
-  // Trước đây dùng useEffect -> setState trong effect (react-hooks/set-state-in-effect).
-  const [syncedServings, setSyncedServings] = useState(initialServings);
-  if (
-    recipe?.servings &&
-    recipe.servings !== syncedServings &&
-    !hasRouteServings
-  ) {
-    setSyncedServings(recipe.servings);
-    setServings(recipe.servings);
-  }
+  // ⚠️ Khẩu phần CỐ ĐỊNH = 1 (không còn Stepper chỉnh được).
+  //
+  // Trước đây: ưu tiên `route.params.servings` (khẩu phần của slot) rồi mới
+  // tới `recipe.servings` (khẩu phần gốc của công thức) -> user chỉnh được.
+  // Nay bỏ hết -> luôn dùng `DEFAULT_SERVINGS = 1` để khớp `slot.servings`
+  // mặc định của BE (xem `DEFAULT_SERVINGS` ở đầu file).
+  const servings = DEFAULT_SERVINGS;
 
   /**
    * ⚠️ B3: khi BE đã trả `inFridge` cho từng nguyên liệu -> DÙNG LUÔN giá trị
@@ -296,12 +299,9 @@ export const RecipeDetailScreen = () => {
 
       let addedCount = 0;
       if (slotId) {
-        // ⚠️ Truyền `servings` (khẩu phần user vừa chỉnh ở Stepper) ->
-        //   BE scale lượng nguyên liệu theo khẩu phần đó, thay vì mặc định
-        //   `slot.servings` của kế hoạch.
-        const result = await services.recipeService.addSlotMissingToShoppingList(slotId, {
-          servings,
-        });
+        // ⚠️ KHÔNG truyền `servings` -> BE dùng `slot.servings` (mặc định 1,
+        //   khớp `DEFAULT_SERVINGS`) -> lượng mua đúng bằng lượng BE tính.
+        const result = await services.recipeService.addSlotMissingToShoppingList(slotId);
         addedCount = result?.addedCount ?? 0;
       } else if (missing.length > 0) {
         // Không có slot -> thêm từng món vào giỏ mua mặc định.
@@ -313,7 +313,8 @@ export const RecipeDetailScreen = () => {
           return missing.includes(name);
         });
 
-        // ⚠️ Scale lượng theo khẩu phần user chọn (giống hành vi của BE).
+        // ⚠️ Scale lượng theo khẩu phần CỐ ĐỊNH (1) — giống hành vi của BE
+        //   (`scaledQty = ri.quantity * slot.servings / recipe.servings`).
         const ratio = servings / (recipe.servings || 1);
 
         for (const ing of missingIngredients) {
@@ -361,16 +362,17 @@ export const RecipeDetailScreen = () => {
    *    không đánh dấu -> user bấm xong "không thấy có gì xảy ra cả".
    *
    * GIỜ ĐÃ NỐI BE THẬT (qua hook `useCookSlot`):
-   *   1. `PATCH /meal-planning/slots/{slotId}` với `{ completed: true, servings }`
+   *   1. `PATCH /meal-planning/slots/{slotId}` với `{ completed: true }`
    *      -> BE set `completedAt` + trừ nguyên liệu FIFO trong tủ lạnh
    *         (idempotent: chỉ trừ lần đầu) + trả về `consumedIngredients`
    *         và `missingIngredients`.
    *   2. Hiện toast cho user biết đã trừ bao nhiêu / còn thiếu gì.
    *   3. Quay lại màn trước để thấy chip "Đã nấu" + số liệu thống kê.
    *
-   * ⚠️ PHẢI gửi `servings` (khẩu phần user vừa chỉnh ở Stepper):
-   *    BE scale nguyên liệu theo `servings / recipe.servings`. Nếu không
-   *    gửi, BE dùng `slot.servings` (lúc sinh kế hoạch) -> TRỪ SAI LƯỢNG.
+   * ⚠️ KHÔNG gửi `servings` (đã gỡ Stepper):
+   *    BE scale nguyên liệu theo `servings / recipe.servings`; không gửi thì
+   *    BE dùng `slot.servings` (mặc định 1 — khớp `DEFAULT_SERVINGS`).
+   *    => Payload PATCH gọn đúng contract BE, không còn field thừa.
    *
    * ⚠️ Cần `slotId` trong route params. Mở từ Home (chỉ có `recipe`) thì
    *    KHÔNG có slot -> không thể tick -> báo user mở từ "Thực đơn tuần tới".
@@ -402,9 +404,9 @@ export const RecipeDetailScreen = () => {
       return;
     }
 
-    // ⚠️ Gửi `servings` -> BE trừ đúng lượng theo khẩu phần user chọn.
-    await cook({ slotId, servings });
-  }, [cooking, slotId, servings, cook, t]);
+    // ⚠️ KHÔNG gửi `servings` -> BE tự dùng `slot.servings` (mặc định 1).
+    await cook({ slotId });
+  }, [cooking, slotId, cook, t]);
 
   const imageMap = {
     recipe_tomato_egg: require('../../../../assets/images/recipe_tomato_egg.png'),
@@ -631,7 +633,7 @@ export const RecipeDetailScreen = () => {
           {/* Tab content */}
           {activeTab === 'ingredients' ? (
             <View style={{ marginTop: sp(20) }}>
-              {/* Servings adjuster */}
+              {/* Khẩu phần CỐ ĐỊNH — không cho chỉnh (đã gỡ Stepper). */}
               <View
                 style={[
                   styles.servingsCard,
@@ -662,7 +664,6 @@ export const RecipeDetailScreen = () => {
                     {servings} người
                   </Text>
                 </View>
-                <Stepper value={servings} onChange={setServings} min={1} max={12} />
               </View>
 
               <View style={{ marginTop: sp(16) }}>

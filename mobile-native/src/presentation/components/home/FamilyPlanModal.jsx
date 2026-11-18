@@ -94,7 +94,17 @@ export const FamilyPlanModal = ({ visible, onClose, onSuccess }) => {
       // Khôi phục QR đang chờ (nếu có) trước khi tạo giao dịch mới.
       // BE trả 409 khi đã có giao dịch pending -> Flutter làm đúng vậy
       // (`package_management_screen.dart:252-267`): tra cứu lại và mở QR cũ.
-      const pending = await userService.findPendingPayment();
+      //
+      // ⚠️ FIX "QR SAI GÓI" (19/11): chỉ khôi phục QR cũ khi giao dịch pending
+      // ĐÚNG gói Family (cùng displayName + amount + type). Nếu giao dịch pending
+      // là của gói khác (VD 149.000đ cũ) mà user đang ở gói 5.000đ -> KHÔNG
+      // dùng QR đó, phải tạo giao dịch mới.
+      const pending = await userService.findPendingPayment({
+        planDisplayName: familyPlan.displayName ?? null,
+        planName: familyPlan.name ?? null,
+        amount: Number(familyPlan.price) || null,
+        type: 'subscribe',
+      });
       if (pending?.qrCode) {
         if (!mountedRef.current) return;
         setCheckout(pending);

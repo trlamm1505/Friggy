@@ -821,16 +821,17 @@ export class RealRecipeService {
    *    tủ lạnh (chỉ có lần tick đầu tiên) -> FE hiển thị cho user biết đã
    *    dùng bao nhiêu nguyên liệu. Trả về object để UI dùng.
    *
-   * ⚠️ `servings` — PHẢI gửi khi user đã chỉnh khẩu phần ở màn chi tiết.
-   *    BE scale nguyên liệu theo `servings / recipe.servings`; nếu không gửi,
-   *    BE dùng `slot.servings` (lúc sinh kế hoạch) -> TRỪ SAI LƯỢNG.
+   * ⚠️ `servings` — KHÔNG gửi nữa (đã gỡ Stepper khẩu phần — 19/11).
+   *    BE scale nguyên liệu theo `servings / recipe.servings`; không gửi thì
+   *    BE dùng `slot.servings` (mặc định 1 — `be/prisma/schema.prisma:385`)
+   *    -> khớp đúng giá trị cố định mà FE hiển thị.
    *    Xem `useCookSlot` / `RecipeDetailScreen.startCooking`.
    *
    * ⚠️ `missingIngredients` = nguyên liệu CÒN THIẾU trong tủ lạnh (đã quy
    *    về base unit) -> FE cảnh báo user trước/sau khi nấu.
    *
    * @param {string} slotId
-   * @param {{completed?:boolean, recipeId?:string|null, servings?:number, note?:string}} payload
+   * @param {{completed?:boolean, recipeId?:string|null, note?:string}} payload
    * @returns {Promise<{id:string,completedAt:string|null,consumedIngredients:Array,missingIngredients:Array}>}
    */
   async updateSlot(slotId, payload = {}) {
@@ -845,7 +846,6 @@ export class RealRecipeService {
     const body = {};
     if (payload.completed !== undefined) body.completed = Boolean(payload.completed);
     if (payload.recipeId !== undefined) body.recipeId = payload.recipeId;
-    if (payload.servings !== undefined) body.servings = payload.servings;
     if (payload.note !== undefined) body.note = payload.note;
 
     const result = await this.client.patch(`/meal-planning/slots/${slotId}`, body);

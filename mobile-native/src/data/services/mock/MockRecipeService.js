@@ -461,7 +461,7 @@ export class MockRecipeService extends IRecipeService {
    *    `consumedIngredients` chỉ có lần tick đầu (idempotent) — giống BE.
    *
    * @param {string} slotId
-   * @param {{completed?:boolean, recipeId?:string|null, servings?:number, note?:string}} payload
+   * @param {{completed?:boolean, recipeId?:string|null, note?:string}} payload
    * @returns {Promise<{id:string,completedAt:string|null,consumedIngredients:Array,missingIngredients:Array}>}
    */
   async updateSlot(slotId, payload = {}) {
@@ -505,9 +505,6 @@ export class MockRecipeService extends IRecipeService {
           found.servings = recipe.servings;
         }
       }
-      if (payload.servings !== undefined) {
-        found.servings = Number(payload.servings);
-      }
       if (payload.note !== undefined) {
         found.note = payload.note;
       }
@@ -516,8 +513,8 @@ export class MockRecipeService extends IRecipeService {
       //
       // ⚠️ Scale theo khẩu phần giống BE:
       //    `scaledQty = ing.amount * (servings / recipe.servings)`.
-      //    BE dùng `servings` user gửi nếu có, ngược lại `slot.servings`.
-      //    Ở mock ta dùng `found.servings` (đã cập nhật ở trên nếu có payload).
+      //    BE dùng `slot.servings` khi client KHÔNG gửi `servings`
+      //    (đã gỡ Stepper khẩu phần — 19/11) -> mock dùng `found.servings`.
       if (payload.completed === true && !wasCooked) {
         const recipe = recipesMock.recipes.find((r) => r.id === found.recipeId);
         const baseServings = Math.max(1, recipe?.servings || 1);

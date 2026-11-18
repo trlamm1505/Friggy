@@ -109,6 +109,25 @@ export class PayOsService {
   }
 
   // ─────────────────────────────────────────────────────────
+  // Hủy payment link
+  // ─────────────────────────────────────────────────────────
+
+  /**
+   * Hủy payment link trên PayOS theo orderCode.
+   * Dùng khi user đổi sang gói khác trong khi còn link cũ chưa thanh toán.
+   * Lỗi được bắt im lặng — link đã hết hạn / không tồn tại vẫn tiếp tục được.
+   */
+  async cancelPaymentLink(orderCode: number): Promise<void> {
+    try {
+      await this.payos.paymentRequests.cancel(orderCode);
+      this.logger.log(`[PayOS] Hủy payment link thành công | orderCode=${orderCode}`);
+    } catch (err) {
+      // Link hết hạn hoặc đã được xử lý → không block luồng chính
+      this.logger.warn(`[PayOS] Hủy payment link thất bại (có thể đã hết hạn) | orderCode=${orderCode}: ${err}`);
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────
   // Xác thực webhook
   // ─────────────────────────────────────────────────────────
 

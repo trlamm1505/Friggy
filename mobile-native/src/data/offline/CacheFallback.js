@@ -356,6 +356,20 @@ export const CACHE_FALLBACKS = {
     searchIngredients: readIngredientCatalog,
     // ⚠️ B4: nhóm tài chính / gia đình - CHỈ ĐỌC offline.
     getCurrentPlan: async () => readJsonCache('current_plan'),
+    /**
+     * ⚠️ 19/11 — THÊM `getMySubscription` vào cache fallback.
+     *
+     * LÝ DO: màn "Gói của tôi" (`MyPackagesScreen`) + `PackageManagementScreen`
+     * đọc gói qua `GET /subscriptions/me`. Trước đây method này KHÔNG có
+     * trong `CACHE_FALLBACKS` -> khi offline, `SafeService` KHÔNG tìm được
+     * cache -> ném lỗi thật -> màn "Gói của tôi" trắng hoặc báo lỗi.
+     *
+     * Ngoài ra `getCurrentPlan` chỉ trả shape PHẲNG (`name`/`displayName`/
+     * `price`/`status`) -> thiếu `plan` lồng mà `useSubscriptionManagement`
+     * cần -> phải cache riêng `my_subscription` (shape đầy đủ của
+     * `RealSubscriptionService.getMySubscription()`).
+     */
+    getMySubscription: async () => readJsonCache('my_subscription'),
     getFamily: async () => readJsonCache('family_info'),
     getFamilyInfo: async () => readJsonCache('family_info'),
     getAvailablePackages: async () => readJsonCache('packages'),

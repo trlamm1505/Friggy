@@ -378,6 +378,83 @@ sang mock khi BE lỗi** (đúng yêu cầu R3 — user phải thấy lỗi th�
 
 
 
+## 4.6. Push notification (thông báo đẩy) — CẦN DEVELOPMENT BUILD
+
+> ⚠️ **Expo Go KHÔNG nhận được thông báo đẩy.**
+> Từ Expo SDK 53, Expo Go đã **gỡ bỏ hoàn toàn** remote push notification
+> (`expo-notifications`). Chạy bằng Expo Go thì app sẽ bỏ qua toàn bộ luồng
+> push và log 1 dòng:
+>
+> ```
+> [PushManager] Đang chạy trong Expo Go -> remote push không khả dụng
+> (Expo SDK 53+ đã gỡ bỏ). Dùng development build để nhận push.
+> ```
+>
+> Đây là hành vi **đúng** — không phải bug. App vẫn chạy bình thường, chỉ
+> không có push.
+
+### 4.6.1. Yêu cầu cho push hoạt động
+
+| Phía       | Cần gì                                                                                |
+| ---------- | ------------------------------------------------------------------------------------- |
+| **Mobile** | Development build (không phải Expo Go)                                                 |
+| **Mobile** | `google-services.json` (Android) / `GoogleService-Info.plist` (iOS) — **chưa có trong repo** |
+| **BE**     | Biến môi trường `FIREBASE_SERVICE_ACCOUNT_JSON` (service account Firebase Admin)      |
+| **BE**     | Bảng `user_devices` phải có `fcmToken` + `isActive = true` (app tự đăng ký)          |
+
+### 4.6.2. Tạo development build
+
+```bash
+cd mobile-native
+
+# Build một lần (để cài vào máy), sau đó dùng `npx expo start --dev-client`
+npx expo run:android --variant debug
+
+# Hoặc dùng EAS (cần tài khoản Expo, build cloud)
+eas build --profile development --platform android
+```
+
+Sau khi cài development build:
+
+```bash
+npx expo start --dev-client
+```
+
+### 4.6.3. Luồng hoạt động
+
+```
+App đăng nhập
+  └─> usePushNotifications đọc GET /users/me/notification-settings
+        └─> pushNotifications = true?
+              └─> PushNotificationManager.registerDevice()
+                    ├─> xin quyền POST_NOTIFICATIONS
+                    ├─> Notifications.getDevicePushTokenAsync()  -> token FCM thật
+                    └─> POST /notifications/fcm-token { token, platform, deviceName }
+
+BE cron job (8:00 / 9:00 hằng ngày)
+  └─> FcmService.sendToUser(userId, { data: { screen: 'fridge' } })
+        └─> thiết bị nhận push -> user bấm -> app điều hướng theo `screen`
+```
+
+> 🔎 Kiểm tra token đã đăng ký chưa:
+>
+> ```sql
+> SELECT id, userId, platform, deviceName, isActive, LEFT(fcmToken, 20)
+> FROM user_devices;
+> ```
+
+### 4.6.4. Mapping deep-link
+
+BE gửi `data.screen` → app map sang route (xem `src/shared/constants/pushRoutes.js`):
+
+| `data.screen`   | Route trong app     | Nguồn                        |
+| --------------- | ------------------- | ---------------------------- |
+| `fridge`        | `FridgeInventory`   | cron `expiry_warning`        |
+| `meal_planning` | `RecipeSuggestions` | cron `weekly_plan_remind`    |
+| `subscription`  | `PackageManagement` | cron `subscription_reminder` |
+
+---
+
 ## 5. Checklist test theo domain
 
 Đã verify các dòng ✅ bằng API thật. Phần còn lại cần test trên thiết bị.

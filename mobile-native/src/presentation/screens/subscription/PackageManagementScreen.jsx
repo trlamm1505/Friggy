@@ -28,14 +28,13 @@
  * điều hướng đi nơi khác -> `useAsyncData` không bị remount.
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   ActivityIndicator,
-  Alert,
   Pressable,
   Image,
 } from 'react-native';
@@ -62,9 +61,9 @@ import { CustomButton } from '../../components/common/CustomButton';
 import { ScreenBackground } from '../../components/common/ScreenBackground';
 import { SubscriptionPlansSheet } from '../../components/subscription/SubscriptionPlansSheet';
 import { PayOSPaymentSheet } from '../../components/subscription/PayOSPaymentSheet';
-import { showError, showSuccess } from '../../utils/helpers';
-import { useServices } from '../../../data/ServiceProvider';
-import { useAsyncData } from '../../hooks/useServiceHooks';
+import { SubscriptionRecoveryBanner } from '../../components/subscription/SubscriptionRecoveryBanner';
+import { useSubscriptionManagement } from '../../hooks/useSubscriptionManagement';
+import { statusLabel } from '../../utils/subscriptionStatus';
 
 import packageMascot from '../../../../assets/images/package.png';
 
@@ -82,178 +81,51 @@ export const formatDate = (dateStr) => {
   return `${parts[2]}/${parts[1]}/${parts[0]}`;
 };
 
-/** Map status của BE -> nhãn tiếng Việt. */
-export const statusLabel = (status, t) => {
-  switch (status) {
-    case 'active':
-      return t('subscription.statusActive');
-    case 'pending':
-      return t('subscription.statusPending');
-    case 'cancelled':
-      return t('subscription.statusCancelled');
-    case 'expired':
-      return t('subscription.statusExpired');
-    default:
-      return t('subscription.statusExpired');
-  }
-};
+/**
+ * Map status của BE -> nhãn tiếng Việt.
+ *
+ * ⚠️ 19/11 — logic đã tách ra `src/presentation/utils/subscriptionStatus.js`
+ *   để dùng chung với màn "Gói của tôi" (`MyPackagesScreen`) mà không phải
+ *   import chéo giữa 2 màn hình.
+ *
+ * ⚠️ Re-export để giữ tương thích import cũ (`SubscriptionFlow.test.js`).
+ */
+export { statusLabel } from '../../utils/subscriptionStatus';
 
 export const PackageManagementScreen = () => {
   const { isDark } = useTheme();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
-  const { userService } = useServices();
 
-  const [subscribingPlanId, setSubscribingPlanId] = useState(null);
   const [plansSheetOpen, setPlansSheetOpen] = useState(false);
 
-  // QR thanh toán (gói individual/family + gia hạn).
-  const [qrCheckout, setQrCheckout] = useState(null);
-  const [qrPlanName, setQrPlanName] = useState(null);
-  const [qrPlanDisplayName, setQrPlanDisplayName] = useState(null);
-  // Gia hạn hay mua mới -> nội dung chuyển khoản khác nhau:
-  //   mua mới  -> "Friggy Gói Cá Nhân"
-  //   gia hạn  -> "Gia hạn Friggy Gói Cá Nhân"
-  // (khớp `description` BE gửi PayOS — xem `PayOSPaymentSheet.buildTransferDescription`).
-  const [qrIsRenew, setQrIsRenew] = useState(false);
-
   const {
-    data: packages,
+    packages,
+    currentSub,
+    currentPlan,
+    currentPlanName,
+    currentStatus,
+    isPaidPlan,
+    isSubscriptionActive,
+    canRenew,
+    canCancelAutoRenew,
     loading,
     error,
-    refetch: reloadPackages,
-  } = useAsyncData((s) => s.userService.getAvailablePackages(), [], []);
-  const { data: currentSub, refetch: reloadCurrent } = useAsyncData(
-    (s) => s.userService.getMySubscription(),
-    null,
-    []
-  );
-
-  const currentPlan = currentSub?.plan ?? null;
-  const currentPlanName = currentPlan?.name ?? 'free';
-  const currentPlanDisplayName = currentPlan?.displayName ?? null;
-  const currentStatus = currentSub?.status ?? 'expired';
-  const isPaidPlan = Number(currentPlan?.price) > 0;
-
-  /** Làm mới cả gói lẫn subscription (dùng sau khi thanh toán / hủy gia hạn). */
-  const refreshAll = useCallback(() => {
-    reloadPackages();
-    reloadCurrent();
-  }, [reloadPackages, reloadCurrent]);
-
-  /**
-   * Mua gói: gọi subscribe -> mở sheet QR.
-   *
-   * Khôi phục QR đang chờ TRƯỚC khi tạo giao dịch mới: BE trả 409 khi đã có
-   * giao dịch pending -> Flutter làm đúng vậy (`package_management_screen.dart:252-267`).
-   */
-  const handleSubscribe = useCallback(
-    async (pkg) => {
-      if (!pkg?.id) return;
-      setSubscribingPlanId(pkg.id);
-      // Mua MỚI -> nội dung chuyển khoản "Friggy <gói>".
-      setQrIsRenew(false);
-      try {
-        const pending = await userService.findPendingPayment();
-        if (pending?.qrCode) {
-          setQrCheckout(pending);
-          setQrPlanName(pkg.name);
-          setQrPlanDisplayName(pkg.displayName);
-          return;
-        }
-
-        const checkout = await userService.subscribe(pkg.id);
-        setQrCheckout(checkout);
-        setQrPlanName(pkg.name);
-        setQrPlanDisplayName(pkg.displayName);
-      } catch (e) {
-        // BE trả 409 khi đã có giao dịch pending -> tra cứu lại và mở QR cũ.
-        try {
-          const pending = await userService.findPendingPayment();
-          if (pending?.qrCode) {
-            setQrCheckout(pending);
-            setQrPlanName(pkg.name);
-            setQrPlanDisplayName(pkg.displayName);
-            return;
-          }
-        } catch {
-          // không có pending -> báo lỗi gốc
-        }
-        showError(e?.message || t('subscription.subscribeFailed'));
-      } finally {
-        setSubscribingPlanId(null);
-      }
-    },
-    [userService, t]
-  );
-
-  /**
-   * Gia hạn gói hiện tại -> QR mới.
-   *
-   * Flutter `_handleRenew()` `:618-670`: tra cứu pending TRƯỚC, rồi gọi
-   * `POST /subscriptions/renew`, và khi lỗi thì tra cứu pending LẠI.
-   */
-  const handleRenew = useCallback(async () => {
-    setSubscribingPlanId('renew');
-    // GIA HẠN -> nội dung chuyển khoản "Gia hạn Friggy <gói>"
-    // (khớp `description` BE gửi PayOS cho `POST /subscriptions/renew`).
-    setQrIsRenew(true);
-    try {
-      const pending = await userService.findPendingPayment();
-      if (pending?.qrCode) {
-        setQrCheckout(pending);
-        setQrPlanName(currentPlanName);
-        setQrPlanDisplayName(currentPlanDisplayName);
-        return;
-      }
-
-      const checkout = await userService.renewSubscription();
-      setQrCheckout(checkout);
-      setQrPlanName(currentPlanName);
-      setQrPlanDisplayName(currentPlanDisplayName);
-    } catch (e) {
-      try {
-        const pending = await userService.findPendingPayment();
-        if (pending?.qrCode) {
-          setQrCheckout(pending);
-          setQrPlanName(currentPlanName);
-          setQrPlanDisplayName(currentPlanDisplayName);
-          return;
-        }
-      } catch {
-        // không có pending -> báo lỗi gốc
-      }
-      showError(e?.message || t('subscription.renewFailed'));
-    } finally {
-      setSubscribingPlanId(null);
-    }
-  }, [userService, currentPlanName, currentPlanDisplayName, t]);
-
-  /**
-   * Hủy gia hạn tự động (owner của gói trả tiền).
-   *
-   * Flutter `_confirmCancelAutoRenewal()` `:673-731` — có hộp thoại xác nhận
-   * trước khi gọi API (hành động không thể hoàn tác).
-   */
-  const handleCancelAutoRenew = useCallback(() => {
-    Alert.alert(t('subscription.cancelAutoRenewTitle'), t('subscription.cancelAutoRenewConfirm'), [
-      { text: t('subscription.keepAutoRenew'), style: 'cancel' },
-      {
-        text: t('subscription.confirmCancelAutoRenew'),
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            const res = await userService.cancelAutoRenewal();
-            showSuccess(res?.message || t('subscription.cancelAutoRenewDone'));
-            reloadCurrent();
-          } catch (e) {
-            showError(e?.message || t('subscription.loadFailed'));
-          }
-        },
-      },
-    ]);
-  }, [userService, t, reloadCurrent]);
+    subscribingPlanId,
+    qrCheckout,
+    qrPlanName,
+    qrPlanDisplayName,
+    qrIsRenew,
+    recoveryNotice,
+    canResumePayment,
+    refreshAll,
+    handleSubscribe,
+    handleRenew,
+    handleCancelAutoRenew,
+    handleResumePendingPayment,
+    closeQr,
+  } = useSubscriptionManagement({ t });
 
   const textColor = isDark ? '#FFFFFF' : AppColors.textPrimary;
   const subTextColor = isDark ? AppColors.darkTextSecondary : AppColors.textSecondary;
@@ -427,8 +299,31 @@ export const PackageManagementScreen = () => {
               </Text>
             </View>
 
-            {/* Nút gia hạn / hủy gia hạn (chỉ với gói trả phí). */}
-            {isPaidPlan ? (
+            {/* ⚠️ Gói trả phí nhưng KHÔNG `active` -> BE `POST /subscriptions/renew`
+                sẽ trả 404 "Không có gói đang hoạt động".
+                Báo rõ để user biết (vẫn giữ nút gia hạn để mở lại QR cũ
+                đang chờ nếu có). */}
+            {isPaidPlan && !isSubscriptionActive ? (
+              <Text style={[styles.noticeText, { color: subTextColor, fontSize: sp(12) }]}>
+                {t('subscription.renewNotActive')}
+              </Text>
+            ) : null}
+
+            {/* ⚠️ 19/11 — "Đã thanh toán nhưng gói chưa được ghi nhận".
+                BE ghi đè `planId` về free khi webhook PayOS không về -> nếu không
+                cảnh báo, user tưởng mất tiền. Xem `subscriptionRecovery.js`. */}
+            <SubscriptionRecoveryBanner
+              notice={recoveryNotice}
+              canResume={canResumePayment}
+              onResume={handleResumePendingPayment}
+              onRefresh={refreshAll}
+            />
+
+            {/* Nút gia hạn / hủy gia hạn (chỉ với gói trả phí).
+                ⚠️ BE `POST /subscriptions/renew` chỉ nhận sub `status='active'`
+                -> `handleRenew()` tự tra cứu pending TRƯỚC, chỉ gọi API khi
+                hợp lệ (nếu không -> báo rõ, không gọi). */}
+            {canRenew ? (
               <>
                 <View
                   style={[
@@ -448,7 +343,7 @@ export const PackageManagementScreen = () => {
                       textStyle={{ fontSize: sp(13) }}
                     />
                   </View>
-                  {currentSub?.autoRenew ? (
+                  {currentSub?.autoRenew && canCancelAutoRenew ? (
                     <View style={styles.actionItem}>
                       <CustomButton
                         title={t('subscription.cancelAutoRenew')}
@@ -560,7 +455,7 @@ export const PackageManagementScreen = () => {
         targetPlanName={qrPlanName}
         targetPlanDisplayName={qrPlanDisplayName}
         isRenew={qrIsRenew}
-        onClose={() => setQrCheckout(null)}
+        onClose={closeQr}
         onSuccess={refreshAll}
       />
     </ScreenBackground>
@@ -722,6 +617,11 @@ const styles = StyleSheet.create({
   actionItem: {
     flex: 1,
     marginRight: sp(8),
+  },
+  noticeText: {
+    fontFamily: FontFamily.regular,
+    lineHeight: sp(17),
+    marginTop: sp(10),
   },
 
   // ── Đặc quyền ──

@@ -1,14 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { Bell, ChevronLeft, Leaf } from 'lucide-react-native';
 import { useTheme } from '../../theme/ThemeContext';
 import { AppColors } from '../../theme/colors';
 import { sp } from '../../utils/responsive';
 import { FontWeights, FontFamily } from '../../theme/typography';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Routes } from '../../../shared/constants/routes';
-import notificationsMock from '../../../shared/mocks/notifications.json';
+import { useUnreadCount } from '../../hooks/useServiceHooks';
 
 export const FriggyAppBar = ({
   showBackButton = false,
@@ -21,22 +21,44 @@ export const FriggyAppBar = ({
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
 
+  /**
+   * Số thông báo chưa đọc THẬT từ BE (`GET /notifications/unread-count`).
+   *
+   * ⚠️ TRƯỚC ĐÂY dùng `notificationsMock` -> badge luôn hiển thị số của mock
+   *   data (4) bất kể user đã đọc hết hay chưa -> SAI.
+   * ⚠️ `useUnreadCount` tự fallback về `0` khi lỗi/offline/chưa đăng nhập.
+   */
+  const { data: realUnread, refetch: refetchUnread } = useUnreadCount();
+
   // unreadCount được SUY RA thay vì giữ state + effect:
   // - nếu caller truyền propUnread -> dùng prop
-  // - nếu không -> đếm từ mock notifications
-  // localUnread chỉ dùng để ghi đè sau khi bấm chuông (đọc lại mock).
-  const mockUnread = notificationsMock.notifications.filter((n) => !n.read).length;
+  // - nếu không -> dùng số thật từ BE
   const [localUnread, setLocalUnread] = useState(null);
-  const unreadCount = localUnread ?? (propUnread !== undefined ? propUnread : mockUnread);
+  const unreadCount =
+    localUnread ?? (propUnread !== undefined ? propUnread : (realUnread ?? 0));
 
-  const handleNotification = async () => {
+  const handleNotification = useCallback(async () => {
     if (onNotificationTap) {
       await onNotificationTap();
     } else {
       await navigation.navigate(Routes.Notifications);
     }
-    setLocalUnread(mockUnread);
-  };
+  // Bỏ ghi đè cục bộ -> badge quay về số thật từ BE.
+  // `useUnreadCount` chỉ fetch 1 lần lúc mount, nên gọi `refetch` để
+  // lấy số mới (user có thể đã đánh dấu đọc ở màn danh sách).
+  setLocalUnread(null);
+  refetchUnread?.();
+  }, [navigation, onNotificationTap, refetchUnread]);
+
+  // ⚠️ `useFocusEffect` (không phải `useEffect`):
+  //   Badge phải cập nhật mỗi lần user quay lại màn hiện tại (ví dụ: đọc
+  //   hết thông báo ở tab Thông báo rồi quay lại Home). `useEffect` chỉ chạy
+  //   lúc mount -> badge vẫn hiển thị số cũ -> SAI.
+  useFocusEffect(
+    useCallback(() => {
+      refetchUnread?.();
+    }, [refetchUnread])
+  );
 
   return (
     <View

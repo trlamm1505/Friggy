@@ -646,32 +646,35 @@ describe('10. B4 — Meal planning (plans / slots / tick / regenerate)', () => {
   });
 
   // ─────────────────────────────────────────────────────────
-  // ⚠️ P0 — `servings` phải được gửi kèm.
+  // ⚠️ ĐÃ GỠ STEPPER KHẨU PHẦN (19/11) -> payload PATCH slots KHÔNG còn
+  // field `servings`.
   //
   // BE scale nguyên liệu theo công thức:
   //     scaledQty = recipeIngredient.quantity * (servings / recipe.servings)
-  // Nếu RN KHÔNG gửi `servings`, BE dùng `slot.servings` (lúc sinh kế hoạch)
-  // -> khi user chỉnh khẩu phần ở màn chi tiết công thức, tủ lạnh bị trừ
-  // SAI LƯỢNG. Đây là bug mất thực phẩm thật.
+  // Không gửi `servings` -> BE dùng `slot.servings` (mặc định 1 —
+  // `be/prisma/schema.prisma:385` `@default(1)`), khớp đúng giá trị cố định
+  // mà FE hiển thị -> không còn nguy cơ trừ sai lượng.
   // ─────────────────────────────────────────────────────────
-  it('updateSlot GỬI `servings` (BE scale nguyên liệu theo khẩu phần)', async () => {
-    api.patch.mockResolvedValue(null);
-
-    await svc.updateSlot('slot-1', { completed: true, servings: 4 });
-
-    expect(api.patch).toHaveBeenCalledWith('/meal-planning/slots/slot-1', {
-      completed: true,
-      servings: 4,
-    });
-  });
-
-  it('updateSlot KHÔNG gửi `servings` khi undefined (BE tự dùng slot.servings)', async () => {
+  it('updateSlot KHÔNG gửi `servings` (đã gỡ Stepper — BE tự dùng slot.servings)', async () => {
     api.patch.mockResolvedValue(null);
 
     await svc.updateSlot('slot-1', { completed: true });
 
     const [, body] = api.patch.mock.calls[0];
     expect(Object.prototype.hasOwnProperty.call(body, 'servings')).toBe(false);
+    expect(body).toEqual({ completed: true });
+  });
+
+  it('updateSlot BỎ QUA `servings` dù caller truyền vào (payload gọn, đúng BE)', async () => {
+    api.patch.mockResolvedValue(null);
+
+    await svc.updateSlot('slot-1', { completed: true, servings: 4 });
+
+    const [, body] = api.patch.mock.calls[0];
+    expect(Object.prototype.hasOwnProperty.call(body, 'servings')).toBe(false);
+    expect(api.patch).toHaveBeenCalledWith('/meal-planning/slots/slot-1', {
+      completed: true,
+    });
   });
 
   it('updateSlot trả đủ key: id, completedAt, consumedIngredients, missingIngredients', async () => {
@@ -1167,7 +1170,7 @@ describe('12. B4 — R1 — Mock và Real cùng shape', () => {
     });
   });
 
-  it('updateSlot(): Mock scale `consumedIngredients` theo servings (khớp BE)', async () => {
+  it('updateSlot(): Mock scale `consumedIngredients` theo slot.servings (khớp BE)', async () => {
     const mock = new MockRecipeService();
     const plan = await mock.getNextWeekPlan();
     const slot = plan.days[0].slots[0];
@@ -1175,18 +1178,25 @@ describe('12. B4 — R1 — Mock và Real cùng shape', () => {
     // ⚠️ State mock là module-level (dùng chung giữa các test trong file)
     //    -> phải BỎ TICK trước mỗi lần tick để `wasCooked === false`
     //    (BE cũng vậy: chỉ trừ lần đầu).
-    const cookWith = async (servings) => {
-      await mock.updateSlot(slot.id, { completed: false });
-      return mock.updateSlot(slot.id, { completed: true, servings });
-    };
+    //
+    // ⚠️ ĐÃ GỠ STEPPER KHẨU PHẦN (19/11): client KHÔNG gửi `servings` nữa
+    //    -> BE (và mock) scale theo `slot.servings` của kế hoạch.
+    await mock.updateSlot(slot.id, { completed: false });
+    const result = await mock.updateSlot(slot.id, { completed: true });
 
-    const base = await cookWith(slot.servings ?? 2);
-    const doubled = await cookWith((slot.servings ?? 2) * 2);
+    expect(result.consumedIngredients.length).toBeGreaterThan(0);
 
-    expect(base.consumedIngredients.length).toBeGreaterThan(0);
-    expect(doubled.consumedIngredients.length).toBe(base.consumedIngredients.length);
-    doubled.consumedIngredients.forEach((it, i) => {
-      expect(it.requiredQuantity).toBeCloseTo(base.consumedIngredients[i].requiredQuantity * 2, 2);
+    // Lượng phải = `ing.amount * (slot.servings / recipe.servings)`.
+    const recipes = require('../../../../shared/mocks/recipes.json');
+    const recipe = (recipes.recipes ?? []).find((r) => r.id === slot.recipeId);
+    const baseServings = Math.max(1, recipe?.servings || 1);
+    const actualServings = Math.max(1, slot.servings || baseServings);
+    const scale = actualServings / baseServings;
+
+    result.consumedIngredients.forEach((it, i) => {
+      const ing = recipe?.ingredients?.[i];
+      const amount = typeof ing === 'string' ? 1 : (ing?.amount ?? 1);
+      expect(it.requiredQuantity).toBeCloseTo(Math.round(amount * scale * 100) / 100, 2);
     });
   });
 

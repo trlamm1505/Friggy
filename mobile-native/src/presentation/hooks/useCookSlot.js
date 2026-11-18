@@ -6,14 +6,15 @@
  *   trong `RecipeDetailScreen` và `CookingSuggestionsSection` — 2 chỗ gần
  *   nhưng lệch nhau (1 chỗ gửi `servings`, 1 chỗ không). Rất dễ quên
  *   cập nhật 1 chỗ khi BE đổi contract.
- *   => Gom về 1 hook, 2 màn chỉ gọi `cook({ slotId, servings })`.
+ *   => Gom về 1 hook, 2 màn chỉ gọi `cook({ slotId })`.
  *
- * ⚠️ VÌ SAO PHẢI GỬI `servings`:
+ * ⚠️ KHÔNG GỬI `servings` (đã gỡ Stepper khẩu phần — 19/11):
  *   BE scale nguyên liệu theo công thức:
  *       scaledQty = recipeIngredient.quantity * (servings / recipe.servings)
- *   Nếu RN không gửi `servings`, BE dùng `slot.servings` (lúc sinh kế hoạch)
- *   -> khi user chỉnh khẩu phần ở màn chi tiết công thức, tủ lạnh bị trừ
- *   SAI LƯỢNG (đây là bug P0 đã ghi nhận).
+ *   `servings` KHÔNG gửi -> BE dùng `slot.servings` (mặc định 1 — khớp
+ *   `meal_slots.servings` `@default(1)` trong `be/prisma/schema.prisma:385`).
+ *   User KHÔNG còn chỉnh được khẩu phần ở bất kỳ màn nào -> giá trị này
+ *   luôn đúng -> payload PATCH gọn, không còn field thừa.
  *
  * ⚠️ BACKEND IDEMPOTENT:
  *   BE chỉ trừ khi `slot.completedAt === null` -> gọi lại lần 2 trả
@@ -79,7 +80,7 @@ function normalizeItem(item, kind) {
  * @param {object} [options]
  * @param {(result:object)=>void} [options.onSuccess] - callback sau khi nấu xong
  * @returns {{
- *   cook: (params:{slotId:string, servings?:number, recipeId?:string|null, note?:string}) => Promise<object|null>,
+ *   cook: (params:{slotId:string, recipeId?:string|null, note?:string}) => Promise<object|null>,
  *   cooking: boolean,
  *   error: Error|null,
  *   result: object|null,
@@ -100,12 +101,12 @@ export const useCookSlot = (options = {}) => {
   /**
    * Tick "đã nấu" 1 meal slot.
    *
-   * @param {{slotId:string, servings?:number, recipeId?:string|null, note?:string}} params
+   * @param {{slotId:string, recipeId?:string|null, note?:string}} params
    * @returns {Promise<object|null>} kết quả từ BE, hoặc `null` nếu lỗi
    */
   const cook = useCallback(
     async (params = {}) => {
-      const { slotId, servings, recipeId, note } = params;
+      const { slotId, recipeId, note } = params;
 
       if (!slotId) {
         showError(t('home.startCookingNoSlot'));
@@ -118,9 +119,8 @@ export const useCookSlot = (options = {}) => {
       setError(null);
 
       try {
-        // ⚠️ `servings` PHẢI gửi kèm -> BE scale nguyên liệu đúng khẩu phần.
+        // ⚠️ KHÔNG gửi `servings` -> BE dùng `slot.servings` (mặc định 1).
         const payload = { completed: true };
-        if (servings !== undefined && servings !== null) payload.servings = servings;
         if (recipeId !== undefined) payload.recipeId = recipeId;
         if (note !== undefined) payload.note = note;
 

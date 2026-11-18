@@ -303,11 +303,9 @@ export const MUTATION_HANDLERS = {
         return {
           slotId: args[0] ?? null,
           completed: payload.completed,
-          // ⚠️ PHẢI lưu `servings` — BE scale nguyên liệu theo khẩu phần.
-          //    Thiếu field này thì khi sync lại sẽ trừ theo `slot.servings`
-          //    (khác với lúc user bấm nấu) -> tủ lạnh bị trừ sai lượng.
-          //    `undefined` -> BE bỏ qua, dùng `slot.servings` (đúng).
-          servings: payload.servings,
+          // ⚠️ KHÔNG lưu `servings` (đã gỡ Stepper khẩu phần — 19/11):
+          //   BE dùng `slot.servings` (mặc định 1) khi không nhận field này ->
+          //   đồng bộ offline khớp đúng lúc user bấm nấu.
           // ⚠️ F6: đổi công thức của slot.
           recipeId: payload.recipeId ?? null,
         };
@@ -336,7 +334,7 @@ export const MUTATION_HANDLERS = {
         if (payload.completed === true) {
           await offlineCache.consumeIngredientsForSlot(
             String(slotId),
-            payload.servings ?? null,
+            null,
             null
           );
         }

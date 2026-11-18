@@ -430,11 +430,10 @@ class SyncEngine {
       case OP_TYPES.SLOT_COMPLETE: {
         const recipe = realService('recipeService');
         if (!recipe) throw new Error('recipeService chưa sẵn sàng');
-        // ⚠️ Truyền lại `servings` để BE trừ đúng lượng như lúc user bấm nấu.
-        //    `undefined` -> BE dùng `slot.servings`.
+        // ⚠️ KHÔNG gửi `servings` -> BE dùng `slot.servings` (mặc định 1),
+        //    giống hệt lúc user bấm nấu (đã gỡ Stepper khẩu phần — 19/11).
         const res = await recipe.updateSlot(payload.slotId, {
           completed: payload.completed,
-          servings: payload.servings,
         });
 
         // ⚠️ BE ĐÃ TRỪ TỦ LẠNH trên server -> cache local (đã trừ offline) phải
@@ -971,6 +970,23 @@ class SyncEngine {
     await safe('getCurrentPlan', async () => {
       const plan = await user.getCurrentPlan();
       if (plan) await offlineCache.saveJsonCache('current_plan', plan);
+    });
+
+    /**
+     * ⚠️ 19/11 — THÊM: cache gói đầy đủ (shape `getMySubscription`).
+     *
+     * LÝ DO: `getCurrentPlan()` trả shape PHẲNG (`name`, `displayName`,
+     * `price`, `status`) — KHÔNG có `plan` lồng. Màn "Gói của tôi" +
+     * `PackageManagementScreen` đọc `currentSub.plan.name` /
+     * `currentSub.status` -> offline phải có cache riêng.
+     *
+     * ⚠️ Cache này là "ảnh chụp" gói ĐANG có. Nếu BE đã hạ cấp/ghi đè sang
+     * free (xem `subscriptionRecovery.js`), cache vẫn giữ gói cũ -> khi
+     * offline user vẫn thấy gói đã mua thay vì bị "nhảy" về free.
+     */
+    await safe('getMySubscription', async () => {
+      const sub = await user.getMySubscription();
+      if (sub) await offlineCache.saveJsonCache('my_subscription', sub);
     });
 
     await safe('getFamilyInfo', async () => {

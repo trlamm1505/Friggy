@@ -284,6 +284,89 @@ describe('RealSubscriptionService - findPendingPayment', () => {
 
     await expect(service.findPendingPayment()).resolves.toBeNull();
   });
+
+  // ─────────────────────────────────────────────────────────
+  // FIX "QR SAI GÓI" (19/11)
+  //
+  // Bug: `findPendingPayment()` trả về giao dịch pending BẤT KỲ -> user chọn
+  // gói 5.000đ nhưng QR hiển thị là QR 149.000đ (giao dịch cũ của gói Family).
+  // Fix: chỉ khôi phục QR cũ khi giao dịch pending ĐÚNG gói đang mua.
+  // ─────────────────────────────────────────────────────────
+
+  it('pending của GÓI KHÁC -> trả null (không dùng lại QR cũ)', async () => {
+    ApiClient.get.mockResolvedValueOnce(beTxList()); // pending: Gói Gia Đình 149000
+
+    const pending = await service.findPendingPayment({
+      planDisplayName: 'Gói Rẻ',
+      planName: 'individual',
+      amount: 5000,
+      type: 'subscribe',
+    });
+
+    expect(pending).toBeNull();
+    // KHÔNG gọi detail (không cần lấy QR của giao dịch sai gói).
+    expect(ApiClient.get).toHaveBeenCalledTimes(1);
+  });
+
+  it('pending ĐÚNG gói (cùng displayName + amount + type) -> trả về để khôi phục QR', async () => {
+    ApiClient.get.mockResolvedValueOnce(beTxList());
+    ApiClient.get.mockResolvedValueOnce({
+      ...beTxList().data[0],
+      qrCode: 'data:image/png;base64,ABC',
+    });
+
+    const pending = await service.findPendingPayment({
+      planDisplayName: 'Gói Gia Đình',
+      planName: 'family',
+      amount: 149000,
+      type: 'subscribe',
+    });
+
+    expect(pending).toBeTruthy();
+    expect(pending.qrCode).toBe('data:image/png;base64,ABC');
+    expect(pending.amount).toBe(149000);
+    expect(pending.planName).toBe('Gói Gia Đình');
+    expect(pending.type).toBe('subscribe');
+  });
+
+  it('cùng gói nhưng SỐ TIỀN khác -> trả null (gói có giá riêng)', async () => {
+    ApiClient.get.mockResolvedValueOnce(beTxList()); // pending: Gói Gia Đình 149000
+
+    const pending = await service.findPendingPayment({
+      planDisplayName: 'Gói Gia Đình',
+      planName: 'family',
+      amount: 5000, // gói Family rẻ hơn trong DB
+      type: 'subscribe',
+    });
+
+    expect(pending).toBeNull();
+  });
+
+  it('subscribe vs renew khác loại -> trả null (tránh dùng nhầm QR gia hạn)', async () => {
+    ApiClient.get.mockResolvedValueOnce(beTxList()); // type: subscribe
+
+    const pending = await service.findPendingPayment({
+      planDisplayName: 'Gói Gia Đình',
+      planName: 'family',
+      amount: 149000,
+      type: 'renew',
+    });
+
+    expect(pending).toBeNull();
+  });
+
+  it('KHÔNG truyền filter -> vẫn trả giao dịch pending (backward compatible)', async () => {
+    ApiClient.get.mockResolvedValueOnce(beTxList());
+    ApiClient.get.mockResolvedValueOnce({
+      ...beTxList().data[0],
+      qrCode: 'data:image/png;base64,ABC',
+    });
+
+    const pending = await service.findPendingPayment();
+
+    expect(pending).toBeTruthy();
+    expect(pending.qrCode).toBe('data:image/png;base64,ABC');
+  });
 });
 
 // ═══════════════ Lịch sử thanh toán ═══════════════

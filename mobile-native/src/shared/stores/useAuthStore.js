@@ -303,6 +303,24 @@ export const useAuthActions = () => {
     } catch (_e) {
       // API lỗi (offline / token hết hạn) -> vẫn xoá phiên local bên dưới
     } finally {
+      /**
+       * ⚠️ GỠ FCM TOKEN TRƯỚC KHI XOÁ PHIÊN:
+       *   BE `DELETE /notifications/fcm-token` cần access token còn hợp lệ.
+       *   Nếu xoá phiên trước -> API trả 401 -> token vẫn còn trong
+       *   `user_devices` -> máy này vẫn nhận push của user cũ -> RÒ RỈ
+       *   thông báo giữa 2 tài khoản (đăng nhập tài khoản khác trên cùng máy).
+       *
+       *   Vì vậy: gỡ token TRƯỚC, xoá phiên SAU. Lỗi gỡ token không được
+       *   chặn logout (offline -> thoát vẫn phải được).
+       */
+      try {
+        const manager = getRegisteredService('pushNotificationManager');
+        if (manager) {
+          await manager.unregisterDevice();
+        }
+      } catch (_e) {
+        // ignore - offline hoặc manager chưa nạp
+      }
       useAuthStore.getState().logout();
     }
   }, [authService]);
